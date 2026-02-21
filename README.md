@@ -1,5 +1,11 @@
 # ソムニ sommNI
 
+<p align="center">
+  <img src="docs/qr.png" alt="Scan to try sommNI" width="200"/>
+  <br>
+  <em>Scan with Even Realities app</em>
+</p>
+
 **Seven Second Sommelier** — A wine tasting notes app for Even Realities G2 smart glasses.
 
 ![Even G2](https://img.shields.io/badge/Even_G2-Compatible-green)
