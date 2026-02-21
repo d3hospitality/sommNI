@@ -50,9 +50,9 @@ async function main(): Promise<void> {
   try {
     logoBase64 = await imageUrlToBase64("./assets/sommni-logo.png");
     await pushLogoToGlasses(bridge, logoBase64);
-    log("Logo loaded", "success");
+    log("Logo loaded (" + logoBase64.length + " chars)", "success");
   } catch (err) {
-    log("Logo not loaded", "error");
+    log("Logo not loaded: " + err, "error");
   }
 
   registerEventHandlers(bridge, logoBase64);

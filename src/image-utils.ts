@@ -1,7 +1,11 @@
 import { EvenAppBridge, ImageRawDataUpdate } from '@evenrealities/even_hub_sdk';
 
 export async function pushLogoToGlasses(bridge: EvenAppBridge, logoBase64: string): Promise<void> {
-  const data: ImageRawDataUpdate = { containerID: 4, containerName: "logo", imageData: logoBase64 };
+  const data: ImageRawDataUpdate = { 
+    containerID: 4, 
+    containerName: "logo", 
+    imageData: logoBase64
+  };
   const result = await bridge.updateImageRawData(data);
   console.log("[sommNI] Logo update:", result);
 }
