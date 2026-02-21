@@ -1,0 +1,11 @@
+{
+  "package_id": "com.d3hospitality.sommni",
+  "name": "ソムニ sommNI",
+  "version": "1.0.0",
+  "description": "Seven Second Sommelier",
+  "tagline": "Dining / Done / Different",
+  "author": "D3 Hospitality",
+  "entrypoint": "index.html",
+  "edition": "202601",
+  "min_app_version": "1.0.0"
+}
