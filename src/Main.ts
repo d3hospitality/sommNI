@@ -48,7 +48,7 @@ async function main(): Promise<void> {
 
   let logoBase64 = "";
   try {
-    logoBase64 = await imageUrlToBase64("/sommNI/assets/sommni-logo.png");
+    logoBase64 = await imageUrlToBase64(import.meta.env.BASE_URL + "assets/sommni-logo.png");
     await pushLogoToGlasses(bridge, logoBase64);
     log("Logo loaded (" + logoBase64.length + " chars)", "success");
   } catch (err) {
