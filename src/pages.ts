@@ -43,7 +43,7 @@ export function buildHomePage(): CreateStartUpPageContainer {
   });
   
   const logo = new ImageContainerProperty({
-    xPosition: 370, yPosition: 30, width: 80, height: 80,
+    xPosition: 420, yPosition: 180, width: 80, height: 80,
     containerID: 4, containerName: "logo",
   });
   
@@ -83,7 +83,7 @@ export function rebuildHomePage(): RebuildPageContainer {
   });
   
   const logo = new ImageContainerProperty({
-    xPosition: 370, yPosition: 30, width: 80, height: 80,
+    xPosition: 420, yPosition: 180, width: 80, height: 80,
     containerID: 4, containerName: "logo",
   });
   
