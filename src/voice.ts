@@ -1,19 +1,18 @@
 // ══════════════════════════════════════════════════════════════════════════
-// VOICE COMMANDS - Push-to-talk (5 seconds)
+// VOICE COMMANDS - Push-to-talk (3 seconds)
 // ══════════════════════════════════════════════════════════════════════════
 
 import { EvenAppBridge } from '@evenrealities/even_hub_sdk';
-import OpenAI from 'openai';
 import { WINES, Wine, WineType } from './constants';
 import { log } from './ui';
+
+// Vercel API endpoint
+const TRANSCRIBE_API = "https://sommni-api.vercel.app/api/transcribe";
 
 // Audio buffer
 let audioChunks: Uint8Array[] = [];
 let isListening = false;
 let listenTimeout: ReturnType<typeof setTimeout> | null = null;
-
-// OpenAI client
-let openai: OpenAI | null = null;
 
 // Extended wine with navigation info
 export interface WineWithNav extends Wine {
@@ -48,29 +47,24 @@ function getAllWines(): WineWithNav[] {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// INITIALIZE VOICE
+// INITIALIZE VOICE (no API key needed - Vercel handles it)
 // ══════════════════════════════════════════════════════════════════════════
 export function initVoice(
   bridge: EvenAppBridge,
-  openaiApiKey: string,
+  _openaiApiKey: string, // kept for compatibility, not used
   callback: WineMatchCallback
 ): void {
   bridgeRef = bridge;
   onWineMatchCallback = callback;
   
-  openai = new OpenAI({
-    apiKey: openaiApiKey,
-    dangerouslyAllowBrowser: true,
-  });
-  
   log("[VOICE] Ready (double-tap to search)", "success");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// START LISTENING (5 seconds)
+// START LISTENING (3 seconds)
 // ══════════════════════════════════════════════════════════════════════════
 export async function startListening(): Promise<void> {
-  if (!bridgeRef || !openai || isListening) return;
+  if (!bridgeRef || isListening) return;
   
   isListening = true;
   audioChunks = [];
@@ -97,7 +91,7 @@ export function handleAudioEvent(pcm: Uint8Array): void {
 // STOP AND PROCESS
 // ══════════════════════════════════════════════════════════════════════════
 async function stopAndProcess(): Promise<void> {
-  if (!bridgeRef || !openai) return;
+  if (!bridgeRef) return;
   
   await bridgeRef.audioControl(false);
   isListening = false;
@@ -124,22 +118,27 @@ async function stopAndProcess(): Promise<void> {
   
   log(`[VOICE] Processing ${totalLength} bytes...`);
   
-  // Convert to WAV
-  const wavBlob = pcmToWav(combinedAudio, 16000);
-  const wavFile = new File([wavBlob], "audio.wav", { type: "audio/wav" });
+  // Convert to base64
+  const base64Audio = uint8ArrayToBase64(combinedAudio);
   
   try {
     log("[VOICE] Transcribing...");
     
-    const transcription = await openai.audio.transcriptions.create({
-      file: wavFile,
-      model: "gpt-4o-transcribe",
-      response_format: "text",
+    const response = await fetch(TRANSCRIBE_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ audio: base64Audio }),
     });
     
-    const transcript = typeof transcription === 'string' 
-      ? transcription 
-      : (transcription as any).text || '';
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Transcription failed');
+    }
+    
+    const result = await response.json();
+    const transcript = result.text || '';
     
     log(`[VOICE] Heard: "${transcript}"`);
     
@@ -214,41 +213,12 @@ function findWineByVoice(transcript: string): WineWithNav | null {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// PCM TO WAV
+// UINT8ARRAY TO BASE64
 // ══════════════════════════════════════════════════════════════════════════
-function pcmToWav(pcmData: Uint8Array, sampleRate: number): Blob {
-  const numChannels = 1;
-  const bitsPerSample = 16;
-  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-  const blockAlign = numChannels * (bitsPerSample / 8);
-  const dataSize = pcmData.length;
-  const headerSize = 44;
-  
-  const buffer = new ArrayBuffer(headerSize + dataSize);
-  const view = new DataView(buffer);
-  
-  writeString(view, 0, "RIFF");
-  view.setUint32(4, 36 + dataSize, true);
-  writeString(view, 8, "WAVE");
-  writeString(view, 12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, numChannels, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, byteRate, true);
-  view.setUint16(32, blockAlign, true);
-  view.setUint16(34, bitsPerSample, true);
-  writeString(view, 36, "data");
-  view.setUint32(40, dataSize, true);
-  
-  const wavData = new Uint8Array(buffer);
-  wavData.set(pcmData, headerSize);
-  
-  return new Blob([wavData], { type: "audio/wav" });
-}
-
-function writeString(view: DataView, offset: number, str: string): void {
-  for (let i = 0; i < str.length; i++) {
-    view.setUint8(offset + i, str.charCodeAt(i));
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
   }
+  return btoa(binary);
 }
