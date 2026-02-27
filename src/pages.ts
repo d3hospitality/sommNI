@@ -13,26 +13,20 @@ import {
 const BACK_LABEL = "‹ Back";
 
 // ══════════════════════════════════════════════════════════════════════════
-// HOME PAGE
+// HOME PAGE - with split logo (top + bottom)
 // ══════════════════════════════════════════════════════════════════════════
 export function buildHomePage(): CreateStartUpPageContainer {
-  const title = new TextContainerProperty({
-    xPosition: 20, yPosition: 10, width: 300, height: 35,
-    containerID: 1, containerName: "title",
-    content: "ソムニ sommNI", isEventCapture: 0,
-  });
-  
   const header = new TextContainerProperty({
-    xPosition: 20, yPosition: 50, width: 300, height: 28,
-    containerID: 2, containerName: "header",
+    xPosition: 20, yPosition: 10, width: 300, height: 28,
+    containerID: 1, containerName: "header",
     content: "Wines", isEventCapture: 0,
   });
   
   const typeNames = WINE_TYPES.map(t => TYPE_DISPLAY[t]);
   
   const typeList = new ListContainerProperty({
-    xPosition: 17, yPosition: 82, width: 330, height: 175,
-    containerID: 3, containerName: "wine-types",
+    xPosition: 17, yPosition: 45, width: 330, height: 200,
+    containerID: 2, containerName: "wine-types",
     itemContainer: new ListItemContainerProperty({
       itemCount: typeNames.length, 
       itemWidth: 0,
@@ -42,37 +36,38 @@ export function buildHomePage(): CreateStartUpPageContainer {
     isEventCapture: 1,
   });
   
-  const logo = new ImageContainerProperty({
-    xPosition: 420, yPosition: 180, width: 80, height: 80,
-    containerID: 4, containerName: "logo",
+  // Top half of logo
+  const logoTop = new ImageContainerProperty({
+    xPosition: 190, yPosition: 28, width: 200, height: 100,
+    containerID: 3, containerName: "logo-top",
+  });
+  
+  // Bottom half of logo (directly below, no gap)
+  const logoBottom = new ImageContainerProperty({
+    xPosition: 190, yPosition: 128, width: 200, height: 100,
+    containerID: 4, containerName: "logo-bottom",
   });
   
   return new CreateStartUpPageContainer({
     containerTotalNum: 4, 
     listObject: [typeList], 
-    textObject: [title, header], 
-    imageObject: [logo],
+    textObject: [header], 
+    imageObject: [logoTop, logoBottom],
   });
 }
 
 export function rebuildHomePage(): RebuildPageContainer {
-  const title = new TextContainerProperty({
-    xPosition: 20, yPosition: 10, width: 300, height: 35,
-    containerID: 1, containerName: "title",
-    content: "ソムニ sommNI", isEventCapture: 0,
-  });
-  
   const header = new TextContainerProperty({
-    xPosition: 20, yPosition: 50, width: 300, height: 28,
-    containerID: 2, containerName: "header",
+    xPosition: 20, yPosition: 10, width: 300, height: 28,
+    containerID: 1, containerName: "header",
     content: "Wines", isEventCapture: 0,
   });
   
   const typeNames = WINE_TYPES.map(t => TYPE_DISPLAY[t]);
   
   const typeList = new ListContainerProperty({
-    xPosition: 17, yPosition: 82, width: 330, height: 175,
-    containerID: 3, containerName: "wine-types",
+    xPosition: 17, yPosition: 45, width: 330, height: 200,
+    containerID: 2, containerName: "wine-types",
     itemContainer: new ListItemContainerProperty({
       itemCount: typeNames.length, 
       itemWidth: 0,
@@ -82,16 +77,23 @@ export function rebuildHomePage(): RebuildPageContainer {
     isEventCapture: 1,
   });
   
-  const logo = new ImageContainerProperty({
-    xPosition: 420, yPosition: 180, width: 80, height: 80,
-    containerID: 4, containerName: "logo",
+  // Top half of logo
+  const logoTop = new ImageContainerProperty({
+    xPosition: 190, yPosition: 28, width: 200, height: 100,
+    containerID: 3, containerName: "logo-top",
+  });
+  
+  // Bottom half of logo
+  const logoBottom = new ImageContainerProperty({
+    xPosition: 190, yPosition: 128, width: 200, height: 100,
+    containerID: 4, containerName: "logo-bottom",
   });
   
   return new RebuildPageContainer({
     containerTotalNum: 4, 
     listObject: [typeList], 
-    textObject: [title, header], 
-    imageObject: [logo],
+    textObject: [header], 
+    imageObject: [logoTop, logoBottom],
   });
 }
 

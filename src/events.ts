@@ -32,11 +32,11 @@ let lastNavigationTime: number = 0;
 const NAVIGATION_DEBOUNCE_MS = 500;
 
 let bridgeRef: EvenAppBridge | null = null;
-let logoBase64Ref: string = "";
+let logoUrlRef: string = "";
 
 export function registerEventHandlers(bridge: EvenAppBridge, logoBase64: string): () => void {
   bridgeRef = bridge;
-  logoBase64Ref = logoBase64;
+  logoUrlRef = logoBase64;
   
   if (OPENAI_API_KEY) {
     initVoice(bridge, OPENAI_API_KEY, handleVoiceWineMatch);
@@ -102,7 +102,7 @@ async function goBack(bridge: EvenAppBridge, logoBase64: string): Promise<void> 
       currentCountry = null; 
       currentStyle = null;
       lastNavigationTime = Date.now();
-      if (logoBase64) await pushLogoToGlasses(bridge, logoBase64);
+      await pushLogoToGlasses(bridge, logoBase64);
       log("‹ Back to Home", "success");
     }
   } catch (err) {
