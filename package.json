@@ -1,7 +1,7 @@
 {
   "name": "sommni",
-  "version": "0.1.0",
-  "description": "sommNI — Seven Second Sommelier for Even Realities G2",
+  "version": "1.0.0",
+  "description": "sommNI — Seven Second Sommelier for Even Realities G2 — Sprite Bottles, Voice Search, Find My Wine",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",

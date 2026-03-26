@@ -1,4 +1,8 @@
-// CRC32 Table
+// ═══════════════════════════════════════════════════════════════════
+// PNG Encoder — Grayscale (8-bit, no alpha)
+// Inherited from soPHICON pipeline
+// ═══════════════════════════════════════════════════════════════════
+
 const crcTable = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
   let c = n;
@@ -33,65 +37,47 @@ function adler32(buf: Uint8Array): number {
 function writeChunk(type: string, data: Uint8Array): Uint8Array {
   const len = data.length;
   const chunk = new Uint8Array(len + 12);
-
-  // Length (Big Endian)
   chunk[0] = (len >>> 24) & 0xff;
   chunk[1] = (len >>> 16) & 0xff;
   chunk[2] = (len >>> 8) & 0xff;
   chunk[3] = len & 0xff;
-
-  // Type
   for (let i = 0; i < 4; i++) {
     chunk[4 + i] = type.charCodeAt(i);
   }
-
-  // Data
   chunk.set(data, 8);
-
-  // CRC
   const crc = crc32(chunk.slice(4, len + 8));
   chunk[len + 8] = (crc >>> 24) & 0xff;
   chunk[len + 9] = (crc >>> 16) & 0xff;
   chunk[len + 10] = (crc >>> 8) & 0xff;
   chunk[len + 11] = crc & 0xff;
-
   return chunk;
 }
 
 export function encodeGrayscalePng(width: number, height: number, data: Uint8Array): Uint8Array {
-  // 1. IHDR Chunk
   const ihdr = new Uint8Array(13);
   const view = new DataView(ihdr.buffer);
   view.setUint32(0, width, false);
   view.setUint32(4, height, false);
-  ihdr[8] = 8;  // Bit depth: 8
-  ihdr[9] = 0;  // Color type: 0 (Grayscale)
-  ihdr[10] = 0; // Compression method
-  ihdr[11] = 0; // Filter method
-  ihdr[12] = 0; // Interlace method
-
+  ihdr[8] = 8;  // Bit depth
+  ihdr[9] = 0;  // Grayscale
+  ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   const ihdrChunk = writeChunk("IHDR", ihdr);
 
-  // 2. Prepare raw data (Scanlines with filter byte 0)
   const scanlineLen = width + 1;
   const totalDataLen = scanlineLen * height;
   const rawData = new Uint8Array(totalDataLen);
-
   for (let y = 0; y < height; y++) {
     const offset = y * scanlineLen;
-    rawData[offset] = 0; // Filter type 0 (None)
+    rawData[offset] = 0;
     rawData.set(data.subarray(y * width, (y + 1) * width), offset + 1);
   }
 
-  // 3. Deflate (Uncompressed blocks)
   const blocks: Uint8Array[] = [];
   blocks.push(new Uint8Array([0x78, 0x01]));
-
   let offset = 0;
   while (offset < rawData.length) {
     let len = Math.min(65535, rawData.length - offset);
     const isLast = (offset + len) === rawData.length;
-
     const header = new Uint8Array(5);
     header[0] = isLast ? 0x01 : 0x00;
     header[1] = len & 0xff;
@@ -99,13 +85,11 @@ export function encodeGrayscalePng(width: number, height: number, data: Uint8Arr
     const nlen = ~len & 0xffff;
     header[3] = nlen & 0xff;
     header[4] = (nlen >>> 8) & 0xff;
-
     blocks.push(header);
     blocks.push(rawData.subarray(offset, offset + len));
     offset += len;
   }
 
-  // Adler32 Footer
   const adler = adler32(rawData);
   const adlerFooter = new Uint8Array(4);
   adlerFooter[0] = (adler >>> 24) & 0xff;
@@ -114,7 +98,6 @@ export function encodeGrayscalePng(width: number, height: number, data: Uint8Arr
   adlerFooter[3] = adler & 0xff;
   blocks.push(adlerFooter);
 
-  // Combine blocks
   let idatLen = 0;
   for (const b of blocks) idatLen += b.length;
   const idatData = new Uint8Array(idatLen);
@@ -126,17 +109,13 @@ export function encodeGrayscalePng(width: number, height: number, data: Uint8Arr
 
   const idatChunk = writeChunk("IDAT", idatData);
   const iendChunk = writeChunk("IEND", new Uint8Array(0));
-
-  // PNG Signature
   const signature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   const totalLength = signature.length + ihdrChunk.length + idatChunk.length + iendChunk.length;
   const finalBuffer = new Uint8Array(totalLength);
-
   let finalOffset = 0;
   finalBuffer.set(signature, finalOffset); finalOffset += signature.length;
   finalBuffer.set(ihdrChunk, finalOffset); finalOffset += ihdrChunk.length;
   finalBuffer.set(idatChunk, finalOffset); finalOffset += idatChunk.length;
   finalBuffer.set(iendChunk, finalOffset);
-
   return finalBuffer;
 }

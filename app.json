@@ -2,10 +2,10 @@
   "package_id": "com.d3hospitality.sommni",
   "name": "ソムニ sommNI",
   "version": "1.0.0",
-  "description": "Seven Second Sommelier",
+  "description": "Seven Second Sommelier — Sprite Bottles, Voice Search, Find My Wine",
   "tagline": "Dining / Done / Different",
   "author": "D3 Hospitality",
   "entrypoint": "index.html",
-  "edition": "202601",
+  "edition": "202603",
   "min_app_version": "1.0.0"
 }

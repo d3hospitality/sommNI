@@ -1,8 +1,14 @@
+// ═══════════════════════════════════════════════════════════════════
+// sommNI — Seven Second Sommelier
+// Sprite-enhanced wine experience for Even Realities G2
+// ═══════════════════════════════════════════════════════════════════
+
 import { waitForEvenAppBridge, DeviceConnectType } from '@evenrealities/even_hub_sdk';
 import { buildHomePage } from './pages';
 import { pushLogoToGlasses } from './image-utils';
 import { registerEventHandlers } from './events';
 import { setStatus, setBattery, log } from './ui';
+import { TOTAL_WINES } from './constants';
 
 async function main(): Promise<void> {
   log("Initializing...");
@@ -38,6 +44,7 @@ async function main(): Promise<void> {
     }
   });
 
+  // Create startup page
   const homePage = buildHomePage();
   const result = await bridge.createStartUpPageContainer(homePage);
   if (result !== 0) {
@@ -46,20 +53,22 @@ async function main(): Promise<void> {
   }
   log("Home page created", "success");
 
-  const logoUrl = import.meta.env.BASE_URL;
+  // Push logo with slight delay for SDK readiness
+  const baseUrl = import.meta.env.BASE_URL;
   try {
     await new Promise(r => setTimeout(r, 500));
-    await pushLogoToGlasses(bridge, logoUrl);
-    log("Logo pushed (raw RGBA)", "success");
+    await pushLogoToGlasses(bridge, baseUrl);
+    log("Logo pushed", "success");
   } catch (err) {
     log("Logo not loaded: " + err, "error");
   }
 
-  registerEventHandlers(bridge, logoUrl);
+  // Register event handlers
+  registerEventHandlers(bridge, baseUrl);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "0.1.0");
-  log("sommNI v0.1.0 — 215 wines + anecdotes loaded", "success");
+  await bridge.setLocalStorage("sommni_version", "1.0.0");
+  log(`sommNI v1.0.0 — ${TOTAL_WINES} wines · bottle sprites · voice search`, "success");
 }
 
 main().catch((err) => {

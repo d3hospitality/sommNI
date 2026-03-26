@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════
-// sommNI — Wine Tasting Notes Data
-// Auto-generated from Excel spreadsheet
-// Do not edit manually — regenerate via: python scripts/generate_constants.py
+// sommNI TG — Wine Data + Helpers
+// Flattened nav: Type → Country → Wine → Notes
+// Wine IDs: w0, w1, w2... (sequential across all types/countries)
 // ═══════════════════════════════════════════════════════════════════
 
 export const DISPLAY = { WIDTH: 576, HEIGHT: 288 } as const;
@@ -117,17 +117,58 @@ export const WINES: Record<string, Record<string, Wine[]>> = {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════
+// Helper Functions
+// ═══════════════════════════════════════════════════════════════════
+
+/** Get all wines for a type + country (flat list) */
+export function getWinesForCountry(type: WineType, country: string): Wine[] {
+  return WINES[type]?.[country] || [];
+}
+
+/** Get unique grape varietals for a type + country (in order of appearance) */
+export function getGrapesForCountry(type: WineType, country: string): string[] {
+  const wines = WINES[type]?.[country] || [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const w of wines) {
+    // Normalize grape: strip parenthetical qualifiers for grouping
+    const grape = normalizeGrape(w.grape);
+    if (!seen.has(grape)) { seen.add(grape); result.push(grape); }
+  }
+  return result;
+}
+
+/** Get wines for a specific grape within a type + country */
+export function getWinesForGrape(type: WineType, country: string, grape: string): Wine[] {
+  return (WINES[type]?.[country] || []).filter(w => normalizeGrape(w.grape) === grape);
+}
+
+/** Normalize grape name for grouping — keeps blends together, strips qualifiers */
+function normalizeGrape(grape: string): string {
+  // Group Sangiovese variants together
+  if (grape.startsWith("Sangiovese")) return "Sangiovese";
+  // Group Bordeaux blends
+  if (grape.includes("Bordeaux")) return "Bordeaux Blend";
+  // Group Merlot blends that lead with Merlot
+  if (grape.startsWith("Merlot/") && grape.includes("Cabernet")) return "Merlot Blend";
+  // Group Champagne blends
+  if (grape === "Chardonnay/Pinot Noir/Meunier" || grape === "Pinot Noir/Chardonnay") return "Champagne Blend";
+  // Group Grenache rosé blends
+  if (grape.startsWith("Grenache/Cinsault")) return "Grenache Blend";
+  // Group Douro blends
+  if (grape.startsWith("Douro Red Blend")) return "Douro Blend";
+  // Strip parenthetical suffixes like (Sweet), (Blend), (Orange), (Rosé)
+  return grape.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+/** Keep for backwards compat */
 export function getStylesForCountry(type: WineType, country: string): string[] {
   const wines = WINES[type]?.[country] || [];
   const styleSet = new Set<string>();
   const result: string[] = [];
-  
-  // Get styles in order they appear (already sorted by STYLE_ORDER in data)
   for (const w of wines) {
-    if (!styleSet.has(w.style)) {
-      styleSet.add(w.style);
-      result.push(w.style);
-    }
+    if (!styleSet.has(w.style)) { styleSet.add(w.style); result.push(w.style); }
   }
   return result;
 }
@@ -142,9 +183,167 @@ export function formatTastingNotes(wine: Wine): string {
   if (wine.nose) parts.push("Nose: " + wine.nose);
   if (wine.palate) parts.push("Palate: " + wine.palate);
   if (wine.finish) parts.push("Finish: " + wine.finish);
-  if (wine.anecdote) { parts.push(""); parts.push("Anecdote: " + wine.anecdote); }
+  if (wine.anecdote) { parts.push(""); parts.push("Story: " + wine.anecdote); }
   return parts.join("\n");
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// Find My Wine — Scoring Maps (from sommNI Android APK)
+// ═══════════════════════════════════════════════════════════════════
+
+export const VIBE_MAP: Record<string, { styles: string[]; palate: string[]; weight: number }> = {
+  fresh:   { styles: ['Dry – Crisp', 'Dry – Mineral-Driven', 'Extra Brut'], palate: ['bright acidity', 'crisp', 'lean', 'fresh', 'zesty', 'refreshing'], weight: 10 },
+  smooth:  { styles: ['Dry – Medium', 'Dry – Fruit-Forward'], palate: ['soft tannin', 'approachable', 'smooth', 'easy', 'gentle', 'round'], weight: 10 },
+  bold:    { styles: ['Dry – Full', 'Dry – Structured'], palate: ['full body', 'firm tannin', 'powerful', 'intense', 'concentrated', 'dense'], weight: 10 },
+  funky:   { styles: ['Dry – Textural', 'Dry – Rustic', 'Dry – Aromatic'], palate: ['funky', 'wild', 'earthy', 'garrigue', 'rustic', 'barnyard'], weight: 10 },
+  elegant: { styles: ['Dry – Elegant'], palate: ['elegant', 'refined', 'complex', 'silky', 'precise', 'finesse', 'graceful'], weight: 10 },
+  cozy:    { styles: ['Dry – Oaked', 'Dry – Rustic'], palate: ['warm', 'spice', 'oak', 'toast', 'vanilla', 'rich', 'velvety'], weight: 10 },
+};
+
+export const FLAVOR_MAP: Record<string, { nose: string[]; palate?: string[]; weight: number }> = {
+  dark_fruits:   { nose: ['blackberry', 'plum', 'black cherry', 'dark fruit', 'cassis', 'blackcurrant', 'dark plum'], weight: 8 },
+  red_fruits:    { nose: ['cherry', 'raspberry', 'strawberry', 'red fruit', 'cranberry', 'red berry', 'red currant'], weight: 8 },
+  earthy:        { nose: ['earth', 'mushroom', 'forest', 'tobacco', 'leather', 'truffle', 'soil', 'wet earth'], weight: 8 },
+  spicy:         { nose: ['pepper', 'clove', 'cinnamon', 'spice', 'licorice', 'anise', 'warm spice'], weight: 8 },
+  smoky:         { nose: ['smoke', 'oak', 'toast', 'cedar', 'charcoal', 'vanilla', 'roast'], weight: 8 },
+  citrus:        { nose: ['lemon', 'lime', 'grapefruit', 'citrus', 'orange zest', 'yuzu'], weight: 8 },
+  stone_fruit:   { nose: ['peach', 'apricot', 'nectarine', 'pear', 'white peach', 'apple'], weight: 8 },
+  tropical:      { nose: ['tropical', 'pineapple', 'mango', 'passion', 'guava', 'exotic'], weight: 8 },
+  floral:        { nose: ['floral', 'flower', 'violet', 'rose', 'blossom', 'jasmine', 'lavender', 'acacia'], weight: 8 },
+  mineral:       { nose: ['mineral', 'chalk', 'slate', 'flint', 'stone', 'saline', 'salt', 'wet stone'], weight: 8 },
+  bright_zesty:  { nose: ['lemon', 'citrus', 'green apple', 'bright', 'crisp'], palate: ['bright', 'zesty', 'crisp'], weight: 8 },
+  creamy_toasty: { nose: ['toast', 'brioche', 'biscuit', 'cream', 'butter', 'hazelnut', 'almond'], weight: 8 },
+  fruity_fun:    { nose: ['strawberry', 'raspberry', 'cherry', 'peach', 'fruit'], palate: ['fruit', 'lively'], weight: 8 },
+};
+
+export const STRUCTURE_MAP: Record<string, { palate: string[]; styles?: string[]; weight: number }> = {
+  light:  { palate: ['light body', 'light–medium', 'lean body', 'delicate'], weight: 6 },
+  medium: { palate: ['medium body', 'medium+ body', 'balanced'], weight: 6 },
+  full:   { palate: ['full body', 'powerful', 'dense', 'concentrated'], weight: 6 },
+};
+
+/** Type-specific flavor options for Find My Wine */
+export function getFlavorOptionsForType(type: WineType | null): { id: string; label: string }[] {
+  if (type === 'White' || type === 'Rose' || type === 'Orange') return [
+    { id: 'citrus', label: 'Citrus' }, { id: 'stone_fruit', label: 'Stone Fruit' },
+    { id: 'tropical', label: 'Tropical' }, { id: 'floral', label: 'Floral' },
+    { id: 'mineral', label: 'Mineral & Salty' },
+  ];
+  if (type === 'Sparkling') return [
+    { id: 'bright_zesty', label: 'Bright & Zesty' },
+    { id: 'creamy_toasty', label: 'Creamy & Toasty' },
+    { id: 'fruity_fun', label: 'Fruity & Fun' },
+  ];
+  if (type === 'Dessert') return [
+    { id: 'stone_fruit', label: 'Stone Fruit & Honey' },
+    { id: 'dark_fruits', label: 'Dark & Rich' },
+  ];
+  // Red (default)
+  return [
+    { id: 'dark_fruits', label: 'Dark Fruits' }, { id: 'red_fruits', label: 'Red Fruits' },
+    { id: 'earthy', label: 'Earthy' }, { id: 'spicy', label: 'Spicy' },
+    { id: 'smoky', label: 'Smoky & Oaky' },
+  ];
+}
+
+/** Score a wine against Find My Wine answers */
+export function scoreWine(wine: Wine, type: WineType, country: string, answers: Record<string, string>): number {
+  let score = 0;
+  const nose = (wine.nose || '').toLowerCase();
+  const palate = (wine.palate || '').toLowerCase();
+  const style = wine.style || '';
+
+  // Type: hard filter
+  if (answers.type && answers.type !== 'skip' && type !== answers.type) return -1;
+
+  // Vibe
+  if (answers.vibe && answers.vibe !== 'skip') {
+    const v = VIBE_MAP[answers.vibe];
+    if (v) {
+      if (v.styles?.includes(style)) score += v.weight;
+      if (v.palate?.some(kw => palate.includes(kw))) score += v.weight * 0.7;
+    }
+  }
+
+  // Flavor
+  if (answers.flavor && answers.flavor !== 'skip') {
+    const f = FLAVOR_MAP[answers.flavor];
+    if (f) {
+      if (f.nose?.some(kw => nose.includes(kw))) score += f.weight;
+      if (f.palate?.some(kw => palate.includes(kw))) score += (f as any).weight * 0.5;
+    }
+  }
+
+  // Body
+  if (answers.body && answers.body !== 'skip') {
+    const s = STRUCTURE_MAP[answers.body];
+    if (s) {
+      if (s.styles?.includes(style)) score += s.weight;
+      if (s.palate?.some(kw => palate.includes(kw))) score += s.weight;
+    }
+  }
+
+  // World
+  if (answers.world && answers.world !== 'skip') {
+    const oldWorld = ['France', 'Italy', 'Spain', 'Germany', 'Austria', 'Portugal', 'Greece', 'Lebanon', 'Cyprus'];
+    const isOld = oldWorld.includes(country);
+    if (answers.world === 'old' && isOld) score += 4;
+    if (answers.world === 'new' && !isOld) score += 4;
+  }
+
+  return score;
+}
+
+/** Get ranked wines for Find My Wine results */
+export function getRankedWines(answers: Record<string, string>): { wine: Wine; type: WineType; country: string; score: number }[] {
+  const results: { wine: Wine; type: WineType; country: string; score: number }[] = [];
+  for (const t of WINE_TYPES) {
+    const countries = COUNTRIES[t];
+    for (const c of countries) {
+      const wines = WINES[t]?.[c] || [];
+      for (const w of wines) {
+        const score = scoreWine(w, t, c, answers);
+        if (score >= 0) results.push({ wine: w, type: t, country: c, score });
+      }
+    }
+  }
+  results.sort((a, b) => b.score - a.score);
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Wine ID System (w0, w1, w2... sequential)
+// Maps to bottle sprite filenames: bottles/w0.png, bottles/w1.png...
+// ═══════════════════════════════════════════════════════════════════
+
+let _wineIdMap: Map<string, string> | null = null;
+
+function buildWineIdMap(): Map<string, string> {
+  if (_wineIdMap) return _wineIdMap;
+  _wineIdMap = new Map();
+  let idx = 0;
+  for (const type of WINE_TYPES) {
+    const countries = COUNTRIES[type];
+    for (const country of countries) {
+      const wines = WINES[type]?.[country] || [];
+      for (const wine of wines) {
+        const key = `${type}|${country}|${wine.name}`;
+        _wineIdMap.set(key, `w${idx}`);
+        idx++;
+      }
+    }
+  }
+  return _wineIdMap;
+}
+
+/** Get wine ID (w0, w1...) for a specific wine */
+export function getWineId(type: WineType, country: string, wineName: string): string {
+  const map = buildWineIdMap();
+  return map.get(`${type}|${country}|${wineName}`) || "w0";
+}
+
+/** Get total wine count */
+export const TOTAL_WINES = 215;
 
 // ═══════════════════════════════════════════════════════════════════
 // Statistics

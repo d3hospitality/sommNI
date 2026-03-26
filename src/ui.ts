@@ -11,11 +11,11 @@ export function setStatus(state: "connected" | "connecting" | "disconnected", la
 
 export function setBattery(level?: number) {
   const el = batteryText();
-  if (el && level !== undefined) el.textContent = `🔋 ${level}%`;
+  if (el && level !== undefined) el.textContent = `${level}%`;
 }
 
 export function log(message: string, type?: "success" | "error") {
-  console.log(`[sommNI] ${message}`);
+  console.log(`[sommNI-TG] ${message}`);
   const el = logEl();
   if (el) {
     const entry = document.createElement("div");

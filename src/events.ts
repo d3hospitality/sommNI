@@ -1,109 +1,218 @@
+// ═══════════════════════════════════════════════════════════════════
+// sommNI TG — Event Handlers v2
+// Nav: Home → Countries → Grapes → Wines → Tasting Notes
+// + Find My Wine (5-step questionnaire → results → tasting notes)
+// Double-tap = BACK on ALL pages (including wine selection)
+// Reactive bottle sprites on list scroll
+// ═══════════════════════════════════════════════════════════════════
+
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList } from '@evenrealities/even_hub_sdk';
 import {
   WINE_TYPES, COUNTRIES, WineType,
-  getStylesForCountry, getWinesForStyle,
+  getGrapesForCountry, getWinesForGrape, getWinesForCountry,
+  getWineId, getFlavorOptionsForType, getRankedWines, Wine,
 } from './constants';
 import {
-  rebuildHomePage, buildCountryListPage, buildStyleListPage,
+  rebuildHomePage, buildCountryListPage, buildGrapeListPage,
   buildWineListPage, buildTastingNotesPage,
+  buildFinderTypePage, buildFinderVibePage, buildFinderFlavorPage,
+  buildFinderBodyPage, buildFinderWorldPage, buildFinderResultsPage,
+  HOME_LIST_ITEMS, FINDER_INDEX,
 } from './pages';
-import { pushLogoToGlasses } from './image-utils';
+import { pushLogoToGlasses, pushLogoSprite, pushBottleSprite } from './image-utils';
 import { log } from './ui';
 import { initVoice, startListening, handleAudioEvent, WineWithNav } from './voice';
 
-// ══════════════════════════════════════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════════════════════════════════════
+// ═══ CONFIG ═══
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
 
-// ══════════════════════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════════════════════
-type Page = "home" | "countries" | "styles" | "wines" | "notes";
+// ═══ STATE ═══
+type Page =
+  | "home" | "countries" | "grapes" | "wines" | "notes"
+  | "finder-type" | "finder-vibe" | "finder-flavor" | "finder-body" | "finder-world" | "finder-results";
 
 let currentPage: Page = "home";
 let currentType: WineType | null = null;
 let currentCountry: string | null = null;
-let currentStyle: string | null = null;
+let currentGrape: string | null = null;
+let currentWineId: string | null = null;
+
+// Find My Wine state
+let finderAnswers: Record<string, string> = {};
+let finderResults: { wine: Wine; type: WineType; country: string; score: number }[] = [];
 
 let lastSelectedIndex: number = 0;
 let navigating = false;
 let lastNavigationTime: number = 0;
-const NAVIGATION_DEBOUNCE_MS = 500;
+const NAV_DEBOUNCE_MS = 500;
 
 let bridgeRef: EvenAppBridge | null = null;
-let logoUrlRef: string = "";
+let baseUrlRef: string = "";
+let lastHoveredIndex: number = -1;
 
-export function registerEventHandlers(bridge: EvenAppBridge, logoBase64: string): () => void {
+// ═══ REGISTER ═══
+export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string): () => void {
   bridgeRef = bridge;
-  logoUrlRef = logoBase64;
-  
+  baseUrlRef = baseUrl;
+
   if (OPENAI_API_KEY) {
     initVoice(bridge, OPENAI_API_KEY, handleVoiceWineMatch);
   }
-  
+
   return bridge.onEvenHubEvent((event: EvenHubEvent) => {
-    handleEvent(bridge, event, logoBase64);
+    handleEvent(bridge, event, baseUrl);
   });
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// HANDLE VOICE WINE MATCH
-// ══════════════════════════════════════════════════════════════════════════
+// ═══ VOICE MATCH ═══
 async function handleVoiceWineMatch(wine: WineWithNav): Promise<void> {
   if (!bridgeRef) return;
-  
-  log(`[NAV] Voice → ${wine.name}`, "success");
-  
-  await bridgeRef.rebuildPageContainer(buildTastingNotesPage(wine));
-  
+  log(`[VOICE-NAV] → ${wine.name}`, "success");
+  const wineId = getWineId(wine.type, wine.country, wine.name);
+  await bridgeRef.rebuildPageContainer(buildTastingNotesPage(wine, wineId));
   currentPage = "notes";
   currentType = wine.type;
   currentCountry = wine.country;
-  currentStyle = wine.style;
+  currentWineId = wineId;
   lastNavigationTime = Date.now();
+  await pushBottleSprite(bridgeRef, baseUrlRef, wineId, 2, "bottle");
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// GO BACK
-// ══════════════════════════════════════════════════════════════════════════
-async function goBack(bridge: EvenAppBridge, logoBase64: string): Promise<void> {
+// ═══ REACTIVE SPRITES ═══
+async function updateGrapePreview(
+  bridge: EvenAppBridge, baseUrl: string, type: WineType, country: string, index: number
+): Promise<void> {
+  const grapes = getGrapesForCountry(type, country);
+  if (index < 0 || index >= grapes.length) return;
+  if (index === lastHoveredIndex) return;
+  lastHoveredIndex = index;
+  const wines = getWinesForGrape(type, country, grapes[index]);
+  if (wines.length === 0) return;
+  const wineId = getWineId(type, country, wines[0].name);
+  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
+}
+
+async function updateWinePreview(
+  bridge: EvenAppBridge, baseUrl: string, type: WineType, country: string, grape: string, index: number
+): Promise<void> {
+  const wines = getWinesForGrape(type, country, grape);
+  if (index < 0 || index >= wines.length) return;
+  if (index === lastHoveredIndex) return;
+  lastHoveredIndex = index;
+  const wineId = getWineId(type, country, wines[index].name);
+  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
+  log(`[HOVER] ${wines[index].name}`);
+}
+
+async function updateCountryPreview(
+  bridge: EvenAppBridge, baseUrl: string, type: WineType, index: number
+): Promise<void> {
+  const countries = COUNTRIES[type];
+  if (index < 0 || index >= countries.length) return;
+  const wines = getWinesForCountry(type, countries[index]);
+  if (wines.length === 0) return;
+  const wineId = getWineId(type, countries[index], wines[0].name);
+  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
+}
+
+async function updateFinderResultPreview(
+  bridge: EvenAppBridge, baseUrl: string, index: number
+): Promise<void> {
+  if (index < 0 || index >= finderResults.length) return;
+  if (index === lastHoveredIndex) return;
+  lastHoveredIndex = index;
+  const r = finderResults[index];
+  const wineId = getWineId(r.type, r.country, r.wine.name);
+  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
+}
+
+// ═══ GO BACK ═══
+async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
   if (navigating) return;
   navigating = true;
-  
+
   try {
     log(`[BACK] from ${currentPage}`);
-    
-    if (currentPage === "notes" && currentType && currentCountry && currentStyle) {
-      await bridge.rebuildPageContainer(buildWineListPage(currentType, currentCountry, currentStyle));
-      currentPage = "wines";
+
+    if (currentPage === "notes" && currentType && currentCountry && currentGrape) {
+      await bridge.rebuildPageContainer(buildWineListPage(currentType, currentCountry, currentGrape));
+      currentPage = "wines"; currentWineId = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
-      log("‹ Back to wines", "success"); 
+      const wines = getWinesForGrape(currentType, currentCountry, currentGrape);
+      if (wines.length > 0) {
+        const wid = getWineId(currentType, currentCountry, wines[0].name);
+        await pushBottleSprite(bridge, baseUrl, wid, 3, "bottle");
+        lastHoveredIndex = 0;
+      }
+      log("< Back to wines", "success");
+    }
+    else if (currentPage === "notes" && currentType && currentCountry) {
+      // Came from finder results or voice — go to grapes
+      await bridge.rebuildPageContainer(buildGrapeListPage(currentType, currentCountry));
+      currentPage = "grapes"; currentWineId = null; lastHoveredIndex = -1;
+      lastNavigationTime = Date.now();
+      log("< Back to grapes", "success");
     }
     else if (currentPage === "wines" && currentType && currentCountry) {
-      await bridge.rebuildPageContainer(buildStyleListPage(currentType, currentCountry));
-      currentPage = "styles"; 
-      currentStyle = null;
+      await bridge.rebuildPageContainer(buildGrapeListPage(currentType, currentCountry));
+      currentPage = "grapes"; currentGrape = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
-      log("‹ Back to styles", "success"); 
+      log("< Back to grapes", "success");
     }
-    else if (currentPage === "styles" && currentType) {
+    else if (currentPage === "grapes" && currentType) {
       await bridge.rebuildPageContainer(buildCountryListPage(currentType));
-      currentPage = "countries"; 
-      currentCountry = null; 
-      currentStyle = null;
+      currentPage = "countries"; currentCountry = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
-      log("‹ Back to countries", "success"); 
+      const countries = COUNTRIES[currentType];
+      if (countries.length > 0) await updateCountryPreview(bridge, baseUrl, currentType, 0);
+      log("< Back to countries", "success");
     }
     else if (currentPage === "countries") {
       await bridge.rebuildPageContainer(rebuildHomePage());
-      currentPage = "home"; 
-      currentType = null; 
-      currentCountry = null; 
-      currentStyle = null;
+      currentPage = "home"; currentType = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
-      await pushLogoToGlasses(bridge, logoBase64);
-      log("‹ Back to Home", "success");
+      await pushLogoToGlasses(bridge, baseUrl);
+      log("< Back to Home", "success");
+    }
+    // Finder back navigation
+    else if (currentPage === "finder-results") {
+      await bridge.rebuildPageContainer(buildFinderWorldPage());
+      currentPage = "finder-world"; lastNavigationTime = Date.now();
+      await pushLogoSprite(bridge, baseUrl);
+      log("< Back to world", "success");
+    }
+    else if (currentPage === "finder-world") {
+      await bridge.rebuildPageContainer(buildFinderBodyPage());
+      currentPage = "finder-body"; lastNavigationTime = Date.now();
+      delete finderAnswers.world;
+      log("< Back to body", "success");
+    }
+    else if (currentPage === "finder-body") {
+      const type = finderAnswers.type as WineType | undefined;
+      await bridge.rebuildPageContainer(buildFinderFlavorPage(type || null));
+      currentPage = "finder-flavor"; lastNavigationTime = Date.now();
+      delete finderAnswers.body;
+      log("< Back to flavor", "success");
+    }
+    else if (currentPage === "finder-flavor") {
+      await bridge.rebuildPageContainer(buildFinderVibePage());
+      currentPage = "finder-vibe"; lastNavigationTime = Date.now();
+      delete finderAnswers.flavor;
+      log("< Back to vibe", "success");
+    }
+    else if (currentPage === "finder-vibe") {
+      await bridge.rebuildPageContainer(buildFinderTypePage());
+      currentPage = "finder-type"; lastNavigationTime = Date.now();
+      delete finderAnswers.vibe;
+      await pushLogoSprite(bridge, baseUrl);
+      log("< Back to type", "success");
+    }
+    else if (currentPage === "finder-type") {
+      await bridge.rebuildPageContainer(rebuildHomePage());
+      currentPage = "home"; finderAnswers = {}; lastHoveredIndex = -1;
+      lastNavigationTime = Date.now();
+      await pushLogoToGlasses(bridge, baseUrl);
+      log("< Back to Home", "success");
     }
   } catch (err) {
     log(`[BACK] ERROR: ${err}`, "error");
@@ -112,77 +221,202 @@ async function goBack(bridge: EvenAppBridge, logoBase64: string): Promise<void> 
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// HANDLE CLICK
-// ══════════════════════════════════════════════════════════════════════════
-async function handleClick(bridge: EvenAppBridge, idx: number, logoBase64: string): Promise<void> {
+// ═══ HANDLE CLICK ═══
+async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string): Promise<void> {
   if (navigating) return;
   navigating = true;
-  
+
   try {
     log(`[CLICK] page=${currentPage} idx=${idx}`);
-    
+
+    // ── HOME ──
     if (currentPage === "home") {
-      if (idx >= 0 && idx < WINE_TYPES.length) {
-        currentType = WINE_TYPES[idx];
-        await bridge.rebuildPageContainer(buildCountryListPage(currentType));
-        currentPage = "countries";
+      if (idx === FINDER_INDEX) {
+        // Find My Wine
+        finderAnswers = {};
+        await bridge.rebuildPageContainer(buildFinderTypePage());
+        currentPage = "finder-type";
         lastNavigationTime = Date.now();
-        log("→ " + currentType, "success"); 
+        await pushLogoSprite(bridge, baseUrl);
+        log("> Find My Wine", "success");
+      } else {
+        // Wine type (offset by 1 because Find My Wine is index 0)
+        const typeIdx = idx - 1;
+        if (typeIdx >= 0 && typeIdx < WINE_TYPES.length) {
+          currentType = WINE_TYPES[typeIdx];
+          await bridge.rebuildPageContainer(buildCountryListPage(currentType));
+          currentPage = "countries"; lastHoveredIndex = -1;
+          lastNavigationTime = Date.now();
+          const countries = COUNTRIES[currentType];
+          if (countries.length > 0) await updateCountryPreview(bridge, baseUrl, currentType, 0);
+          log(`> ${currentType}`, "success");
+        }
       }
       return;
     }
-    
+
+    // ── COUNTRIES ──
     if (currentPage === "countries" && currentType) {
       const countries = COUNTRIES[currentType];
-      if (idx === countries.length) {
-        navigating = false;
-        await goBack(bridge, logoBase64);
-        return;
-      }
+      if (idx === countries.length) { navigating = false; await goBack(bridge, baseUrl); return; }
       if (idx >= 0 && idx < countries.length) {
         currentCountry = countries[idx];
-        await bridge.rebuildPageContainer(buildStyleListPage(currentType, currentCountry));
-        currentPage = "styles";
+        await bridge.rebuildPageContainer(buildGrapeListPage(currentType, currentCountry));
+        currentPage = "grapes"; lastHoveredIndex = -1;
         lastNavigationTime = Date.now();
-        log("→ " + currentCountry, "success"); 
+        await updateGrapePreview(bridge, baseUrl, currentType, currentCountry, 0);
+        log(`> ${currentCountry}`, "success");
       }
       return;
     }
-    
-    if (currentPage === "styles" && currentType && currentCountry) {
-      const styles = getStylesForCountry(currentType, currentCountry);
-      if (idx === styles.length) {
-        navigating = false;
-        await goBack(bridge, logoBase64);
-        return;
-      }
-      if (idx >= 0 && idx < styles.length) {
-        currentStyle = styles[idx];
-        await bridge.rebuildPageContainer(buildWineListPage(currentType, currentCountry, currentStyle));
-        currentPage = "wines";
-        lastNavigationTime = Date.now();
-        log("→ " + currentStyle, "success"); 
+
+    // ── GRAPES ──
+    if (currentPage === "grapes" && currentType && currentCountry) {
+      const grapes = getGrapesForCountry(currentType, currentCountry);
+      if (idx === grapes.length) { navigating = false; await goBack(bridge, baseUrl); return; }
+      if (idx >= 0 && idx < grapes.length) {
+        currentGrape = grapes[idx];
+        const wines = getWinesForGrape(currentType, currentCountry, currentGrape);
+
+        // If only 1 wine for this grape, skip straight to tasting notes
+        if (wines.length === 1) {
+          const wine = wines[0];
+          const wineId = getWineId(currentType, currentCountry, wine.name);
+          currentWineId = wineId;
+          await bridge.rebuildPageContainer(buildTastingNotesPage(wine, wineId));
+          currentPage = "notes";
+          lastNavigationTime = Date.now();
+          await pushBottleSprite(bridge, baseUrl, wineId, 2, "bottle");
+          log(`> ${wine.name} (direct)`, "success");
+        } else {
+          await bridge.rebuildPageContainer(buildWineListPage(currentType, currentCountry, currentGrape));
+          currentPage = "wines"; lastHoveredIndex = -1;
+          lastNavigationTime = Date.now();
+          if (wines.length > 0) {
+            const wid = getWineId(currentType, currentCountry, wines[0].name);
+            await pushBottleSprite(bridge, baseUrl, wid, 3, "bottle");
+            lastHoveredIndex = 0;
+          }
+          log(`> ${currentGrape}`, "success");
+        }
       }
       return;
     }
-    
-    if (currentPage === "wines" && currentType && currentCountry && currentStyle) {
-      const wines = getWinesForStyle(currentType, currentCountry, currentStyle);
-      if (idx === wines.length) {
-        navigating = false;
-        await goBack(bridge, logoBase64);
-        return;
-      }
+
+    // ── WINES ──
+    if (currentPage === "wines" && currentType && currentCountry && currentGrape) {
+      const wines = getWinesForGrape(currentType, currentCountry, currentGrape);
+      if (idx === wines.length) { navigating = false; await goBack(bridge, baseUrl); return; }
       if (idx >= 0 && idx < wines.length) {
         const wine = wines[idx];
-        await bridge.rebuildPageContainer(buildTastingNotesPage(wine));
+        const wineId = getWineId(currentType, currentCountry, wine.name);
+        currentWineId = wineId;
+        await bridge.rebuildPageContainer(buildTastingNotesPage(wine, wineId));
         currentPage = "notes";
         lastNavigationTime = Date.now();
-        log("→ " + wine.name, "success"); 
+        await pushBottleSprite(bridge, baseUrl, wineId, 2, "bottle");
+        log(`> ${wine.name}`, "success");
       }
       return;
     }
+
+    // ═══ FINDER STEPS ═══
+
+    // ── FINDER TYPE ──
+    if (currentPage === "finder-type") {
+      const typeOptions = ["Red", "White", "Sparkling", "Rose", "Orange", "Dessert"];
+      if (idx === 7) { navigating = false; await goBack(bridge, baseUrl); return; } // Back
+      if (idx === 6) { finderAnswers.type = "skip"; } // Surprise Me
+      else if (idx >= 0 && idx < 6) { finderAnswers.type = typeOptions[idx]; }
+      await bridge.rebuildPageContainer(buildFinderVibePage());
+      currentPage = "finder-vibe";
+      lastNavigationTime = Date.now();
+      log(`> Finder type: ${finderAnswers.type}`, "success");
+      return;
+    }
+
+    // ── FINDER VIBE ──
+    if (currentPage === "finder-vibe") {
+      const vibeIds = ["fresh", "smooth", "bold", "funky", "elegant", "cozy"];
+      if (idx === 7) { navigating = false; await goBack(bridge, baseUrl); return; } // Back
+      if (idx === 6) { finderAnswers.vibe = "skip"; } // Skip
+      else if (idx >= 0 && idx < 6) { finderAnswers.vibe = vibeIds[idx]; }
+      const type = finderAnswers.type as WineType | undefined;
+      await bridge.rebuildPageContainer(buildFinderFlavorPage(type && type !== "skip" ? type : null));
+      currentPage = "finder-flavor";
+      lastNavigationTime = Date.now();
+      log(`> Finder vibe: ${finderAnswers.vibe}`, "success");
+      return;
+    }
+
+    // ── FINDER FLAVOR ──
+    if (currentPage === "finder-flavor") {
+      const type = finderAnswers.type as WineType | undefined;
+      const flavorOpts = getFlavorOptionsForType(type && type !== "skip" ? type : null);
+      const totalItems = flavorOpts.length + 2; // + Skip + Back
+      if (idx === totalItems - 1) { navigating = false; await goBack(bridge, baseUrl); return; } // Back
+      if (idx === totalItems - 2) { finderAnswers.flavor = "skip"; } // Skip
+      else if (idx >= 0 && idx < flavorOpts.length) { finderAnswers.flavor = flavorOpts[idx].id; }
+      await bridge.rebuildPageContainer(buildFinderBodyPage());
+      currentPage = "finder-body";
+      lastNavigationTime = Date.now();
+      log(`> Finder flavor: ${finderAnswers.flavor}`, "success");
+      return;
+    }
+
+    // ── FINDER BODY ──
+    if (currentPage === "finder-body") {
+      const bodyIds = ["light", "medium", "full"];
+      if (idx === 4) { navigating = false; await goBack(bridge, baseUrl); return; } // Back
+      if (idx === 3) { finderAnswers.body = "skip"; } // Skip
+      else if (idx >= 0 && idx < 3) { finderAnswers.body = bodyIds[idx]; }
+      await bridge.rebuildPageContainer(buildFinderWorldPage());
+      currentPage = "finder-world";
+      lastNavigationTime = Date.now();
+      log(`> Finder body: ${finderAnswers.body}`, "success");
+      return;
+    }
+
+    // ── FINDER WORLD ──
+    if (currentPage === "finder-world") {
+      const worldIds = ["old", "new", "skip"];
+      if (idx === 3) { navigating = false; await goBack(bridge, baseUrl); return; } // Back
+      if (idx >= 0 && idx < 3) { finderAnswers.world = worldIds[idx]; }
+
+      // Score and show results
+      finderResults = getRankedWines(finderAnswers).slice(0, 12);
+      await bridge.rebuildPageContainer(buildFinderResultsPage(finderResults));
+      currentPage = "finder-results"; lastHoveredIndex = -1;
+      lastNavigationTime = Date.now();
+      if (finderResults.length > 0) {
+        const r = finderResults[0];
+        const wid = getWineId(r.type, r.country, r.wine.name);
+        await pushBottleSprite(bridge, baseUrl, wid, 3, "bottle");
+        lastHoveredIndex = 0;
+      }
+      log(`> Finder results: ${finderResults.length} matches`, "success");
+      return;
+    }
+
+    // ── FINDER RESULTS ──
+    if (currentPage === "finder-results") {
+      if (idx === finderResults.length) { navigating = false; await goBack(bridge, baseUrl); return; } // Back
+      if (idx >= 0 && idx < finderResults.length) {
+        const r = finderResults[idx];
+        const wineId = getWineId(r.type, r.country, r.wine.name);
+        currentType = r.type;
+        currentCountry = r.country;
+        currentGrape = null; // came from finder, not grape nav
+        currentWineId = wineId;
+        await bridge.rebuildPageContainer(buildTastingNotesPage(r.wine, wineId));
+        currentPage = "notes";
+        lastNavigationTime = Date.now();
+        await pushBottleSprite(bridge, baseUrl, wineId, 2, "bottle");
+        log(`> ${r.wine.name} (finder)`, "success");
+      }
+      return;
+    }
+
   } catch (err) {
     log(`[CLICK] ERROR: ${err}`, "error");
   } finally {
@@ -190,57 +424,74 @@ async function handleClick(bridge: EvenAppBridge, idx: number, logoBase64: strin
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// HANDLE DOUBLE-CLICK
-// ══════════════════════════════════════════════════════════════════════════
-async function handleDoubleClick(bridge: EvenAppBridge, logoBase64: string): Promise<void> {
-  log(`[DOUBLE-CLICK] page=${currentPage}`);
-  
-  if (currentPage === "notes") {
-    await goBack(bridge, logoBase64);
-  } else {
-    startListening();
-  }
+// ═══ DOUBLE-CLICK = BACK on ALL pages ═══
+async function handleDoubleClick(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
+  log(`[DBLCLICK] page=${currentPage}`);
+  await goBack(bridge, baseUrl);
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// MAIN EVENT HANDLER
-// ══════════════════════════════════════════════════════════════════════════
-async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, logoBase64: string): Promise<void> {
-  
+// ═══ MAIN EVENT HANDLER ═══
+async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: string): Promise<void> {
+
+  // Audio
   if (event.audioEvent) {
     handleAudioEvent(event.audioEvent.audioPcm);
   }
-  
+
+  // List events
   if (event.listEvent) {
     const le = event.listEvent;
     const idx = le.currentSelectItemIndex;
-    
-    if (idx != null) {
-      lastSelectedIndex = idx;
-    } else {
-      lastSelectedIndex = 0;
-    }
-    
+    if (idx != null) lastSelectedIndex = idx;
+    else lastSelectedIndex = 0;
+
     const type = le.eventType;
-    if (type === OsEventTypeList.SCROLL_TOP_EVENT ||
-        type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
-      return;
+
+    // Reactive sprites on scroll
+    if (currentPage === "wines" && currentType && currentCountry && currentGrape) {
+      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
+        await updateWinePreview(bridge, baseUrl, currentType, currentCountry, currentGrape, lastSelectedIndex);
+        return;
+      }
+      await updateWinePreview(bridge, baseUrl, currentType, currentCountry, currentGrape, lastSelectedIndex);
     }
-    
-    const timeSinceNav = Date.now() - lastNavigationTime;
-    if (timeSinceNav < NAVIGATION_DEBOUNCE_MS) {
-      return;
+
+    if (currentPage === "grapes" && currentType && currentCountry) {
+      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
+        await updateGrapePreview(bridge, baseUrl, currentType, currentCountry, lastSelectedIndex);
+        return;
+      }
+      await updateGrapePreview(bridge, baseUrl, currentType, currentCountry, lastSelectedIndex);
     }
-    
-    await handleClick(bridge, lastSelectedIndex, logoBase64);
+
+    if (currentPage === "countries" && currentType) {
+      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
+        await updateCountryPreview(bridge, baseUrl, currentType, lastSelectedIndex);
+        return;
+      }
+      await updateCountryPreview(bridge, baseUrl, currentType, lastSelectedIndex);
+    }
+
+    if (currentPage === "finder-results") {
+      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
+        await updateFinderResultPreview(bridge, baseUrl, lastSelectedIndex);
+        return;
+      }
+      await updateFinderResultPreview(bridge, baseUrl, lastSelectedIndex);
+    }
+
+    if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) return;
+    if (Date.now() - lastNavigationTime < NAV_DEBOUNCE_MS) return;
+
+    await handleClick(bridge, lastSelectedIndex, baseUrl);
     return;
   }
 
+  // System events
   if (event.sysEvent) {
     const type = event.sysEvent.eventType;
     if (type === OsEventTypeList.DOUBLE_CLICK_EVENT || type === 3) {
-      await handleDoubleClick(bridge, logoBase64);
+      await handleDoubleClick(bridge, baseUrl);
     }
   }
 }
