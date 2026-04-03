@@ -1,11 +1,23 @@
 {
   "package_id": "com.d3hospitality.sommni",
-  "name": "ソムニ sommNI",
+  "name": "sommNI",
   "version": "1.0.0",
   "description": "Seven Second Sommelier — Sprite Bottles, Voice Search, Find My Wine",
   "tagline": "Dining / Done / Different",
   "author": "D3 Hospitality",
   "entrypoint": "index.html",
-  "edition": "202603",
-  "min_app_version": "1.0.0"
+  "edition": "202601",
+  "min_sdk_version": "0.0.9",
+  "min_app_version": "1.0.0",
+  "supported_languages": ["en"],
+  "permissions": [
+    {
+      "name": "g2-microphone",
+      "desc": "Voice search for wines using push-to-talk"
+    },
+    {
+      "name": "network",
+      "desc": "Transcription API for voice-to-text wine search"
+    }
+  ]
 }
