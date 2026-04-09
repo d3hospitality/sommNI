@@ -126,21 +126,62 @@ export function getWinesForCountry(type: WineType, country: string): Wine[] {
   return WINES[type]?.[country] || [];
 }
 
-/** Get unique grape varietals for a type + country (in order of appearance) */
+/** Sentinel for the "Other" bucket that collects single-wine grapes */
+export const OTHER_GRAPE = "Other";
+
+/** Get unique grape varietals for a type + country (in order of appearance).
+ *  Grapes that have only 1 wine are collected into an "Other" bucket at the end. */
 export function getGrapesForCountry(type: WineType, country: string): string[] {
   const wines = WINES[type]?.[country] || [];
-  const seen = new Set<string>();
-  const result: string[] = [];
+  // Count wines per normalized grape
+  const counts = new Map<string, number>();
+  const order: string[] = [];
   for (const w of wines) {
-    // Normalize grape: strip parenthetical qualifiers for grouping
     const grape = normalizeGrape(w.grape);
-    if (!seen.has(grape)) { seen.add(grape); result.push(grape); }
+    if (!counts.has(grape)) { counts.set(grape, 0); order.push(grape); }
+    counts.set(grape, counts.get(grape)! + 1);
   }
+  // Grapes with 2+ wines keep their own entry; singles go into "Other"
+  const result: string[] = [];
+  let otherCount = 0;
+  for (const g of order) {
+    if (counts.get(g)! > 1) {
+      result.push(g);
+    } else {
+      otherCount++;
+    }
+  }
+  if (otherCount > 0) result.push(OTHER_GRAPE);
   return result;
 }
 
-/** Get wines for a specific grape within a type + country */
+/** Get the list of normalized grape names that were folded into "Other" */
+export function getOtherGrapes(type: WineType, country: string): string[] {
+  const wines = WINES[type]?.[country] || [];
+  const counts = new Map<string, number>();
+  for (const w of wines) {
+    const grape = normalizeGrape(w.grape);
+    counts.set(grape, (counts.get(grape) || 0) + 1);
+  }
+  const singles: string[] = [];
+  const seen = new Set<string>();
+  for (const w of wines) {
+    const grape = normalizeGrape(w.grape);
+    if (counts.get(grape) === 1 && !seen.has(grape)) {
+      seen.add(grape);
+      singles.push(grape);
+    }
+  }
+  return singles;
+}
+
+/** Get wines for a specific grape within a type + country.
+ *  Pass OTHER_GRAPE to get all wines whose normalized grape has only 1 entry. */
 export function getWinesForGrape(type: WineType, country: string, grape: string): Wine[] {
+  if (grape === OTHER_GRAPE) {
+    const others = new Set(getOtherGrapes(type, country));
+    return (WINES[type]?.[country] || []).filter(w => others.has(normalizeGrape(w.grape)));
+  }
   return (WINES[type]?.[country] || []).filter(w => normalizeGrape(w.grape) === grape);
 }
 
@@ -160,6 +201,43 @@ function normalizeGrape(grape: string): string {
   if (grape.startsWith("Douro Red Blend")) return "Douro Blend";
   // Strip parenthetical suffixes like (Sweet), (Blend), (Orange), (Rosé)
   return grape.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+/**
+ * Get a display name for a wine in list context.
+ * - Strips redundant grape prefix when browsing within a specific grape
+ *   (e.g. "Cabernet Sauvignon – Vasse Felix" → "Vasse Felix" when in Cab Sauv list)
+ * - Adds a short grape tag when in the "Other" bucket
+ *   (e.g. "Ilatraia – Brancaia" → "Ilatraia – Brancaia · CS/PV/CF")
+ */
+export function getWineDisplayName(wine: Wine, currentGrape: string): string {
+  const name = wine.name;
+
+  // When in Other bucket, append a short grape abbreviation
+  if (currentGrape === OTHER_GRAPE) {
+    const tag = abbreviateGrape(wine.grape);
+    return tag ? `${name} · ${tag}` : name;
+  }
+
+  // Strip grape prefix if the wine name starts with the main grape
+  const mainGrape = wine.grape.split("/")[0].replace(/\s*\([^)]*\)/, "").trim();
+  if (name.startsWith(mainGrape)) {
+    const rest = name.slice(mainGrape.length).replace(/^[\s–—\-]+/, "").trim();
+    if (rest.length > 0) return rest;
+  }
+
+  return name;
+}
+
+/** Shorten a grape string for compact display: "Cabernet Sauvignon/Petit Verdot/Cabernet Franc" → "CS/PV/CF" */
+function abbreviateGrape(grape: string): string {
+  const clean = grape.replace(/\s*\([^)]*\)/g, "").trim();
+  const parts = clean.split("/").map(p => p.trim());
+  return parts.map(p => {
+    const words = p.split(/\s+/);
+    if (words.length === 1) return words[0].length <= 4 ? words[0] : words[0].slice(0, 3);
+    return words.map(w => w[0]?.toUpperCase() || "").join("");
+  }).join("/");
 }
 
 /** Keep for backwards compat */

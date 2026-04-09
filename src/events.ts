@@ -9,7 +9,7 @@
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList } from '@evenrealities/even_hub_sdk';
 import {
   WINE_TYPES, COUNTRIES, WineType,
-  getGrapesForCountry, getWinesForGrape, getWinesForCountry,
+  getGrapesForCountry, getWinesForGrape,
   getWineId, getFlavorOptionsForType, getRankedWines, Wine,
 } from './constants';
 import {
@@ -19,12 +19,28 @@ import {
   buildFinderBodyPage, buildFinderWorldPage, buildFinderResultsPage,
   HOME_LIST_ITEMS, FINDER_INDEX,
 } from './pages';
-import { pushLogoToGlasses, pushLogoSprite, pushBottleSprite } from './image-utils';
+import { pushLogoToGlasses, pushGlobeToGlasses, pushGrapeSpriteToGlasses, pushBottleSprite, pushBottleSpriteQuad, pushRobotSpriteToGlasses } from './image-utils';
 import { log } from './ui';
-import { initVoice, startListening, handleAudioEvent, WineWithNav } from './voice';
 
-// ═══ CONFIG ═══
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || "";
+// ═══ ROBOT EMOTION MAPPING PER FINDER STEP ═══
+// Steps 3-5 shuffle randomly from their pool each time the page is entered
+function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+async function pushFinderRobot(bridge: EvenAppBridge, baseUrl: string, page: string): Promise<void> {
+  const emotionFn = FINDER_ROBOT[page];
+  if (!emotionFn) return;
+  const emotion = emotionFn();
+  await pushRobotSpriteToGlasses(bridge, baseUrl, emotion);
+  log(`[ROBOT] ${emotion}`);
+}
+
+const FINDER_ROBOT: Record<string, () => string> = {
+  "finder-type":   () => "thinking",
+  "finder-vibe":   () => "contemplating",
+  "finder-flavor": () => pickRandom(["curious", "warning"]),
+  "finder-body":   () => pickRandom(["swirling", "sommelier"]),
+  "finder-world":  () => pickRandom(["presenting", "delighted", "pouring", "celebrating"]),
+};
 
 // ═══ STATE ═══
 type Page =
@@ -55,65 +71,14 @@ export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string): (
   bridgeRef = bridge;
   baseUrlRef = baseUrl;
 
-  if (OPENAI_API_KEY) {
-    initVoice(bridge, OPENAI_API_KEY, handleVoiceWineMatch);
-  }
-
   return bridge.onEvenHubEvent((event: EvenHubEvent) => {
     handleEvent(bridge, event, baseUrl);
   });
 }
 
-// ═══ VOICE MATCH ═══
-async function handleVoiceWineMatch(wine: WineWithNav): Promise<void> {
-  if (!bridgeRef) return;
-  log(`[VOICE-NAV] → ${wine.name}`, "success");
-  const wineId = getWineId(wine.type, wine.country, wine.name);
-  await bridgeRef.rebuildPageContainer(buildTastingNotesPage(wine, wineId));
-  currentPage = "notes";
-  currentType = wine.type;
-  currentCountry = wine.country;
-  currentWineId = wineId;
-  lastNavigationTime = Date.now();
-  await pushBottleSprite(bridgeRef, baseUrlRef, wineId, 2, "bottle");
-}
-
 // ═══ REACTIVE SPRITES ═══
-async function updateGrapePreview(
-  bridge: EvenAppBridge, baseUrl: string, type: WineType, country: string, index: number
-): Promise<void> {
-  const grapes = getGrapesForCountry(type, country);
-  if (index < 0 || index >= grapes.length) return;
-  if (index === lastHoveredIndex) return;
-  lastHoveredIndex = index;
-  const wines = getWinesForGrape(type, country, grapes[index]);
-  if (wines.length === 0) return;
-  const wineId = getWineId(type, country, wines[0].name);
-  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
-}
-
-async function updateWinePreview(
-  bridge: EvenAppBridge, baseUrl: string, type: WineType, country: string, grape: string, index: number
-): Promise<void> {
-  const wines = getWinesForGrape(type, country, grape);
-  if (index < 0 || index >= wines.length) return;
-  if (index === lastHoveredIndex) return;
-  lastHoveredIndex = index;
-  const wineId = getWineId(type, country, wines[index].name);
-  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
-  log(`[HOVER] ${wines[index].name}`);
-}
-
-async function updateCountryPreview(
-  bridge: EvenAppBridge, baseUrl: string, type: WineType, index: number
-): Promise<void> {
-  const countries = COUNTRIES[type];
-  if (index < 0 || index >= countries.length) return;
-  const wines = getWinesForCountry(type, countries[index]);
-  if (wines.length === 0) return;
-  const wineId = getWineId(type, countries[index], wines[0].name);
-  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
-}
+// Country, Grape, Wine selection pages no longer have image containers.
+// Only finder results still has a reactive bottle sprite.
 
 async function updateFinderResultPreview(
   bridge: EvenAppBridge, baseUrl: string, index: number
@@ -138,33 +103,28 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
       await bridge.rebuildPageContainer(buildWineListPage(currentType, currentCountry, currentGrape));
       currentPage = "wines"; currentWineId = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
-      const wines = getWinesForGrape(currentType, currentCountry, currentGrape);
-      if (wines.length > 0) {
-        const wid = getWineId(currentType, currentCountry, wines[0].name);
-        await pushBottleSprite(bridge, baseUrl, wid, 3, "bottle");
-        lastHoveredIndex = 0;
-      }
       log("< Back to wines", "success");
     }
     else if (currentPage === "notes" && currentType && currentCountry) {
       // Came from finder results or voice — go to grapes
       await bridge.rebuildPageContainer(buildGrapeListPage(currentType, currentCountry));
+      await pushGrapeSpriteToGlasses(bridge, baseUrl);
       currentPage = "grapes"; currentWineId = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
       log("< Back to grapes", "success");
     }
     else if (currentPage === "wines" && currentType && currentCountry) {
       await bridge.rebuildPageContainer(buildGrapeListPage(currentType, currentCountry));
+      await pushGrapeSpriteToGlasses(bridge, baseUrl);
       currentPage = "grapes"; currentGrape = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
       log("< Back to grapes", "success");
     }
     else if (currentPage === "grapes" && currentType) {
       await bridge.rebuildPageContainer(buildCountryListPage(currentType));
+      await pushGlobeToGlasses(bridge, baseUrl);
       currentPage = "countries"; currentCountry = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
-      const countries = COUNTRIES[currentType];
-      if (countries.length > 0) await updateCountryPreview(bridge, baseUrl, currentType, 0);
       log("< Back to countries", "success");
     }
     else if (currentPage === "countries") {
@@ -178,12 +138,13 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
     else if (currentPage === "finder-results") {
       await bridge.rebuildPageContainer(buildFinderWorldPage());
       currentPage = "finder-world"; lastNavigationTime = Date.now();
-      await pushLogoSprite(bridge, baseUrl);
+      await pushFinderRobot(bridge, baseUrl, "finder-world");
       log("< Back to world", "success");
     }
     else if (currentPage === "finder-world") {
       await bridge.rebuildPageContainer(buildFinderBodyPage());
       currentPage = "finder-body"; lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-body");
       delete finderAnswers.world;
       log("< Back to body", "success");
     }
@@ -191,20 +152,22 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
       const type = finderAnswers.type as WineType | undefined;
       await bridge.rebuildPageContainer(buildFinderFlavorPage(type || null));
       currentPage = "finder-flavor"; lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-flavor");
       delete finderAnswers.body;
       log("< Back to flavor", "success");
     }
     else if (currentPage === "finder-flavor") {
       await bridge.rebuildPageContainer(buildFinderVibePage());
       currentPage = "finder-vibe"; lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-vibe");
       delete finderAnswers.flavor;
       log("< Back to vibe", "success");
     }
     else if (currentPage === "finder-vibe") {
       await bridge.rebuildPageContainer(buildFinderTypePage());
       currentPage = "finder-type"; lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-type");
       delete finderAnswers.vibe;
-      await pushLogoSprite(bridge, baseUrl);
       log("< Back to type", "success");
     }
     else if (currentPage === "finder-type") {
@@ -237,7 +200,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         await bridge.rebuildPageContainer(buildFinderTypePage());
         currentPage = "finder-type";
         lastNavigationTime = Date.now();
-        await pushLogoSprite(bridge, baseUrl);
+        await pushFinderRobot(bridge, baseUrl, "finder-type");
         log("> Find My Wine", "success");
       } else {
         // Wine type (offset by 1 because Find My Wine is index 0)
@@ -245,10 +208,9 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         if (typeIdx >= 0 && typeIdx < WINE_TYPES.length) {
           currentType = WINE_TYPES[typeIdx];
           await bridge.rebuildPageContainer(buildCountryListPage(currentType));
+          await pushGlobeToGlasses(bridge, baseUrl);
           currentPage = "countries"; lastHoveredIndex = -1;
           lastNavigationTime = Date.now();
-          const countries = COUNTRIES[currentType];
-          if (countries.length > 0) await updateCountryPreview(bridge, baseUrl, currentType, 0);
           log(`> ${currentType}`, "success");
         }
       }
@@ -262,9 +224,9 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       if (idx >= 0 && idx < countries.length) {
         currentCountry = countries[idx];
         await bridge.rebuildPageContainer(buildGrapeListPage(currentType, currentCountry));
+        await pushGrapeSpriteToGlasses(bridge, baseUrl);
         currentPage = "grapes"; lastHoveredIndex = -1;
         lastNavigationTime = Date.now();
-        await updateGrapePreview(bridge, baseUrl, currentType, currentCountry, 0);
         log(`> ${currentCountry}`, "success");
       }
       return;
@@ -286,17 +248,12 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
           await bridge.rebuildPageContainer(buildTastingNotesPage(wine, wineId));
           currentPage = "notes";
           lastNavigationTime = Date.now();
-          await pushBottleSprite(bridge, baseUrl, wineId, 2, "bottle");
+          await pushBottleSpriteQuad(bridge, baseUrl, wineId, 120, 50);
           log(`> ${wine.name} (direct)`, "success");
         } else {
           await bridge.rebuildPageContainer(buildWineListPage(currentType, currentCountry, currentGrape));
           currentPage = "wines"; lastHoveredIndex = -1;
           lastNavigationTime = Date.now();
-          if (wines.length > 0) {
-            const wid = getWineId(currentType, currentCountry, wines[0].name);
-            await pushBottleSprite(bridge, baseUrl, wid, 3, "bottle");
-            lastHoveredIndex = 0;
-          }
           log(`> ${currentGrape}`, "success");
         }
       }
@@ -314,7 +271,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         await bridge.rebuildPageContainer(buildTastingNotesPage(wine, wineId));
         currentPage = "notes";
         lastNavigationTime = Date.now();
-        await pushBottleSprite(bridge, baseUrl, wineId, 2, "bottle");
+        await pushBottleSpriteQuad(bridge, baseUrl, wineId, 120, 50);
         log(`> ${wine.name}`, "success");
       }
       return;
@@ -331,6 +288,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       await bridge.rebuildPageContainer(buildFinderVibePage());
       currentPage = "finder-vibe";
       lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-vibe");
       log(`> Finder type: ${finderAnswers.type}`, "success");
       return;
     }
@@ -345,6 +303,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       await bridge.rebuildPageContainer(buildFinderFlavorPage(type && type !== "skip" ? type : null));
       currentPage = "finder-flavor";
       lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-flavor");
       log(`> Finder vibe: ${finderAnswers.vibe}`, "success");
       return;
     }
@@ -360,6 +319,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       await bridge.rebuildPageContainer(buildFinderBodyPage());
       currentPage = "finder-body";
       lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-body");
       log(`> Finder flavor: ${finderAnswers.flavor}`, "success");
       return;
     }
@@ -373,6 +333,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       await bridge.rebuildPageContainer(buildFinderWorldPage());
       currentPage = "finder-world";
       lastNavigationTime = Date.now();
+      await pushFinderRobot(bridge, baseUrl, "finder-world");
       log(`> Finder body: ${finderAnswers.body}`, "success");
       return;
     }
@@ -411,7 +372,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         await bridge.rebuildPageContainer(buildTastingNotesPage(r.wine, wineId));
         currentPage = "notes";
         lastNavigationTime = Date.now();
-        await pushBottleSprite(bridge, baseUrl, wineId, 2, "bottle");
+        await pushBottleSpriteQuad(bridge, baseUrl, wineId, 120, 50);
         log(`> ${r.wine.name} (finder)`, "success");
       }
       return;
@@ -433,11 +394,6 @@ async function handleDoubleClick(bridge: EvenAppBridge, baseUrl: string): Promis
 // ═══ MAIN EVENT HANDLER ═══
 async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: string): Promise<void> {
 
-  // Audio
-  if (event.audioEvent) {
-    handleAudioEvent(event.audioEvent.audioPcm);
-  }
-
   // List events
   if (event.listEvent) {
     const le = event.listEvent;
@@ -447,31 +403,7 @@ async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: 
 
     const type = le.eventType;
 
-    // Reactive sprites on scroll
-    if (currentPage === "wines" && currentType && currentCountry && currentGrape) {
-      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
-        await updateWinePreview(bridge, baseUrl, currentType, currentCountry, currentGrape, lastSelectedIndex);
-        return;
-      }
-      await updateWinePreview(bridge, baseUrl, currentType, currentCountry, currentGrape, lastSelectedIndex);
-    }
-
-    if (currentPage === "grapes" && currentType && currentCountry) {
-      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
-        await updateGrapePreview(bridge, baseUrl, currentType, currentCountry, lastSelectedIndex);
-        return;
-      }
-      await updateGrapePreview(bridge, baseUrl, currentType, currentCountry, lastSelectedIndex);
-    }
-
-    if (currentPage === "countries" && currentType) {
-      if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
-        await updateCountryPreview(bridge, baseUrl, currentType, lastSelectedIndex);
-        return;
-      }
-      await updateCountryPreview(bridge, baseUrl, currentType, lastSelectedIndex);
-    }
-
+    // Reactive sprites on scroll — only finder results has an image container
     if (currentPage === "finder-results") {
       if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
         await updateFinderResultPreview(bridge, baseUrl, lastSelectedIndex);
