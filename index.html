@@ -2,20 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>sommNI</title>
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
   <div id="app">
+    <!-- Status Bar -->
     <div class="status-bar">
       <span id="status-dot" class="dot disconnected"></span>
       <span id="status-text">Connecting...</span>
       <span id="battery-text"></span>
     </div>
-    <h1>ソムニ<br><span class="subtitle">sommNI</span></h1>
-    <p class="tagline">Seven Second Sommelier — Dining / Done / Different</p>
-    <div id="log"></div>
+
+    <!-- Header -->
+    <div class="header">
+      <h1>ソムニ <span class="subtitle">sommNI</span></h1>
+      <p class="tagline">Seven Second Sommelier</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-bar">
+      <button class="tab active" data-tab="home">Home</button>
+      <button class="tab" data-tab="cellar">Cellar</button>
+      <button class="tab" data-tab="courses">Courses</button>
+      <button class="tab" data-tab="pairings">Pairings</button>
+      <button class="tab" data-tab="study">Study</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <!-- TAB: Home -->
+    <section id="tab-home" class="tab-panel active">
+      <div class="card">
+        <div class="card-header">Glasses Status</div>
+        <div id="home-glasses-status" class="card-body">
+          <span class="muted">Waiting for connection...</span>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="home-wines">215</div>
+          <div class="stat-label">Wines</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="home-tracked">—</div>
+          <div class="stat-label">Tracked</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="home-pairings">—</div>
+          <div class="stat-label">Pairings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="home-favorites">—</div>
+          <div class="stat-label">Favorites</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">By Type</div>
+        <div id="home-types" class="card-body"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Inventory Alerts</div>
+        <div id="home-alerts" class="card-body">
+          <span class="muted">All stocked up</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Cellar -->
+    <section id="tab-cellar" class="tab-panel">
+      <div id="cellar-content"></div>
+    </section>
+
+    <!-- TAB: Course Builder -->
+    <section id="tab-courses" class="tab-panel">
+      <div id="courses-content"></div>
+    </section>
+
+    <!-- TAB: Pairings -->
+    <section id="tab-pairings" class="tab-panel">
+      <div id="pairings-content"></div>
+    </section>
+
+    <!-- TAB: Study -->
+    <section id="tab-study" class="tab-panel">
+      <div id="study-content"></div>
+    </section>
+
+    <!-- TAB: Settings -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="card">
+        <div class="card-header">About</div>
+        <div class="card-body">
+          <div class="setting-row">
+            <span>Version</span>
+            <span id="settings-version" class="muted">—</span>
+          </div>
+          <div class="setting-row">
+            <span>Total Wines</span>
+            <span class="muted">215</span>
+          </div>
+          <div class="setting-row">
+            <span>Device</span>
+            <span id="settings-device" class="muted">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">Favorites</div>
+        <div id="settings-favorites" class="card-body wine-list">
+          <span class="muted">No favorites yet</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">Debug Log</div>
+        <div id="log" class="card-body log-container"></div>
+      </div>
+    </section>
   </div>
   <script type="module" src="/src/Main.ts"></script>
 </body>

@@ -7,10 +7,15 @@ import { waitForEvenAppBridge, DeviceConnectType } from '@evenrealities/even_hub
 import { buildHomePage } from './pages';
 import { pushLogoToGlasses } from './image-utils';
 import { registerEventHandlers } from './events';
+import { initSync } from './sync';
 import { setStatus, setBattery, log } from './ui';
 import { TOTAL_WINES } from './constants';
+import { initDashboard, refreshAll, setDeviceInfo, setVersionInfo, setGlassesStatus } from './dashboard';
 
 async function main(): Promise<void> {
+  // Initialize dashboard tab switching immediately
+  initDashboard();
+
   log("Initializing...");
   setStatus("connecting", "Waiting for bridge...");
 
@@ -23,21 +28,26 @@ async function main(): Promise<void> {
   const device = await bridge.getDeviceInfo();
   if (device) {
     log("Device: " + device.model + " (" + device.sn + ")");
+    setDeviceInfo(device.model, device.sn);
     if (device.status?.isConnected()) {
       setStatus("connected");
       setBattery(device.status.batteryLevel);
+      setGlassesStatus(true, device.status.batteryLevel);
     }
   } else {
     setStatus("disconnected", "No glasses");
+    setGlassesStatus(false);
   }
 
   bridge.onDeviceStatusChanged((status) => {
     if (status.connectType === DeviceConnectType.Connected) {
       setStatus("connected");
       setBattery(status.batteryLevel);
+      setGlassesStatus(true, status.batteryLevel);
       log("Connected — battery " + status.batteryLevel + "%", "success");
     } else if (status.connectType === DeviceConnectType.Disconnected) {
       setStatus("disconnected");
+      setGlassesStatus(false);
       log("Disconnected", "error");
     } else if (status.connectType === DeviceConnectType.Connecting) {
       setStatus("connecting");
@@ -63,12 +73,21 @@ async function main(): Promise<void> {
     log("Logo not loaded: " + err, "error");
   }
 
+  // Initialize sync bridge (shared localStorage with phone dashboard)
+  initSync(bridge);
+  log("Sync bridge ready", "success");
+
   // Register event handlers
   registerEventHandlers(bridge, baseUrl);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "1.0.0");
-  log(`sommNI v1.0.0 — ${TOTAL_WINES} wines · bottle sprites · voice search`, "success");
+  await bridge.setLocalStorage("sommni_version", "2.0.0");
+  setVersionInfo("2.0.0");
+  log(`sommNI v2.0.0 — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+
+  // Refresh all dashboard tabs with data from bridge
+  await refreshAll();
+  log("Dashboard loaded", "success");
 }
 
 main().catch((err) => {

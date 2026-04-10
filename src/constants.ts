@@ -420,6 +420,25 @@ export function getWineId(type: WineType, country: string, wineName: string): st
   return map.get(`${type}|${country}|${wineName}`) || "w0";
 }
 
+/** Reverse lookup: wine ID → { wine, type, country } */
+let _reverseMap: Map<string, { wine: Wine; type: WineType; country: string }> | null = null;
+
+export function lookupWineById(wineId: string): { wine: Wine; type: WineType; country: string } | null {
+  if (!_reverseMap) {
+    _reverseMap = new Map();
+    let idx = 0;
+    for (const type of WINE_TYPES) {
+      for (const country of COUNTRIES[type]) {
+        for (const wine of (WINES[type]?.[country] || [])) {
+          _reverseMap.set(`w${idx}`, { wine, type, country });
+          idx++;
+        }
+      }
+    }
+  }
+  return _reverseMap.get(wineId) || null;
+}
+
 /** Get total wine count */
 export const TOTAL_WINES = 215;
 

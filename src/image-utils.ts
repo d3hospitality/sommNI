@@ -322,47 +322,51 @@ export async function pushBottleSpriteSplit(
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// BOTTLE SPRITE QUAD — split into 4 horizontal strips (200×50 each)
-// Source: 288×288 transparent PNG → rendered at 200×200 → 4 × 200×50
-// Container IDs 1-4, names "bottle-1" through "bottle-4"
+// BOTTLE SPRITE DUAL — 1024×1024 → scale-to-fit 100×288 → 2 halves
+// No stretching, no cropping — just scale down and center on black.
+// 100px wide = 144 - 22 clipped left - 22 clipped right.
+// SDK max per container: 288w × 144h. We use 100×144 per half.
+// Container 1 = top half, Container 2 = bottom half
 // ═══════════════════════════════════════════════════════════════════
 
-export async function pushBottleSpriteQuad(
+export async function pushBottleSpriteDual(
   bridge: EvenAppBridge, baseUrl: string, wineId: string,
-  stripW: number, stripH: number,
+  halfW: number, halfH: number,
 ): Promise<void> {
   const url = `${baseUrl}bottles/${wineId}.png`;
-  const totalH = stripH * 4;
+  const totalH = halfH * 2;
   try {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`${resp.status}`);
     const blob = await resp.blob();
     const bmp = await createImageBitmap(blob);
 
-    // Draw 288×288 source onto stripW × totalH canvas (200×200), centered
-    const cvs = document.createElement('canvas');
-    cvs.width = stripW; cvs.height = totalH;
-    const ctx = cvs.getContext('2d')!;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, stripW, totalH);
-    const scale = Math.min(stripW / bmp.width, totalH / bmp.height);
+    // Scale to FIT within halfW × totalH — no stretch, no crop
+    const scale = Math.min(halfW / bmp.width, totalH / bmp.height);
     const fw = Math.round(bmp.width * scale);
     const fh = Math.round(bmp.height * scale);
-    ctx.drawImage(bmp, Math.round((stripW - fw) / 2), Math.round((totalH - fh) / 2), fw, fh);
-    const full = ctx.getImageData(0, 0, stripW, totalH).data;
+    const offX = Math.round((halfW - fw) / 2);
+    const offY = Math.round((totalH - fh) / 2);
 
-    // Slice into 4 strips and push sequentially (SDK: no concurrent image sends)
-    for (let s = 0; s < 4; s++) {
-      const gray = new Uint8Array(stripW * stripH);
-      const yOff = s * stripH * stripW;
-      for (let i = 0; i < stripW * stripH; i++) {
-        const o = (yOff + i) * 4;
-        gray[i] = 0.299 * full[o] + 0.587 * full[o + 1] + 0.114 * full[o + 2];
+    const cvs = document.createElement('canvas');
+    cvs.width = halfW; cvs.height = totalH;
+    const ctx = cvs.getContext('2d')!;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, halfW, totalH);
+    ctx.drawImage(bmp, offX, offY, fw, fh);
+
+    // Split into top and bottom halves, push sequentially
+    const names = ["bottle-top", "bottle-bot"];
+    for (let s = 0; s < 2; s++) {
+      const px = ctx.getImageData(0, s * halfH, halfW, halfH).data;
+      const gray = new Uint8Array(halfW * halfH);
+      for (let i = 0; i < gray.length; i++) {
+        const o = i * 4;
+        gray[i] = 0.299 * px[o] + 0.587 * px[o + 1] + 0.114 * px[o + 2];
       }
-      const png = encodeGrayscalePng(stripW, stripH, gray);
-      await pushImg(bridge, s + 1, `bottle-${s + 1}`, png);
+      await pushImg(bridge, s + 1, names[s], encodeGrayscalePng(halfW, halfH, gray));
     }
 
-    console.log(`[sommNI-TG] Bottle quad pushed: ${wineId}`);
-  } catch (e) { console.warn(`[sommNI-TG] Bottle quad FAILED: ${wineId}`, e); }
+    console.log(`[sommNI-TG] Bottle pushed: ${wineId} (${halfW}×${totalH} → 2×${halfW}×${halfH})`);
+  } catch (e) { console.warn(`[sommNI-TG] Bottle FAILED: ${wineId}`, e); }
 }
