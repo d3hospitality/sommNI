@@ -4,7 +4,9 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { waitForEvenAppBridge, DeviceConnectType } from '@evenrealities/even_hub_sdk';
-import { buildHomePage } from './pages';
+import { initWinebrary } from './winebrary';
+import { connectWinebraryGlasses, setWinebraryDeviceConnected } from './winebrary-glasses';
+import { buildHomePage, rebuildHomePage } from './pages';
 import { pushLogoToGlasses } from './image-utils';
 import { registerEventHandlers } from './events';
 import { initSync } from './sync';
@@ -15,6 +17,8 @@ import { initDashboard, refreshAll, setDeviceInfo, setVersionInfo, setGlassesSta
 async function main(): Promise<void> {
   // Initialize dashboard tab switching immediately
   initDashboard();
+  initWinebrary();
+  await refreshAll();
 
   log("Initializing...");
   setStatus("connecting", "Waiting for bridge...");
@@ -31,6 +35,7 @@ async function main(): Promise<void> {
     setDeviceInfo(device.model, device.sn);
     if (device.status?.isConnected()) {
       setStatus("connected");
+      setWinebraryDeviceConnected(true);
       setBattery(device.status.batteryLevel);
       setGlassesStatus(true, device.status.batteryLevel);
     }
@@ -42,11 +47,13 @@ async function main(): Promise<void> {
   bridge.onDeviceStatusChanged((status) => {
     if (status.connectType === DeviceConnectType.Connected) {
       setStatus("connected");
+      setWinebraryDeviceConnected(true);
       setBattery(status.batteryLevel);
       setGlassesStatus(true, status.batteryLevel);
       log("Connected — battery " + status.batteryLevel + "%", "success");
     } else if (status.connectType === DeviceConnectType.Disconnected) {
       setStatus("disconnected");
+      setWinebraryDeviceConnected(false);
       setGlassesStatus(false);
       log("Disconnected", "error");
     } else if (status.connectType === DeviceConnectType.Connecting) {
@@ -58,13 +65,22 @@ async function main(): Promise<void> {
   const homePage = buildHomePage();
   const result = await bridge.createStartUpPageContainer(homePage);
   if (result !== 0) {
-    log("Startup failed: " + result, "error");
-    return;
+    // The glasses keep the startup page when only the web view reloads (Even Hub web view
+    // restart, dev hot reload). Take over the existing page instead of stopping.
+    log("Startup page exists (" + result + "); rebuilding home");
+    if (!await bridge.rebuildPageContainer(rebuildHomePage())) {
+      log("Startup failed: " + result, "error");
+      return;
+    }
   }
   log("Home page created", "success");
 
-  // Push logo with slight delay for SDK readiness
-  const baseUrl = import.meta.env.BASE_URL;
+  // Use full GitHub Pages URL for remote assets (ehpk doesn't bundle bottles)
+  const baseUrl = new URL('./', location.href).href;
+  connectWinebraryGlasses(bridge, baseUrl);
+  if (import.meta.env.DEV && new URLSearchParams(location.search).get('g2-fixture') === 'library') {
+    (await import('./dev-fixture')).installLibraryFixture(baseUrl);
+  }
   try {
     await new Promise(r => setTimeout(r, 500));
     await pushLogoToGlasses(bridge, baseUrl);
@@ -82,8 +98,8 @@ async function main(): Promise<void> {
   log("Events active", "success");
 
   await bridge.setLocalStorage("sommni_version", "2.0.0");
-  setVersionInfo("2.0.0");
-  log(`sommNI v2.0.0 — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  setVersionInfo("3.0.0 · wineLENS");
+  log(`wineLENS v3.0.0 — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();

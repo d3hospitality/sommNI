@@ -170,6 +170,7 @@ function generateDashboardQuestions(wineId: string): { category: string; questio
 export function initDashboard(): void {
   document.addEventListener('click', handleGlobalClick);
   document.addEventListener('input', handleGlobalInput);
+  void refreshAll();
 
   const tabs = document.querySelectorAll<HTMLButtonElement>('.tab');
   tabs.forEach(tab => {
@@ -427,11 +428,24 @@ function handleGlobalInput(e: Event): void {
   const target = e.target as HTMLElement;
   if (target.id === 'cellar-search') {
     cellarSearch = (target as HTMLInputElement).value;
+    const cursorPos = (target as HTMLInputElement).selectionStart;
     renderCellar();
+    const restored = document.getElementById('cellar-search') as HTMLInputElement | null;
+    if (restored) {
+      restored.focus();
+      if (cursorPos !== null) restored.setSelectionRange(cursorPos, cursorPos);
+    }
   }
   if (target.id === 'pairing-search') {
     pairingSearchQ = (target as HTMLInputElement).value;
+    const cursorPos = (target as HTMLInputElement).selectionStart;
     renderPairings();
+    // Refocus the search input after re-render (innerHTML destroys + recreates it)
+    const restored = document.getElementById('pairing-search') as HTMLInputElement | null;
+    if (restored) {
+      restored.focus();
+      if (cursorPos !== null) restored.setSelectionRange(cursorPos, cursorPos);
+    }
   }
 }
 
@@ -586,7 +600,7 @@ async function renderCellar(): Promise<void> {
             <div class="wine-card-name">${esc(wine.name.split('–')[0].trim())}</div>
             <div class="wine-card-meta">${esc(wine.region)} · ${esc(wine.style)}</div>
           </div>
-          <button class="fav-btn ${isFav ? 'faved' : ''}" data-action="toggle-fav" data-value="${wineId}">${isFav ? '★' : '☆'}</button>
+          <button class="wl-text-button" data-save-library="${wineId}">＋ Winebrary</button><button class="fav-btn ${isFav ? 'faved' : ''}" data-action="toggle-fav" data-value="${wineId}">${isFav ? '★' : '☆'}</button>
         </div>
         <div class="stock-row">
           <button class="stock-btn" data-action="stock-minus" data-value="${wineId}">−</button>
@@ -628,7 +642,7 @@ function renderCourses(): void {
       html += `<div class="flow-card">
         <div class="flow-header">
           <div class="flow-dots">${FINDER_FLOW.map((_, i) =>
-            `<span class="dot-pip ${i === courseStep ? 'active' : i < courseStep ? 'done' : ''}"></span>`
+            `<span class="dot-pip ${i === courseStep ? 'active' : i < (courseStep as number) ? 'done' : ''}"></span>`
           ).join('')}</div>
           <button class="btn-outline" data-action="course-back">‹ Back</button>
         </div>

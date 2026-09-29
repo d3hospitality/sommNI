@@ -1,0 +1,32 @@
+name: wineLENS checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  companion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck && npm run build
+      - name: Browser and glasses regression checks
+        run: |
+          npm run dev > /tmp/winelens-vite.log 2>&1 &
+          VITE_TEST_PID=$!
+          trap 'kill "$VITE_TEST_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://localhost:5186/sommNI/ > /dev/null && break
+            sleep 1
+          done
+          npm run test:ui
+          npm run test:glasses
+          npm run test:nav
+          npm run test:display
+          npm run test:bottles
