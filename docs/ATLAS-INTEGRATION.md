@@ -9,15 +9,14 @@ Builds on Codex's prototype (`docs/atlas/ATLAS-HANDOFF.md`, `src/atlas/`, unchan
 - `unmapped` (19): broad regions that span many clusters (Tuscany, Burgundy, Piedmont, Loire…) or names with no cluster. They stay fully browsable through Home › wine type › country › grape. No boundaries are invented; clusters are winery locations, not appellations.
 - `tests/glasses.navigation.cjs` fails if a catalog region has no entry or a linked cluster does not exist in that country, so new wines force a mapping decision.
 
-## Your Winebrary in the Atlas
-- Signed in, your Winebrary widens the scope: its countries are listed (with a count, e.g. "United States (1)") and its regions appear when they match a linked cluster or a cluster name exactly (in the wine's country when known, or unambiguously).
-- Wines saved from the catalog use their catalog twin's region; free-text regions use "Place, CC" or `metadata.country`.
-- Region view (tap a region): "MY WINEBRARY · n" and your wines there; scroll to pick, tap to open the Winebrary page, double tap returns to the same Atlas view. Signed out, it says to sign in on the phone and shows the catalog count instead.
-- Sign-out or a library change re-scopes the Atlas immediately (no private wines linger on the glasses).
-- Wines whose place doesn't match stay in My Winebrary only.
+## Region view: every wine is findable and opens
+- Tap a region: your Winebrary wines first, then the wineLENS catalog wines from that place ("MINE 1 · CATALOG 28"). Scroll to pick, tap to open: yours open the Winebrary page, catalog wines open the tasting notes. Double tap returns to the same Atlas view.
+- Places with no linked cluster (Tuscany, Burgundy, Piedmont…) still get a row, marked "not mapped yet": the view frames the country with no winery dots, so no boundary or location is implied. Every catalog wine is listed somewhere (tested).
+- Signed in, your Winebrary widens the scope: its countries and places appear with counts ("Argentina (3)") and sort first. Catalog twins use the catalog region; free text uses "Place, CC", `metadata.country`, or a catalog region of the same name ("Burgundy" → France). Wines with no resolvable country stay in My Winebrary only.
+- Sign-out or a library change re-scopes the Atlas at once.
 
 ## Beta package
-- `npm run pack:beta` builds with a relative base into `dist-ehpk/` and packs `app.beta.json` (same package id, name "wineLENS Beta", version 3.1.0; Even Hub only accepts x.y.z versions) into `wineLENS-3.1.0-beta.ehpk`. Upload is manual.
+- `npm run pack:beta` builds with a relative base into `dist-ehpk/` and packs `app.beta.json` (same package id, name "wineLENS Beta", version 3.1.1; Even Hub only accepts x.y.z versions) into `wineLENS-3.1.1-beta.ehpk`. Upload is manual.
 - The package is ~36 MB, almost all bottle photographs (`bottles/`, 34 MB). Check the Even Hub size limit on upload; if it is refused, the bottles can move to WebP or be served from the whitelisted GitHub Pages host.
 
 ## Display ownership (`src/display.ts`)

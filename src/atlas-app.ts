@@ -12,14 +12,14 @@
 // Catalog browsing stays country → grape → wine until region mappings are reviewed.
 // ═══════════════════════════════════════════════════════════════════
 
-import type { EvenAppBridge, EvenHubEvent } from '@evenrealities/even_hub_sdk';
+import { OsEventTypeList, type EvenAppBridge, type EvenHubEvent } from '@evenrealities/even_hub_sdk';
 import { GlobeRenderer, type AtlasData, type Country, type Region } from './atlas/renderer';
 import { AtlasNavigator } from './atlas/navigator';
 import { AtlasGlasses } from './atlas/glasses';
 import { claimDisplay, dropDisplay } from './display';
-import { invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial } from './image-utils';
-import { rebuildHomePage } from './pages';
-import { allCatalogWines, lookupWineById } from './identity';
+import { invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
+import { rebuildHomePage, buildTastingNotesPage } from './pages';
+import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
 import { readLibrary, showWineFromAtlas, vintageShort } from './winebrary-glasses';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
@@ -83,11 +83,17 @@ async function exitToHome(): Promise<void> {
 // like a Winebrary wine's region. Adding wines widens the Atlas automatically; anything
 // unmatched stays reachable through catalog browsing and My Winebrary.
 interface RegionLink { region: string; clusters: string[]; link: string; review: string; note: string }
+/** A wine listed in a region view: one of yours (Winebrary) or one from the wineLENS catalog. */
+export type AtlasEntry = { kind: 'library'; wine: LibraryWine } | { kind: 'catalog'; item: CatalogWine };
 export interface CatalogAtlas {
   data: AtlasData; countries: Country[];
-  countryWines: Map<string, number>; regionWines: Map<string, number>;
-  /** Winebrary wines by atlas region id, and by country code (all wines placed in that country). */
-  library: Map<string, LibraryWine[]>; libraryByCountry: Map<string, LibraryWine[]>;
+  /** Catalog wines per country code. */
+  countryWines: Map<string, number>;
+  /** Wines per atlas region id, yours first. */
+  entries: Map<string, AtlasEntry[]>;
+  mineByRegion: Map<string, number>; mineByCountry: Map<string, number>;
+  /** Region rows without map geometry (a catalog/Winebrary place with no linked cluster). */
+  unmapped: Set<string>;
   unlinked: string[];
 }
 
@@ -104,61 +110,79 @@ function countryByAnyName(renderer: GlobeRenderer, raw: string | null | undefine
 }
 
 /** Where a Winebrary wine sits: its catalog twin if saved from the catalog, else its own region/country text. */
-function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink>, wine: LibraryWine): { country: Country | null; regions: Region[] } {
+function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink>, wine: LibraryWine): { country: Country | null; regions: Region[]; place: string } {
   const twin = wine.wine_id ? lookupWineById(wine.wine_id) : null;
   if (twin) {
     const country = atlasCountryFor(renderer, twin.country);
     const regions = country ? (links.get(twin.wine.region)?.clusters ?? []).map(n => renderer.data.regions.find(r => r.name === n && r.country === country.code)).filter((r): r is Region => !!r) : [];
-    return { country, regions };
+    return { country, regions, place: twin.wine.region.split(',')[0].trim() };
   }
-  const [place, suffix] = (wine.region ?? '').split(',').map(p => p.trim());
+  const [place = '', suffix] = (wine.region ?? '').split(',').map(p => p.trim());
   const country = countryByAnyName(renderer, wine.metadata?.country) ?? countryByAnyName(renderer, suffix);
-  if (!place) return { country, regions: [] };
-  // A catalog link with the same place name first (e.g. "Russian River" → Russian River Valley) …
-  const link = [...links.values()].find(l => norm(l.region.split(',')[0]) === norm(place));
+  // A catalog region with the same place name (e.g. "Burgundy" → Burgundy, FR) gives the country …
+  const link = place ? [...links.values()].find(l => norm(l.region.split(',')[0]) === norm(place)) : undefined;
+  const linkCountry = !country && link ? countryByAnyName(renderer, link.region.split(',')[1]?.trim()) : null;
+  const known = country ?? linkCountry;
+  if (!place) return { country: known, regions: [], place };
+  // … and its clusters; otherwise a cluster with exactly this name (in the wine's country, or unambiguous).
   const candidates = link?.clusters.length ? link.clusters.map(n => renderer.data.regions.filter(r => r.name === n)).flat() : renderer.data.regions.filter(r => norm(r.name) === norm(place));
-  // … then an exact cluster name, in the wine's country when known, else only if the name is unambiguous.
-  const inCountry = country ? candidates.filter(r => r.country === country.code) : candidates;
+  const inCountry = known ? candidates.filter(r => r.country === known.code) : candidates;
+  if (!known && new Set(candidates.map(r => r.country)).size > 1) return { country: null, regions: [], place };
   const regions = inCountry.length ? [inCountry[0]] : [];
-  const resolvedCountry = country ?? (regions[0] ? renderer.data.countries.find(c => c.code === regions[0].country) ?? null : null);
-  if (!country && new Set(candidates.map(r => r.country)).size > 1) return { country: null, regions: [] };
-  return { country: resolvedCountry, regions };
+  const resolved = known ?? (regions[0] ? renderer.data.countries.find(c => c.code === regions[0].country) ?? null : null);
+  return { country: resolved, regions, place };
 }
 
 export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[] = []): CatalogAtlas {
   const links = linkTable();
-  const countryWines = new Map<string, number>(), regionWines = new Map<string, number>();
-  const linked = new Map<string, Region>(), unlinked = new Set<string>();
-  const library = new Map<string, LibraryWine[]>(), libraryByCountry = new Map<string, LibraryWine[]>();
-  const add = <T>(map: Map<string, T[]>, key: string, value: T) => map.set(key, [...(map.get(key) ?? []), value]);
-  for (const { wine, country: countryName } of allCatalogWines()) {
-    const country = atlasCountryFor(renderer, countryName);
+  const countryWines = new Map<string, number>(), mineByRegion = new Map<string, number>(), mineByCountry = new Map<string, number>();
+  const regions = new Map<string, Region>(), unmapped = new Set<string>(), unlinked = new Set<string>();
+  const mine = new Map<string, AtlasEntry[]>(), catalog = new Map<string, AtlasEntry[]>();
+  const push = (map: Map<string, AtlasEntry[]>, id: string, entry: AtlasEntry) => map.set(id, [...(map.get(id) ?? []), entry]);
+  const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
+  // A place with no linked cluster still gets a row, so every wine can be found. No geometry is invented:
+  // the view frames the country and draws no winery dots.
+  const placeRow = (country: Country, place: string): Region => {
+    const name = place || 'Other wines';
+    const id = `place:${country.code}:${norm(name)}`;
+    let row = regions.get(id);
+    if (!row) {
+      row = { id, name, sourceKey: '', country: country.code, center: country.center, radius: 5, points: [], count: 0, geometryKind: 'winery-cluster' };
+      regions.set(id, row); unmapped.add(id);
+    }
+    return row;
+  };
+  for (const item of allCatalogWines()) {
+    const country = atlasCountryFor(renderer, item.country);
     if (!country) continue;
-    countryWines.set(country.code, (countryWines.get(country.code) ?? 0) + 1);
-    const regions = (links.get(wine.region)?.clusters ?? [])
+    bump(countryWines, country.code);
+    let linked = (links.get(item.wine.region)?.clusters ?? [])
       .map(name => renderer.data.regions.find(r => r.name === name && r.country === country.code))
       .filter((r): r is Region => !!r);
-    if (!regions.length) unlinked.add(wine.region);
-    for (const r of regions) { linked.set(r.id, r); regionWines.set(r.id, (regionWines.get(r.id) ?? 0) + 1); }
+    if (!linked.length) { unlinked.add(item.wine.region); linked = [placeRow(country, item.wine.region.split(',')[0].trim())]; }
+    for (const r of linked) { regions.set(r.id, r); push(catalog, r.id, { kind: 'catalog', item }); }
   }
   for (const wine of libraryItems) {
-    const { country, regions } = placeLibraryWine(renderer, links, wine);
-    if (country) add(libraryByCountry, country.code, wine);
-    for (const r of regions) { linked.set(r.id, r); add(library, r.id, wine); }
+    const placed = placeLibraryWine(renderer, links, wine);
+    if (!placed.country) continue;           // no country: stays in My Winebrary only
+    bump(mineByCountry, placed.country.code);
+    const rows = placed.regions.length ? placed.regions : [placeRow(placed.country, placed.place)];
+    for (const r of rows) { regions.set(r.id, r); push(mine, r.id, { kind: 'library', wine }); bump(mineByRegion, r.id); }
   }
-  const mine = (code: string) => libraryByCountry.get(code)?.length ?? 0;
+  const entries = new Map<string, AtlasEntry[]>();
+  for (const id of regions.keys()) entries.set(id, [...(mine.get(id) ?? []), ...(catalog.get(id) ?? [])]);
   const countries = renderer.data.countries
-    .filter(c => countryWines.has(c.code) || mine(c.code) > 0)
-    .sort((a, b) => (mine(b.code) - mine(a.code)) || ((countryWines.get(b.code) ?? 0) - (countryWines.get(a.code) ?? 0)) || a.name.localeCompare(b.name));
-  return { data: { ...renderer.data, regions: [...linked.values()] }, countries, countryWines, regionWines, library, libraryByCountry, unlinked: [...unlinked].sort() };
+    .filter(c => countryWines.has(c.code) || mineByCountry.has(c.code))
+    .sort((a, b) => ((mineByCountry.get(b.code) ?? 0) - (mineByCountry.get(a.code) ?? 0)) || ((countryWines.get(b.code) ?? 0) - (countryWines.get(a.code) ?? 0)) || a.name.localeCompare(b.name));
+  return { data: { ...renderer.data, regions: [...regions.values()] }, countries, countryWines, entries, mineByRegion, mineByCountry, unmapped, unlinked: [...unlinked].sort() };
 }
 
-const wineLabel = (wine: LibraryWine) => [wine.wine_name, vintageShort(wine)].filter(Boolean).join(' ');
+const entryLabel = (e: AtlasEntry) => e.kind === 'library' ? [e.wine.wine_name, vintageShort(e.wine)].filter(Boolean).join(' ') : e.item.wine.name;
 
 class CatalogAtlasNavigator extends AtlasNavigator {
   wineIndex = 0;
-  /** Set by a tap on a Winebrary wine in the region view; atlas-app opens it. */
-  pendingWine: LibraryWine | null = null;
+  /** Set by a tap on a wine in the region view; atlas-app opens it. */
+  pending: AtlasEntry | null = null;
   constructor(private scope: CatalogAtlas, public signedIn: boolean) { super(scope.data); this.countries = scope.countries; }
 
   /** New scope (Winebrary loaded, signed out …): keep the same country/region when still present. */
@@ -170,43 +194,44 @@ class CatalogAtlasNavigator extends AtlasNavigator {
     if (mode !== 'countries' && r >= 0) this.regionIndex = r; else { this.mode = 'countries'; this.regionIndex = 0; }
     this.wineIndex = Math.min(this.wineIndex, Math.max(0, this.wines.length - 1));
   }
-  get wines(): LibraryWine[] { return this.region ? this.scope.library.get(this.region.id) ?? [] : []; }
+  get wines(): AtlasEntry[] { return this.region ? this.scope.entries.get(this.region.id) ?? [] : []; }
   get title(): string { return this.mode === 'countries' ? `WINE ATLAS · ${this.countries.length} COUNTRIES` : super.title; }
   get labels(): string[] {
-    if (this.mode !== 'countries') return this.regions.map(r => { const n = this.scope.library.get(r.id)?.length ?? 0; return n ? `${r.name} (${n})` : r.name; });
-    return this.countries.map(c => { const n = this.scope.libraryByCountry.get(c.code)?.length ?? 0; return n ? `${c.name} (${n})` : c.name; });
+    if (this.mode !== 'countries') return this.regions.map(r => { const n = this.scope.mineByRegion.get(r.id) ?? 0; return n ? `${r.name} (${n})` : r.name; });
+    return this.countries.map(c => { const n = this.scope.mineByCountry.get(c.code) ?? 0; return n ? `${c.name} (${n})` : c.name; });
   }
   get hint(): string {
-    if (this.mode === 'countries' && !this.regions.length) return `${this.index + 1} / ${this.labels.length}   No mapped region yet`;
     if (this.mode === 'detail') return this.wines.length ? `${this.wineIndex + 1} / ${this.wines.length}   Tap: open wine` : 'Double tap: regions';
     return super.hint;
   }
-  /** Region view: your Winebrary wines from this place (scroll + tap opens one). */
+  /** Region view: your Winebrary wines, then catalog wines from this place. Scroll + tap opens one. */
   get rows(): string {
     if (this.mode !== 'detail') return super.rows;
-    const r = this.region!, wines = this.wines, catalog = this.scope.regionWines.get(r.id) ?? 0;
-    if (!wines.length) {
-      return [r.name, '', this.signedIn ? 'No Winebrary wines here yet' : 'Sign in on your phone to see', this.signedIn ? '' : 'your Winebrary here',
-        catalog ? `wineLENS catalog: ${catalog} ${catalog === 1 ? 'wine' : 'wines'}` : '', 'Dots: mapped wineries'].filter((l, i) => i < 2 || l).join('\n');
-    }
+    const r = this.region!, wines = this.wines;
+    const mine = this.scope.mineByRegion.get(r.id) ?? 0, catalog = wines.length - mine;
+    const header = mine && catalog ? `MINE ${mine} · CATALOG ${catalog}` : mine ? `MY WINEBRARY · ${mine}` : `WINELENS CATALOG · ${catalog}`;
+    const name = this.scope.unmapped.has(r.id) ? `${r.name} · not mapped yet` : r.name;
+    if (!wines.length) return [name, '', 'No wines here yet'].join('\n');
     const start = Math.max(0, Math.min(this.wineIndex - 1, wines.length - 4));
-    const list = wines.slice(start, start + 4).map((w, i) => `${start + i === this.wineIndex ? '>' : ' '} ${wineLabel(w)}`);
-    return [r.name, `MY WINEBRARY · ${wines.length}`, ...list].join('\n');
+    const list = wines.slice(start, start + 4).map((w, i) => `${start + i === this.wineIndex ? '>' : ' '} ${entryLabel(w)}`);
+    return [name, header, ...list].join('\n');
   }
-  /** Your wines first, then catalog wines, then the source's winery count. */
+  /** Your wines first, then mapped places, then catalog wines, then the source's winery count. */
   get regions(): Region[] {
     const scope = this.scope;
     const list = super.regions;
     if (!scope) return list;
-    const mine = (r: Region) => scope.library.get(r.id)?.length ?? 0;
-    return list.sort((a, b) => mine(b) - mine(a) || (scope.regionWines.get(b.id) ?? 0) - (scope.regionWines.get(a.id) ?? 0) || b.count - a.count);
+    const mine = (r: Region) => scope.mineByRegion.get(r.id) ?? 0;
+    const mapped = (r: Region) => scope.unmapped.has(r.id) ? 0 : 1;
+    const all = (r: Region) => scope.entries.get(r.id)?.length ?? 0;
+    return list.sort((a, b) => mine(b) - mine(a) || mapped(b) - mapped(a) || all(b) - all(a) || b.count - a.count || a.name.localeCompare(b.name));
   }
   scroll(delta: number): void {
     if (this.mode === 'detail') { this.wineIndex = Math.max(0, Math.min(this.wines.length - 1, this.wineIndex + delta)); return; }
     super.scroll(delta);
   }
   select(): void {
-    if (this.mode === 'detail') { this.pendingWine = this.wines[this.wineIndex] ?? null; return; }
+    if (this.mode === 'detail') { this.pending = this.wines[this.wineIndex] ?? null; return; }
     if (this.mode === 'regions') this.wineIndex = 0;
     super.select();
   }
@@ -228,16 +253,29 @@ export async function atlasLibraryChanged(): Promise<void> {
   if (active) glasses?.refresh();
 }
 
-/** Tap on a wine in the region view: the Winebrary page takes the display; double tap comes back here. */
-async function openPendingWine(): Promise<void> {
-  const wine = navigator?.pendingWine;
-  if (!navigator || !wine) return;
-  navigator.pendingWine = null;
-  try { await showWineFromAtlas(wine, () => openAtlasOnGlasses()); }
-  catch (error) { fail(error instanceof Error ? error : new Error(String(error))); }
+// ═══ Opening a wine from a region view ═══
+// Yours → the Winebrary wine page; catalog → the tasting notes page. Double tap returns to the
+// same Atlas view. Each page claims the display, so the Atlas transport is idle first.
+let notesOpen = false;
+async function openCatalogNotes(item: CatalogWine): Promise<void> {
+  if (!bridge) return;
+  await claimDisplay('atlas-notes', () => { notesOpen = false; });
+  invalidateImages();
+  if (!await bridge.rebuildPageContainer(buildTastingNotesPage(item.wine, item.id))) throw new Error('The glasses did not accept the tasting notes.');
+  notesOpen = true;
+  void pushTastingNotesImages(bridge, baseUrl, item.id).catch(error => console.warn('[Atlas] bottle image unavailable', error));
+}
+async function openPending(): Promise<void> {
+  const entry = navigator?.pending;
+  if (!navigator || !entry) return;
+  navigator.pending = null;
+  try {
+    if (entry.kind === 'library') await showWineFromAtlas(entry.wine, () => openAtlasOnGlasses());
+    else await openCatalogNotes(entry.item);
+  } catch (error) { fail(error instanceof Error ? error : new Error(String(error))); }
 }
 function changed(): void {
-  if (navigator?.pendingWine) void openPendingWine();
+  if (navigator?.pending) void openPending();
   announce();
 }
 
@@ -262,6 +300,15 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
 
 /** Atlas consumes events before any other module while it owns the display. */
 export function handleAtlasGlassesEvent(event: EvenHubEvent): boolean {
+  if (notesOpen) {
+    // Tasting notes opened from the Atlas: the text scrolls by itself; double tap goes back.
+    const type = event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType;
+    if (type === OsEventTypeList.DOUBLE_CLICK_EVENT) {
+      notesOpen = false; dropDisplay('atlas-notes');
+      void openAtlasOnGlasses().catch(error => fail(error instanceof Error ? error : new Error(String(error))));
+    }
+    return true;
+  }
   return active && !!glasses && glasses.handle(event);
 }
 

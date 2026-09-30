@@ -146,6 +146,10 @@ const assert=require('node:assert/strict');
   handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(1500);  // open the wine
   atlas.push(last());
   handler({sysEvent:{eventType:3}});await wait(1800);atlas.push(last(),A.atlasStatus().mode,A.atlasStatus().active); // back to the Atlas
+  handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);  // next row: a catalog wine
+  handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(1500);
+  const catalogNotes=last();
+  handler({sysEvent:{eventType:3}});await wait(1800);out.catalogFromAtlas=[catalogNotes,last(),A.atlasStatus().mode];
   handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
   handler({sysEvent:{eventType:3}});await wait(1200);atlas.push(last(),A.atlasStatus().active);
   out.atlas=atlas;out.atlasImages=[...new Set(images)];
@@ -153,7 +157,9 @@ const assert=require('node:assert/strict');
   const I=await import('/sommNI/src/identity.ts');
   const links=(await import('/sommNI/src/data/atlas-region-links.json')).default.links;
   const scope=A.catalogAtlas(await A.loadAtlasRenderer());
-  out.scope={countries:scope.countries.map(c=>c.name),regions:scope.data.regions.length,unlinked:scope.unlinked.length};
+  out.scope={countries:scope.countries.map(c=>c.name),regions:scope.data.regions.filter(r=>!scope.unmapped.has(r.id)).length,unmappedRows:scope.unmapped.size,unlinked:scope.unlinked.length};
+  const listed=new Set();for(const list of scope.entries.values())for(const e of list)if(e.kind==='catalog')listed.add(e.item.id);
+  out.everyCatalogWineListed=listed.size===I.allCatalogWines().length;
   const catalogCountries=[...new Set(I.allCatalogWines().map(w=>w.country))];
   const linkProblems=[];
   for(const w of I.allCatalogWines()) if(!links.some(l=>l.region===w.wine.region)) linkProblems.push('no link entry: '+w.wine.region);
@@ -182,7 +188,9 @@ const assert=require('node:assert/strict');
  assert.deepEqual(result.atlas.slice(0,2),['atlas-title+atlas-rows+atlas-hint','> United States (1)']);
  assert.equal(result.atlas[2],'Australia');
  assert.equal(result.atlas[3],'regions');assert.equal(result.atlas[4],'> Napa Valley (1)');
- assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMY WINEBRARY · 1\n> Estate Cabernet 2019$/);
+ assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
+ assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker','atlas-title+atlas-rows+atlas-hint','detail']);
+ assert.equal(result.everyCatalogWineListed,true);
  assert.equal(result.atlas[7],'library-title+library-vintage+library-notes+library-footer');
  assert.deepEqual(result.atlas.slice(8,11),['atlas-title+atlas-rows+atlas-hint','detail',true]);
  assert.deepEqual(result.atlas.slice(11),['home-list',false]);
