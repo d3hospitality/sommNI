@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { resolveAccountProject, WINELENS_PROJECT_URL } from '../src/account-project.ts';
 import { normalizeCode, validCode, randomCode, privateHash, subscriptionAccess } from '../supabase/functions/_shared/policy.ts';
 import { deviceAuthStorage } from '../src/account-storage.ts';
 assert.equal(normalizeCode(' abcd-1234 '), 'ABCD1234');
@@ -25,3 +27,12 @@ await storage.removeItem('session'); assert.equal(await storage.getItem('session
 fail=true; await assert.rejects(storage.setItem('session','must-not-stick'), /Could not save/); assert.equal(await storage.getItem('session'),null);
 fail=false; await storage.setItem('session','restored'); assert.equal(await storage.getItem('session'),'restored');
 console.log('PASS: code validation and keyed hashes; Stripe status/expiry/price/mode authorization; durable serialized G2 sessions and storage failure.');
+
+assert.equal(resolveAccountProject().url, WINELENS_PROJECT_URL);
+assert.throws(() => resolveAccountProject('https://shared.supabase.co'), /dedicated/);
+assert.throws(() => resolveAccountProject(WINELENS_PROJECT_URL, 'sb_secret_do-not-expose'), /public publishable/);
+for (const manifest of ['app.json', 'app.beta.json']) {
+  const config = JSON.parse(fs.readFileSync(new URL('../' + manifest, import.meta.url), 'utf8'));
+  assert.deepEqual(config.permissions.find(p => p.name === 'network').whitelist.filter(url => url.includes('supabase.co')), [WINELENS_PROJECT_URL]);
+}
+console.log('PASS: both G2 manifests use only wineLENS; shared-project URLs and server keys are rejected.');

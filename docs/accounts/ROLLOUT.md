@@ -46,11 +46,20 @@ The existing advertised pricing is a proposal awaiting the owner's response; it 
 
 ### 1. One account backend
 
-Use the dedicated project `mcmtasetompygfktzhpr` for the website, G2 package and Vercel API. The publishable key in `src/account-config.ts` is public; no server secret belongs in a Vite variable.
+Use the dedicated project `mcmtasetompygfktzhpr` for the website, G2 package and Vercel API. The publishable key in `src/account-project.ts` is public; no server secret belongs in a Vite variable. Both G2 manifests whitelist only this project. The Vite build and account client reject another Supabase URL or a non-publishable key before creating an auth client.
 
 Review and deploy the API's existing pending collection, bottle storage/quota and study migrations before allowing new users into Winebrary. Configure `SUPABASE_URL` and `SUPABASE_ANON_KEY` on Vercel for this project, then verify with an actual authenticated request. Do not rely on the legacy default URL in the API source.
 
 ### 2. Public website and Google
+
+Setup progress on 30 September 2026:
+
+- Confirmed the dedicated **wineLENS** Supabase project is healthy and accessible in the dashboard.
+- Created a separate Google Cloud project **wineLENS**, ID `winelens-510218`, under `d3hospitality.com`. No billing services were enabled.
+- Prepared Google consent configuration with app name **wineLENS**, an external audience, and support/developer contact `ops@d3hospitality.com`. Creation is pending the owner's acceptance of Google's API Services User Data Policy; no OAuth client has been created yet.
+- Supabase originally had Site URL `http://localhost:3000` and no redirect allowlist. Added only the exact development account return URL `http://localhost:5188/sommNI/account.html`. Set the final Site URL when the account site is published.
+- Google provider remains disabled until its dedicated client ID and secret are configured. This is not a completed live Google sign-in acceptance test.
+
 
 Select the final public account URL. The current provisional build default is `https://sommni-beige.vercel.app/sommNI/account.html`, which is **not published yet**. A custom wineLENS domain can replace it without changing the pairing protocol.
 
