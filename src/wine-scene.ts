@@ -3,7 +3,8 @@
 //   • the country and its neighbours, dithered, as the backdrop (dim: bottle + text stay brightest)
 //   • the country semi-highlighted (textured fill + bright border)
 //   • the region super-highlighted: a glow over its mapped winery locations + the dots
-//   • the bottle photograph over the map's left edge (wine page only)
+//   • the bottle standing ON the region (wine page only): its base sits in the region's glow,
+//     so bottle and map share one narrow panel and the text gets most of the screen
 //   • a caption strip above the map: a text container that MOVES to sit over the region,
 //     joined to the glow by a dotted leader line drawn into the map
 // G2 draws images above text, so the caption lives in a strip the map doesn't cover.
@@ -17,12 +18,14 @@ import { type Country, type GlobeRenderer, type Region } from './atlas/renderer'
 import { alphaBounds, toGreenLevels } from './bottle-raster';
 
 /** Map panel on screen: x ≥ SCENE_X; the caption strip is y < MAP_Y; the map is below it. */
-export const SCENE_X = 288, MAP_Y = 36, MAP_W = 288, MAP_H = 288 - MAP_Y;
+export const SCENE_X = 376, MAP_Y = 36, MAP_W = 576 - SCENE_X, MAP_H = 288 - MAP_Y;
+/** The caption may reach left of the panel (over the caption strip only) for long place names. */
+export const CAPTION_MIN_X = 262;
 /** Two image tiles stack to fill the map (SDK image height limit is 144). */
 export const TILE_W = MAP_W, TILE_H = MAP_H / 2;
 const DEG = Math.PI / 180;
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-const BOTTLE = { x: 6, y: 4, w: 96, h: MAP_H - 8 };
+const BOTTLE_W = 74, BOTTLE_TOP = 6;
 // Levels (0–255 before quantising to multiples of 17). The map is a backdrop: every level sits
 // well below the bottle and the text (which reach full brightness); the region is still the
 // brightest thing on the map, the country next, neighbours faintest.
@@ -61,7 +64,8 @@ function camera(country: Country, region: Region | null, withBottle: boolean) {
   const angular = Math.min(18, Math.max(5, region ? Math.max(sep * 1.5, region.radius * 4) : 9));
   const scale = (Math.min(MAP_W, MAP_H) / 2 - 10) / Math.sin(angular * DEG);
   let center: [number, number] = region ? [(country.center[0] + target[0]) / 2, (country.center[1] + target[1]) / 2] : [...target];
-  const box = { x0: withBottle ? 150 : 50, x1: MAP_W - 40, y0: 44, y1: MAP_H - 44 };
+  // With a bottle the region sits low (the bottle stands on it); otherwise anywhere comfortable.
+  const box = withBottle ? { x0: 64, x1: MAP_W - 64, y0: MAP_H - 58, y1: MAP_H - 40 } : { x0: 44, x1: MAP_W - 44, y0: 44, y1: MAP_H - 44 };
   for (let i = 0; i < 3; i++) {
     const p = projector(center, scale)(target[0], target[1]);
     const want = { x: Math.min(box.x1, Math.max(box.x0, p.x)), y: Math.min(box.y1, Math.max(box.y0, p.y)) };
@@ -88,8 +92,7 @@ function countryIds(renderer: GlobeRenderer, center: [number, number], scale: nu
   return ids;
 }
 
-async function bottleLayer(url: string): Promise<{ gray: Uint8Array; alpha: Uint8Array } | null> {
-  const { w: width, h: height } = BOTTLE;
+async function bottleLayer(url: string, width: number, height: number): Promise<{ gray: Uint8Array; alpha: Uint8Array } | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) return null;
@@ -154,30 +157,30 @@ export function planWineScene(renderer: GlobeRenderer, input: SceneInput): Scene
         if (sx < -12 || sx >= MAP_W + 12 || sy < -12 || sy >= MAP_H + 12) continue;
         dots.push([sx, sy]); add(sx, sy, 12, 1, 2);
       }
-      add(cam.anchorX, cam.anchorY, 30, 1.6, 1.5);          // halo: a tight cluster still reads as a place
+      // Halo: a tight cluster still reads as a place; under a bottle it is the pool of light
+      // the bottle stands in, so it is wider than the glass.
+      add(cam.anchorX, cam.anchorY, imageUrl ? 50 : 30, 1.6, 1.5);
     }
     for (let i = 0; i < glow.length; i++) if (glow[i] > 0.02) value[i] = Math.max(value[i], GLOW_MIN + (GLOW_MAX - GLOW_MIN) * Math.min(1, glow[i] / 4));
     for (const [x, y] of dots) if (x >= 0 && y >= 0 && x < MAP_W && y < MAP_H) value[y * MAP_W + x] = DOT;
     for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) value[y * MAP_W + x] *= lensMask(x, y);
-    // Leader: a dotted line from the caption strip down to the top of the highlight.
-    const top = cam.anchorY - (region ? 32 : 10);
+    // Leader: a dotted line from the caption strip down to the highlight (or the bottle's cap).
+    const top = imageUrl ? BOTTLE_TOP - 2 : cam.anchorY - (region ? 32 : 10);
     for (let y = 0; y < top; y += 2) if (cam.anchorX >= 0 && cam.anchorX < MAP_W) value[y * MAP_W + cam.anchorX] = LEADER;
-    // Behind the bottle the map fades, so the glass reads cleanly.
-    if (imageUrl) {
-      const fadeEnd = BOTTLE.x + BOTTLE.w + 14;
-      for (let y = 0; y < MAP_H; y++) for (let x = 0; x < fadeEnd; x++) value[y * MAP_W + x] *= x < BOTTLE.x + BOTTLE.w ? 0.5 : 0.5 + 0.5 * (x - BOTTLE.x - BOTTLE.w) / 14;
-    }
     const out = new Uint8Array(MAP_W * MAP_H);
     for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
       const i = y * MAP_W + x, d = (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16;
       out[i] = Math.min(238, Math.max(0, Math.floor(value[i] / 17 + d) * 17));
     }
     if (imageUrl) {
-      const bottle = await bottleLayer(imageUrl);
-      if (bottle) for (let y = 0; y < BOTTLE.h; y++) for (let x = 0; x < BOTTLE.w; x++) {
-        const k = y * BOTTLE.w + x;
+      // Stand the bottle on the region: base a little below the anchor, centred on it.
+      const h = Math.min(MAP_H - BOTTLE_TOP, cam.anchorY + 10 - BOTTLE_TOP);
+      const bx = Math.min(MAP_W - BOTTLE_W - 2, Math.max(2, cam.anchorX - Math.round(BOTTLE_W / 2)));
+      const bottle = h > 60 ? await bottleLayer(imageUrl, BOTTLE_W, h) : null;
+      if (bottle) for (let y = 0; y < h; y++) for (let x = 0; x < BOTTLE_W; x++) {
+        const k = y * BOTTLE_W + x;
         if (bottle.alpha[k] < 40) continue;
-        out[(BOTTLE.y + y) * MAP_W + BOTTLE.x + x] = bottle.gray[k];
+        out[(BOTTLE_TOP + y) * MAP_W + bx + x] = bottle.gray[k];
       }
     }
     return [out.slice(0, TILE_W * TILE_H), out.slice(TILE_W * TILE_H)];
@@ -190,7 +193,7 @@ export function planWineScene(renderer: GlobeRenderer, input: SceneInput): Scene
  * character on G2; the box is sized to the words so it can travel with the region.
  */
 export function captionBox(anchorX: number, text: string): { x: number; width: number } {
-  const width = Math.min(MAP_W - 8, Math.ceil([...text].length * 9.5) + 16);
-  const x = Math.round(SCENE_X + Math.min(MAP_W - width - 2, Math.max(4, anchorX - width / 2)));
+  const width = Math.min(576 - CAPTION_MIN_X - 2, Math.ceil([...text].length * 9.5) + 16);
+  const x = Math.round(Math.min(576 - width - 2, Math.max(CAPTION_MIN_X, SCENE_X + anchorX - width / 2)));
   return { x, width };
 }
