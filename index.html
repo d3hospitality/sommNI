@@ -87,6 +87,16 @@
 
     <!-- TAB: Cellar -->
     <section id="tab-cellar" class="tab-panel">
+      <article id="atlas-card" class="wl-atlas" aria-labelledby="atlas-title">
+        <canvas id="atlas-mini" width="360" height="360" aria-hidden="true"></canvas>
+        <div class="wl-atlas-copy">
+          <p class="wl-kicker">Wine Atlas</p>
+          <h3 id="atlas-title">Turn the globe to a wine country.</h3>
+          <p class="wl-muted">Scroll countries, then zoom into regions drawn from mapped winery locations (winerymap, 2024). Clusters show where wineries are, not appellation boundaries.</p>
+          <div class="wl-atlas-actions"><button class="wl-primary" id="atlas-open-glasses" type="button">Open on glasses</button><a class="wl-text-button" id="atlas-open-phone" href="atlas.html">Explore on phone →</a></div>
+          <p class="st-status" id="atlas-status" aria-live="polite"></p>
+        </div>
+      </article>
       <div id="cellar-content"></div>
     </section>
 

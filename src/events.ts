@@ -10,9 +10,9 @@
 // Reactive bottle sprites on list scroll
 // ═══════════════════════════════════════════════════════════════════
 
-import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer } from '@evenrealities/even_hub_sdk';
+import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, TextContainerUpgrade } from '@evenrealities/even_hub_sdk';
 import {
-  WINE_TYPES, COUNTRIES, WineType, TYPE_DISPLAY,
+  WINE_TYPES, COUNTRIES, WineType, TYPE_DISPLAY, getWinesForCountry,
   getGrapesForCountry, getWinesForGrape,
   getFlavorOptionsForType, getRankedWines, Wine,
 } from './constants';
@@ -25,7 +25,7 @@ import {
   buildPairingsListPage, buildPairingDetailPage,
   wineListPage, pairingsListPage,
   HOME_LIST_ITEMS, LIBRARY_INDEX, FINDER_INDEX, STUDY_INDEX, PAIRINGS_INDEX,
-  TYPE_START_INDEX,
+  ATLAS_INDEX, TYPE_START_INDEX, countryInfoText,
 } from './pages';
 import {
   pushLogoToGlasses, pushGlobeToGlasses, pushGrapeSpriteToGlasses,
@@ -34,7 +34,8 @@ import {
 import { getPairings, type Pairing } from './sync';
 import { handleLibraryGlassesEvent, openLibraryOnGlasses } from './winebrary-glasses';
 import { handleStudyGlassesEvent, openStudyOnGlasses } from './study/glasses';
-import { invalidateImages } from './image-utils';
+import { handleAtlasGlassesEvent, openAtlasOnGlasses, pushCatalogGlobe } from './atlas-app';
+import { invalidateImages, sendSerial } from './image-utils';
 import { log } from './ui';
 
 // ═══ STATE ═══
@@ -100,6 +101,37 @@ async function updateFinderResultPreview(
   if (wineId) await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
 }
 
+/**
+ * Catalog country list: the globe shows where this type's wines come from (every catalog
+ * country lit, turned to the one with the most wines). G2 lists scroll natively and the
+ * simulator sends no scroll events, so the footprint is the reliable default; if the
+ * firmware does report a hovered row, the globe turns to that country.
+ */
+function countriesByWines(type: WineType): string[] {
+  return [...COUNTRIES[type]].sort((a, b) => getWinesForCountry(type, b).length - getWinesForCountry(type, a).length);
+}
+async function showCountryFootprint(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
+  if (!currentType) return;
+  lastHoveredIndex = -1;
+  if (!await pushCatalogGlobe(bridge, countriesByWines(currentType))) await pushGlobeToGlasses(bridge, baseUrl);
+}
+/** Grape list: the chosen country on the globe (the grape sprites were decorative). */
+async function showGrapeCountry(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
+  if (!currentCountry || !await pushCatalogGlobe(bridge, currentCountry, { names: ['grape-top', 'grape-bottom'] })) await showGrapeCountry(bridge, baseUrl);
+}
+async function hoverCountry(bridge: EvenAppBridge, index: number): Promise<void> {
+  if (!currentType || index === lastHoveredIndex) return;
+  lastHoveredIndex = index;
+  const type = currentType;
+  const content = countryInfoText(type, index);
+  const text = async () => {
+    await bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID: 5, containerName: 'info', content, contentOffset: 0, contentLength: 0 }));
+  };
+  const country = COUNTRIES[type][index];
+  if (country) await pushCatalogGlobe(bridge, country, { settle: true, lead: text });
+  else await pushCatalogGlobe(bridge, countriesByWines(type), { settle: true, lead: text }); // Back row: footprint again
+}
+
 function lookupName(wineId: string): string {
   return lookupWineById(wineId)?.wine.name ?? 'Unavailable wine';
 }
@@ -137,21 +169,21 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
     }
     else if (currentPage === "notes" && currentType && currentCountry) {
       await rebuild(bridge, buildGrapeListPage(currentType, currentCountry));
-      await pushGrapeSpriteToGlasses(bridge, baseUrl);
+      await showGrapeCountry(bridge, baseUrl);
       currentPage = "grapes"; currentWineId = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
       log("< Back to grapes", "success");
     }
     else if (currentPage === "wines" && currentType && currentCountry) {
       await rebuild(bridge, buildGrapeListPage(currentType, currentCountry));
-      await pushGrapeSpriteToGlasses(bridge, baseUrl);
+      await showGrapeCountry(bridge, baseUrl);
       currentPage = "grapes"; currentGrape = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
       log("< Back to grapes", "success");
     }
     else if (currentPage === "grapes" && currentType) {
       await rebuild(bridge, buildCountryListPage(currentType));
-      await pushGlobeToGlasses(bridge, baseUrl);
+      await showCountryFootprint(bridge, baseUrl);
       currentPage = "countries"; currentCountry = null; lastHoveredIndex = -1;
       lastNavigationTime = Date.now();
       log("< Back to countries", "success");
@@ -269,6 +301,13 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         log("> Study today", "success");
         return;
       }
+      else if (idx === ATLAS_INDEX) {
+        // Atlas owns the display (and its events) until double tap from its country list.
+        navigating = false;
+        try { await openAtlasOnGlasses(); log("> Wine Atlas", "success"); }
+        catch (error) { log(`Wine Atlas unavailable: ${error instanceof Error ? error.message : String(error)}`, "error"); }
+        return;
+      }
       else if (idx === PAIRINGS_INDEX) {
         pairingsCache = await getPairings();
         pairingsPage = 0;
@@ -283,7 +322,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         if (typeIdx >= 0 && typeIdx < WINE_TYPES.length) {
           currentType = WINE_TYPES[typeIdx];
           await rebuild(bridge, buildCountryListPage(currentType));
-          await pushGlobeToGlasses(bridge, baseUrl);
+          await showCountryFootprint(bridge, baseUrl);
           currentPage = "countries"; lastHoveredIndex = -1;
           lastNavigationTime = Date.now();
           log(`> ${currentType}`, "success");
@@ -299,7 +338,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       if (idx >= 0 && idx < countries.length) {
         currentCountry = countries[idx];
         await rebuild(bridge, buildGrapeListPage(currentType, currentCountry));
-        await pushGrapeSpriteToGlasses(bridge, baseUrl);
+        await showGrapeCountry(bridge, baseUrl);
         currentPage = "grapes"; lastHoveredIndex = -1;
         lastNavigationTime = Date.now();
         log(`> ${currentCountry}`, "success");
@@ -324,7 +363,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
           notesReturn = async () => {
             await rebuild(bridge, buildGrapeListPage(type, country));
             currentPage = "grapes"; currentGrape = null; lastHoveredIndex = -1; lastNavigationTime = Date.now();
-            await pushGrapeSpriteToGlasses(bridge, baseUrl);
+            await showGrapeCountry(bridge, baseUrl);
           };
           await pushTastingNotesImages(bridge, baseUrl, wineId);
           log(`> ${wine.name} (direct)`, "success");
@@ -516,7 +555,7 @@ async function handleDoubleClick(bridge: EvenAppBridge, baseUrl: string): Promis
 
 // ═══ MAIN EVENT HANDLER ═══
 async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: string): Promise<void> {
-  if (handleStudyGlassesEvent(event) || handleLibraryGlassesEvent(event)) return;
+  if (handleAtlasGlassesEvent(event) || handleStudyGlassesEvent(event) || handleLibraryGlassesEvent(event)) return;
   const gesture=event.listEvent?.eventType ?? event.textEvent?.eventType ?? event.sysEvent?.eventType;
   if (gesture === OsEventTypeList.DOUBLE_CLICK_EVENT) { await handleDoubleClick(bridge, baseUrl); return; }
 
@@ -536,6 +575,12 @@ async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: 
         return;
       }
       await updateFinderResultPreview(bridge, baseUrl, lastSelectedIndex);
+    }
+
+    // Live globe — catalog country list
+    if (currentPage === "countries" && (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT)) {
+      await hoverCountry(bridge, lastSelectedIndex);
+      return;
     }
 
     if (type === OsEventTypeList.SCROLL_TOP_EVENT || type === OsEventTypeList.SCROLL_BOTTOM_EVENT) return;

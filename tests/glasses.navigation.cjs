@@ -17,6 +17,7 @@ const assert=require('node:assert/strict');
   const C=await import('/sommNI/src/constants.ts');
   const G=await import('/sommNI/src/winebrary-glasses.ts');
   const E=await import('/sommNI/src/events.ts');
+  const A=await import('/sommNI/src/atlas-app.ts');
   const enc=new TextEncoder();const bytes=s=>enc.encode(s).length;
   const out={};
 
@@ -46,10 +47,11 @@ const assert=require('node:assert/strict');
   out.catalogPages=pages;out.catalogProblems=problems.slice(0,10);
 
   // ── 3. Mock bridge shared by the flows below ──
-  const shown=[];let rejectNext=false;let handler=null;const store={};
+  const shown=[];let rejectNext=false;let handler=null;const store={};const images=[];const texts=[];
   const bridge={
    rebuildPageContainer:async pg=>{ if(rejectNext){rejectNext=false;return false;} shown.push(pg);return true; },
-   updateImageRawData:async()=>'success',
+   updateImageRawData:async u=>{images.push(u.containerName);return 'success';},
+   textContainerUpgrade:async u=>{texts.push(u.containerName+':'+u.content);return true;},
    onEvenHubEvent:cb=>{handler=cb;return()=>{};},
    getLocalStorage:async k=>store[k]||'', setLocalStorage:async(k,v)=>{store[k]=v;return true;},
   };
@@ -70,6 +72,7 @@ const assert=require('node:assert/strict');
   const groups=G.groupLibrary(items);
   out.grouping=[groups.length,groups[0].wines.map(w=>w.vintage??'NV').join(',')];
   G.connectWinebraryGlasses(bridge,base);G.setWinebraryDeviceConnected(true);
+  A.connectAtlasGlasses(bridge,base);
   E.registerEventHandlers(bridge,base);
   G.setLibrarySource(()=>({userId:null,loading:false,error:'',items:[]}));
   await click(0);out.signedOut=last();await dbl();out.signedOutBack=last();
@@ -95,7 +98,13 @@ const assert=require('node:assert/strict');
 
   // ── 5. Legacy catalog: paging, notes return to origin, rejected pages keep state ──
   const flow=[];gap=1400;
-  await click(4);flow.push(last());                       // Red
+  await click(P.TYPE_START_INDEX);flow.push(last());      // Red
+  // live globe: the catalog country list paints the hovered country through the app image queue
+  await wait(1500);const globeAtOpen=images.filter(n=>n.startsWith('globe-')).length;
+  images.length=0;texts.length=0;
+  handler({listEvent:{containerID:2,containerName:'countries',eventType:2,currentSelectItemIndex:1}});
+  handler({listEvent:{containerID:2,containerName:'countries',eventType:2,currentSelectItemIndex:2}});await wait(900);
+  out.globe={atOpen:globeAtOpen,hover:images.slice(),info:texts.slice()};
   const it=C.COUNTRIES.Red.indexOf('Italy');await click(it);flow.push(last());
   const gi=C.getGrapesForCountry('Red','Italy').indexOf('Sangiovese');await click(gi);flow.push(last()+':'+shown.at(-1).listObject[0].itemContainer.itemName.length);
   await click(18);flow.push(shown.at(-1).textObject[0].content);  // More
@@ -117,6 +126,27 @@ const assert=require('node:assert/strict');
   out.pairing=[pl,pd,pn,last()];
   for(let i=0;i<3;i++) await dbl();
   out.home=last();
+  // ── 6. Wine Atlas from Home: owns events, scroll/tap/back, exit rebuilds Home ──
+  images.length=0;
+  await click(P.ATLAS_INDEX);await wait(1200);
+  const atlas=[last(),shown.at(-1).textObject.find(t=>t.containerName==='atlas-rows').content.split('\n')[0]];
+  handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);
+  atlas.push(A.atlasStatus().country);
+  handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(600);   // tap (firmware omits CLICK=0)
+  atlas.push(A.atlasStatus().mode);
+  handler({sysEvent:{eventType:3}});await wait(600);atlas.push(A.atlasStatus().mode);
+  handler({sysEvent:{eventType:3}});await wait(1200);atlas.push(last(),A.atlasStatus().active);
+  out.atlas=atlas;out.atlasImages=[...new Set(images)];
+  // Catalog scope: only countries with wines; regions only through explicit links
+  const I=await import('/sommNI/src/identity.ts');
+  const links=(await import('/sommNI/src/data/atlas-region-links.json')).default.links;
+  const scope=A.catalogAtlas(await A.loadAtlasRenderer());
+  out.scope={countries:scope.countries.map(c=>c.name),regions:scope.data.regions.length,unlinked:scope.unlinked.length};
+  const catalogCountries=[...new Set(I.allCatalogWines().map(w=>w.country))];
+  const linkProblems=[];
+  for(const w of I.allCatalogWines()) if(!links.some(l=>l.region===w.wine.region)) linkProblems.push('no link entry: '+w.wine.region);
+  for(const l of links) for(const c of l.clusters) if(!scope.data.regions.some(r=>r.name===c)) linkProblems.push('cluster not linked in its country: '+l.region+' → '+c);
+  out.linkProblems=[...new Set(linkProblems)];out.catalogCountryCount=catalogCountries.length;
   return out;
  });
  console.log(JSON.stringify(result,null,1));
@@ -135,5 +165,13 @@ const assert=require('node:assert/strict');
  assert.deepEqual(result.finder,['results','wine-name+sub+notes+kicker','results']);
  assert.deepEqual(result.pairing,['pairings-list','pairing-wines','wine-name+sub+notes+kicker','pairing-wines']);
  assert.equal(result.home,'home-list');
+ assert.equal(result.globe.atOpen,2);assert.deepEqual(result.globe.hover,['globe-top','globe-bottom']);
+ assert.ok(result.globe.info.at(-1).startsWith('info:France'),result.globe.info.join('|'));
+ assert.deepEqual(result.atlas.slice(0,2),['atlas-title+atlas-rows+atlas-hint','> '+result.scope.countries[0]]);
+ assert.equal(result.atlas[2],result.scope.countries[1]);assert.equal(result.atlas[3],'regions');
+ assert.equal(result.scope.countries.length,result.catalogCountryCount);assert.deepEqual(result.linkProblems,[]);
+ assert.ok(result.scope.regions>0&&result.scope.regions<60,'only linked clusters: '+result.scope.regions);assert.equal(result.atlas[4],'countries');
+ assert.equal(result.atlas[5],'home-list');assert.equal(result.atlas[6],false);
+ assert.ok(result.atlasImages.includes('atlas-top')&&result.atlasImages.includes('atlas-bottom'));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

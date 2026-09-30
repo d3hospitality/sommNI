@@ -1,6 +1,7 @@
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, TextContainerProperty, ImageContainerProperty, ListContainerProperty, ListItemContainerProperty } from '@evenrealities/even_hub_sdk';
 import type { LibraryWine } from './winebrary';
 import { pushBottlePhoto, invalidateImages, pushLogoToGlasses } from './image-utils';
+import { claimDisplay, dropDisplay } from './display';
 import { bottleCanvas } from './bottle-raster';
 import { rebuildHomePage } from './pages';
 import { pageList, clipLabel, clipBytes, labelBytes, wholeRowHeight, LIST_LABEL_MAX, LIST_ROW_PITCH, type ListPage } from './glasses-list';
@@ -160,6 +161,7 @@ async function render(next: Screen): Promise<void> {
   else if (next.kind === 'vintages') page = buildVintageListPage(groups[next.group], next.page);
   else if (next.kind === 'detail') page = buildLibraryWinePage(next.wine, next.from === 'phone' ? 'Home' : 'Back');
   else page = buildMessagePage(next.reason);
+  await claimDisplay('library', relinquish);
   if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page. Try again.');
   active = true; screen = next; lastNavigation = Date.now();
   if (next.kind === 'detail' && next.wine.image_url) {
@@ -172,9 +174,12 @@ async function goHome(): Promise<void> {
   invalidateImages();
   if (!await bridge.rebuildPageContainer(rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
   active=false; screen=null; lastNavigation=Date.now();
+  dropDisplay('library');
   window.dispatchEvent(new Event('winelens-glasses-home'));
   await pushLogoToGlasses(bridge, baseUrl);
 }
+/** Another module took the display (e.g. the Wine Atlas from the phone): stop consuming events. */
+function relinquish(): void { active=false; screen=null; }
 /** One navigation at a time; a rejected page leaves the previous screen and state untouched. */
 async function settle(task: () => Promise<void>): Promise<void> {
   if (sending) return;
@@ -261,7 +266,7 @@ export async function clearPrivateGlasses() {
   if (!active || !bridge) return;
   invalidateImages();
   const accepted=await bridge.rebuildPageContainer(rebuildHomePage());
-  if (accepted) { active=false; screen=null; groups=[]; window.dispatchEvent(new Event('winelens-glasses-home')); }
+  if (accepted) { active=false; screen=null; groups=[]; dropDisplay('library'); window.dispatchEvent(new Event('winelens-glasses-home')); }
 }
 
 // ═══ OFFLINE COPY ═══

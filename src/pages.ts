@@ -30,13 +30,15 @@ export const HOME_LIST_ITEMS = [
   "Find My Wine",
   "Wine Pairings",
   "Study today",
+  "Wine Atlas",
   ...WINE_TYPES.map(t => TYPE_DISPLAY[t]),
 ];
 export const LIBRARY_INDEX = 0;
 export const FINDER_INDEX = 1;
 export const PAIRINGS_INDEX = 2;
 export const STUDY_INDEX = 3;   // shared recall engine (study/glasses.ts)
-export const TYPE_START_INDEX = 4;  // wine types start here
+export const ATLAS_INDEX = 4;   // globe + winery-cluster explorer (atlas-app.ts)
+export const TYPE_START_INDEX = 5;  // wine types start here
 
 // List heights snap to whole 40 px rows so the last visible row is never clipped.
 const LIST_VIEW_H = wholeRowHeight(254);   // 240 = 6 rows, leaves room for an info line
@@ -145,6 +147,18 @@ export function rebuildHomePage(): RebuildPageContainer {
 //   Format: "Red · 10 Countries"
 // ══════════════════════════════════════════════════════════════════
 
+/** Two lines under the globe: the hovered country and how much of the catalog it holds. */
+export function countryInfoText(type: WineType, index: number): string {
+  const countries = COUNTRIES[type];
+  const country = countries[index];
+  if (!country) {
+    const wines = countries.reduce((n, c) => n + getWinesForCountry(type, c).length, 0);
+    return `${TYPE_DISPLAY[type]} · ${countries.length} ${countries.length === 1 ? 'country' : 'countries'}\n${wines} wines, lit on the globe`;
+  }
+  const wines = getWinesForCountry(type, country).length;
+  return `${country}\n${TYPE_DISPLAY[type]} · ${wines} ${wines === 1 ? 'wine' : 'wines'} · ${index + 1}/${countries.length}`;
+}
+
 export function buildCountryListPage(type: WineType): RebuildPageContainer {
   const countries = COUNTRIES[type];
   const listItems = [...countries, BACK_LABEL];
@@ -173,11 +187,10 @@ export function buildCountryListPage(type: WineType): RebuildPageContainer {
     containerID: 4, containerName: "globe-bottom",
   });
 
-  const countLabel = countries.length === 1 ? 'Country' : 'Countries';
   const infoText = new TextContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: 50,
+    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: 56,
     containerID: 5, containerName: "info",
-    content: `${TYPE_DISPLAY[type]} · ${countries.length} ${countLabel}`,
+    content: countryInfoText(type, -1),
     isEventCapture: 0,
   });
 

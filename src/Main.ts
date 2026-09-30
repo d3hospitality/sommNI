@@ -12,6 +12,8 @@ import { registerEventHandlers } from './events';
 import { initSync, migrateLegacyWineIds, inEvenHubHost } from './sync';
 import { useAccount, useStorage, eventCount } from './study/store';
 import { connectStudyGlasses } from './study/glasses';
+import { connectAtlasGlasses } from './atlas-app';
+import { initAtlasCard } from './atlas-phone';
 import { setStatus, setBattery, log } from './ui';
 import { TOTAL_WINES } from './constants';
 import { initDashboard, refreshAll, setDeviceInfo, setVersionInfo, setGlassesStatus } from './dashboard';
@@ -21,6 +23,7 @@ async function main(): Promise<void> {
   await useAccount(null);
   await runMigration();
   initDashboard();
+  initAtlasCard();
   initWinebrary();
   await refreshAll();
 
@@ -83,6 +86,7 @@ async function main(): Promise<void> {
   const baseUrl = new URL('./', location.href).href;
   connectWinebraryGlasses(bridge, baseUrl);
   connectStudyGlasses(bridge, baseUrl);
+  connectAtlasGlasses(bridge, baseUrl);
   // Inside Even Hub, companion data and study progress live in the host's storage.
   log(`Storage: ${inEvenHubHost() ? 'Even Hub' : 'browser'} · ${eventCount()} study reviews on this device`);
   if (inEvenHubHost()) {

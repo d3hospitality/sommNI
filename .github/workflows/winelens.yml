@@ -15,7 +15,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run typecheck && npm run build && npm run check:ids
+      - run: node scripts/build-atlas.mjs && npm run typecheck && npm run build && npm run check:ids
       - name: Browser and glasses regression checks
         run: |
           npm run dev > /tmp/winelens-vite.log 2>&1 &
@@ -31,3 +31,4 @@ jobs:
           npm run test:display
           npm run test:bottles
           npm run test:study
+          node tests/atlas.cjs

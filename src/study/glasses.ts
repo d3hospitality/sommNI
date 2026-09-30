@@ -16,6 +16,7 @@ import { assetIdFor } from '../identity';
 import { bottleImageUrl } from '../bottle-assets';
 import { clipBytes, clipLabel, LIST_ROW_PITCH } from '../glasses-list';
 import { pushBottlePhoto, invalidateImages, pushLogoToGlasses } from '../image-utils';
+import { claimDisplay, dropDisplay } from '../display';
 import { rebuildHomePage } from '../pages';
 
 type Screen = 'prompt' | 'reveal' | 'saved' | 'summary' | 'empty';
@@ -110,6 +111,7 @@ async function render(force = true): Promise<void> {
   else if (next === 'saved') page = buildStudyMessagePage('Saved.', p!.saveError || 'Answered on your phone.', 'Tap: next card  ·  Double tap: stop');
   else if (next === 'summary') page = summaryPage(s!);
   else page = buildStudyMessagePage('Nothing due right now.', emptyBody(), 'Tap: Home');
+  await claimDisplay('study', relinquish);
   invalidateImages();
   if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page.');
   active = true; screen = next; shownKey = key; lastNavigation = Date.now();
@@ -128,9 +130,12 @@ async function goHome(): Promise<void> {
   invalidateImages();
   if (!await bridge.rebuildPageContainer(rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
   active = false; screen = null; shownKey = ''; lastNavigation = Date.now();
+  dropDisplay('study');
   window.dispatchEvent(new Event('winelens-glasses-home'));
   await pushLogoToGlasses(bridge, baseUrl);
 }
+/** Another module took the display (e.g. the Wine Atlas from the phone): stop consuming events. */
+function relinquish(): void { active = false; screen = null; shownKey = ''; }
 async function settle(task: () => Promise<void>): Promise<void> {
   if (busy) return;
   busy = true;

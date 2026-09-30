@@ -24,6 +24,18 @@ async function pushImg(bridge: EvenAppBridge, id: number, name: string, data: Ui
   });
   imageQueue=task; await task;
 }
+/** Any other small bridge operation (e.g. a text upgrade) that must not interleave with image transfers. */
+export async function sendSerial(task: () => Promise<unknown>, epoch=imageEpoch): Promise<void> {
+  const run=imageQueue.catch(()=>{}).then(async()=>{ if(epoch===imageEpoch) await task(); });
+  imageQueue=run; await run;
+}
+/** Resolves once the app-wide image queue has nothing in flight (used before another module takes the display). */
+export async function imageIdle(): Promise<void> { await imageQueue.catch(()=>{}); }
+export function currentImageEpoch(): number { return imageEpoch; }
+/** Send a ready 16-level grayscale buffer through the app-wide queue; stale epochs never send. */
+export async function pushGrayImage(bridge: EvenAppBridge, id: number, name: string, width: number, height: number, gray: Uint8Array, epoch=imageEpoch): Promise<void> {
+  await pushImg(bridge,id,name,encodeGrayscalePng(width,height,gray),epoch);
+}
 export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, width: number, halfHeight: number): Promise<void> {
   const epoch=imageEpoch;
   const canvas=await stageCanvas(source,width,halfHeight*2);
