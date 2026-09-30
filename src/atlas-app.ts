@@ -21,7 +21,7 @@ import { invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogo
 import { rebuildHomePage, buildTastingNotesPage } from './pages';
 import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
 import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
-import { renderWineScene, sceneTiles } from './wine-scene';
+import { planWineScene, type ScenePlan } from './wine-scene';
 import { TYPE_DISPLAY } from './constants';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
@@ -47,12 +47,12 @@ export function connectAtlasGlasses(b: EvenAppBridge, url: string): void {
   setPlaceSceneBuilder(placeScene);
 }
 /** Regions list → the country; wines list → the region glowing inside it (no bottle). */
-async function placeScene(countryName: string, regionName: string | null): Promise<Uint8Array[] | null> {
+async function placeScene(countryName: string, regionName: string | null): Promise<ScenePlan | null> {
   const renderer = await loadAtlasRenderer();
   const country = renderer.data.countries.find(c => c.name === countryName) ?? countryByAnyName(renderer, countryName);
   if (!country) return null;
   const region = regionName ? renderer.data.regions.find(r => r.name === regionName && r.country === country.code) ?? null : null;
-  return sceneTiles(await renderWineScene(renderer, { country, region, imageUrl: null }));
+  return planWineScene(renderer, { country, region, imageUrl: null });
 }
 
 /** Type › country › region for Winebrary wines, using the Atlas's places (country names from the map). */
@@ -76,11 +76,11 @@ async function placeLibraryWines(wines: LibraryWine[]): Promise<Map<string, Wine
   }
   return out;
 }
-async function libraryWineScene(wine: LibraryWine): Promise<Uint8Array[] | null> {
+async function libraryWineScene(wine: LibraryWine): Promise<ScenePlan | null> {
   const renderer = await loadAtlasRenderer();
   const placed = placeLibraryWine(renderer, linkTable(), wine);
   if (!placed.country) return null;
-  return sceneTiles(await renderWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: wine.image_url ?? null }));
+  return planWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: wine.image_url ?? null });
 }
 
 /** Map data is ~1 MB: load it once, on first use (Atlas entry or first country list). */
