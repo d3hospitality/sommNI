@@ -1,0 +1,102 @@
+/* G2B showcase: the mechanics only (canvas over poster, states, controls). Each site sets the look through these
+   custom properties and its own typography; nothing here should need editing per site. */
+.g2b {
+  --g2b-bg: #16171a;
+  --g2b-fg: #f4f4f2;
+  --g2b-muted: #b3b4ba;
+  --g2b-line: #3a3b41;
+  --g2b-accent: #b4f2ae;
+  --g2b-radius: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+  color: var(--g2b-fg);
+}
+.g2b-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--g2b-radius);
+  overflow: hidden;
+  background: var(--g2b-bg);
+}
+.g2b-stage > canvas,
+.g2b-stage > video,
+.g2b-poster,
+.g2b-poster img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.g2b-poster img,
+.g2b-stage > video { object-fit: cover; }
+/* the poster stays until the first 3D frame is drawn; the canvas fades in over it */
+.g2b-stage > canvas { opacity: 0; transition: opacity 0.4s ease; touch-action: pan-y; outline: none; }
+.g2b.is-live .g2b-stage > canvas { opacity: 1; }
+.g2b.is-live .g2b-poster { visibility: hidden; transition: visibility 0s linear 0.4s; }
+.g2b.is-video .g2b-poster { visibility: hidden; }
+/* the glasses can be taken by hand: a sideways drag turns them (spin), or Explore orbits them */
+.g2b.is-live .g2b-stage > canvas { cursor: grab; }
+.g2b.is-live .g2b-stage > canvas:active { cursor: grabbing; }
+.g2b.is-exploring .g2b-stage > canvas { touch-action: none; }
+.g2b-status:empty { display: none; }
+.g2b-status {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.55);
+  color: var(--g2b-fg);
+  font-size: 12px;
+}
+
+.g2b-panel { display: grid; gap: 18px; min-width: 0; }
+.g2b-features { display: flex; flex-wrap: wrap; gap: 8px; }
+.g2b-features button,
+.g2b-controls button {
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--g2b-line);
+  background: transparent;
+  color: var(--g2b-fg);
+  cursor: pointer;
+}
+.g2b-features button[aria-pressed='true'] { background: var(--g2b-fg); color: var(--g2b-bg); border-color: var(--g2b-fg); }
+.g2b-features button:hover,
+.g2b-controls button:hover { border-color: var(--g2b-muted); }
+.g2b-features button:focus-visible,
+.g2b-controls button:focus-visible { outline: 2px solid var(--g2b-fg); outline-offset: 3px; }
+.g2b-caption { margin: 0; min-height: 3em; color: var(--g2b-fg); font-size: 17px; line-height: 1.5; text-wrap: pretty; }
+/* the same capture, large enough to read, beside the model */
+.g2b-zoom { margin: 0; display: grid; gap: 8px; }
+.g2b-zoom img {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  border-radius: 10px;
+  background: #000;
+  border: 1px solid var(--g2b-line);
+  image-rendering: auto;
+}
+.g2b-zoom figcaption { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--g2b-muted); }
+.g2b-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* phones: a square stage. The glasses are wide, so the fit is set by the width and a taller box only adds empty
+   space above the controls; square still counts as portrait for the camera presets (showcase.ts layoutOf). The
+   4:5 mobile poster and video cover-crop into it, losing only background. */
+@media (max-width: 860px) {
+  .g2b { grid-template-columns: minmax(0, 1fr); }
+  .g2b-stage { aspect-ratio: 1 / 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g2b-stage > canvas { transition: none; }
+  .g2b.is-live .g2b-poster { transition: none; }
+}

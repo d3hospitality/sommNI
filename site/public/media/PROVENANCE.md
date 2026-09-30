@@ -12,3 +12,11 @@ All UI images are real app/simulator captures supplied in the task. No generated
 
 Source root: ~/Documents/Codex/2026-09-29/can-you-do-a-deep-audit/outputs/.
 Converted with cwebp. G2 display green is the simulator's rendering. Hero artwork frames a real capture; the 3D viewer composites these captures onto the model. Both are labelled. No model video or unrelated PolyGot media is shipped.
+
+## 3D renders (September 30, 2026)
+The g2-notes / g2-library / g2-atlas / g2-study flat captures were replaced by renders:
+- `site/public/g2b/media/winelens/glasses-*.png`: real wineLENS simulator captures (automation port 9899),
+  576 × 288, on black. Winebrary and Atlas-region captures use the built-in sample collection (dev fixture).
+- `site/public/media/lens/*.webp`, `site/public/g2b/out/winelens/*`: the vendored G2B stage (3D Even G2 model,
+  `site/public/g2b/ERG2B.web.glb`) with those captures on the lenses, rendered by `tools/render-showcase.cjs`
+  from the live page. Renders, not photographs; display colour is simulated.

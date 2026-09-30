@@ -23,9 +23,11 @@ const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.ttf'
   await page.screenshot({path:path.join(output,`landing-${width}.png`),fullPage:true});
   await page.screenshot({path:path.join(output,`landing-hero-${width}.png`)});
   await page.getByText('Is wineLENS free?',{exact:true}).click();assert(await page.getByText(/Yes, wineLENS is free during beta/).isVisible());
-  await page.getByRole('button',{name:'Explore in 3D ↗'}).click();await page.locator('#g2-viewer canvas').waitFor({state:'visible'});assert.equal(models,1);
-  await page.locator('#model-angle').fill('25');await page.getByRole('button',{name:'Atlas',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-screen=atlas]').getAttribute('aria-pressed')==='true');
-  await page.locator('#g2-viewer').screenshot({path:path.join(output,`g2-composite-${width}.png`)});
+  // The 3D showcase loads itself as its section nears the viewport (poster first), then turns with the page.
+  await page.locator('[data-g2b]').scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>/is-live|is-video/.test(document.querySelector('.g2b').className),null,{timeout:30000});assert.equal(models,1);
+  await page.getByRole('button',{name:'Atlas',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-g2b-beat=atlas]').getAttribute('aria-pressed')==='true');
+  await page.waitForTimeout(1500);await page.locator('.g2b-stage').screenshot({path:path.join(output,`g2-composite-${width}.png`)});
   await page.goto(BASE+'/link');await page.getByText('This is a preview. Google sign-in and account linking are disabled here.').waitFor();assert(await page.getByRole('button',{name:'Continue with Google ↗'}).isDisabled());assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:path.join(output,`link-signed-out-${width}.png`),fullPage:true});
   for(const policy of ['privacypolicy','terms']){await page.goto(BASE+'/'+policy);assert.equal(await page.locator('h1').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
@@ -62,6 +64,6 @@ const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.ttf'
   await signed.getByRole('button',{name:'Delete account',exact:true}).click();await signed.getByLabel('Type DELETE to confirm').fill('DELETE');await signed.getByRole('button',{name:'Permanently delete account',exact:true}).click();await signed.getByText('Your account and cloud data have been deleted.').waitFor();assert.equal(deleted,1);
   assert.deepEqual(signedErrors,[]);await signed.close();
  }
- console.log('PASS: 390/1440 layouts, clean URLs, mobile navigation, FAQ, lazy 3D, screen selection, signed-out preview, mocked production sign-in/code/poll/revoke/delete, screenshots');
+ console.log('PASS: 390/1440 layouts, clean URLs, mobile navigation, FAQ, lazy 3D showcase, screen selection, signed-out preview, mocked production sign-in/code/poll/revoke/delete, screenshots');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

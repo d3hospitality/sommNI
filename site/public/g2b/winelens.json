@@ -1,0 +1,102 @@
+{
+  "site": "winelens",
+  "model": "ERG2B.web.glb",
+  "assetAdapter": "erg2b",
+  "eye": "both",
+  "background": "#231C19",
+  "tone": "dark",
+  "displaySettings": {
+    "mode": "black",
+    "scale": 0.88,
+    "x": 0,
+    "y": 0.02,
+    "opacity": 0.96,
+    "brightness": 1.7
+  },
+  "cameraPresets": {
+    "desktop": {
+      "wide": { "yaw": 22, "pitch": 9, "zoom": 1, "lift": -0.06, "truck": -0.129 },
+      "left": { "yaw": -24, "pitch": 6, "zoom": 1.1, "lift": -0.05, "truck": 0.141 },
+      "front": { "yaw": 3, "pitch": 5, "zoom": 1.02, "lift": -0.05, "truck": -0.018 },
+      "right": { "yaw": 21, "pitch": 7, "zoom": 1.1, "lift": -0.05, "truck": -0.124 }
+    },
+    "mobile": {
+      "wide": { "yaw": 12, "pitch": 11, "zoom": 1.02, "lift": -0.03, "truck": -0.071 },
+      "left": { "yaw": -10, "pitch": 8, "zoom": 1.04, "lift": -0.02, "truck": 0.059 },
+      "front": { "yaw": 2, "pitch": 7, "zoom": 1.04, "lift": -0.02, "truck": -0.012 },
+      "right": { "yaw": 9, "pitch": 8, "zoom": 1.04, "lift": -0.02, "truck": -0.053 }
+    }
+  },
+  "timeline": [
+    {
+      "id": "notes",
+      "src": "media/winelens/glasses-notes.png",
+      "moveMs": 1100,
+      "holdMs": 3200,
+      "preset": "wide",
+      "caption": "Tasting notes: look, nose, palate and finish beside the bottle, with the story behind it.",
+      "alt": "Louis Latour Aloxe-Corton on the glasses: PINOT NOIR · RED · DRY, ELEGANT, the producer and Côte-de-Beaune, then LOOK Bright ruby with garnet hints, NOSE Red cherry, raspberry compote, rose hip, subtle cedar, beside a lit bottle photograph."
+    },
+    {
+      "id": "winebrary",
+      "src": "media/winelens/glasses-winebrary-wine.png",
+      "moveMs": 1100,
+      "holdMs": 3200,
+      "preset": "left",
+      "caption": "My Winebrary: your own bottle, standing on its region, with your notes.",
+      "alt": "A Winebrary wine on the glasses: RED · MALBEC, Grand Malbec, Terrazas de los Andes 2017, tasting notes, and on the right a dithered map of Argentina with Mendoza glowing under the bottle, captioned MENDOZA · Argentina. Sample collection."
+    },
+    {
+      "id": "atlas",
+      "src": "media/winelens/glasses-atlas.png",
+      "moveMs": 1100,
+      "holdMs": 3200,
+      "preset": "front",
+      "caption": "Wine Atlas: turn the globe to the countries in your collection and the catalog.",
+      "alt": "The Wine Atlas on the glasses: WINE ATLAS · 15 COUNTRIES, a list starting Argentina (3), France (2), Italy, United States, Spain, beside a globe with Argentina highlighted."
+    },
+    {
+      "id": "study",
+      "src": "media/winelens/glasses-study.png",
+      "moveMs": 1100,
+      "holdMs": 3200,
+      "preset": "right",
+      "caption": "Study: a question from a sourced fact. Think, then tap to reveal.",
+      "alt": "A study card on the glasses: STUDY · 1 of 5 · release, Cain Cuvée NV14, Which harvests are in this bottle, and in what share? beside the bottle, with Think, then tap to reveal."
+    }
+  ],
+  "poster": {
+    "desktop": "out/winelens/winelens-poster-desktop.webp",
+    "mobile": "out/winelens/winelens-poster-mobile.webp"
+  },
+  "videoFallback": {
+    "landscape": {
+      "webm": "out/winelens/winelens-landscape.webm",
+      "mp4": "out/winelens/winelens-landscape.mp4"
+    },
+    "mobile": {
+      "webm": "out/winelens/winelens-mobile.webm",
+      "mp4": "out/winelens/winelens-mobile.mp4"
+    }
+  },
+  "featureCaptions": {
+    "notes": "Tasting notes",
+    "winebrary": "Winebrary",
+    "atlas": "Atlas",
+    "study": "Study"
+  },
+  "holdDrift": 1.2,
+  "motion": {
+    "mode": "spin",
+    "revolutionMs": 24000,
+    "linger": 0.35,
+    "scrollTurns": 0.5,
+    "float": 0.012,
+    "floatMs": 8000,
+    "camera": {
+      "desktop": { "yaw": 0, "pitch": 9, "zoom": 1, "lift": -0.12 },
+      "mobile": { "yaw": 0, "pitch": 9, "zoom": 1, "lift": 0 }
+    }
+  },
+  "look": { "exposure": 0.95, "environment": 0.45, "fill": 0.22, "key": 2.8, "rim": 2.4, "reflections": 0.6, "glass": 0.03, "frame": 0.55, "shadow": 0.6 }
+}

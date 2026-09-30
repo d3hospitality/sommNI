@@ -1,31 +1,38 @@
-import { Stage, loadImageCapture, type Capture } from './g2b/stage';
-export async function mountGlasses() {
-  const canvas = document.querySelector<HTMLCanvasElement>('#g2-viewer canvas')!;
-  const stage = new Stage(canvas, { background: '#231C19', tone: 'dark', pixelRatio: Math.min(devicePixelRatio, 1.5), look: { glass: .03, environment: .4, key: 2.8, frame: .7 } });
-  try {
-    await stage.load('/g2b/ERG2B.web.glb', 'erg2b');
-    const captures = new Map<string, Capture>();
-    const select = async (screen: string) => {
-      let capture = captures.get(screen);
-      if (!capture) { capture = await loadImageCapture(`/media/g2-${screen}.webp`, stage.renderer); captures.set(screen, capture); }
-      stage.setCaptures(capture, null, 1); stage.render();
-    };
-    stage.setDisplay({ mode: 'black', scale: .88, x: 0, y: .02, opacity: .96, brightness: 1.7 }, 'both');
-    await select('notes');
-    canvas.hidden = false; document.getElementById('model-poster')!.hidden = true;
-    document.querySelector<HTMLElement>('.model-controls')!.hidden = false;
-    let angle = 0;
-    const draw = () => { const r = canvas.parentElement!.getBoundingClientRect(); stage.setSize(r.width, r.height); stage.setSpin(angle); stage.setPose({ yaw: 0, pitch: 9, zoom: 1, lift: 0, truck: 0 }); stage.render(); };
-    new ResizeObserver(draw).observe(canvas.parentElement!); draw();
-    document.getElementById('model-angle')!.addEventListener('input', e => { angle = Number((e.target as HTMLInputElement).value); draw(); });
-    // Deliberately user-driven: no autoplay, offscreen animation or reduced-motion exception.
-    let selection = 0;
-    document.querySelectorAll<HTMLButtonElement>('[data-screen]').forEach(button => button.addEventListener('click', async () => {
-      const revision = ++selection;
-      document.querySelectorAll<HTMLButtonElement>('[data-screen]').forEach(b => b.disabled = true);
-      try { await select(button.dataset.screen!); if (revision === selection) document.querySelectorAll('[data-screen]').forEach(b => b.setAttribute('aria-pressed', String(b === button))); }
-      catch { document.getElementById('model-status')!.textContent = 'This screen could not load. Choose another or try again.'; }
-      finally { document.querySelectorAll<HTMLButtonElement>('[data-screen]').forEach(b => b.disabled = false); }
-    }));
-  } catch (error) { stage.dispose(); throw error; }
+// ═══════════════════════════════════════════════════════════════════
+// The glasses in 3D: four wineLENS simulator captures on a 3D model
+// of Even G2 that turns from one to the next. Visitors can pick a
+// screen, pause, or take the model and turn it themselves.
+//
+// The component is vendored from g2b-showcase (site/g2b, with its
+// files in site/public/g2b): change it there and sync, so the page and
+// the exported video, GIF and poster keep drawing the same loop.
+//
+// Without this module the block still shows its poster, captions and
+// the enlarged screen. three.js, the model and the captures load only
+// as the block comes near, and the showcase pauses itself offscreen.
+// ═══════════════════════════════════════════════════════════════════
+
+const root = document.querySelector<HTMLElement>('[data-g2b]');
+
+if (root) {
+  const mount = () =>
+    import('./g2b/showcase').then(async ({ mountShowcase }) => {
+      const showcase = await mountShowcase(root);
+      // the behaviour checks in g2b-showcase (tools/check-review.mjs) read this in dev
+      if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__g2b = { winelens: showcase };
+    });
+
+  if ('IntersectionObserver' in window) {
+    const near = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        near.disconnect();
+        void mount();
+      },
+      { rootMargin: '300px 0px' },
+    );
+    near.observe(root);
+  } else {
+    void mount();
+  }
 }
