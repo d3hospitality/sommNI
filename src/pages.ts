@@ -16,25 +16,33 @@ import {
   getFlavorOptionsForType, getWineDisplayName,
   Wine, WineType,
 } from './constants';
-import type { QuizQuestion } from './quiz';
 import type { Pairing, CourseSlot } from './sync';
+import { lookupWineById } from './identity';
+import { pageList, wholeRowHeight, clipLabel, clipBytes, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
 const BACK_LABEL = "Back";
 
 // Home list: Find My Wine + Wine Pairings + Quiz Me + wine types
 // Course Builder and 86 List live in the phone dashboard only
+// No separator row: on G2 every list row is selectable, so a divider is a dead stop.
 export const HOME_LIST_ITEMS = [
+  "My Winebrary",
   "Find My Wine",
   "Wine Pairings",
-  "Quiz Me",
-  "──────",   // separator
+  "Study today",
+  "Wine Atlas",
   ...WINE_TYPES.map(t => TYPE_DISPLAY[t]),
 ];
-export const FINDER_INDEX = 0;
-export const PAIRINGS_INDEX = 1;
-export const QUIZ_INDEX = 2;
-export const SEPARATOR_INDEX = 3;
-export const TYPE_START_INDEX = 4;  // wine types start here
+export const LIBRARY_INDEX = 0;
+export const FINDER_INDEX = 1;
+export const PAIRINGS_INDEX = 2;
+export const STUDY_INDEX = 3;   // shared recall engine (study/glasses.ts)
+export const ATLAS_INDEX = 4;   // globe + winery-cluster explorer (atlas-app.ts)
+export const TYPE_START_INDEX = 5;  // wine types start here
+
+// List heights snap to whole 40 px rows so the last visible row is never clipped.
+const LIST_VIEW_H = wholeRowHeight(254);   // 240 = 6 rows, leaves room for an info line
+const HOME_LIST_H = wholeRowHeight(284);   // 280 = 7 rows
 
 // ══════════════════════════════════════════════════════════════════
 // Shared info-bar constants — right-aligned at bottom of screen
@@ -67,13 +75,13 @@ const PANEL_TAG_W = PANEL_W;                                // same width
 
 function homeContainers() {
   const typeList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 185, height: 254,
+    xPosition: 2, yPosition: 2, width: 185, height: HOME_LIST_H,
     containerID: 2, containerName: "home-list",
     itemContainer: new ListItemContainerProperty({
       itemCount: HOME_LIST_ITEMS.length,
       itemWidth: 0,
       isItemSelectBorderEn: 1,
-      itemName: [...HOME_LIST_ITEMS],
+      itemName: [...HOME_LIST_ITEMS].map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -94,16 +102,16 @@ function homeContainers() {
   // "D3Hospitality" ≈ 14ch × ~9px = ~126px → x = 393 - 63 = 330
   // "Dining / Done Different" ≈ 23ch × ~9px = ~207px → x = 393 - 103 = 290
   const tagLine1 = new TextContainerProperty({
-    xPosition: 297, yPosition: PANEL_TAG_Y, width: 300, height: 30,
+    xPosition: 290, yPosition: PANEL_TAG_Y, width: 280, height: 30,
     containerID: 5, containerName: "tag1",
-    content: `Dining / Done Different`,
+    content: `YOUR WINE. IN FOCUS.`,
     isEventCapture: 0,
   });
 
   const tagLine2 = new TextContainerProperty({
-    xPosition: 337, yPosition: PANEL_TAG_Y + 25, width: 300, height: 30,
+    xPosition: 288, yPosition: PANEL_TAG_Y + 25, width: 280, height: 30,
     containerID: 6, containerName: "tag2",
-    content: `D3Hospitality`,
+    content: `Double tap: exit`,
     isEventCapture: 0,
   });
 
@@ -139,6 +147,18 @@ export function rebuildHomePage(): RebuildPageContainer {
 //   Format: "Red · 10 Countries"
 // ══════════════════════════════════════════════════════════════════
 
+/** Two lines under the globe: the hovered country and how much of the catalog it holds. */
+export function countryInfoText(type: WineType, index: number): string {
+  const countries = COUNTRIES[type];
+  const country = countries[index];
+  if (!country) {
+    const wines = countries.reduce((n, c) => n + getWinesForCountry(type, c).length, 0);
+    return `${TYPE_DISPLAY[type]} · ${countries.length} ${countries.length === 1 ? 'country' : 'countries'}\n${wines} wines, lit on the globe`;
+  }
+  const wines = getWinesForCountry(type, country).length;
+  return `${country}\n${TYPE_DISPLAY[type]} · ${wines} ${wines === 1 ? 'wine' : 'wines'} · ${index + 1}/${countries.length}`;
+}
+
 export function buildCountryListPage(type: WineType): RebuildPageContainer {
   const countries = COUNTRIES[type];
   const listItems = [...countries, BACK_LABEL];
@@ -146,13 +166,13 @@ export function buildCountryListPage(type: WineType): RebuildPageContainer {
   const LIST_W = PANEL_X - 4; // 294 — leave room for globe on right
 
   const countryList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: LIST_W, height: 254,
+    xPosition: 2, yPosition: 2, width: LIST_W, height: LIST_VIEW_H,
     containerID: 2, containerName: "countries",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length,
       itemWidth: 0,
       isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -167,11 +187,10 @@ export function buildCountryListPage(type: WineType): RebuildPageContainer {
     containerID: 4, containerName: "globe-bottom",
   });
 
-  const countLabel = countries.length === 1 ? 'Country' : 'Countries';
   const infoText = new TextContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: 50,
+    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: 56,
     containerID: 5, containerName: "info",
-    content: `${TYPE_DISPLAY[type]} · ${countries.length} ${countLabel}`,
+    content: countryInfoText(type, -1),
     isEventCapture: 0,
   });
 
@@ -205,13 +224,13 @@ export function buildGrapeListPage(type: WineType, country: string): RebuildPage
   const LIST_W = PANEL_X - 4;
 
   const grapeList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: LIST_W, height: 254,
+    xPosition: 2, yPosition: 2, width: LIST_W, height: LIST_VIEW_H,
     containerID: 2, containerName: "grapes",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length,
       itemWidth: 0,
       isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -250,18 +269,20 @@ export function buildGrapeListPage(type: WineType, country: string): RebuildPage
 //   Format: "Sauvignon Blanc · France · 3 Wines"
 // ══════════════════════════════════════════════════════════════════
 
-export function buildWineListPage(type: WineType, country: string, grape: string): RebuildPageContainer {
+export function wineListPage(type: WineType, country: string, grape: string, page = 0): ListPage {
   const wines = getWinesForGrape(type, country, grape);
+  return pageList(wines.map(w => getWineDisplayName(w, grape)), page);
+}
 
-  const wineNames = wines.map(w => {
-    const display = getWineDisplayName(w, grape);
-    return display.length > 60 ? display.slice(0, 58) + ".." : display;
-  });
-  const listItems = [...wineNames, BACK_LABEL];
+export function buildWineListPage(type: WineType, country: string, grape: string, page = 0): RebuildPageContainer {
+  const wines = getWinesForGrape(type, country, grape);
+  const paged = wineListPage(type, country, grape, page);
+  const listItems = paged.labels;
 
-  const LIST_Y = 2;
-  const LIST_H = 254;
-  const INFO_Y = LIST_Y + LIST_H + 5;
+  // Same hierarchy as the Winebrary list: context line on top, list sized to its rows
+  // (a list shorter than its container is centred vertically by the firmware).
+  const LIST_Y = 42;
+  const LIST_H = Math.min(LIST_VIEW_H, listItems.length * LIST_ROW_PITCH);
 
   const wineList = new ListContainerProperty({
     xPosition: 2, yPosition: LIST_Y, width: 572, height: LIST_H,
@@ -270,16 +291,16 @@ export function buildWineListPage(type: WineType, country: string, grape: string
       itemCount: listItems.length,
       itemWidth: 0,
       isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
 
-  const wineLabel = wines.length === 1 ? 'Wine' : 'Wines';
+  const wineLabel = wines.length === 1 ? 'wine' : 'wines';
   const infoText = new TextContainerProperty({
-    xPosition: INFO_X, yPosition: INFO_Y, width: INFO_W, height: INFO_H,
+    xPosition: 16, yPosition: 4, width: 544, height: 34,
     containerID: 3, containerName: "info",
-    content: `${grape} · ${country} · ${wines.length} ${wineLabel}`,
+    content: clipLabel(`${grape} · ${country} · ${wines.length} ${wineLabel}` + (paged.pageCount > 1 ? ` · ${paged.page + 1}/${paged.pageCount}` : ''), 57),
     isEventCapture: 0,
   });
 
@@ -291,150 +312,142 @@ export function buildWineListPage(type: WineType, country: string, grape: string
 }
 
 // ══════════════════════════════════════════════════════════════════
-// TASTING NOTES — 7 containers (4 image + 3 text)
-//   Images 1-4 = bottle sprite in 4 strips
-//                Display: 120w × 70h each, stacked at y=4 → total 280px, nearly full height
-//                Image data: 120×140 per strip (center-cropped from 1024×1024 RGBA)
-//                SDK limits: max 288w × 144h per image container
-//   Text   5   = wine name           — y=2 (flush to ceiling)
-//   Text   6   = region · style
-//   Text   7   = tasting notes       — flush down to y=286 (scrollable)
+// TASTING NOTES v2 — "lit stage" layout, 7 containers (3 image + 4 text)
+//   Images 1-2 = bottle on a lit stage (spotlight, floor pool, faint reflection), 112×140 halves
+//   Image  6   = hairline rule under the header, fading out to the right
+//   Text   3   = wine (1–2 lines)             Text 4 = producer · region
+//   Text   5   = tasting notes (scrollable)   Text 7 = GRAPE · TYPE · STYLE kicker
 //
-//   Source: 1024×1024 RGBA → scale to fit 100×288 → 2 halves of 100×144
-//   Display: 2 containers at 100×144 display pixels, stacked from y=0
-//
-//   Layout (576×288):
-//   ┌──────────┬───────────────────────────────────────┐ y=0
-//   │          │ Sancerre "Le Mont" - Fourcher Lebrun  │
-//   │ 100×144  │ Loire Valley, FR · Dry - Mineral      │
-//   │ (top)    │───────────────────────────────────────│
-//   │          │ Appearance: Pale gold with green...   │
-//   │──────────│ Nose: White peach, chalky mineral...  │
-//   │          │ Palate: Crisp, racy acidity...        │
-//   │ 100×144  │ Finish: Long, saline, refreshing...   │
-//   │ (bot)    │ Story: ...                             │
-//   │          │                                        │
-//   └──────────┴───────────────────────────────────────┘ y=288
-//   2+100+4=106px               470px
+//   ┌────────────┬──────────────────────────────────────┐ y=0
+//   │   ░░▒▒░░   │ PINOT NOIR · RED · DRY, ELEGANT      │
+//   │    ▐█▌     │ Aloxe-Corton                         │
+//   │    ▐█▌     │ Louis Latour · Côte-de-Beaune, FR    │
+//   │    ▐█▌     │ ━━━━━━━━━━━━━━━━━━━───────           │
+//   │    ▐█▌     │ LOOK  Bright ruby with garnet hints. │
+//   │  ░▒███▒░   │ NOSE  Red cherry, raspberry compote… │
+//   │    ░░░     │ …                                    │
+//   └────────────┴──────────────────────────────────────┘ y=288
 // ══════════════════════════════════════════════════════════════════
 
-export function buildTastingNotesPage(wine: Wine, _wineId: string): RebuildPageContainer {
-  const IMG_X = 2;            // 2px safe zone from left
-  const IMG_W = 100;          // display width (144 - 22 clipped each side)
-  const IMG_H = 144;          // display height per half (2 × 144 = 288, full screen)
-  const IMG_Y = 0;            // flush top
-  const TEXT_X = IMG_X + IMG_W + 4; // 106
-  const TEXT_W = 576 - TEXT_X;      // 470
-  const TEXT_TOP = 2;         // flush to ceiling
+/** Split "Aloxe-Corton – Louis Latour" into wine and producer. */
+export function splitWineName(name: string): { title: string; producer: string } {
+  const at = name.lastIndexOf(' – ');
+  return at > 0 ? { title: name.slice(0, at).trim(), producer: name.slice(at + 3).trim() } : { title: name, producer: '' };
+}
 
-  // 2 image halves — scale-to-fit, no stretch, no crop
+function clipChars(text: string, max: number): string {
+  const chars = [...text];
+  return chars.length <= max ? text : chars.slice(0, max - 1).join('').trimEnd() + '…';
+}
+
+export const NOTES_IMG = { x: 4, y: 4, w: 112, h: 140 } as const;
+// The hairline still draws one pixel; its image container must be at least 20px high.
+export const NOTES_RULE = { w: 288, h: 20 } as const;
+
+export function buildTastingNotesPage(wine: Wine, wineId: string | null): RebuildPageContainer {
+  const TEXT_X = NOTES_IMG.x + NOTES_IMG.w + 8; // 124
+  const TEXT_W = 576 - TEXT_X - 4;              // 448
+  const PER_LINE = Math.floor(TEXT_W / 9.5);    // ~47 characters
+  const LINE = 27;
+
   const p1 = new ImageContainerProperty({
-    xPosition: IMG_X, yPosition: IMG_Y, width: IMG_W, height: IMG_H,
+    xPosition: NOTES_IMG.x, yPosition: NOTES_IMG.y, width: NOTES_IMG.w, height: NOTES_IMG.h,
     containerID: 1, containerName: "bottle-top",
   });
   const p2 = new ImageContainerProperty({
-    xPosition: IMG_X, yPosition: IMG_Y + IMG_H, width: IMG_W, height: IMG_H,
+    xPosition: NOTES_IMG.x, yPosition: NOTES_IMG.y + NOTES_IMG.h, width: NOTES_IMG.w, height: NOTES_IMG.h,
     containerID: 2, containerName: "bottle-bot",
   });
 
-  // Wine name — flush to ceiling
+  const { title, producer } = splitWineName(wine.name);
+  const type = lookupWineById(wineId)?.type;
+  const style = (wine.style || '').replace(/\s*[–-]\s*/g, ', ');
+  const kickerText = clipChars([wine.grape, type, style].filter(Boolean).join(' · ').toUpperCase(), PER_LINE);
+  const subText = clipChars([producer, wine.region].filter(Boolean).join(' · '), PER_LINE);
+
+  let y = 2;
+  const kicker = new TextContainerProperty({
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: LINE + 1,
+    containerID: 7, containerName: "kicker", content: kickerText, isEventCapture: 0,
+  });
+  y += LINE + 1;
+
+  const TITLE_LINES = [...title].length > PER_LINE ? 2 : 1;
+  const TITLE_H = TITLE_LINES * LINE + 1;
   const header = new TextContainerProperty({
-    xPosition: TEXT_X, yPosition: TEXT_TOP, width: TEXT_W, height: 28,
-    containerID: 3, containerName: "wine-name",
-    content: wine.name,
-    isEventCapture: 0,
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: TITLE_H,
+    containerID: 3, containerName: "wine-name", content: title, isEventCapture: 0,
   });
+  y += TITLE_H;
 
-  // Region · style
   const sub = new TextContainerProperty({
-    xPosition: TEXT_X, yPosition: TEXT_TOP + 28, width: TEXT_W, height: 22,
-    containerID: 4, containerName: "sub",
-    content: `${wine.region} · ${wine.style}`,
-    isEventCapture: 0,
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: LINE + 1,
+    containerID: 4, containerName: "sub", content: subText, isEventCapture: 0,
   });
+  y += LINE + 1;
 
-  // Tasting notes — 5px gap below sub, flush all the way down to bottom
-  const NOTES_Y = TEXT_TOP + 28 + 22 + 5; // header + sub + 5px gap = 57
-  const NOTES_H = 288 - NOTES_Y - 2;     // 229px, flush to floor with 2px safe zone
+  const rule = new ImageContainerProperty({
+    xPosition: TEXT_X + 4, yPosition: y + 1, width: NOTES_RULE.w, height: NOTES_RULE.h,
+    containerID: 6, containerName: "rule",
+  });
+  y += NOTES_RULE.h + 4;
 
-  const notesLines: string[] = [];
-  notesLines.push("Appearance: " + wine.appearance);
-  notesLines.push("");
-  notesLines.push("Nose: " + wine.nose);
-  notesLines.push("");
-  notesLines.push("Palate: " + wine.palate);
-  notesLines.push("");
-  notesLines.push("Finish: " + wine.finish);
-  if (wine.anecdote) {
-    notesLines.push("");
-    notesLines.push("Story: " + wine.anecdote);
-  }
+  const NOTES_H = Math.floor((254 - y) / LINE) * LINE + 4;
+  const sections: [string, string][] = [
+    ["LOOK", wine.appearance], ["NOSE", wine.nose], ["PALATE", wine.palate], ["FINISH", wine.finish],
+  ];
+  if (wine.anecdote) sections.push(["STORY", wine.anecdote]);
+  const body = sections.filter(([, text]) => text).map(([label, text]) => `${label}  ${text}`);
+  body.push("— Catalog notes · not producer-verified");
 
   const notes = new TextContainerProperty({
-    xPosition: TEXT_X, yPosition: NOTES_Y, width: TEXT_W, height: NOTES_H,
-    containerID: 5, containerName: "notes",
-    content: notesLines.join("\n"),
-    isEventCapture: 1,
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: NOTES_H,
+    containerID: 5, containerName: "notes", content: clipBytes(body.join("\n\n")), isEventCapture: 1,
+  });
+  const footer = new TextContainerProperty({
+    xPosition: TEXT_X, yPosition: 258, width: TEXT_W, height: 28,
+    containerID: 8, containerName: 'notes-hint', content: 'Scroll notes · Double tap: Back', isEventCapture: 0,
   });
 
   return new RebuildPageContainer({
-    containerTotalNum: 5,
-    textObject: [header, sub, notes],
-    imageObject: [p1, p2],
+    containerTotalNum: 8,
+    textObject: [header, sub, notes, kicker, footer],
+    imageObject: [p1, p2, rule],
   });
 }
 
 // ══════════════════════════════════════════════════════════════════
 // FIND MY WINE — 5-step questionnaire pages
-// Each step: 4 containers (list + robot sprite top/bottom + step text)
+// Each step: a selectable list and a full-height prompt panel.
 //   2 = options list (left, narrow)
-//   3 = robot sprite top half (same position as home logo)
-//   4 = robot sprite bottom half
-//   5 = step text (same position as home tagline, flush to floor)
+//   5 = step text in the right panel
 //
-// Robot emotion per step (shuffled where noted — picked in events.ts):
-//   Step 1 → thinking
-//   Step 2 → contemplating
-//   Step 3 → curious | warning (random)
-//   Step 4 → swirling | sommelier (random)
-//   Step 5 → presenting | delighted | pouring | celebrating (random)
 // ══════════════════════════════════════════════════════════════════
 
 const FINDER_STEP_H = 288 - PANEL_TAG_Y - 2; // flush to floor minus 2px safe zone
 
 function finderContainers(listName: string, options: string[], stepContent: string) {
   const optList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 250, height: 254,
+    xPosition: 2, yPosition: 2, width: 250, height: LIST_VIEW_H,
     containerID: 2, containerName: listName,
     itemContainer: new ListItemContainerProperty({
       itemCount: options.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: options,
+      itemName: options.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
 
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "robot-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "robot-bottom",
-  });
-
   const step = new TextContainerProperty({
-    xPosition: PANEL_TAG_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_TAG_X, height: FINDER_STEP_H,
+    xPosition: 314, yPosition: 12, width: 260, height: 264,
     containerID: 5, containerName: "step",
     content: stepContent,
     isEventCapture: 0,
   });
 
   return new RebuildPageContainer({
-    containerTotalNum: 4,
+    containerTotalNum: 2,
     listObject: [optList],
     textObject: [step],
-    imageObject: [spriteTop, spriteBottom],
   });
 }
 
@@ -496,11 +509,11 @@ export function buildFinderResultsPage(
   const listItems = [...wineNames, BACK_LABEL];
 
   const resultList = new ListContainerProperty({
-    xPosition: 10, yPosition: 20, width: 470, height: 255,
+    xPosition: 10, yPosition: 20, width: 470, height: LIST_VIEW_H,
     containerID: 2, containerName: "results",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -531,8 +544,6 @@ export function buildFinderResultsPage(
 // ══════════════════════════════════════════════════════════════════
 // COURSE BUILDER — overview of saved courses (up to 5)
 //   2 = course slot list (left panel)
-//   3 = robot sprite top (right panel)
-//   4 = robot sprite bottom
 //   5 = header text
 // ══════════════════════════════════════════════════════════════════
 
@@ -555,250 +566,31 @@ export function buildCourseOverviewPage(courses: CourseSlot[]): RebuildPageConta
   const LIST_W = PANEL_X - 4;
 
   const courseList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: LIST_W, height: 254,
+    xPosition: 2, yPosition: 2, width: LIST_W, height: LIST_VIEW_H,
     containerID: 2, containerName: "course-list",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
 
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "robot-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "robot-bottom",
-  });
-
   const header = new TextContainerProperty({
-    xPosition: PANEL_TAG_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_TAG_X, height: FINDER_STEP_H,
+    xPosition: 314, yPosition: 12, width: 260, height: 264,
     containerID: 5, containerName: "header",
     content: `Course Builder\n${courses.filter(c => c.wineName).length}/${courses.length} set`,
     isEventCapture: 0,
   });
 
   return new RebuildPageContainer({
-    containerTotalNum: 4,
+    containerTotalNum: 2,
     listObject: [courseList],
     textObject: [header],
-    imageObject: [spriteTop, spriteBottom],
   });
 }
 
 // Course Builder uses the same finder flow pages (buildFinderTypePage, etc.)
 // The events.ts handler tracks which course slot is being configured
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — question page with 4 options
-//   2 = options list (left, wide — options are long text)
-//   3 = robot sprite top (right panel)
-//   4 = robot sprite bottom
-//   5 = question text + category + progress
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizQuestionPage(
-  q: QuizQuestion, questionNum: number, totalQuestions: number,
-  wineName: string,
-): RebuildPageContainer {
-  const listItems = [...q.options.map(o =>
-    o.length > 55 ? o.slice(0, 53) + ".." : o
-  )];
-
-  const optList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 300, height: 254,
-    containerID: 2, containerName: "quiz-opts",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
-    }),
-    isEventCapture: 1,
-  });
-
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "robot-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "robot-bottom",
-  });
-
-  // Truncate wine name for display
-  const nameShort = wineName.length > 28 ? wineName.slice(0, 26) + ".." : wineName;
-
-  const questionText = new TextContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: FINDER_STEP_H,
-    containerID: 5, containerName: "question",
-    content: `Q${questionNum}/${totalQuestions} · ${q.category}\n\n${q.question}\n\n${nameShort}`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 4,
-    listObject: [optList],
-    textObject: [questionText],
-    imageObject: [spriteTop, spriteBottom],
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — answer feedback page (shows correct/wrong + Next/Score)
-//   2 = action list (Next Question / See Score / Quit)
-//   5 = feedback text
-//   3,4 = robot sprite
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizFeedbackPage(
-  correct: boolean, correctAnswer: string,
-  questionNum: number, totalQuestions: number,
-  scoreSoFar: number,
-): RebuildPageContainer {
-  const isLast = questionNum >= totalQuestions;
-  const listItems = isLast
-    ? ["See Score", "Quit Quiz"]
-    : ["Next Question", "Quit Quiz"];
-
-  const actionList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 300, height: 254,
-    containerID: 2, containerName: "quiz-action",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
-    }),
-    isEventCapture: 1,
-  });
-
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "robot-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "robot-bottom",
-  });
-
-  const mark = correct ? "CORRECT!" : "WRONG";
-  const ansLine = correct ? "" : `\nAnswer:\n${correctAnswer.length > 45 ? correctAnswer.slice(0, 43) + ".." : correctAnswer}`;
-  const feedback = new TextContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: FINDER_STEP_H,
-    containerID: 5, containerName: "feedback",
-    content: `${mark}${ansLine}\n\nScore: ${scoreSoFar}/${questionNum}`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 4,
-    listObject: [actionList],
-    textObject: [feedback],
-    imageObject: [spriteTop, spriteBottom],
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — score screen
-//   2 = action list (Try Again / Random Wine / Back)
-//   5 = score display
-//   3,4 = robot sprite (celebrating if high score)
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizScorePage(
-  score: number, total: number, wineName: string,
-): RebuildPageContainer {
-  const pct = Math.round((score / total) * 100);
-  const emoji = pct === 100 ? "PERFECT" : pct >= 75 ? "GREAT" : pct >= 50 ? "GOOD" : "KEEP GOING";
-  const nameShort = wineName.length > 30 ? wineName.slice(0, 28) + ".." : wineName;
-
-  const listItems = ["Try Again", "Random Wine", BACK_LABEL];
-
-  const actionList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 300, height: 254,
-    containerID: 2, containerName: "quiz-score-action",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
-    }),
-    isEventCapture: 1,
-  });
-
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "robot-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "robot-bottom",
-  });
-
-  const scoreText = new TextContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_X, height: FINDER_STEP_H,
-    containerID: 5, containerName: "score",
-    content: `${emoji}!\n\n${score}/${total} — ${pct}%\n\n${nameShort}`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 4,
-    listObject: [actionList],
-    textObject: [scoreText],
-    imageObject: [spriteTop, spriteBottom],
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — wine picker (list of favorited wines to quiz on)
-//   2 = wine list + Random + Back
-//   3,4 = robot sprite
-//   5 = header
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizPickerPage(
-  wineNames: string[],
-): RebuildPageContainer {
-  const listItems = ["Random Wine", ...wineNames.map(n =>
-    n.length > 50 ? n.slice(0, 48) + ".." : n
-  ), BACK_LABEL];
-
-  const pickerList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: PANEL_X - 4, height: 254,
-    containerID: 2, containerName: "quiz-picker",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
-    }),
-    isEventCapture: 1,
-  });
-
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "robot-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "robot-bottom",
-  });
-
-  const header = new TextContainerProperty({
-    xPosition: PANEL_TAG_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_TAG_X, height: FINDER_STEP_H,
-    containerID: 5, containerName: "header",
-    content: `Quiz Me\n\nPick a wine or\ngo random`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 4,
-    listObject: [pickerList],
-    textObject: [header],
-    imageObject: [spriteTop, spriteBottom],
-  });
-}
 
 // ══════════════════════════════════════════════════════════════════
 // PAIRINGS — list of saved pairings
@@ -807,19 +599,19 @@ export function buildQuizPickerPage(
 //   5 = header text
 // ══════════════════════════════════════════════════════════════════
 
-export function buildPairingsListPage(pairings: Pairing[]): RebuildPageContainer {
-  const listItems = pairings.map(p => {
-    const label = `${p.name} (${p.wineIds.length}/5)`;
-    return label.length > 45 ? label.slice(0, 43) + ".." : label;
-  });
-  listItems.push(BACK_LABEL);
+export function pairingsListPage(pairings: Pairing[], page = 0): ListPage {
+  return pageList(pairings.map(p => `${p.name} (${p.wineIds.length}/5)`), page);
+}
+
+export function buildPairingsListPage(pairings: Pairing[], page = 0): RebuildPageContainer {
+  const listItems = pairingsListPage(pairings, page).labels;
 
   const pairingList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: PANEL_X - 4, height: 254,
+    xPosition: 2, yPosition: 2, width: PANEL_X - 4, height: LIST_VIEW_H,
     containerID: 2, containerName: "pairings-list",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -870,7 +662,7 @@ export function buildPairingDetailPage(
     containerID: 2, containerName: "pairing-wines",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -906,11 +698,11 @@ export function build86ListPage(
   listItems.push(BACK_LABEL);
 
   const wineList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 572, height: 254,
+    xPosition: 2, yPosition: 2, width: 572, height: LIST_VIEW_H,
     containerID: 2, containerName: "86-list",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems,
+      itemName: listItems.map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });

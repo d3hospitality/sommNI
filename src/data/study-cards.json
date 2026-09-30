@@ -1,0 +1,79 @@
+{
+ "version": 1,
+ "note": "Hand-authored recall cards. Every card cites approved claim IDs from references.json; content.ts refuses a card whose claims are missing, unapproved or from an unavailable source. Bump a card's version when its prompt, answer or supporting claims change. 'match' lists alternative spellings per required part (accent- and case-insensitive). 'options' is an optional curated recognition set containing the answer exactly once; distractors are same-category values that contradict an approved claim.",
+ "cards": [
+  {
+   "id": "card_cain-nv14_blend-years",
+   "version": 1,
+   "wine_id": "wl_cain-cuvee-nv14",
+   "release_id": "rel_cain-cuvee-nv14_nv14",
+   "skill": "release-identity",
+   "subject": "Cain Cuvée NV14",
+   "prompt": "Which harvests are in this bottle, and in what share?",
+   "answer": "48% 2013 and 52% 2014",
+   "explanation": "NV14 is a non-vintage release code, not a harvest year. The producer's fact sheet lists 48% 2013 and 52% 2014.",
+   "match": [["2013"], ["2014"]],
+   "claims": ["clm_cain-cuvee-nv14_nv14_release_code", "clm_cain-cuvee-nv14_nv14_vintage_state", "clm_cain-cuvee-nv14_nv14_vintage_components"],
+   "hide_image": false
+  },
+  {
+   "id": "card_cain-nv14_origin",
+   "version": 1,
+   "wine_id": "wl_cain-cuvee-nv14",
+   "release_id": "rel_cain-cuvee-nv14_nv14",
+   "skill": "origin",
+   "subject": "Cain Cuvée NV14",
+   "prompt": "Where does this wine come from?",
+   "answer": "Napa Valley",
+   "explanation": "The NV14 fact sheet places the wine in Napa Valley.",
+   "match": [["napa"]],
+   "options": ["Napa Valley", "Sonoma County", "Paso Robles", "Willamette Valley"],
+   "claims": ["clm_cain-cuvee-nv14_nv14_origin"],
+   "hide_image": false
+  },
+  {
+   "id": "card_ixsir-gr-rose-2023_grapes",
+   "version": 1,
+   "wine_id": "wl_grand-reserve-rose-ixsir",
+   "release_id": "rel_grand-reserve-rose-ixsir_2023",
+   "skill": "grape",
+   "subject": "IXSIR Grande Réserve Rosé 2023",
+   "prompt": "Name the three grape varieties.",
+   "answer": "Mourvèdre, Cinsault and Syrah",
+   "explanation": "The producer's 2023 sheet lists these three varieties without blend percentages, so none are shown here. Other years' ratings on that sheet do not apply to 2023.",
+   "match": [["mourvedre", "mataro", "monastrell"], ["cinsault", "cinsaut"], ["syrah", "shiraz"]],
+   "claims": ["clm_grand-reserve-rose-ixsir_2023_vintage_year", "clm_grand-reserve-rose-ixsir_2023_grape_varieties", "clm_grand-reserve-rose-ixsir_2023_grape_percentages"],
+   "hide_image": false
+  },
+  {
+   "id": "card_pater-patriae_grape",
+   "version": 1,
+   "wine_id": "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo",
+   "release_id": null,
+   "skill": "grape",
+   "subject": "Pater Patriae · Tenuta Cafaggiolo",
+   "prompt": "Which grape is it made from?",
+   "answer": "Pinot Noir (Pinot Nero)",
+   "explanation": "Tenuta Cafaggiolo's technical notes identify Pater Patriae as Pinot Nero. This supports the wine's identity; it does not verify any single vintage.",
+   "match": [["pinot noir", "pinot nero", "spatburgunder"]],
+   "options": ["Pinot Noir (Pinot Nero)", "Sangiovese", "Nebbiolo", "Merlot"],
+   "claims": ["clm_pater-patriae-pinot-noir-tenuta-cafaggiolo_wine_grape"],
+   "hide_image": true
+  },
+  {
+   "id": "card_pater-patriae_appellation",
+   "version": 1,
+   "wine_id": "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo",
+   "release_id": null,
+   "skill": "appellation",
+   "subject": "Pater Patriae · Tenuta Cafaggiolo",
+   "prompt": "Which appellation does it carry?",
+   "answer": "IGT Toscana",
+   "explanation": "The producer's technical notes list the denomination as IGT Toscana Pinot Nero.",
+   "match": [["igt toscana", "toscana igt"]],
+   "options": ["IGT Toscana", "Chianti Classico DOCG", "Bolgheri DOC", "Brunello di Montalcino DOCG"],
+   "claims": ["clm_pater-patriae-pinot-noir-tenuta-cafaggiolo_wine_appellation"],
+   "hide_image": true
+  }
+ ]
+}

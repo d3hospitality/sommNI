@@ -1,0 +1,216 @@
+legacy_id,name,seed_type,seed_country,photo_status,photo_reference_url,fact_status
+w0,Grand Malbec – Terrazas de los Andes,Red,Argentina,visual-catalog-match,,needs-primary-source-review
+w1,Cabernet Sauvignon – Vasse Felix,Red,Australia,visual-catalog-match,,needs-primary-source-review
+w2,Henry’s Seven – Henschke,Red,Australia,visual-catalog-match,,needs-primary-source-review
+w3,Aloxe-Corton – Louis Latour,Red,France,visual-catalog-match,,needs-primary-source-review
+w4,Aloxe-Corton – Tollot-Beaut,Red,France,visual-catalog-match,,needs-primary-source-review
+w5,Château Margaux Grand Vin,Red,France,visual-catalog-match,,needs-primary-source-review
+w6,Gevrey-Chambertin – Jean-Claude Boisset,Red,France,visual-catalog-match,,needs-primary-source-review
+w7,Gevrey-Chambertin – Taupenot-Merme,Red,France,visual-catalog-match,,needs-primary-source-review
+w8,Nuits-Saint-Georges – Maison Latour,Red,France,visual-catalog-match,,needs-primary-source-review
+w9,"Santenay 1er Cru ""Grand Clos Rousseau"" – Remoissenet",Red,France,visual-catalog-match,,needs-primary-source-review
+w10,"Vosne-Romanée 1er Cru ""Les Chaumes"" – Gros Frère et Sœur",Red,France,visual-catalog-match,,needs-primary-source-review
+w11,Vosne-Romanée – Jean-Claude Boisset,Red,France,visual-catalog-match,,needs-primary-source-review
+w12,Château Armens Grand Cru,Red,France,visual-catalog-match,https://www.vineyardbrands.com/content/Bottle%20Shots/0156/0156-21-01-11-14-31-44-496.png,needs-primary-source-review
+w13,Château La Gaffelière Premier Grand Cru,Red,France,visual-catalog-match,,needs-primary-source-review
+w14,Château l’Ecuyer,Red,France,visual-catalog-match,,needs-primary-source-review
+w15,Le Pauillac de Latour – Château Latour,Red,France,visual-catalog-match,,needs-primary-source-review
+w16,"Châteauneuf-du-Pape ""Vieilles Vignes"" – Marcoux",Red,France,visual-catalog-match,,needs-primary-source-review
+w17,Châteauneuf-du-Pape Rouge – Domaine de Marcoux,Red,France,visual-catalog-match,,needs-primary-source-review
+w18,"Côte-Rôtie ""La Mouline"" – Guigal",Red,France,visual-catalog-match,,needs-primary-source-review
+w19,"Côte-Rôtie ""La Turque"" – Guigal",Red,France,visual-catalog-match,,needs-primary-source-review
+w20,"Côte-Rôtie ""Mon Village"" – Stéphane Ogier",Red,France,visual-catalog-match,,needs-primary-source-review
+w21,Hermitage – Jean-Louis Chave,Red,France,visual-catalog-match,,needs-primary-source-review
+w22,Château Mongravey Cru Bourgeois,Red,France,visual-catalog-match,,needs-primary-source-review
+w23,Dame de Gaffelière – Château La Gaffelière,Red,France,visual-catalog-match,https://www.topwijnen.be/media/cache/product_detail/b/d/6/7/bd67af2eed518f239e1a0cadd3b297aa9e840c30_Dame_de_Gaffeliere_web.png,needs-primary-source-review
+w24,Margaux du Château Margaux,Red,France,visual-catalog-match,,needs-primary-source-review
+w25,"Chianti Classico ""Montebuoni"" – Castello di Ama",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w26,"Barbaresco ""San Giuliano"" – Paolo Manzone",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w27,"Barbaresco ""Vanotu"" – Pelissero",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w28,Barbaresco – Gaja,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w29,"Barolo ""Comune di Verduno"" – Fratelli Alessandria",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w30,"Barolo ""Garretti"" – La Spinetta",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w31,"Barolo ""Gianetto"" – Guido Porro",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w32,"Barolo ""Serradenari"" – Giulia Negri",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w33,"Barolo ""Serralunga d’Alba"" – Paolo Manzone",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w34,Barolo Riserva – Paolo Manzone,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w35,Barolo – Borgogno,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w36,"Brunello ""Cerretalto"" – Casanova di Neri",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w37,"Brunello ""Tenuta Nuova"" – Casanova di Neri",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w38,Brunello di Montalcino 1.5L – Col di Lamo,Red,Italy,visual-catalog-match,https://www.coldilamo.com/wp-content/uploads/2022/04/magnum-brunello-di-montalcino-nero.jpg,needs-primary-source-review
+w39,Brunello di Montalcino Riserva – Col di Lamo,Red,Italy,visual-catalog-match,https://www.coldilamo.com/wp-content/uploads/2022/04/brunello-di-montalcino-riserva-2015-nero.jpg,needs-primary-source-review
+w40,Brunello di Montalcino – Altesino,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w41,Brunello di Montalcino – Biondi-Santi,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w42,Brunello di Montalcino – Canalicchio di Sopra,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w43,Brunello di Montalcino – Casanova di Neri,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w44,Brunello di Montalcino – Castello Romitorio,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w45,Brunello di Montalcino – Col di Lamo,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w46,Brunello di Montalcino – Ridolfi,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w47,"Chianti Classico Gran Selezione ""San Lorenzo"" – Castello di Ama",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w48,Flaccianello della Pieve – Fontodi,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w49,Poggio Valente – Fattoria La Pupille,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w50,Tignanello – Antinori,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w51,Haiku – Castello di Ama,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w52,Il Blu – Brancaia,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w53,Ilatraia – Brancaia,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w54,Modus – Ruffino,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w55,Case Via – Fontodi,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w56,Il Fauno di Arcanum – Tenuta di Arceno,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w57,Irrosso – Casanova di Neri,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w58,Le Volte dell’Ornellaia,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w59,Magnetic – Donne Fittipaldi,Red,Italy,visual-catalog-match,https://donnefittipaldi.net/wp-content/uploads/2023/05/MAGNETIC_2022.png,needs-primary-source-review
+w60,"Nebbiolo ""No Name"" – Borgogno",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w61,Pater-Patriae Pinot Noir – Tenuta Cafaggiolo,Red,Italy,visual-catalog-match,https://tenuta-cafaggiolo.com/it/wp-content/uploads/pater-patriae.jpeg,pilot-claims-reviewed; remaining facts unverified
+w62,"Rosso di Montalcino ""Giovanni Neri"" – Casanova di Neri",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w63,Rosso di Montalcino – Canalicchio di Sopra,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w64,Toscana Rosso – Il Borro,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w65,Tre – Brancaia,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w66,"Barbera d’Alba ""Fiorenza"" – Paolo Manzone",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w67,"Barbera d’Alba ""Piani"" – Pelissero",Red,Italy,visual-catalog-match,,needs-primary-source-review
+w68,Chianti Classico Riserva – Volpaia,Red,Italy,visual-catalog-match,,needs-primary-source-review
+w69,Ixsir Grand Reserve Red Blend,Red,Lebanon,visual-catalog-match,,needs-primary-source-review
+w70,Massaya Gold Reserve,Red,Lebanon,visual-catalog-match,,needs-primary-source-review
+w71,Love Letter – Mersel,Red,Lebanon,visual-catalog-match,,needs-primary-source-review
+w72,Gabriel – Adobe Guadalupe,Red,Mexico,visual-catalog-match,,needs-primary-source-review
+w73,Líquen Alfrocheiro – João Cabral Almeida,Red,Portugal,visual-catalog-match,,needs-primary-source-review
+w74,Maria Izabel Tinto – Quinta Maria Izabel,Red,Portugal,visual-catalog-match,,needs-primary-source-review
+w75,Pinot Noir – Storm,Red,South Africa,visual-catalog-match,,needs-primary-source-review
+w76,Rioja Reserva – Montaña,Red,Spain,visual-catalog-match,https://www.saratogawine.com/wp-content/uploads/2024/06/8bb9f70.png,needs-primary-source-review
+w77,Rioja Reserva – Valenciso,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w78,Castillo Ygay Gran Reserva Especial – Marqués de Murrieta,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w79,Imperial Gran Reserva – CVNE,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w80,Valbuena 5 Años – Vega Sicilia,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w81,Contador – Benjamín Romeo,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w82,Malleolus de Sanchomartín – Emilio Moro,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w83,Veraton – Bodegas Alto Moncayo,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w84,10 Años Después – Valenciso,Red,Spain,visual-catalog-match,,needs-primary-source-review
+w85,"Pinot Noir ""Botanica"" – Antica Terra",Red,United States,visual-catalog-match,,needs-primary-source-review
+w86,"Pinot Noir ""Plow"" – Lingua Franca",Red,United States,visual-catalog-match,,needs-primary-source-review
+w87,Pinot Noir – Bergström (Le Pré du Col),Red,United States,visual-catalog-match,,needs-primary-source-review
+w88,Pinot Noir – Domaine Drouhin,Red,United States,visual-catalog-match,,needs-primary-source-review
+w89,Pinot Noir – Hanzell Estate,Red,United States,visual-catalog-match,,needs-primary-source-review
+w90,Pinot Noir – Joseph Phelps (Freestone),Red,United States,visual-catalog-match,,needs-primary-source-review
+w91,Pinot Noir – Keller Estate,Red,United States,visual-catalog-match,,needs-primary-source-review
+w92,Pinot Noir – Paul Hobbs,Red,United States,visual-catalog-match,,needs-primary-source-review
+w93,Pinot Noir – St. Innocent (Momtazi),Red,United States,visual-catalog-match,,needs-primary-source-review
+w94,"Sea Smoke ""Sea Spray""",Red,United States,visual-catalog-match,,needs-primary-source-review
+w95,"Cain Cuvée ""NV14""",Red,United States,visual-catalog-match,https://thebourboncentral.com/cdn/shop/files/cain-cuvee-nv14-red-blend-110173.jpg?v=1744730471,pilot-claims-reviewed; remaining facts unverified
+w96,Opus One,Red,United States,visual-catalog-match,,needs-primary-source-review
+w97,The Mascot – Harlan Family,Red,United States,visual-catalog-match,,needs-primary-source-review
+w98,"Cabernet Sauvignon ""Brother’s Vineyard"" – Snowden",Red,United States,visual-catalog-match,,needs-primary-source-review
+w99,"Cabernet Sauvignon ""Highest Beauty"" – To Kalon",Red,United States,visual-catalog-match,,needs-primary-source-review
+w100,"Cabernet Sauvignon ""Palermo"" – Orin Swift",Red,United States,visual-catalog-match,,needs-primary-source-review
+w101,Cabernet Sauvignon – Caymus,Red,United States,visual-catalog-match,,needs-primary-source-review
+w102,Cabernet Sauvignon – Chimney Rock,Red,United States,visual-catalog-match,,needs-primary-source-review
+w103,Cabernet Sauvignon – Faust,Red,United States,visual-catalog-match,,needs-primary-source-review
+w104,Cabernet Sauvignon – Joseph Phelps,Red,United States,visual-catalog-match,,needs-primary-source-review
+w105,Cabernet Sauvignon – Pahlmeyer,Red,United States,needs-reference-review,,needs-primary-source-review
+w106,Cabernet Sauvignon – Sinegal Estate,Red,United States,visual-catalog-match,,needs-primary-source-review
+w107,Darius II – Darioush,Red,United States,visual-catalog-match,,needs-primary-source-review
+w108,Double Diamond Cabernet – Schrader,Red,United States,visual-catalog-match,,needs-primary-source-review
+w109,Isosceles – Justin,Red,United States,visual-catalog-match,,needs-primary-source-review
+w110,Madrona Ranch – Abreu,Red,United States,visual-catalog-match,,needs-primary-source-review
+w111,Papillon – Orin Swift,Red,United States,visual-catalog-match,,needs-primary-source-review
+w112,Syrah – Donnachadh Estate,Red,United States,visual-catalog-match,,needs-primary-source-review
+w113,Merlot – Freemark Abbey,Red,United States,visual-catalog-match,,needs-primary-source-review
+w114,Merlot – Grgich Hills,Red,United States,visual-catalog-match,,needs-primary-source-review
+w115,Pinot Noir – Chehalem,Red,United States,visual-catalog-match,,needs-primary-source-review
+w116,Cabernet Sauvignon – Silver Oak,Red,United States,visual-catalog-match,,needs-primary-source-review
+w117,Grüner Veltliner – Ebner-Ebenauer,White,Austria,visual-catalog-match,,needs-primary-source-review
+w118,Corton-Charlemagne Grand Cru – Louis Latour,White,France,visual-catalog-match,,needs-primary-source-review
+w119,"Meursault ""Le Limozin"" – Xavier Monnot",White,France,visual-catalog-match,,needs-primary-source-review
+w120,Pouilly-Fuissé – Louis Latour,White,France,visual-catalog-match,,needs-primary-source-review
+w121,Y Ygrec – Château d’Yquem,White,France,visual-catalog-match,,needs-primary-source-review
+w122,Les Carmes de Rieussec – Château Rieussec,White,France,visual-catalog-match,https://www.12bouteilles.com/10492-large_default/carmes-de-rieussec-2018.jpg,needs-primary-source-review
+w123,"Chablis 1er Cru ""Fourchaume"" – Malandes",White,France,visual-catalog-match,,needs-primary-source-review
+w124,"Chablis 1er Cru ""Les Fourchaumes"" – l’Enclos",White,France,visual-catalog-match,,needs-primary-source-review
+w125,Chablis – William Fèvre,White,France,visual-catalog-match,,needs-primary-source-review
+w126,"Sancerre ""Chavignol"" – Yves Martin",White,France,visual-catalog-match,,needs-primary-source-review
+w127,"Sancerre ""Côte des Monts Damnés"" – Hubert Brochard",White,France,visual-catalog-match,https://www.hubert-brochard.fr/wp-content/uploads/2024/05/hubert-brochard-sancerre-la-cote-des-monts-damnes.png,needs-primary-source-review
+w128,"Sancerre ""La Chatellenie"" – Joseph Mellot",White,France,visual-catalog-match,,needs-primary-source-review
+w129,"Sancerre ""Le Mont"" – Foucher Lebrun",White,France,visual-catalog-match,,needs-primary-source-review
+w130,"Riesling ""Forster Kirchenstück"" GG – Von Winning",White,Germany,visual-catalog-match,,needs-primary-source-review
+w131,Riesling – Dönnhoff,White,Germany,visual-catalog-match,,needs-primary-source-review
+w132,"Assyrtiko ""Santorini"" – Sigalas",White,Greece,visual-catalog-match,,needs-primary-source-review
+w133,Gavi del Comune di Gavi – Villa Sparina,White,Italy,visual-catalog-match,,needs-primary-source-review
+w134,"Pecorino ""Cortalto"" – Cerulli Spinozzi",White,Italy,visual-catalog-match,,needs-primary-source-review
+w135,"Pinot Grigio ""Porer"" – Alois Lageder",White,Italy,visual-catalog-match,,needs-primary-source-review
+w136,Pinot Grigio – Elena Walch,White,Italy,visual-catalog-match,,needs-primary-source-review
+w137,"Roero Arneis ""Reysù"" – Paolo Manzone",White,Italy,visual-catalog-match,,needs-primary-source-review
+w138,Trebbiano d’Abruzzo – Tiberio,White,Italy,visual-catalog-match,,needs-primary-source-review
+w139,"Vermentino ""Prelius"" – Volpaia",White,Italy,visual-catalog-match,,needs-primary-source-review
+w140,"Grillo Riserva ""Kheire"" – Gorghi Tondi",White,Italy,visual-catalog-match,,needs-primary-source-review
+w141,SP68 Bianco – Arianna Occhipinti,White,Italy,visual-catalog-match,,needs-primary-source-review
+w142,Trebbiano d’Abruzzo – Emidio Pepe,White,Italy,visual-catalog-match,,needs-primary-source-review
+w143,Reserve Ammiq Blanc,White,Lebanon,visual-catalog-match,https://images.squarespace-cdn.com/content/v1/6901e3b60f67e56d2fb8dcbf/74385de5-efe1-406b-b5bc-d6864d51e1b8/Chardonnay+-+Focus+Background.png,needs-primary-source-review
+w144,Altitudes Blanc – Ixsir,White,Lebanon,visual-catalog-match,,needs-primary-source-review
+w145,"Sauvignon Blanc ""Te Muna"" – Craggy Range",White,New Zealand,visual-catalog-match,,needs-primary-source-review
+w146,Encruzado – João Cabral Almeida,White,Portugal,visual-catalog-match,,needs-primary-source-review
+w147,Kalmoesfontein White Blend – A.A. Badenhorst,White,South Africa,visual-catalog-match,,needs-primary-source-review
+w148,Albariño – Eidos,White,Spain,visual-catalog-match,,needs-primary-source-review
+w149,Albariño – Mar de Frades,White,Spain,visual-catalog-match,,needs-primary-source-review
+w150,O Rosal – Terras Gauda,White,Spain,visual-catalog-match,,needs-primary-source-review
+w151,"Chardonnay ""MFN"" – Booker",White,United States,visual-catalog-match,,needs-primary-source-review
+w152,"Chardonnay ""Mannequin"" – Orin Swift",White,United States,visual-catalog-match,,needs-primary-source-review
+w153,Chardonnay – Cakebread Cellars,White,United States,visual-catalog-match,,needs-primary-source-review
+w154,Chardonnay – Château Montelena,White,United States,visual-catalog-match,,needs-primary-source-review
+w155,Chardonnay – Darioush,White,United States,visual-catalog-match,,needs-primary-source-review
+w156,Chardonnay – Grgich Hills,White,United States,visual-catalog-match,,needs-primary-source-review
+w157,Chardonnay – Schug,White,United States,visual-catalog-match,,needs-primary-source-review
+w158,"Sauvignon Blanc ""Double Diamond"" – Schrader",White,United States,visual-catalog-match,,needs-primary-source-review
+w159,Sauvignon Blanc – Arnot-Roberts,White,United States,visual-catalog-match,,needs-primary-source-review
+w160,Sauvignon Blanc – Sinegal Estate,White,United States,visual-catalog-match,,needs-primary-source-review
+w161,Viognier – Penner-Ash,White,United States,visual-catalog-match,,needs-primary-source-review
+w162,"Pinot Gris ""Daisy"" – Antiquum Farm",White,United States,visual-catalog-match,,needs-primary-source-review
+w163,Delamotte Blanc de Blancs,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w164,Dom Pérignon,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w165,Dom Ruinart Blanc de Blancs,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w166,"J. Lassalle ""Préférence"" 1er Cru",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w167,"Krug ""Grande Cuvée"" 170ème Édition",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w168,"Laurent-Perrier ""La Cuvée"" Brut",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w169,"Louis Roederer ""Cristal""",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w170,"Michel Mailliard ""Cuvée Grégory"" 1er Cru Brut",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w171,"Moussé Fils ""Les Fortes Terres""",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w172,"Moët & Chandon ""Impérial"" Brut",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w173,"Perrier-Jouët ""Belle Époque""",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w174,Perrier-Jouët Blanc de Blancs,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w175,Perrier-Jouët Grand Brut,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w176,Pierre Péters Cuvée de Réserve BdB,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w177,"Piper-Heidsieck ""Rare""",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w178,"Pol Roger ""Sir Winston Churchill""",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w179,Ruinart Blanc de Blancs,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w180,"Veuve Clicquot ""Yellow Label"" Brut",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w181,Billecart-Salmon Brut Rosé,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w182,"Brice ""Heritage"" Brut Rosé",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w183,Charles Heidsieck Réserve Brut Rosé,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w184,"G.H. Mumm ""Grand Cordon"" Brut Rosé",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w185,Gaston Chiquet Rosé 1er Cru,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w186,Henriot Brut Rosé,Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w187,"Laurent-Perrier ""Cuvée Rosé""",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w188,"Louis Roederer ""Cristal"" Rosé",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w189,"Perrier-Jouët ""Blason"" Rosé",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w190,"Pommery ""Cuvée Louise"" Rosé",Sparkling,France,visual-catalog-match,https://www.datocms-assets.com/58888/1758103429-louise-nature-rose-2004-a-l-echelle.png,needs-primary-source-review
+w191,"Dosnon ""Récolte Brute"" Extra Brut",Sparkling,France,visual-catalog-match,,needs-primary-source-review
+w192,Ferrari Trento Trentodoc Brut,Sparkling,Italy,visual-catalog-match,,needs-primary-source-review
+w193,"Prosecco ""Rustico"" – Nino Franco",Sparkling,Italy,visual-catalog-match,,needs-primary-source-review
+w194,Ferrari Trento Trentodoc Brut Rosé,Sparkling,Italy,visual-catalog-match,,needs-primary-source-review
+w195,Metodo Classico Brut Rosé – Terrazze dell’Etna,Sparkling,Italy,visual-catalog-match,,needs-primary-source-review
+w196,"Moscato d’Asti ""Bricco Quaglia"" – La Spinetta",Sparkling,Italy,visual-catalog-match,,needs-primary-source-review
+w197,"Mersel ""Leb Nat"" Pet-Nat Rosé",Sparkling,Lebanon,visual-catalog-match,,needs-primary-source-review
+w198,Château Romassan Rosé,Rose,France,visual-catalog-match,,needs-primary-source-review
+w199,Chinon Rosé – Charles Joguet,Rose,France,visual-catalog-match,,needs-primary-source-review
+w200,Whispering Angel – Château d'Esclans,Rose,France,visual-catalog-match,,needs-primary-source-review
+w201,“Clos Beylesse” Rosé – Domaine de l'Abbaye (1.5L),Rose,France,visual-catalog-match,https://www.stbarthswine.com/cdn/shop/products/2018ClosBeylesseBlueBottleRoseMagnumProvence.jpg?v=1603377403&width=1080,needs-primary-source-review
+w202,“Fantastique” Rosé – Château Sainte Marguerite,Rose,France,visual-catalog-match,,needs-primary-source-review
+w203,“Prestige” Rosé – Minuty,Rose,France,visual-catalog-match,,needs-primary-source-review
+w204,“Clos du Temple” Rosé – Gérard Bertrand,Rose,France,visual-catalog-match,,needs-primary-source-review
+w205,“Garrus” Rosé – Château d'Esclans,Rose,France,visual-catalog-match,,needs-primary-source-review
+w206,“Grand Reserve” Rosé – Ixsir,Rose,Lebanon,visual-catalog-match,https://shop.ixsir.com/cdn/shop/files/IXSIR-GR-Rose-Packshot.jpg?v=1754928520,pilot-claims-reviewed; remaining facts unverified
+w207,Wine Creek Ranch Rosé – Quivira,Rose,United States,visual-catalog-match,,needs-primary-source-review
+w208,“Orange Tacsum” – La Mariota (Orange Wine),Orange,France,visual-catalog-match,,needs-primary-source-review
+w209,Commandaria – Tsiakkas,Dessert,Cyprus,visual-catalog-match,,needs-primary-source-review
+w210,Recioto della Valpolicella – Dal Forno Romano,Dessert,Italy,visual-catalog-match,,needs-primary-source-review
+w211,"Recioto di Soave ""I Capitelli"" – Anselmi",Dessert,Italy,visual-catalog-match,,needs-primary-source-review
+w212,"Vin Santo ""Il Decano"" – Montepaldi",Dessert,Italy,visual-catalog-match,https://ik.imagekit.io/ventis/prod/tr:n-product_full_image_zoomable/content/images/prodotti/60/82/608288/20231017113831060.jpg,needs-primary-source-review
+w213,"Tawny Port ""Otima"" – Warre’s",Dessert,Portugal,visual-catalog-match,,needs-primary-source-review
+w214,Tawny Port – Quinta do Noval,Dessert,Portugal,visual-catalog-match,,needs-primary-source-review

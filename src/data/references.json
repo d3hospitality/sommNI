@@ -1,0 +1,225 @@
+{
+ "version": 1,
+ "generated_from": {
+  "file": "wine-reference-register.json",
+  "checked_at": "2026-09-29",
+  "catalog_records": 215
+ },
+ "sources": [
+  {
+   "id": "src_c9ac0fd040",
+   "publisher": "Tenuta Cafaggiolo",
+   "kind": "producer-product-page",
+   "title": "Pater Patriae product page",
+   "url": "https://tenuta-cafaggiolo.com/it/wine/pater-patriae/",
+   "retrieved_at": "2026-09-29",
+   "sha256": "575beb1948c64a66895127dd4cbf3fc92f90b64bf125b3ca9f08a905fb6a0b17",
+   "availability": "available",
+   "image_rights": "not-assessed"
+  },
+  {
+   "id": "src_2e3eeecd01",
+   "publisher": "Cain Vineyard & Winery",
+   "kind": "producer-technical-sheet",
+   "title": "Cain Cuvée NV14 fact sheet",
+   "url": "https://www.cainfive.com/wp-content/uploads/2021/08/NV14_Cain_Cuvee_factsheet.pdf",
+   "retrieved_at": "2026-09-29",
+   "sha256": "fcd6d1dea79592589eda1df0044ff9f2f7cab2c45d3a93c10fb1649288c1b8f9",
+   "availability": "available",
+   "image_rights": "not-assessed"
+  },
+  {
+   "id": "src_8807627978",
+   "publisher": "IXSIR",
+   "kind": "producer-technical-sheet",
+   "title": "Grande Réserve Rosé 2023 technical sheet",
+   "url": "https://ixsir.com/wp-content/uploads/2024/09/GR-Rose-2023.pdf",
+   "retrieved_at": "2026-09-29",
+   "sha256": "059525d8291a14ad9248cee703512fc88954f557af6509c8ecdc954482e7bc08",
+   "availability": "available",
+   "image_rights": "not-assessed"
+  }
+ ],
+ "releases": [
+  {
+   "id": "rel_cain-cuvee-nv14_nv14",
+   "wine_id": "wl_cain-cuvee-nv14",
+   "scope": "NV14",
+   "vintage_state": "non_vintage",
+   "year": null,
+   "release_code": "NV14"
+  },
+  {
+   "id": "rel_grand-reserve-rose-ixsir_2023",
+   "wine_id": "wl_grand-reserve-rose-ixsir",
+   "scope": "2023",
+   "vintage_state": "year",
+   "year": 2023,
+   "release_code": null
+  }
+ ],
+ "claims": [
+  {
+   "id": "clm_pater-patriae-pinot-noir-tenuta-cafaggiolo_wine_appellation",
+   "wine_id": "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo",
+   "release_id": null,
+   "field": "appellation",
+   "value": "IGT Toscana Pinot Nero",
+   "unit": null,
+   "source_id": "src_c9ac0fd040",
+   "locator": "Note Tecniche / Denominazione",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_pater-patriae-pinot-noir-tenuta-cafaggiolo_wine_grape",
+   "wine_id": "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo",
+   "release_id": null,
+   "field": "grape",
+   "value": "Pinot Noir",
+   "unit": null,
+   "source_id": "src_c9ac0fd040",
+   "locator": "Note Tecniche / Denominazione",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_cain-cuvee-nv14_nv14_release_code",
+   "wine_id": "wl_cain-cuvee-nv14",
+   "release_id": "rel_cain-cuvee-nv14_nv14",
+   "field": "release_code",
+   "value": "NV14",
+   "unit": null,
+   "source_id": "src_2e3eeecd01",
+   "locator": "Harvest & Varietal Information",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_cain-cuvee-nv14_nv14_vintage_state",
+   "wine_id": "wl_cain-cuvee-nv14",
+   "release_id": "rel_cain-cuvee-nv14_nv14",
+   "field": "vintage_state",
+   "value": "non_vintage",
+   "unit": null,
+   "source_id": "src_2e3eeecd01",
+   "locator": "Harvest & Varietal Information",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_cain-cuvee-nv14_nv14_vintage_components",
+   "wine_id": "wl_cain-cuvee-nv14",
+   "release_id": "rel_cain-cuvee-nv14_nv14",
+   "field": "vintage_components",
+   "value": [
+    {
+     "year": 2013,
+     "percent": 48
+    },
+    {
+     "year": 2014,
+     "percent": 52
+    }
+   ],
+   "unit": null,
+   "source_id": "src_2e3eeecd01",
+   "locator": "Harvest & Varietal Information",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_cain-cuvee-nv14_nv14_origin",
+   "wine_id": "wl_cain-cuvee-nv14",
+   "release_id": "rel_cain-cuvee-nv14_nv14",
+   "field": "origin",
+   "value": "Napa Valley",
+   "unit": null,
+   "source_id": "src_2e3eeecd01",
+   "locator": "Harvest & Varietal Information",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_grand-reserve-rose-ixsir_2023_vintage_year",
+   "wine_id": "wl_grand-reserve-rose-ixsir",
+   "release_id": "rel_grand-reserve-rose-ixsir_2023",
+   "field": "vintage_year",
+   "value": 2023,
+   "unit": null,
+   "source_id": "src_8807627978",
+   "locator": "Grape varieties",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_grand-reserve-rose-ixsir_2023_grape_varieties",
+   "wine_id": "wl_grand-reserve-rose-ixsir",
+   "release_id": "rel_grand-reserve-rose-ixsir_2023",
+   "field": "grape_varieties",
+   "value": [
+    "Mourvedre",
+    "Cinsault",
+    "Syrah"
+   ],
+   "unit": null,
+   "source_id": "src_8807627978",
+   "locator": "Grape varieties",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  },
+  {
+   "id": "clm_grand-reserve-rose-ixsir_2023_grape_percentages",
+   "wine_id": "wl_grand-reserve-rose-ixsir",
+   "release_id": "rel_grand-reserve-rose-ixsir_2023",
+   "field": "grape_percentages",
+   "value": null,
+   "unit": null,
+   "source_id": "src_8807627978",
+   "locator": "Grape varieties",
+   "status": "approved",
+   "reviewer": "Codex direct-source review",
+   "reviewed_at": "2026-09-29",
+   "revision": 1,
+   "note": "Do not apply release-scoped claims to a different vintage or bottling."
+  }
+ ],
+ "open_items": [
+  {
+   "wine_id": "wl_cabernet-sauvignon-pahlmeyer",
+   "legacy_id": "w105",
+   "status": "unresolved",
+   "note": "Pahlmeyer Proprietary Red or Jayson Cabernet Sauvignon? User confirmation pending."
+  },
+  {
+   "wine_id": "wl_sancerre-cote-des-monts-damnes-hubert-brochard",
+   "legacy_id": "w127",
+   "status": "unresolved",
+   "note": "Confirm release before approving maturation details: current producer page and an older indexed technical sheet differ; old PDF URL returned 404."
+  }
+ ]
+}

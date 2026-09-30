@@ -2,41 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>sommNI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>wineLENS — A clearer view of wine</title>
+  <meta name="theme-color" content="#FBF7EF">
+  <meta name="description" content="Your wines, vintages and tasting notes. A clearer view of wine, from your Winebrary to Even G2 glasses.">
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div id="app">
     <!-- Status Bar -->
     <div class="status-bar">
       <span id="status-dot" class="dot disconnected"></span>
-      <span id="status-text">Connecting...</span>
+      <span id="status-text">Open in Even Hub to connect glasses</span>
       <span id="battery-text"></span>
     </div>
 
-    <!-- Header -->
-    <div class="header">
-      <h1>ソムニ <span class="subtitle">sommNI</span></h1>
-      <p class="tagline">Seven Second Sommelier</p>
-    </div>
+    <header class="header">
+      <a class="wl-wordmark" href="./" aria-label="wineLENS home"><span class="wl-brand-symbol" aria-hidden="true">◎</span> wine<span>LENS</span></a>
+      <p class="tagline">A clearer view of wine.</p>
+      <button id="wl-account" class="wl-outline">Sign in ↗</button>
+    </header>
 
     <!-- Tab Navigation -->
     <nav class="tab-bar">
-      <button class="tab active" data-tab="home">Home</button>
-      <button class="tab" data-tab="cellar">Cellar</button>
+      <button class="tab active" data-tab="home">Overview</button>
+      <button class="tab" data-tab="winebrary">Winebrary</button>
+      <button class="tab" data-tab="cellar">Discover</button>
       <button class="tab" data-tab="courses">Courses</button>
       <button class="tab" data-tab="pairings">Pairings</button>
       <button class="tab" data-tab="study">Study</button>
       <button class="tab" data-tab="settings">Settings</button>
     </nav>
 
+    <p id="save-alert" class="save-alert" role="alert" hidden></p>
+    <main id="main-content">
     <!-- TAB: Home -->
     <section id="tab-home" class="tab-panel active">
+      <div class="wl-hero">
+        <div class="wl-hero-copy"><p class="wl-kicker">GOOD TASTE. SHARPER FOCUS.</p><h1>WINE.<br>IN.<br><span>FOCUS.</span></h1><p class="wl-hero-intro">A bottle worth knowing.<br>A vintage worth remembering.</p><div class="wl-hero-actions"><button class="wl-primary" data-open-tab="winebrary">Meet your Winebrary ↗</button><button class="wl-text-button" data-open-tab="cellar">Explore 215 wines →</button></div><p class="wl-hero-foot">DISCOVER / COLLECT / SEE MORE</p></div>
+        <div class="wl-hero-art"><div class="wl-orbit" aria-hidden="true"></div><span class="wl-art-index">01 / A CLOSER LOOK</span><img src="./photography/red.png" alt="Terrazas de los Andes Grand Malbec 2017 bottle photograph"><div class="wl-art-caption"><span>TERrazas DE LOS ANDES</span><strong>Grand Malbec <span>2017</span></strong><p>Real bottle. Real character.</p></div></div>
+      </div>
+      <div class="wl-editorial-strip"><p>A library of good taste.</p><span>From the first impression<br>to the last glass.</span><button class="wl-outline" data-wl-add>＋ Add a wine</button></div>
+      <div class="wl-home-grid">
       <div class="card">
         <div class="card-header">Glasses Status</div>
         <div id="home-glasses-status" class="card-body">
-          <span class="muted">Waiting for connection...</span>
+          <span class="muted">Open in Even Hub to connect your glasses.</span>
         </div>
       </div>
       <div class="stats-grid">
@@ -67,10 +79,24 @@
           <span class="muted">All stocked up</span>
         </div>
       </div>
+      </div>
+      <div class="wl-glasses-banner"><div><p class="wl-kicker">WINE KNOWLEDGE. AT A GLANCE.</p><h2>Keep your eyes<br>on the conversation.</h2><p>Your bottle, vintage and tasting notes.<br>Ready for your Even G2 display.</p></div><div class="wl-glasses-mini"><span>wineLENS / WINEBRARY</span><strong>Grand Malbec</strong><p>2017 · Mendoza</p><p>Black fruit. Fresh lift.<br>A long, generous finish.</p><small>Illustrative display preview</small></div></div>
     </section>
+
+    <section id="tab-winebrary" class="tab-panel"><div id="winebrary-content"></div></section>
 
     <!-- TAB: Cellar -->
     <section id="tab-cellar" class="tab-panel">
+      <article id="atlas-card" class="wl-atlas" aria-labelledby="atlas-title">
+        <canvas id="atlas-mini" width="360" height="360" aria-hidden="true"></canvas>
+        <div class="wl-atlas-copy">
+          <p class="wl-kicker">Wine Atlas</p>
+          <h3 id="atlas-title">Turn the globe to a wine country.</h3>
+          <p class="wl-muted">Scroll countries, then zoom into regions drawn from mapped winery locations (winerymap, 2024). Clusters show where wineries are, not appellation boundaries.</p>
+          <div class="wl-atlas-actions"><button class="wl-primary" id="atlas-open-glasses" type="button">Open on glasses</button><a class="wl-text-button" id="atlas-open-phone" href="atlas.html">Explore on phone →</a></div>
+          <p class="st-status" id="atlas-status" aria-live="polite"></p>
+        </div>
+      </article>
       <div id="cellar-content"></div>
     </section>
 
@@ -119,6 +145,8 @@
         <div id="log" class="card-body log-container"></div>
       </div>
     </section>
+    </main>
+    <footer class="wl-footer"><span>wineLENS</span><span>A clearer view of wine.</span><span>BY D3 HOSPITALITY</span></footer>
   </div>
   <script type="module" src="/src/Main.ts"></script>
 </body>

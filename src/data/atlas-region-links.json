@@ -1,0 +1,489 @@
+{
+  "about": "Explicit links from catalog wine regions to winerymap winery clusters (public/atlas/atlas-data.json). Clusters are winery locations, not appellation boundaries. Only linked regions appear as Atlas regions; unmapped regions stay reachable through catalog browsing. Every catalog region must have an entry (tests/atlas-catalog.cjs).",
+  "links": [
+    {
+      "region": "Abruzzo, IT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Alto Adige, IT",
+      "clusters": [
+        "Alto Adige"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Aube, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Bandol, FR",
+      "clusters": [
+        "Bandol"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Batroun, LB",
+      "clusters": [
+        "North Lebanon"
+      ],
+      "link": "broader-area",
+      "review": "pending",
+      "note": "Batroun District is in the North Lebanon governorate; the cluster is the governorate."
+    },
+    {
+      "region": "Batroun, Lebanon",
+      "clusters": [
+        "North Lebanon"
+      ],
+      "link": "broader-area",
+      "review": "pending",
+      "note": "Batroun District is in the North Lebanon governorate; the cluster is the governorate."
+    },
+    {
+      "region": "Bekaa Valley, LB",
+      "clusters": [
+        "Beqaa Valley"
+      ],
+      "link": "alias",
+      "review": "pending",
+      "note": "Transliteration variant of the same valley."
+    },
+    {
+      "region": "Bordeaux, FR",
+      "clusters": [
+        "Bordeaux"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Burgundy, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "California, US",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Campo de Borja, ES",
+      "clusters": [
+        "Campo de Borja"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Carneros, US",
+      "clusters": [
+        "Los Carneros"
+      ],
+      "link": "alias",
+      "review": "pending",
+      "note": "Carneros AVA is officially \"Los Carneros\"."
+    },
+    {
+      "region": "Champagne, FR",
+      "clusters": [
+        "Champagne"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Cyprus",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Côte-de-Beaune, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Côte-de-Nuits, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Douro, PT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Dão, PT",
+      "clusters": [
+        "Dão"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Eden Valley, Australia",
+      "clusters": [
+        "Eden Valley"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Greece",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Hemel-en-Aarde Ridge, South Africa",
+      "clusters": [
+        "Hemel-en-Aarde Ridge"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Languedoc-Roussillon, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Loire Valley, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Margaret River, Australia",
+      "clusters": [
+        "Margaret River"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Margaux, FR",
+      "clusters": [
+        "Margaux"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Martinborough, NZ",
+      "clusters": [
+        "Martinborough"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Mendoza, Argentina",
+      "clusters": [
+        "Mendoza"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Nahe, DE",
+      "clusters": [
+        "Nahe"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Napa Valley, US",
+      "clusters": [
+        "Napa Valley"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Oakville, US",
+      "clusters": [
+        "Oakville"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Paso Robles, US",
+      "clusters": [
+        "Paso Robles"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Pauillac, FR",
+      "clusters": [
+        "Pauillac"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Pfalz, DE",
+      "clusters": [
+        "Pfalz"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Piedmont, IT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Pomerol, FR",
+      "clusters": [
+        "Pomerol"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Provence, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Rhône Valley, FR",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Ribera del Duero, ES",
+      "clusters": [
+        "Ribera del Duero"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Rioja Alta, ES",
+      "clusters": [
+        "Rioja Alta"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Rioja, ES",
+      "clusters": [
+        "Rioja"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Rogue Valley, US",
+      "clusters": [
+        "Rogue Valley"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Russian River, US",
+      "clusters": [
+        "Russian River Valley"
+      ],
+      "link": "alias",
+      "review": "pending",
+      "note": "Short form of the Russian River Valley AVA."
+    },
+    {
+      "region": "Rías Baixas, ES",
+      "clusters": [
+        "Rías Baixas"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Saint-Émilion, FR",
+      "clusters": [
+        "Saint-Emilion"
+      ],
+      "link": "alias",
+      "review": "pending",
+      "note": "Same appellation; source drops the accent."
+    },
+    {
+      "region": "Sauternes, FR",
+      "clusters": [
+        "Sauternes"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Sicily, IT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Sonoma Coast, US",
+      "clusters": [
+        "Sonoma Coast"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Sonoma County, US",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Sonoma Valley, US",
+      "clusters": [
+        "Sonoma Valley"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Sta. Rita Hills, US",
+      "clusters": [
+        "Sta. Rita Hills"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Swartland, ZA",
+      "clusters": [
+        "Swartland"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Trentino, IT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Tuscany, IT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Valdobbiadene, IT",
+      "clusters": [
+        "Conegliano Valdobbiadene Prosecco"
+      ],
+      "link": "alias",
+      "review": "pending",
+      "note": "Valdobbiadene wines are labelled under the Conegliano Valdobbiadene Prosecco DOCG."
+    },
+    {
+      "region": "Valle de Guadalupe, Mexico",
+      "clusters": [
+        "Baja California"
+      ],
+      "link": "broader-area",
+      "review": "pending",
+      "note": "Valle de Guadalupe lies within Baja California; the cluster is the whole state."
+    },
+    {
+      "region": "Veneto, IT",
+      "clusters": [],
+      "link": "unmapped",
+      "review": "pending",
+      "note": "Region spans many source clusters; needs a sourced boundary or an explicit cluster list."
+    },
+    {
+      "region": "Weinviertel, AT",
+      "clusters": [
+        "Weinviertel"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    },
+    {
+      "region": "Willamette Valley, US",
+      "clusters": [
+        "Willamette Valley"
+      ],
+      "link": "exact-name",
+      "review": "pending",
+      "note": ""
+    }
+  ]
+}

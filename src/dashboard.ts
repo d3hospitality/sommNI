@@ -7,14 +7,15 @@
 import {
   getInventory, getInventoryStats, adjustStock, setStock,
   getPairings, createPairing, updatePairing, deletePairing,
-  getQuizStats, getQuizHistory, getLearnedVault, getFavorites,
-  toggleFavorite, saveFavorites, recordQuizAnswer, recordQuizSession,
-  checkAndUpdateLearned, getCourseState, saveCourseState,
+  getFavorites, toggleFavorite, getCourseState, saveCourseState,
   type Pairing, type CourseSlot,
 } from './sync';
+import { getWineId, lookupWineById } from './identity';
+import { wineReferences } from './study/content';
+import { initStudyPanel, renderStudyPanel } from './study/phone';
 import {
   WINES, WINE_TYPES, COUNTRIES, TYPE_DISPLAY, TOTAL_WINES,
-  getWineId, lookupWineById, getWinesForCountry, getGrapesForCountry,
+  getWinesForCountry, getGrapesForCountry,
   getWinesForGrape, scoreWine, getRankedWines, getFlavorOptionsForType,
   type Wine, type WineType,
 } from './constants';
@@ -96,80 +97,20 @@ let pairingAddingWine = false;
 let pairingEditingName = false;
 let pairingEditingNotes = false;
 
-// Study/Quiz state
-let studyMode: 'browse' | 'study' | 'quiz' | 'score' = 'browse';
-let studyCardIdx = 0;
-let studyFlipped = false;
-let quizWineId: string | null = null;
-let quizQuestions: { category: string; question: string; correct: string; options: string[] }[] = [];
-let quizQIdx = 0;
-let quizSelected: string | null = null;
-let quizShowResult = false;
-let quizCorrectCount = 0;
-let quizTotalCount = 0;
-
-// ═══════════════════════════════════════════════════════════════════
-// QUIZ QUESTION GENERATOR
-// ═══════════════════════════════════════════════════════════════════
-
-function generateDashboardQuestions(wineId: string): { category: string; question: string; correct: string; options: string[] }[] {
-  const lookup = lookupWineById(wineId);
-  if (!lookup) return [];
-  const wine = lookup.wine;
-  const qs: { category: string; question: string; correct: string; options: string[] }[] = [];
-
-  // Build a pool of other wines for distractors
-  const allWines: { wine: Wine; type: WineType; country: string }[] = [];
-  for (const t of WINE_TYPES) {
-    for (const c of COUNTRIES[t]) {
-      for (const w of (WINES[t]?.[c] || [])) {
-        allWines.push({ wine: w, type: t, country: c });
-      }
-    }
-  }
-  const others = allWines.filter(w => w.wine.name !== wine.name);
-  const shuffle = <T>(a: T[]): T[] => [...a].sort(() => Math.random() - 0.5);
-  const pick3 = <T>(arr: T[]): T[] => shuffle(arr).slice(0, 3);
-
-  // Country
-  const otherCountries = [...new Set(others.map(w => w.country))].filter(c => c !== lookup.country);
-  qs.push({ category: 'Origin', question: 'What country does this wine come from?',
-    correct: lookup.country, options: shuffle([lookup.country, ...pick3(otherCountries)]) });
-
-  // Grape
-  const otherGrapes = [...new Set(others.map(w => w.wine.grape))].filter(g => g !== wine.grape);
-  qs.push({ category: 'Grape', question: 'What grape(s) is this wine made from?',
-    correct: wine.grape, options: shuffle([wine.grape, ...pick3(otherGrapes)]) });
-
-  // Region
-  const otherRegions = [...new Set(others.map(w => w.wine.region))].filter(r => r !== wine.region);
-  qs.push({ category: 'Region', question: 'What region is this wine from?',
-    correct: wine.region, options: shuffle([wine.region, ...pick3(otherRegions)]) });
-
-  // Nose
-  if (wine.nose) {
-    const otherNoses = others.filter(w => w.wine.nose).map(w => w.wine.nose);
-    qs.push({ category: 'Nose', question: 'Which describes the nose of this wine?',
-      correct: wine.nose, options: shuffle([wine.nose, ...pick3(otherNoses)]) });
-  }
-
-  // Finish
-  if (wine.finish) {
-    const otherFinishes = others.filter(w => w.wine.finish).map(w => w.wine.finish);
-    qs.push({ category: 'Finish', question: 'How would you describe the finish?',
-      correct: wine.finish, options: shuffle([wine.finish, ...pick3(otherFinishes)]) });
-  }
-
-  return shuffle(qs);
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // INIT + TAB SWITCHING
 // ═══════════════════════════════════════════════════════════════════
 
 export function initDashboard(): void {
   document.addEventListener('click', handleGlobalClick);
+  const study = document.getElementById('study-content');
+  if (study) initStudyPanel(study);
+  window.addEventListener('winelens-save-error', () => {
+    const el = document.getElementById('save-alert');
+    if (el) { el.textContent = 'A change could not be saved on this device. Try again.'; el.hidden = false; }
+  });
   document.addEventListener('input', handleGlobalInput);
+  void refreshAll();
 
   const tabs = document.querySelectorAll<HTMLButtonElement>('.tab');
   tabs.forEach(tab => {
@@ -201,7 +142,7 @@ async function refreshTab(tabId: string): Promise<void> {
       case 'cellar': await renderCellar(); break;
       case 'courses': renderCourses(); break;
       case 'pairings': renderPairings(); break;
-      case 'study': await renderStudy(); break;
+      case 'study': await renderStudyPanel(); break;
       case 'settings': await renderSettings(); break;
     }
   } catch (e) { console.warn(`[dashboard] refresh ${tabId}:`, e); }
@@ -234,12 +175,14 @@ async function handleGlobalClick(e: Event): Promise<void> {
     case 'cellar-filter':
       cellarFilter = val as 'all' | '85' | '86'; await renderCellar(); break;
     case 'stock-plus':
-      inventoryCache[val] = (inventoryCache[val] ?? 0) + 1;
-      await adjustStock(val, 1); await renderCellar(); break;
-    case 'stock-minus':
-      inventoryCache[val] = Math.max(0, (inventoryCache[val] ?? 0) - 1);
-      await adjustStock(val, -1); await renderCellar(); break;
+    case 'stock-minus': {
+      if (!lookupWineById(val)) break; // never write stock against an unknown ID
+      await adjustStock(val, action === 'stock-plus' ? 1 : -1);
+      inventoryCache = await getInventory(); // show what was actually stored
+      await renderCellar(); break;
+    }
     case 'toggle-fav': {
+      if (!lookupWineById(val)) break;
       const nowFav = await toggleFavorite(val);
       if (nowFav) { favoritesCache.push(val); } else { favoritesCache = favoritesCache.filter(id => id !== val); }
       await renderCellar(); break;
@@ -357,69 +300,6 @@ async function handleGlobalClick(e: Event): Promise<void> {
       }
       renderPairings(); break;
     }
-
-    // ── Study ──
-    case 'study-start':
-      if (favoritesCache.length === 0) break;
-      studyMode = 'study'; studyCardIdx = 0; studyFlipped = false; await renderStudy(); break;
-    case 'study-browse':
-      studyMode = 'browse'; await renderStudy(); break;
-    case 'study-flip':
-      studyFlipped = !studyFlipped; await renderStudy(); break;
-    case 'study-prev':
-      studyFlipped = false; studyCardIdx = (studyCardIdx - 1 + favoritesCache.length) % favoritesCache.length;
-      await renderStudy(); break;
-    case 'study-next':
-      studyFlipped = false; studyCardIdx = (studyCardIdx + 1) % favoritesCache.length;
-      await renderStudy(); break;
-    case 'quiz-start': {
-      quizWineId = val;
-      quizQuestions = generateDashboardQuestions(val);
-      if (quizQuestions.length === 0) break;
-      quizQIdx = 0; quizSelected = null; quizShowResult = false;
-      quizCorrectCount = 0; quizTotalCount = 0;
-      studyMode = 'quiz'; await renderStudy(); break;
-    }
-    case 'quiz-random': {
-      if (favoritesCache.length === 0) break;
-      const rid = favoritesCache[Math.floor(Math.random() * favoritesCache.length)];
-      quizWineId = rid;
-      quizQuestions = generateDashboardQuestions(rid);
-      if (quizQuestions.length === 0) break;
-      quizQIdx = 0; quizSelected = null; quizShowResult = false;
-      quizCorrectCount = 0; quizTotalCount = 0;
-      studyMode = 'quiz'; await renderStudy(); break;
-    }
-    case 'quiz-answer': {
-      if (quizShowResult) break;
-      quizSelected = val;
-      quizShowResult = true;
-      const correct = val === quizQuestions[quizQIdx].correct;
-      if (correct) quizCorrectCount++;
-      quizTotalCount++;
-      if (quizWineId) await recordQuizAnswer(quizWineId, correct);
-      await renderStudy(); break;
-    }
-    case 'quiz-next': {
-      if (quizQIdx < quizQuestions.length - 1) {
-        quizQIdx++; quizSelected = null; quizShowResult = false;
-      } else {
-        // Quiz complete
-        const lookup = lookupWineById(quizWineId!);
-        const wineName = lookup ? lookup.wine.name : quizWineId!;
-        await recordQuizSession(quizWineId!, wineName, quizCorrectCount, quizTotalCount, quizQuestions.length);
-        studyMode = 'score';
-      }
-      await renderStudy(); break;
-    }
-    case 'quiz-retry':
-      if (quizWineId) {
-        quizQuestions = generateDashboardQuestions(quizWineId);
-        quizQIdx = 0; quizSelected = null; quizShowResult = false;
-        quizCorrectCount = 0; quizTotalCount = 0;
-        studyMode = 'quiz';
-      }
-      await renderStudy(); break;
   }
 }
 
@@ -427,11 +307,24 @@ function handleGlobalInput(e: Event): void {
   const target = e.target as HTMLElement;
   if (target.id === 'cellar-search') {
     cellarSearch = (target as HTMLInputElement).value;
+    const cursorPos = (target as HTMLInputElement).selectionStart;
     renderCellar();
+    const restored = document.getElementById('cellar-search') as HTMLInputElement | null;
+    if (restored) {
+      restored.focus();
+      if (cursorPos !== null) restored.setSelectionRange(cursorPos, cursorPos);
+    }
   }
   if (target.id === 'pairing-search') {
     pairingSearchQ = (target as HTMLInputElement).value;
+    const cursorPos = (target as HTMLInputElement).selectionStart;
     renderPairings();
+    // Refocus the search input after re-render (innerHTML destroys + recreates it)
+    const restored = document.getElementById('pairing-search') as HTMLInputElement | null;
+    if (restored) {
+      restored.focus();
+      if (cursorPos !== null) restored.setSelectionRange(cursorPos, cursorPos);
+    }
   }
 }
 
@@ -571,8 +464,14 @@ async function renderCellar(): Promise<void> {
     html += '<div class="wine-cards">';
     for (const wine of wines) {
       const wineId = getWineId(cellarType, cellarCountry, wine.name);
+      if (!wineId) continue; // no canonical identity: not shown rather than mis-linked
       const stock = inventoryCache[wineId] ?? null;
       const isFav = favoritesCache.includes(wineId);
+      const refs = wineReferences(wineId);
+      const refChip = refs.claims.length
+        ? `<p class="ref-chip ref-verified">Producer-sourced facts · ${[...new Set(refs.claims.map(c => c.source.publisher))].map(esc).join(', ')} · checked ${esc(refs.claims[0].reviewed_at)}</p>`
+        : refs.open.length ? `<p class="ref-chip ref-open">Reference under review: ${esc(refs.open[0].note)}</p>`
+        : '<p class="ref-chip">Catalog details not yet verified</p>';
 
       // Apply filter
       if (cellarFilter === '85' && (stock === null || stock === 0 || stock > 2)) continue;
@@ -585,8 +484,9 @@ async function renderCellar(): Promise<void> {
           <div class="wine-card-info">
             <div class="wine-card-name">${esc(wine.name.split('–')[0].trim())}</div>
             <div class="wine-card-meta">${esc(wine.region)} · ${esc(wine.style)}</div>
+            ${refChip}
           </div>
-          <button class="fav-btn ${isFav ? 'faved' : ''}" data-action="toggle-fav" data-value="${wineId}">${isFav ? '★' : '☆'}</button>
+          <button class="wl-text-button" data-save-library="${wineId}">＋ Winebrary</button><button class="fav-btn ${isFav ? 'faved' : ''}" data-action="toggle-fav" data-value="${wineId}">${isFav ? '★' : '☆'}</button>
         </div>
         <div class="stock-row">
           <button class="stock-btn" data-action="stock-minus" data-value="${wineId}">−</button>
@@ -628,7 +528,7 @@ function renderCourses(): void {
       html += `<div class="flow-card">
         <div class="flow-header">
           <div class="flow-dots">${FINDER_FLOW.map((_, i) =>
-            `<span class="dot-pip ${i === courseStep ? 'active' : i < courseStep ? 'done' : ''}"></span>`
+            `<span class="dot-pip ${i === courseStep ? 'active' : i < (courseStep as number) ? 'done' : ''}"></span>`
           ).join('')}</div>
           <button class="btn-outline" data-action="course-back">‹ Back</button>
         </div>
@@ -658,6 +558,7 @@ function renderCourses(): void {
         html += `<div class="results-country">${esc(country)} <span class="muted">(${wines.length})</span></div>`;
         for (const r of wines) {
           const wid = getWineId(r.type, r.country, r.wine.name);
+          if (!wid) continue;
           html += `<button class="result-wine" data-action="course-select-wine" data-value="${wid}" data-value2="${esc(r.wine.name)}">
             <div class="result-wine-name">${esc(r.wine.name.split('–')[0].trim())}</div>
             <div class="result-wine-meta">${esc(r.wine.grape)} · ${esc(r.wine.style)}</div>
@@ -835,151 +736,6 @@ function renderPairings(): void {
 // STUDY TAB — favorites-based flash cards + quiz
 // ═══════════════════════════════════════════════════════════════════
 
-async function renderStudy(): Promise<void> {
-  const content = $('study-content');
-  if (!content) return;
-  let html = '';
-
-  if (studyMode === 'score') {
-    const pct = quizTotalCount > 0 ? Math.round((quizCorrectCount / quizTotalCount) * 100) : 0;
-    const emoji = pct === 100 ? '&#127942;' : pct >= 75 ? '&#127863;' : pct >= 50 ? '&#128214;' : '&#128170;';
-    const lookup = lookupWineById(quizWineId!);
-    const wineName = lookup ? lookup.wine.name.split('–')[0].trim() : '';
-
-    html += `<div class="score-screen">
-      <div class="score-emoji">${emoji}</div>
-      <div class="score-pct">${pct}%</div>
-      <div class="score-detail">${quizCorrectCount}/${quizTotalCount} correct on ${esc(wineName)}</div>
-      <div class="score-actions">
-        <button class="btn-gold" data-action="quiz-retry">Try Again</button>
-        <button class="btn-gold" data-action="quiz-random">Random Wine</button>
-      </div>
-      <button class="btn-outline" data-action="study-browse" style="margin-top:12px">Back to Cards</button>
-    </div>`;
-
-  } else if (studyMode === 'quiz' && quizWineId && quizQuestions.length > 0) {
-    const q = quizQuestions[quizQIdx];
-    const lookup = lookupWineById(quizWineId);
-    const wineName = lookup ? lookup.wine.name.split('–')[0].trim() : '';
-    const wineType = lookup ? lookup.type : 'Red';
-
-    html += `<button class="btn-outline" data-action="study-browse">‹ Cards</button>
-    <div class="quiz-header">
-      <div>
-        <div class="quiz-wine-name">${esc(wineName)}</div>
-        <span style="color:${typeColor(wineType)};font-size:11px">${TYPE_DISPLAY[wineType as WineType]}</span>
-      </div>
-      <span class="quiz-progress">${quizQIdx + 1}/${quizQuestions.length}</span>
-    </div>
-    <div class="quiz-card">
-      <span class="quiz-category">${q.category}</span>
-      <p class="quiz-question">${esc(q.question)}</p>
-      <div class="quiz-options">${q.options.map(opt => {
-        let cls = 'quiz-option';
-        if (quizShowResult) {
-          if (opt === q.correct) cls += ' correct';
-          else if (opt === quizSelected) cls += ' wrong';
-        }
-        return `<button class="${cls}" data-action="quiz-answer" data-value="${esc(opt)}">${esc(opt)}</button>`;
-      }).join('')}</div>
-      ${quizShowResult ? `<div class="quiz-feedback">
-        <span class="${quizSelected === q.correct ? 'feedback-correct' : 'feedback-wrong'}">${quizSelected === q.correct ? 'Correct!' : 'Answer: ' + esc(q.correct)}</span>
-        <button class="btn-gold-sm" data-action="quiz-next">${quizQIdx < quizQuestions.length - 1 ? 'Next Question' : 'See Score'}</button>
-      </div>` : ''}
-    </div>
-    <div class="quiz-pips">${quizQuestions.map((_, i) =>
-      `<span class="dot-pip ${i < quizQIdx ? 'done' : i === quizQIdx ? 'active' : ''}"></span>`
-    ).join('')}</div>`;
-
-  } else if (studyMode === 'study' && favoritesCache.length > 0) {
-    const wid = favoritesCache[studyCardIdx];
-    const lookup = lookupWineById(wid);
-    if (!lookup) { studyMode = 'browse'; await renderStudy(); return; }
-    const wine = lookup.wine;
-    const wineType = lookup.type;
-
-    html += `<button class="btn-outline" data-action="study-browse">‹ Cards</button>
-    <div class="study-counter">${studyCardIdx + 1} / ${favoritesCache.length}</div>
-    <div class="flash-card" data-action="study-flip">`;
-    if (!studyFlipped) {
-      html += `<div class="card-front">
-        <div class="card-wine-name">${esc(wine.name.split('–')[0].trim())}</div>
-        ${wine.name.includes('–') ? `<div class="card-producer">${esc(wine.name.split('–')[1]?.trim() || '')}</div>` : ''}
-        <div class="card-type" style="color:${typeColor(wineType)}">${TYPE_DISPLAY[wineType]}</div>
-        <div class="card-hint">Tap to reveal details</div>
-      </div>`;
-    } else {
-      html += `<div class="card-back">
-        ${[['Grape', wine.grape], ['Country', lookup.country], ['Region', wine.region], ['Style', wine.style],
-          ['Nose', wine.nose], ['Palate', wine.palate], ['Finish', wine.finish]].filter(([,v]) => v).map(([l,v]) =>
-          `<div class="card-detail"><span class="card-label">${l}</span><span class="card-value">${esc(v as string)}</span></div>`
-        ).join('')}
-      </div>`;
-    }
-    html += `</div>
-    <div class="study-nav">
-      <button class="btn-outline" data-action="study-prev">‹ Prev</button>
-      <button class="btn-gold" data-action="quiz-start" data-value="${wid}">Quiz Me</button>
-      <button class="btn-outline" data-action="study-next">Next ›</button>
-    </div>`;
-
-  } else {
-    // Browse mode — show favorites list + quiz history
-    html += `<div class="section-header">
-      <div class="section-label">Your Favorites</div>
-      ${favoritesCache.length > 0 ? `<button class="btn-gold-sm" data-action="study-start">Study Cards</button>` : ''}
-    </div>`;
-
-    if (favoritesCache.length === 0) {
-      html += '<div class="empty-state"><p>No favorites yet</p><p class="muted">Browse your cellar and star wines to build your study deck.</p></div>';
-    } else {
-      html += '<div class="fav-list">';
-      for (const wid of favoritesCache) {
-        const w = lookupWineById(wid);
-        if (!w) continue;
-        html += `<div class="fav-item">
-          <div class="fav-info">
-            <div class="fav-name">${esc(w.wine.name.split('–')[0].trim())}</div>
-            <div class="fav-meta" style="color:${typeColor(w.type)}">${TYPE_DISPLAY[w.type]} · ${esc(w.wine.grape)}</div>
-          </div>
-          <button class="btn-gold-sm" data-action="quiz-start" data-value="${wid}">Quiz</button>
-        </div>`;
-      }
-      html += '</div>';
-      if (favoritesCache.length > 1) {
-        html += `<button class="btn-gold" data-action="quiz-random" style="margin-top:12px;width:100%">Random Quiz</button>`;
-      }
-    }
-
-    // Quiz history
-    const history = await getQuizHistory();
-    if (history.length > 0) {
-      html += '<div class="section-label" style="margin-top:20px">Quiz History</div>';
-      html += history.slice(0, 15).map(h => {
-        const scoreClass = h.pct === 100 ? 'perfect' : h.pct >= 70 ? 'good' : 'poor';
-        return `<div class="quiz-row">
-          <span class="quiz-row-name">${esc(h.wineName.split('–')[0].trim())}</span>
-          <span class="quiz-row-score ${scoreClass}">${h.pct}%</span>
-          <span class="quiz-row-date">${formatDate(h.date)}</span>
-        </div>`;
-      }).join('');
-    }
-
-    // Learned vault
-    const vault = await getLearnedVault();
-    if (vault.length > 0) {
-      html += '<div class="section-label" style="margin-top:20px">Learned Vault</div>';
-      for (const wid of vault) {
-        const w = lookupWineById(wid);
-        if (!w) continue;
-        html += `<div class="vault-item"><span>${esc(w.wine.name.split('–')[0].trim())}</span><span class="vault-badge">Mastered</span></div>`;
-      }
-    }
-  }
-
-  content.innerHTML = html;
-}
-
 // ═══════════════════════════════════════════════════════════════════
 // SETTINGS TAB
 // ═══════════════════════════════════════════════════════════════════
@@ -1010,8 +766,10 @@ function getAllWinesFlat() {
   for (const t of WINE_TYPES) {
     for (const c of COUNTRIES[t]) {
       for (const w of (WINES[t]?.[c] || [])) {
+        const id = getWineId(t, c, w.name);
+        if (!id) continue;
         _flatWines.push({
-          id: getWineId(t, c, w.name),
+          id,
           name: w.name,
           grape: w.grape,
           type: t,

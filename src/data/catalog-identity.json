@@ -1,0 +1,1296 @@
+{
+ "version": 1,
+ "frozen_legacy_at": "2026-09-29",
+ "entries": [
+  {
+   "id": "wl_grand-malbec-terrazas-de-los-andes",
+   "key": "Red|Argentina|Grand Malbec – Terrazas de los Andes",
+   "legacy_id": "w0",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-vasse-felix",
+   "key": "Red|Australia|Cabernet Sauvignon – Vasse Felix",
+   "legacy_id": "w1",
+   "status": "active"
+  },
+  {
+   "id": "wl_henry-s-seven-henschke",
+   "key": "Red|Australia|Henry’s Seven – Henschke",
+   "legacy_id": "w2",
+   "status": "active"
+  },
+  {
+   "id": "wl_aloxe-corton-louis-latour",
+   "key": "Red|France|Aloxe-Corton – Louis Latour",
+   "legacy_id": "w3",
+   "status": "active"
+  },
+  {
+   "id": "wl_aloxe-corton-tollot-beaut",
+   "key": "Red|France|Aloxe-Corton – Tollot-Beaut",
+   "legacy_id": "w4",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateau-margaux-grand-vin",
+   "key": "Red|France|Château Margaux Grand Vin",
+   "legacy_id": "w5",
+   "status": "active"
+  },
+  {
+   "id": "wl_gevrey-chambertin-jean-claude-boisset",
+   "key": "Red|France|Gevrey-Chambertin – Jean-Claude Boisset",
+   "legacy_id": "w6",
+   "status": "active"
+  },
+  {
+   "id": "wl_gevrey-chambertin-taupenot-merme",
+   "key": "Red|France|Gevrey-Chambertin – Taupenot-Merme",
+   "legacy_id": "w7",
+   "status": "active"
+  },
+  {
+   "id": "wl_nuits-saint-georges-maison-latour",
+   "key": "Red|France|Nuits-Saint-Georges – Maison Latour",
+   "legacy_id": "w8",
+   "status": "active"
+  },
+  {
+   "id": "wl_santenay-1er-cru-grand-clos-rousseau-remoissenet",
+   "key": "Red|France|Santenay 1er Cru \"Grand Clos Rousseau\" – Remoissenet",
+   "legacy_id": "w9",
+   "status": "active"
+  },
+  {
+   "id": "wl_vosne-romanee-1er-cru-les-chaumes-gros-frere-et-s-ur",
+   "key": "Red|France|Vosne-Romanée 1er Cru \"Les Chaumes\" – Gros Frère et Sœur",
+   "legacy_id": "w10",
+   "status": "active"
+  },
+  {
+   "id": "wl_vosne-romanee-jean-claude-boisset",
+   "key": "Red|France|Vosne-Romanée – Jean-Claude Boisset",
+   "legacy_id": "w11",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateau-armens-grand-cru",
+   "key": "Red|France|Château Armens Grand Cru",
+   "legacy_id": "w12",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateau-la-gaffeliere-premier-grand-cru",
+   "key": "Red|France|Château La Gaffelière Premier Grand Cru",
+   "legacy_id": "w13",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateau-l-ecuyer",
+   "key": "Red|France|Château l’Ecuyer",
+   "legacy_id": "w14",
+   "status": "active"
+  },
+  {
+   "id": "wl_le-pauillac-de-latour-chateau-latour",
+   "key": "Red|France|Le Pauillac de Latour – Château Latour",
+   "legacy_id": "w15",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateauneuf-du-pape-vieilles-vignes-marcoux",
+   "key": "Red|France|Châteauneuf-du-Pape \"Vieilles Vignes\" – Marcoux",
+   "legacy_id": "w16",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateauneuf-du-pape-rouge-domaine-de-marcoux",
+   "key": "Red|France|Châteauneuf-du-Pape Rouge – Domaine de Marcoux",
+   "legacy_id": "w17",
+   "status": "active"
+  },
+  {
+   "id": "wl_cote-rotie-la-mouline-guigal",
+   "key": "Red|France|Côte-Rôtie \"La Mouline\" – Guigal",
+   "legacy_id": "w18",
+   "status": "active"
+  },
+  {
+   "id": "wl_cote-rotie-la-turque-guigal",
+   "key": "Red|France|Côte-Rôtie \"La Turque\" – Guigal",
+   "legacy_id": "w19",
+   "status": "active"
+  },
+  {
+   "id": "wl_cote-rotie-mon-village-stephane-ogier",
+   "key": "Red|France|Côte-Rôtie \"Mon Village\" – Stéphane Ogier",
+   "legacy_id": "w20",
+   "status": "active"
+  },
+  {
+   "id": "wl_hermitage-jean-louis-chave",
+   "key": "Red|France|Hermitage – Jean-Louis Chave",
+   "legacy_id": "w21",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateau-mongravey-cru-bourgeois",
+   "key": "Red|France|Château Mongravey Cru Bourgeois",
+   "legacy_id": "w22",
+   "status": "active"
+  },
+  {
+   "id": "wl_dame-de-gaffeliere-chateau-la-gaffeliere",
+   "key": "Red|France|Dame de Gaffelière – Château La Gaffelière",
+   "legacy_id": "w23",
+   "status": "active"
+  },
+  {
+   "id": "wl_margaux-du-chateau-margaux",
+   "key": "Red|France|Margaux du Château Margaux",
+   "legacy_id": "w24",
+   "status": "active"
+  },
+  {
+   "id": "wl_chianti-classico-montebuoni-castello-di-ama",
+   "key": "Red|Italy|Chianti Classico \"Montebuoni\" – Castello di Ama",
+   "legacy_id": "w25",
+   "status": "active"
+  },
+  {
+   "id": "wl_barbaresco-san-giuliano-paolo-manzone",
+   "key": "Red|Italy|Barbaresco \"San Giuliano\" – Paolo Manzone",
+   "legacy_id": "w26",
+   "status": "active"
+  },
+  {
+   "id": "wl_barbaresco-vanotu-pelissero",
+   "key": "Red|Italy|Barbaresco \"Vanotu\" – Pelissero",
+   "legacy_id": "w27",
+   "status": "active"
+  },
+  {
+   "id": "wl_barbaresco-gaja",
+   "key": "Red|Italy|Barbaresco – Gaja",
+   "legacy_id": "w28",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-comune-di-verduno-fratelli-alessandria",
+   "key": "Red|Italy|Barolo \"Comune di Verduno\" – Fratelli Alessandria",
+   "legacy_id": "w29",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-garretti-la-spinetta",
+   "key": "Red|Italy|Barolo \"Garretti\" – La Spinetta",
+   "legacy_id": "w30",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-gianetto-guido-porro",
+   "key": "Red|Italy|Barolo \"Gianetto\" – Guido Porro",
+   "legacy_id": "w31",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-serradenari-giulia-negri",
+   "key": "Red|Italy|Barolo \"Serradenari\" – Giulia Negri",
+   "legacy_id": "w32",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-serralunga-d-alba-paolo-manzone",
+   "key": "Red|Italy|Barolo \"Serralunga d’Alba\" – Paolo Manzone",
+   "legacy_id": "w33",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-riserva-paolo-manzone",
+   "key": "Red|Italy|Barolo Riserva – Paolo Manzone",
+   "legacy_id": "w34",
+   "status": "active"
+  },
+  {
+   "id": "wl_barolo-borgogno",
+   "key": "Red|Italy|Barolo – Borgogno",
+   "legacy_id": "w35",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-cerretalto-casanova-di-neri",
+   "key": "Red|Italy|Brunello \"Cerretalto\" – Casanova di Neri",
+   "legacy_id": "w36",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-tenuta-nuova-casanova-di-neri",
+   "key": "Red|Italy|Brunello \"Tenuta Nuova\" – Casanova di Neri",
+   "legacy_id": "w37",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-1-5l-col-di-lamo",
+   "key": "Red|Italy|Brunello di Montalcino 1.5L – Col di Lamo",
+   "legacy_id": "w38",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-riserva-col-di-lamo",
+   "key": "Red|Italy|Brunello di Montalcino Riserva – Col di Lamo",
+   "legacy_id": "w39",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-altesino",
+   "key": "Red|Italy|Brunello di Montalcino – Altesino",
+   "legacy_id": "w40",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-biondi-santi",
+   "key": "Red|Italy|Brunello di Montalcino – Biondi-Santi",
+   "legacy_id": "w41",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-canalicchio-di-sopra",
+   "key": "Red|Italy|Brunello di Montalcino – Canalicchio di Sopra",
+   "legacy_id": "w42",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-casanova-di-neri",
+   "key": "Red|Italy|Brunello di Montalcino – Casanova di Neri",
+   "legacy_id": "w43",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-castello-romitorio",
+   "key": "Red|Italy|Brunello di Montalcino – Castello Romitorio",
+   "legacy_id": "w44",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-col-di-lamo",
+   "key": "Red|Italy|Brunello di Montalcino – Col di Lamo",
+   "legacy_id": "w45",
+   "status": "active"
+  },
+  {
+   "id": "wl_brunello-di-montalcino-ridolfi",
+   "key": "Red|Italy|Brunello di Montalcino – Ridolfi",
+   "legacy_id": "w46",
+   "status": "active"
+  },
+  {
+   "id": "wl_chianti-classico-gran-selezione-san-lorenzo-castello-di",
+   "key": "Red|Italy|Chianti Classico Gran Selezione \"San Lorenzo\" – Castello di Ama",
+   "legacy_id": "w47",
+   "status": "active"
+  },
+  {
+   "id": "wl_flaccianello-della-pieve-fontodi",
+   "key": "Red|Italy|Flaccianello della Pieve – Fontodi",
+   "legacy_id": "w48",
+   "status": "active"
+  },
+  {
+   "id": "wl_poggio-valente-fattoria-la-pupille",
+   "key": "Red|Italy|Poggio Valente – Fattoria La Pupille",
+   "legacy_id": "w49",
+   "status": "active"
+  },
+  {
+   "id": "wl_tignanello-antinori",
+   "key": "Red|Italy|Tignanello – Antinori",
+   "legacy_id": "w50",
+   "status": "active"
+  },
+  {
+   "id": "wl_haiku-castello-di-ama",
+   "key": "Red|Italy|Haiku – Castello di Ama",
+   "legacy_id": "w51",
+   "status": "active"
+  },
+  {
+   "id": "wl_il-blu-brancaia",
+   "key": "Red|Italy|Il Blu – Brancaia",
+   "legacy_id": "w52",
+   "status": "active"
+  },
+  {
+   "id": "wl_ilatraia-brancaia",
+   "key": "Red|Italy|Ilatraia – Brancaia",
+   "legacy_id": "w53",
+   "status": "active"
+  },
+  {
+   "id": "wl_modus-ruffino",
+   "key": "Red|Italy|Modus – Ruffino",
+   "legacy_id": "w54",
+   "status": "active"
+  },
+  {
+   "id": "wl_case-via-fontodi",
+   "key": "Red|Italy|Case Via – Fontodi",
+   "legacy_id": "w55",
+   "status": "active"
+  },
+  {
+   "id": "wl_il-fauno-di-arcanum-tenuta-di-arceno",
+   "key": "Red|Italy|Il Fauno di Arcanum – Tenuta di Arceno",
+   "legacy_id": "w56",
+   "status": "active"
+  },
+  {
+   "id": "wl_irrosso-casanova-di-neri",
+   "key": "Red|Italy|Irrosso – Casanova di Neri",
+   "legacy_id": "w57",
+   "status": "active"
+  },
+  {
+   "id": "wl_le-volte-dell-ornellaia",
+   "key": "Red|Italy|Le Volte dell’Ornellaia",
+   "legacy_id": "w58",
+   "status": "active"
+  },
+  {
+   "id": "wl_magnetic-donne-fittipaldi",
+   "key": "Red|Italy|Magnetic – Donne Fittipaldi",
+   "legacy_id": "w59",
+   "status": "active"
+  },
+  {
+   "id": "wl_nebbiolo-no-name-borgogno",
+   "key": "Red|Italy|Nebbiolo \"No Name\" – Borgogno",
+   "legacy_id": "w60",
+   "status": "active"
+  },
+  {
+   "id": "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo",
+   "key": "Red|Italy|Pater-Patriae Pinot Noir – Tenuta Cafaggiolo",
+   "legacy_id": "w61",
+   "status": "active"
+  },
+  {
+   "id": "wl_rosso-di-montalcino-giovanni-neri-casanova-di-neri",
+   "key": "Red|Italy|Rosso di Montalcino \"Giovanni Neri\" – Casanova di Neri",
+   "legacy_id": "w62",
+   "status": "active"
+  },
+  {
+   "id": "wl_rosso-di-montalcino-canalicchio-di-sopra",
+   "key": "Red|Italy|Rosso di Montalcino – Canalicchio di Sopra",
+   "legacy_id": "w63",
+   "status": "active"
+  },
+  {
+   "id": "wl_toscana-rosso-il-borro",
+   "key": "Red|Italy|Toscana Rosso – Il Borro",
+   "legacy_id": "w64",
+   "status": "active"
+  },
+  {
+   "id": "wl_tre-brancaia",
+   "key": "Red|Italy|Tre – Brancaia",
+   "legacy_id": "w65",
+   "status": "active"
+  },
+  {
+   "id": "wl_barbera-d-alba-fiorenza-paolo-manzone",
+   "key": "Red|Italy|Barbera d’Alba \"Fiorenza\" – Paolo Manzone",
+   "legacy_id": "w66",
+   "status": "active"
+  },
+  {
+   "id": "wl_barbera-d-alba-piani-pelissero",
+   "key": "Red|Italy|Barbera d’Alba \"Piani\" – Pelissero",
+   "legacy_id": "w67",
+   "status": "active"
+  },
+  {
+   "id": "wl_chianti-classico-riserva-volpaia",
+   "key": "Red|Italy|Chianti Classico Riserva – Volpaia",
+   "legacy_id": "w68",
+   "status": "active"
+  },
+  {
+   "id": "wl_ixsir-grand-reserve-red-blend",
+   "key": "Red|Lebanon|Ixsir Grand Reserve Red Blend",
+   "legacy_id": "w69",
+   "status": "active"
+  },
+  {
+   "id": "wl_massaya-gold-reserve",
+   "key": "Red|Lebanon|Massaya Gold Reserve",
+   "legacy_id": "w70",
+   "status": "active"
+  },
+  {
+   "id": "wl_love-letter-mersel",
+   "key": "Red|Lebanon|Love Letter – Mersel",
+   "legacy_id": "w71",
+   "status": "active"
+  },
+  {
+   "id": "wl_gabriel-adobe-guadalupe",
+   "key": "Red|Mexico|Gabriel – Adobe Guadalupe",
+   "legacy_id": "w72",
+   "status": "active"
+  },
+  {
+   "id": "wl_liquen-alfrocheiro-joao-cabral-almeida",
+   "key": "Red|Portugal|Líquen Alfrocheiro – João Cabral Almeida",
+   "legacy_id": "w73",
+   "status": "active"
+  },
+  {
+   "id": "wl_maria-izabel-tinto-quinta-maria-izabel",
+   "key": "Red|Portugal|Maria Izabel Tinto – Quinta Maria Izabel",
+   "legacy_id": "w74",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-storm",
+   "key": "Red|South Africa|Pinot Noir – Storm",
+   "legacy_id": "w75",
+   "status": "active"
+  },
+  {
+   "id": "wl_rioja-reserva-montana",
+   "key": "Red|Spain|Rioja Reserva – Montaña",
+   "legacy_id": "w76",
+   "status": "active"
+  },
+  {
+   "id": "wl_rioja-reserva-valenciso",
+   "key": "Red|Spain|Rioja Reserva – Valenciso",
+   "legacy_id": "w77",
+   "status": "active"
+  },
+  {
+   "id": "wl_castillo-ygay-gran-reserva-especial-marques-de-murrieta",
+   "key": "Red|Spain|Castillo Ygay Gran Reserva Especial – Marqués de Murrieta",
+   "legacy_id": "w78",
+   "status": "active"
+  },
+  {
+   "id": "wl_imperial-gran-reserva-cvne",
+   "key": "Red|Spain|Imperial Gran Reserva – CVNE",
+   "legacy_id": "w79",
+   "status": "active"
+  },
+  {
+   "id": "wl_valbuena-5-anos-vega-sicilia",
+   "key": "Red|Spain|Valbuena 5 Años – Vega Sicilia",
+   "legacy_id": "w80",
+   "status": "active"
+  },
+  {
+   "id": "wl_contador-benjamin-romeo",
+   "key": "Red|Spain|Contador – Benjamín Romeo",
+   "legacy_id": "w81",
+   "status": "active"
+  },
+  {
+   "id": "wl_malleolus-de-sanchomartin-emilio-moro",
+   "key": "Red|Spain|Malleolus de Sanchomartín – Emilio Moro",
+   "legacy_id": "w82",
+   "status": "active"
+  },
+  {
+   "id": "wl_veraton-bodegas-alto-moncayo",
+   "key": "Red|Spain|Veraton – Bodegas Alto Moncayo",
+   "legacy_id": "w83",
+   "status": "active"
+  },
+  {
+   "id": "wl_10-anos-despues-valenciso",
+   "key": "Red|Spain|10 Años Después – Valenciso",
+   "legacy_id": "w84",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-botanica-antica-terra",
+   "key": "Red|United States|Pinot Noir \"Botanica\" – Antica Terra",
+   "legacy_id": "w85",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-plow-lingua-franca",
+   "key": "Red|United States|Pinot Noir \"Plow\" – Lingua Franca",
+   "legacy_id": "w86",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-bergstrom-le-pre-du-col",
+   "key": "Red|United States|Pinot Noir – Bergström (Le Pré du Col)",
+   "legacy_id": "w87",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-domaine-drouhin",
+   "key": "Red|United States|Pinot Noir – Domaine Drouhin",
+   "legacy_id": "w88",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-hanzell-estate",
+   "key": "Red|United States|Pinot Noir – Hanzell Estate",
+   "legacy_id": "w89",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-joseph-phelps-freestone",
+   "key": "Red|United States|Pinot Noir – Joseph Phelps (Freestone)",
+   "legacy_id": "w90",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-keller-estate",
+   "key": "Red|United States|Pinot Noir – Keller Estate",
+   "legacy_id": "w91",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-paul-hobbs",
+   "key": "Red|United States|Pinot Noir – Paul Hobbs",
+   "legacy_id": "w92",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-st-innocent-momtazi",
+   "key": "Red|United States|Pinot Noir – St. Innocent (Momtazi)",
+   "legacy_id": "w93",
+   "status": "active"
+  },
+  {
+   "id": "wl_sea-smoke-sea-spray",
+   "key": "Red|United States|Sea Smoke \"Sea Spray\"",
+   "legacy_id": "w94",
+   "status": "active"
+  },
+  {
+   "id": "wl_cain-cuvee-nv14",
+   "key": "Red|United States|Cain Cuvée \"NV14\"",
+   "legacy_id": "w95",
+   "status": "active"
+  },
+  {
+   "id": "wl_opus-one",
+   "key": "Red|United States|Opus One",
+   "legacy_id": "w96",
+   "status": "active"
+  },
+  {
+   "id": "wl_the-mascot-harlan-family",
+   "key": "Red|United States|The Mascot – Harlan Family",
+   "legacy_id": "w97",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-brother-s-vineyard-snowden",
+   "key": "Red|United States|Cabernet Sauvignon \"Brother’s Vineyard\" – Snowden",
+   "legacy_id": "w98",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-highest-beauty-to-kalon",
+   "key": "Red|United States|Cabernet Sauvignon \"Highest Beauty\" – To Kalon",
+   "legacy_id": "w99",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-palermo-orin-swift",
+   "key": "Red|United States|Cabernet Sauvignon \"Palermo\" – Orin Swift",
+   "legacy_id": "w100",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-caymus",
+   "key": "Red|United States|Cabernet Sauvignon – Caymus",
+   "legacy_id": "w101",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-chimney-rock",
+   "key": "Red|United States|Cabernet Sauvignon – Chimney Rock",
+   "legacy_id": "w102",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-faust",
+   "key": "Red|United States|Cabernet Sauvignon – Faust",
+   "legacy_id": "w103",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-joseph-phelps",
+   "key": "Red|United States|Cabernet Sauvignon – Joseph Phelps",
+   "legacy_id": "w104",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-pahlmeyer",
+   "key": "Red|United States|Cabernet Sauvignon – Pahlmeyer",
+   "legacy_id": "w105",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-sinegal-estate",
+   "key": "Red|United States|Cabernet Sauvignon – Sinegal Estate",
+   "legacy_id": "w106",
+   "status": "active"
+  },
+  {
+   "id": "wl_darius-ii-darioush",
+   "key": "Red|United States|Darius II – Darioush",
+   "legacy_id": "w107",
+   "status": "active"
+  },
+  {
+   "id": "wl_double-diamond-cabernet-schrader",
+   "key": "Red|United States|Double Diamond Cabernet – Schrader",
+   "legacy_id": "w108",
+   "status": "active"
+  },
+  {
+   "id": "wl_isosceles-justin",
+   "key": "Red|United States|Isosceles – Justin",
+   "legacy_id": "w109",
+   "status": "active"
+  },
+  {
+   "id": "wl_madrona-ranch-abreu",
+   "key": "Red|United States|Madrona Ranch – Abreu",
+   "legacy_id": "w110",
+   "status": "active"
+  },
+  {
+   "id": "wl_papillon-orin-swift",
+   "key": "Red|United States|Papillon – Orin Swift",
+   "legacy_id": "w111",
+   "status": "active"
+  },
+  {
+   "id": "wl_syrah-donnachadh-estate",
+   "key": "Red|United States|Syrah – Donnachadh Estate",
+   "legacy_id": "w112",
+   "status": "active"
+  },
+  {
+   "id": "wl_merlot-freemark-abbey",
+   "key": "Red|United States|Merlot – Freemark Abbey",
+   "legacy_id": "w113",
+   "status": "active"
+  },
+  {
+   "id": "wl_merlot-grgich-hills",
+   "key": "Red|United States|Merlot – Grgich Hills",
+   "legacy_id": "w114",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-noir-chehalem",
+   "key": "Red|United States|Pinot Noir – Chehalem",
+   "legacy_id": "w115",
+   "status": "active"
+  },
+  {
+   "id": "wl_cabernet-sauvignon-silver-oak",
+   "key": "Red|United States|Cabernet Sauvignon – Silver Oak",
+   "legacy_id": "w116",
+   "status": "active"
+  },
+  {
+   "id": "wl_gruner-veltliner-ebner-ebenauer",
+   "key": "White|Austria|Grüner Veltliner – Ebner-Ebenauer",
+   "legacy_id": "w117",
+   "status": "active"
+  },
+  {
+   "id": "wl_corton-charlemagne-grand-cru-louis-latour",
+   "key": "White|France|Corton-Charlemagne Grand Cru – Louis Latour",
+   "legacy_id": "w118",
+   "status": "active"
+  },
+  {
+   "id": "wl_meursault-le-limozin-xavier-monnot",
+   "key": "White|France|Meursault \"Le Limozin\" – Xavier Monnot",
+   "legacy_id": "w119",
+   "status": "active"
+  },
+  {
+   "id": "wl_pouilly-fuisse-louis-latour",
+   "key": "White|France|Pouilly-Fuissé – Louis Latour",
+   "legacy_id": "w120",
+   "status": "active"
+  },
+  {
+   "id": "wl_y-ygrec-chateau-d-yquem",
+   "key": "White|France|Y Ygrec – Château d’Yquem",
+   "legacy_id": "w121",
+   "status": "active"
+  },
+  {
+   "id": "wl_les-carmes-de-rieussec-chateau-rieussec",
+   "key": "White|France|Les Carmes de Rieussec – Château Rieussec",
+   "legacy_id": "w122",
+   "status": "active"
+  },
+  {
+   "id": "wl_chablis-1er-cru-fourchaume-malandes",
+   "key": "White|France|Chablis 1er Cru \"Fourchaume\" – Malandes",
+   "legacy_id": "w123",
+   "status": "active"
+  },
+  {
+   "id": "wl_chablis-1er-cru-les-fourchaumes-l-enclos",
+   "key": "White|France|Chablis 1er Cru \"Les Fourchaumes\" – l’Enclos",
+   "legacy_id": "w124",
+   "status": "active"
+  },
+  {
+   "id": "wl_chablis-william-fevre",
+   "key": "White|France|Chablis – William Fèvre",
+   "legacy_id": "w125",
+   "status": "active"
+  },
+  {
+   "id": "wl_sancerre-chavignol-yves-martin",
+   "key": "White|France|Sancerre \"Chavignol\" – Yves Martin",
+   "legacy_id": "w126",
+   "status": "active"
+  },
+  {
+   "id": "wl_sancerre-cote-des-monts-damnes-hubert-brochard",
+   "key": "White|France|Sancerre \"Côte des Monts Damnés\" – Hubert Brochard",
+   "legacy_id": "w127",
+   "status": "active"
+  },
+  {
+   "id": "wl_sancerre-la-chatellenie-joseph-mellot",
+   "key": "White|France|Sancerre \"La Chatellenie\" – Joseph Mellot",
+   "legacy_id": "w128",
+   "status": "active"
+  },
+  {
+   "id": "wl_sancerre-le-mont-foucher-lebrun",
+   "key": "White|France|Sancerre \"Le Mont\" – Foucher Lebrun",
+   "legacy_id": "w129",
+   "status": "active"
+  },
+  {
+   "id": "wl_riesling-forster-kirchenstuck-gg-von-winning",
+   "key": "White|Germany|Riesling \"Forster Kirchenstück\" GG – Von Winning",
+   "legacy_id": "w130",
+   "status": "active"
+  },
+  {
+   "id": "wl_riesling-donnhoff",
+   "key": "White|Germany|Riesling – Dönnhoff",
+   "legacy_id": "w131",
+   "status": "active"
+  },
+  {
+   "id": "wl_assyrtiko-santorini-sigalas",
+   "key": "White|Greece|Assyrtiko \"Santorini\" – Sigalas",
+   "legacy_id": "w132",
+   "status": "active"
+  },
+  {
+   "id": "wl_gavi-del-comune-di-gavi-villa-sparina",
+   "key": "White|Italy|Gavi del Comune di Gavi – Villa Sparina",
+   "legacy_id": "w133",
+   "status": "active"
+  },
+  {
+   "id": "wl_pecorino-cortalto-cerulli-spinozzi",
+   "key": "White|Italy|Pecorino \"Cortalto\" – Cerulli Spinozzi",
+   "legacy_id": "w134",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-grigio-porer-alois-lageder",
+   "key": "White|Italy|Pinot Grigio \"Porer\" – Alois Lageder",
+   "legacy_id": "w135",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-grigio-elena-walch",
+   "key": "White|Italy|Pinot Grigio – Elena Walch",
+   "legacy_id": "w136",
+   "status": "active"
+  },
+  {
+   "id": "wl_roero-arneis-reysu-paolo-manzone",
+   "key": "White|Italy|Roero Arneis \"Reysù\" – Paolo Manzone",
+   "legacy_id": "w137",
+   "status": "active"
+  },
+  {
+   "id": "wl_trebbiano-d-abruzzo-tiberio",
+   "key": "White|Italy|Trebbiano d’Abruzzo – Tiberio",
+   "legacy_id": "w138",
+   "status": "active"
+  },
+  {
+   "id": "wl_vermentino-prelius-volpaia",
+   "key": "White|Italy|Vermentino \"Prelius\" – Volpaia",
+   "legacy_id": "w139",
+   "status": "active"
+  },
+  {
+   "id": "wl_grillo-riserva-kheire-gorghi-tondi",
+   "key": "White|Italy|Grillo Riserva \"Kheire\" – Gorghi Tondi",
+   "legacy_id": "w140",
+   "status": "active"
+  },
+  {
+   "id": "wl_sp68-bianco-arianna-occhipinti",
+   "key": "White|Italy|SP68 Bianco – Arianna Occhipinti",
+   "legacy_id": "w141",
+   "status": "active"
+  },
+  {
+   "id": "wl_trebbiano-d-abruzzo-emidio-pepe",
+   "key": "White|Italy|Trebbiano d’Abruzzo – Emidio Pepe",
+   "legacy_id": "w142",
+   "status": "active"
+  },
+  {
+   "id": "wl_reserve-ammiq-blanc",
+   "key": "White|Lebanon|Reserve Ammiq Blanc",
+   "legacy_id": "w143",
+   "status": "active"
+  },
+  {
+   "id": "wl_altitudes-blanc-ixsir",
+   "key": "White|Lebanon|Altitudes Blanc – Ixsir",
+   "legacy_id": "w144",
+   "status": "active"
+  },
+  {
+   "id": "wl_sauvignon-blanc-te-muna-craggy-range",
+   "key": "White|New Zealand|Sauvignon Blanc \"Te Muna\" – Craggy Range",
+   "legacy_id": "w145",
+   "status": "active"
+  },
+  {
+   "id": "wl_encruzado-joao-cabral-almeida",
+   "key": "White|Portugal|Encruzado – João Cabral Almeida",
+   "legacy_id": "w146",
+   "status": "active"
+  },
+  {
+   "id": "wl_kalmoesfontein-white-blend-a-a-badenhorst",
+   "key": "White|South Africa|Kalmoesfontein White Blend – A.A. Badenhorst",
+   "legacy_id": "w147",
+   "status": "active"
+  },
+  {
+   "id": "wl_albarino-eidos",
+   "key": "White|Spain|Albariño – Eidos",
+   "legacy_id": "w148",
+   "status": "active"
+  },
+  {
+   "id": "wl_albarino-mar-de-frades",
+   "key": "White|Spain|Albariño – Mar de Frades",
+   "legacy_id": "w149",
+   "status": "active"
+  },
+  {
+   "id": "wl_o-rosal-terras-gauda",
+   "key": "White|Spain|O Rosal – Terras Gauda",
+   "legacy_id": "w150",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-mfn-booker",
+   "key": "White|United States|Chardonnay \"MFN\" – Booker",
+   "legacy_id": "w151",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-mannequin-orin-swift",
+   "key": "White|United States|Chardonnay \"Mannequin\" – Orin Swift",
+   "legacy_id": "w152",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-cakebread-cellars",
+   "key": "White|United States|Chardonnay – Cakebread Cellars",
+   "legacy_id": "w153",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-chateau-montelena",
+   "key": "White|United States|Chardonnay – Château Montelena",
+   "legacy_id": "w154",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-darioush",
+   "key": "White|United States|Chardonnay – Darioush",
+   "legacy_id": "w155",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-grgich-hills",
+   "key": "White|United States|Chardonnay – Grgich Hills",
+   "legacy_id": "w156",
+   "status": "active"
+  },
+  {
+   "id": "wl_chardonnay-schug",
+   "key": "White|United States|Chardonnay – Schug",
+   "legacy_id": "w157",
+   "status": "active"
+  },
+  {
+   "id": "wl_sauvignon-blanc-double-diamond-schrader",
+   "key": "White|United States|Sauvignon Blanc \"Double Diamond\" – Schrader",
+   "legacy_id": "w158",
+   "status": "active"
+  },
+  {
+   "id": "wl_sauvignon-blanc-arnot-roberts",
+   "key": "White|United States|Sauvignon Blanc – Arnot-Roberts",
+   "legacy_id": "w159",
+   "status": "active"
+  },
+  {
+   "id": "wl_sauvignon-blanc-sinegal-estate",
+   "key": "White|United States|Sauvignon Blanc – Sinegal Estate",
+   "legacy_id": "w160",
+   "status": "active"
+  },
+  {
+   "id": "wl_viognier-penner-ash",
+   "key": "White|United States|Viognier – Penner-Ash",
+   "legacy_id": "w161",
+   "status": "active"
+  },
+  {
+   "id": "wl_pinot-gris-daisy-antiquum-farm",
+   "key": "White|United States|Pinot Gris \"Daisy\" – Antiquum Farm",
+   "legacy_id": "w162",
+   "status": "active"
+  },
+  {
+   "id": "wl_delamotte-blanc-de-blancs",
+   "key": "Sparkling|France|Delamotte Blanc de Blancs",
+   "legacy_id": "w163",
+   "status": "active"
+  },
+  {
+   "id": "wl_dom-perignon",
+   "key": "Sparkling|France|Dom Pérignon",
+   "legacy_id": "w164",
+   "status": "active"
+  },
+  {
+   "id": "wl_dom-ruinart-blanc-de-blancs",
+   "key": "Sparkling|France|Dom Ruinart Blanc de Blancs",
+   "legacy_id": "w165",
+   "status": "active"
+  },
+  {
+   "id": "wl_j-lassalle-preference-1er-cru",
+   "key": "Sparkling|France|J. Lassalle \"Préférence\" 1er Cru",
+   "legacy_id": "w166",
+   "status": "active"
+  },
+  {
+   "id": "wl_krug-grande-cuvee-170eme-edition",
+   "key": "Sparkling|France|Krug \"Grande Cuvée\" 170ème Édition",
+   "legacy_id": "w167",
+   "status": "active"
+  },
+  {
+   "id": "wl_laurent-perrier-la-cuvee-brut",
+   "key": "Sparkling|France|Laurent-Perrier \"La Cuvée\" Brut",
+   "legacy_id": "w168",
+   "status": "active"
+  },
+  {
+   "id": "wl_louis-roederer-cristal",
+   "key": "Sparkling|France|Louis Roederer \"Cristal\"",
+   "legacy_id": "w169",
+   "status": "active"
+  },
+  {
+   "id": "wl_michel-mailliard-cuvee-gregory-1er-cru-brut",
+   "key": "Sparkling|France|Michel Mailliard \"Cuvée Grégory\" 1er Cru Brut",
+   "legacy_id": "w170",
+   "status": "active"
+  },
+  {
+   "id": "wl_mousse-fils-les-fortes-terres",
+   "key": "Sparkling|France|Moussé Fils \"Les Fortes Terres\"",
+   "legacy_id": "w171",
+   "status": "active"
+  },
+  {
+   "id": "wl_moet-and-chandon-imperial-brut",
+   "key": "Sparkling|France|Moët & Chandon \"Impérial\" Brut",
+   "legacy_id": "w172",
+   "status": "active"
+  },
+  {
+   "id": "wl_perrier-jouet-belle-epoque",
+   "key": "Sparkling|France|Perrier-Jouët \"Belle Époque\"",
+   "legacy_id": "w173",
+   "status": "active"
+  },
+  {
+   "id": "wl_perrier-jouet-blanc-de-blancs",
+   "key": "Sparkling|France|Perrier-Jouët Blanc de Blancs",
+   "legacy_id": "w174",
+   "status": "active"
+  },
+  {
+   "id": "wl_perrier-jouet-grand-brut",
+   "key": "Sparkling|France|Perrier-Jouët Grand Brut",
+   "legacy_id": "w175",
+   "status": "active"
+  },
+  {
+   "id": "wl_pierre-peters-cuvee-de-reserve-bdb",
+   "key": "Sparkling|France|Pierre Péters Cuvée de Réserve BdB",
+   "legacy_id": "w176",
+   "status": "active"
+  },
+  {
+   "id": "wl_piper-heidsieck-rare",
+   "key": "Sparkling|France|Piper-Heidsieck \"Rare\"",
+   "legacy_id": "w177",
+   "status": "active"
+  },
+  {
+   "id": "wl_pol-roger-sir-winston-churchill",
+   "key": "Sparkling|France|Pol Roger \"Sir Winston Churchill\"",
+   "legacy_id": "w178",
+   "status": "active"
+  },
+  {
+   "id": "wl_ruinart-blanc-de-blancs",
+   "key": "Sparkling|France|Ruinart Blanc de Blancs",
+   "legacy_id": "w179",
+   "status": "active"
+  },
+  {
+   "id": "wl_veuve-clicquot-yellow-label-brut",
+   "key": "Sparkling|France|Veuve Clicquot \"Yellow Label\" Brut",
+   "legacy_id": "w180",
+   "status": "active"
+  },
+  {
+   "id": "wl_billecart-salmon-brut-rose",
+   "key": "Sparkling|France|Billecart-Salmon Brut Rosé",
+   "legacy_id": "w181",
+   "status": "active"
+  },
+  {
+   "id": "wl_brice-heritage-brut-rose",
+   "key": "Sparkling|France|Brice \"Heritage\" Brut Rosé",
+   "legacy_id": "w182",
+   "status": "active"
+  },
+  {
+   "id": "wl_charles-heidsieck-reserve-brut-rose",
+   "key": "Sparkling|France|Charles Heidsieck Réserve Brut Rosé",
+   "legacy_id": "w183",
+   "status": "active"
+  },
+  {
+   "id": "wl_g-h-mumm-grand-cordon-brut-rose",
+   "key": "Sparkling|France|G.H. Mumm \"Grand Cordon\" Brut Rosé",
+   "legacy_id": "w184",
+   "status": "active"
+  },
+  {
+   "id": "wl_gaston-chiquet-rose-1er-cru",
+   "key": "Sparkling|France|Gaston Chiquet Rosé 1er Cru",
+   "legacy_id": "w185",
+   "status": "active"
+  },
+  {
+   "id": "wl_henriot-brut-rose",
+   "key": "Sparkling|France|Henriot Brut Rosé",
+   "legacy_id": "w186",
+   "status": "active"
+  },
+  {
+   "id": "wl_laurent-perrier-cuvee-rose",
+   "key": "Sparkling|France|Laurent-Perrier \"Cuvée Rosé\"",
+   "legacy_id": "w187",
+   "status": "active"
+  },
+  {
+   "id": "wl_louis-roederer-cristal-rose",
+   "key": "Sparkling|France|Louis Roederer \"Cristal\" Rosé",
+   "legacy_id": "w188",
+   "status": "active"
+  },
+  {
+   "id": "wl_perrier-jouet-blason-rose",
+   "key": "Sparkling|France|Perrier-Jouët \"Blason\" Rosé",
+   "legacy_id": "w189",
+   "status": "active"
+  },
+  {
+   "id": "wl_pommery-cuvee-louise-rose",
+   "key": "Sparkling|France|Pommery \"Cuvée Louise\" Rosé",
+   "legacy_id": "w190",
+   "status": "active"
+  },
+  {
+   "id": "wl_dosnon-recolte-brute-extra-brut",
+   "key": "Sparkling|France|Dosnon \"Récolte Brute\" Extra Brut",
+   "legacy_id": "w191",
+   "status": "active"
+  },
+  {
+   "id": "wl_ferrari-trento-trentodoc-brut",
+   "key": "Sparkling|Italy|Ferrari Trento Trentodoc Brut",
+   "legacy_id": "w192",
+   "status": "active"
+  },
+  {
+   "id": "wl_prosecco-rustico-nino-franco",
+   "key": "Sparkling|Italy|Prosecco \"Rustico\" – Nino Franco",
+   "legacy_id": "w193",
+   "status": "active"
+  },
+  {
+   "id": "wl_ferrari-trento-trentodoc-brut-rose",
+   "key": "Sparkling|Italy|Ferrari Trento Trentodoc Brut Rosé",
+   "legacy_id": "w194",
+   "status": "active"
+  },
+  {
+   "id": "wl_metodo-classico-brut-rose-terrazze-dell-etna",
+   "key": "Sparkling|Italy|Metodo Classico Brut Rosé – Terrazze dell’Etna",
+   "legacy_id": "w195",
+   "status": "active"
+  },
+  {
+   "id": "wl_moscato-d-asti-bricco-quaglia-la-spinetta",
+   "key": "Sparkling|Italy|Moscato d’Asti \"Bricco Quaglia\" – La Spinetta",
+   "legacy_id": "w196",
+   "status": "active"
+  },
+  {
+   "id": "wl_mersel-leb-nat-pet-nat-rose",
+   "key": "Sparkling|Lebanon|Mersel \"Leb Nat\" Pet-Nat Rosé",
+   "legacy_id": "w197",
+   "status": "active"
+  },
+  {
+   "id": "wl_chateau-romassan-rose",
+   "key": "Rose|France|Château Romassan Rosé",
+   "legacy_id": "w198",
+   "status": "active"
+  },
+  {
+   "id": "wl_chinon-rose-charles-joguet",
+   "key": "Rose|France|Chinon Rosé – Charles Joguet",
+   "legacy_id": "w199",
+   "status": "active"
+  },
+  {
+   "id": "wl_whispering-angel-chateau-d-esclans",
+   "key": "Rose|France|Whispering Angel – Château d'Esclans",
+   "legacy_id": "w200",
+   "status": "active"
+  },
+  {
+   "id": "wl_clos-beylesse-rose-domaine-de-l-abbaye-1-5l",
+   "key": "Rose|France|“Clos Beylesse” Rosé – Domaine de l'Abbaye (1.5L)",
+   "legacy_id": "w201",
+   "status": "active"
+  },
+  {
+   "id": "wl_fantastique-rose-chateau-sainte-marguerite",
+   "key": "Rose|France|“Fantastique” Rosé – Château Sainte Marguerite",
+   "legacy_id": "w202",
+   "status": "active"
+  },
+  {
+   "id": "wl_prestige-rose-minuty",
+   "key": "Rose|France|“Prestige” Rosé – Minuty",
+   "legacy_id": "w203",
+   "status": "active"
+  },
+  {
+   "id": "wl_clos-du-temple-rose-gerard-bertrand",
+   "key": "Rose|France|“Clos du Temple” Rosé – Gérard Bertrand",
+   "legacy_id": "w204",
+   "status": "active"
+  },
+  {
+   "id": "wl_garrus-rose-chateau-d-esclans",
+   "key": "Rose|France|“Garrus” Rosé – Château d'Esclans",
+   "legacy_id": "w205",
+   "status": "active"
+  },
+  {
+   "id": "wl_grand-reserve-rose-ixsir",
+   "key": "Rose|Lebanon|“Grand Reserve” Rosé – Ixsir",
+   "legacy_id": "w206",
+   "status": "active"
+  },
+  {
+   "id": "wl_wine-creek-ranch-rose-quivira",
+   "key": "Rose|United States|Wine Creek Ranch Rosé – Quivira",
+   "legacy_id": "w207",
+   "status": "active"
+  },
+  {
+   "id": "wl_orange-tacsum-la-mariota-orange-wine",
+   "key": "Orange|France|“Orange Tacsum” – La Mariota (Orange Wine)",
+   "legacy_id": "w208",
+   "status": "active"
+  },
+  {
+   "id": "wl_commandaria-tsiakkas",
+   "key": "Dessert|Cyprus|Commandaria – Tsiakkas",
+   "legacy_id": "w209",
+   "status": "active"
+  },
+  {
+   "id": "wl_recioto-della-valpolicella-dal-forno-romano",
+   "key": "Dessert|Italy|Recioto della Valpolicella – Dal Forno Romano",
+   "legacy_id": "w210",
+   "status": "active"
+  },
+  {
+   "id": "wl_recioto-di-soave-i-capitelli-anselmi",
+   "key": "Dessert|Italy|Recioto di Soave \"I Capitelli\" – Anselmi",
+   "legacy_id": "w211",
+   "status": "active"
+  },
+  {
+   "id": "wl_vin-santo-il-decano-montepaldi",
+   "key": "Dessert|Italy|Vin Santo \"Il Decano\" – Montepaldi",
+   "legacy_id": "w212",
+   "status": "active"
+  },
+  {
+   "id": "wl_tawny-port-otima-warre-s",
+   "key": "Dessert|Portugal|Tawny Port \"Otima\" – Warre’s",
+   "legacy_id": "w213",
+   "status": "active"
+  },
+  {
+   "id": "wl_tawny-port-quinta-do-noval",
+   "key": "Dessert|Portugal|Tawny Port – Quinta do Noval",
+   "legacy_id": "w214",
+   "status": "active"
+  }
+ ]
+}

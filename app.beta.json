@@ -1,0 +1,31 @@
+{
+  "package_id": "com.d3hospitality.sommni",
+  "edition": "202601",
+  "name": "wineLENS Beta",
+  "version": "3.1.7",
+  "min_app_version": "2.0.0",
+  "min_sdk_version": "0.0.9",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Loads wines and private account bottle images",
+      "whitelist": [
+        "https://d3hospitality.github.io",
+        "https://sommni-api.vercel.app",
+        "https://hwqovzizjoelzfulhxem.supabase.co"
+      ]
+    },
+    {
+      "name": "g2-microphone",
+      "desc": "Voice search for wines using push-to-talk"
+    },
+    {
+      "name": "album",
+      "desc": "Choose a bottle photograph for your private Winebrary."
+    }
+  ],
+  "supported_languages": [
+    "en"
+  ]
+}
