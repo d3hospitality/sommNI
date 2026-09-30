@@ -1,3 +1,4 @@
+import { accountBilling } from './billing';
 import type { Session } from '@supabase/supabase-js';
 import { API_BASE, CANONICAL_ORIGIN, isCanonicalSite, siteSupabase, googleIsEnabled } from './site-auth';
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -13,6 +14,7 @@ async function main() {
     return;
   }
   const auth = siteSupabase();
+  const billing = accountBilling(async () => (await auth.auth.getSession()).data.session);
   const ready = await googleIsEnabled();
   button('google').disabled = !ready;
   const signedOutMessage = ready ? 'Continue with Google to get your link code.' : 'Google sign-in is not enabled yet. Account linking will be available when beta setup is complete.';
@@ -100,7 +102,8 @@ async function main() {
       const changed = session?.user.id !== next?.user.id; session = next;
       if (!changed && next) return;
       epoch++; clearCode(); el('signed-in').hidden = !next; el('signed-out').hidden = !!next; el('account-email').textContent = next?.user.email || ''; el('devices').replaceChildren();
-      if (!next) { dialog.close(); status(signedOutMessage); return; }
+      if (!next) { billing.clear(); dialog.close(); status(signedOutMessage); return; }
+      void billing.refresh();
       void guarded(async () => { await devices(); await issue(); });
     }, 0);
   });

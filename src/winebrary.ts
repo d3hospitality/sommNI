@@ -1,3 +1,4 @@
+import { accountRequest, billingStatus, usageCost, type BillingStatus } from './billing';
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
 import { SITE_URL, API_URL } from './account-config';
@@ -70,7 +71,7 @@ function signIn() {
     <a class="wl-primary" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer">Open link page ↗</a>
     <p class="wl-muted small">${SITE_URL}/link</p>
     <form id="wl-login"><label>Link code<input id="wl-link-code" name="code" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX"></label>
-    <button class="wl-primary" type="submit">Link this device</button></form><p class="wl-muted small">Codes last 10 minutes and work once. Free during beta.</p>`);
+    <button class="wl-primary" type="submit">Link this device</button></form><p class="wl-muted small">Codes last 10 minutes and work once. Free essentials, optional Pro.</p>`);
   const form = dialog.querySelector<HTMLFormElement>('#wl-login')!;
   const code = form.querySelector<HTMLInputElement>('[name=code]')!;
   code.addEventListener('blur', () => { code.value = formatLinkCode(code.value); });
@@ -119,14 +120,15 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
   const vintageState = newVintage ? 'year' : wine?.metadata?.vintage_state || (wine?.vintage ? 'year' : 'unknown');
   const field = (name: string, label: string, value: unknown = '', extra = '') => `<label>${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   openDialog(`<p class="wl-kicker">${editing ? 'YOUR COLLECTION' : 'MAKE ROOM FOR SOMETHING GOOD'}</p><h2>${editing ? 'Edit this wine.' : newVintage ? 'Another year. New story.' : 'Add a wine.'}</h2>
-    <form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name','Wine name',wine?.wine_name,'required maxlength="300"')}${field('producer','Producer',wine?.producer,'maxlength="200"')}
+    ${!editing && !newVintage ? '<button id="wl-scan-label" class="wl-outline" type="button">Scan the label</button><p class="wl-muted small">Or enter the wine manually for free.</p>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name','Wine name',wine?.wine_name,'required maxlength="300"')}${field('producer','Producer',wine?.producer,'maxlength="200"')}
     <label>Vintage<select name="vintage_state" aria-label="Vintage"><option value="year" ${vintageState==='year'?'selected':''}>Known year</option><option value="non_vintage" ${vintageState==='non_vintage'?'selected':''}>Non-vintage</option><option value="unknown" ${vintageState==='unknown'?'selected':''}>I don’t know yet</option></select></label>
     ${field('vintage','Year',newVintage ? '' : wine?.vintage,'type="number" min="1800" max="'+(new Date().getFullYear()+1)+'" step="1"')}
     ${field('region','Region',wine?.region,'maxlength="200"')}${field('country','Country',wine?.metadata?.country,'maxlength="100"')}${field('grape','Grape',wine?.metadata?.grape,'maxlength="200"')}
-    <label>Wine style<select name="color" aria-label="Wine style">${['Red','White','Sparkling','Rose','Orange','Dessert'].map(c=>`<option ${c===wine?.metadata?.color?'selected':''}>${c}</option>`).join('')}</select></label></div>
+    <label>Wine style<select name="color" aria-label="Wine style">${[...(wine?.metadata?.color === 'Unknown' ? ['Unknown'] : []),'Red','White','Sparkling','Rose','Orange','Dessert'].map(c=>`<option ${c===wine?.metadata?.color?'selected':''}>${c}</option>`).join('')}</select></label></div>
     <label>Your tasting notes<textarea name="notes" maxlength="2000" rows="3" placeholder="What made this bottle memorable?">${esc(newVintage ? '' : wine?.notes)}</textarea></label>
     <p class="wl-muted small">${newVintage ? 'This creates a separate entry. The previous year keeps its own notes and photo.' : 'Save now. You can add a bottle photo or studio rendering next.'}</p>
     <button class="wl-primary" type="submit">${editing ? 'Save changes' : 'Save to Winebrary'} ↗</button></form>`);
+  dialog.querySelector('#wl-scan-label')?.addEventListener('click', () => void scanLabel());
   const form = dialog.querySelector<HTMLFormElement>('form')!;
   const state = form.querySelector<HTMLSelectElement>('[name=vintage_state]')!;
   const year = form.querySelector<HTMLInputElement>('[name=vintage]')!;
@@ -139,6 +141,43 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
     if (account !== userId) return;
     setBusy(false); detail(result.item); await refresh();
   }); });
+}
+async function scanLabel() {
+  const account = userId;
+  openDialog(`<p class="wl-kicker">LABEL SCAN</p><h2>Start with the label.</h2><p class="wl-muted">Choose a clear label photo. OpenAI extracts details and a draft note for you to review before saving.</p><label class="wl-upload">Pick or take a label photo<input id="wl-label-file" type="file" accept="image/png,image/jpeg,image/webp" capture="environment"></label><p class="wl-muted small">PNG, JPEG or WebP · up to 2 MB.</p><p id="wl-scan-cost" role="status">Checking your allowance…</p><div id="wl-token-consent" hidden><label><input id="wl-consent-once" type="checkbox"> <span id="wl-consent-text">Use tokens?</span></label><label><input id="wl-consent-always" type="checkbox"> Always allow</label></div><a id="wl-scan-upgrade" class="wl-outline" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer" hidden>Upgrade on wineLENS.com ↗</a><button id="wl-scan-submit" class="wl-primary" disabled>Scan and review ↗</button><button id="wl-scan-manual" class="wl-text-button">Enter manually</button>`);
+  const revision = dialogRevision;
+  let state: BillingStatus, photo = '', requestId = crypto.randomUUID();
+  const send = dialog.querySelector<HTMLButtonElement>('#wl-scan-submit')!;
+  const file = dialog.querySelector<HTMLInputElement>('#wl-label-file')!;
+  dialog.querySelector('#wl-scan-manual')!.addEventListener('click', () => editWine());
+  const ready = () => { send.disabled = !photo || !state || !state.scan_available || (!state.pro && state.allowances.label_scan.remaining === 0); };
+  file.addEventListener('change', async () => {
+    photo = ''; requestId = crypto.randomUUID(); ready(); const selected = file.files?.[0]; if (!selected) return;
+    if (!['image/png','image/jpeg','image/webp'].includes(selected.type) || selected.size > 2 * 1024 * 1024) { feedback('Choose a PNG, JPEG or WebP under 2 MB.'); return; }
+    const reader = new FileReader(); reader.onload = () => { if (revision !== dialogRevision) return; photo = String(reader.result); feedback('Photo ready. Check the cost before scanning.'); ready(); }; reader.readAsDataURL(selected);
+  });
+  try {
+    state = await billingStatus(); if (revision !== dialogRevision || account !== userId) return;
+    dialog.querySelector('#wl-scan-cost')!.textContent = usageCost(state, 'label_scan');
+    const paid = state.allowances.label_scan.remaining === 0 && state.pro;
+    (dialog.querySelector('#wl-token-consent') as HTMLElement).hidden = !paid || state.auto_spend;
+    dialog.querySelector('#wl-consent-text')!.textContent = `Use ${state.rate_card.features.label_scan.tokens} token?`;
+    (dialog.querySelector('#wl-scan-upgrade') as HTMLElement).hidden = state.pro || state.allowances.label_scan.remaining > 0;
+    if (!state.scan_available) feedback('Not available yet, you have not been charged.'); ready();
+  } catch (e) { if (revision === dialogRevision) feedback(e instanceof Error ? e.message : 'Allowance unavailable.'); }
+  if (revision !== dialogRevision) return;
+  send.addEventListener('click', () => void run(async () => {
+    const always = dialog.querySelector<HTMLInputElement>('#wl-consent-always')!.checked;
+    const consent = dialog.querySelector<HTMLInputElement>('#wl-consent-once')!.checked || always;
+    if (state.allowances.label_scan.remaining === 0 && !state.auto_spend && !consent) throw new Error('Confirm token use before scanning.');
+    if (always && !state.auto_spend) await accountRequest('billing', { action: 'auto-spend', enabled: true });
+    const result = await accountRequest('wine-scan', { photo, request_id: requestId, spend_consent: consent });
+    if (account !== userId || revision !== dialogRevision) return;
+    setBusy(false);
+    editWine({ wine_name: result.wine_name, producer: result.producer, vintage: typeof result.vintage === 'number' ? result.vintage : null, region: result.region, notes: result.draft_tasting_note,
+      metadata: { vintage_state: result.vintage === 'non-vintage' ? 'non_vintage' : typeof result.vintage === 'number' ? 'year' : 'unknown', country: result.country, grape: result.grape, color: result.color } });
+    feedback(`Review every field before saving. Scan confidence: ${Math.round(result.confidence * 100)}%. The tasting note is a draft.`);
+  }));
 }
 function detail(wine: LibraryWine) {
   openDialog(`<p class="wl-kicker">${esc(vintageLabel(wine))} · ${esc(wine.metadata?.color || 'WINE')}</p><h2>${esc(wine.wine_name)}</h2><p class="wl-muted">${esc([wine.producer, wine.region, wine.metadata?.country].filter(Boolean).join(' · '))}</p>
@@ -163,10 +202,11 @@ function detail(wine: LibraryWine) {
 function photoStudio(wine: LibraryWine) {
   let draft: ImageDraft | null = null;
   let original: ImageDraft | null = null;
+  let studioConsent = false;
   const account = userId;
   openDialog(`<p class="wl-kicker">BOTTLE STUDIO</p><h2>The real thing.<br>In its best light.</h2><p class="wl-muted">Start with a clear photo of this exact bottle and vintage. Use it as-is, or make a realistic studio rendering.</p>
     <label class="wl-upload">＋ Choose a bottle photo<input id="wl-file" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="wl-muted small">PNG, JPEG or WebP · under 2 MB. Only upload photos you can use. Generating a rendering sends this photo to OpenAI.</p>
-    <div id="wl-image-review" class="wl-image-review"></div><div class="wl-studio-actions"><button id="wl-render" class="wl-primary" hidden>Create studio rendering ↗</button><button id="wl-approve" class="wl-outline" hidden>Use this image</button><button id="wl-original" class="wl-text-button" hidden>Back to original photo</button></div><p class="wl-muted small">Three studio attempts per day, including failed attempts. Check the label, producer and year before using a rendering.</p>`);
+    <div id="wl-image-review" class="wl-image-review"></div><div class="wl-studio-actions"><button id="wl-render" class="wl-primary" hidden>Create studio rendering ↗</button><button id="wl-approve" class="wl-outline" hidden>Use this image</button><button id="wl-original" class="wl-text-button" hidden>Back to original photo</button></div><p class="wl-muted small">Pro includes monthly Studio renderings. Extra renderings use tokens with your consent. Check the label, producer and year before using a rendering.</p>`);
   const preview = () => {
     dialog.querySelector('#wl-image-review')!.innerHTML = `<img src="${esc(draft!.url)}" alt="Bottle image for review"><p class="wl-kicker">${draft!.source === 'generated' ? 'STUDIO RENDERING · CHECK LABEL & VINTAGE' : 'YOUR ORIGINAL PHOTO'}</p>`;
     dialog.querySelector<HTMLButtonElement>('#wl-render')!.hidden = false;
@@ -184,7 +224,13 @@ function photoStudio(wine: LibraryWine) {
   }));
   dialog.querySelector('#wl-render')!.addEventListener('click', () => run(async () => {
     if (!original) return; feedback('Lighting your bottle… This can take up to two minutes.');
-    const result = await api('/api/generate-bottle','POST',{ collection_id:wine.id, reference_path:original.path, request_id:crypto.randomUUID() });
+    const state = await billingStatus();
+    if (!state.pro) throw new Error('Studio requires Pro. Upgrade on wineLENS.com.');
+    if (state.allowances.studio_render.remaining === 0 && !state.auto_spend && !studioConsent) {
+      feedback(`${usageCost(state, 'studio_render')}. Tap Create studio rendering again to confirm.`); studioConsent = true; return;
+    }
+    const result = await api('/api/generate-bottle','POST',{ collection_id:wine.id, reference_path:original.path, request_id:crypto.randomUUID(), spend_consent:studioConsent });
+    studioConsent = false;
     if (account !== userId) return;
     draft=result.draft; preview(); feedback('Compare the label and vintage with your photo before using this rendering.');
   }));
@@ -206,7 +252,9 @@ export function initWinebrary() {
   document.getElementById('wl-account')!.addEventListener('click', () => {
     if (!userId) return signIn();
     const pending=unsyncedEvents().length;
-    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">${esc(accountEmail)}<br>Your Winebrary and study progress are private. Unlinking removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you unlink now.</p>` : ''}<button id="wl-signout" class="wl-primary">Unlink this device</button>`);
+    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">${esc(accountEmail)}<br>Your Winebrary and study progress are private. Unlinking removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you unlink now.</p>` : ''}<p id="wl-balance-chip" class="wl-muted" role="status">Checking plan and tokens…</p><a class="wl-text-button" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer">Plan and usage ↗</a><button id="wl-signout" class="wl-primary">Unlink this device</button>`);
+    const accountRevision = dialogRevision;
+    void billingStatus().then(state => { if (accountRevision === dialogRevision) dialog.querySelector('#wl-balance-chip')!.textContent = `${state.pro ? 'Pro' : 'Free'} · ${state.tokens} tokens`; }).catch(() => { if (accountRevision === dialogRevision) dialog.querySelector('#wl-balance-chip')!.textContent = 'Plan and tokens unavailable.'; });
     dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const warning = await unlinkDevice(); dialog.close(); if (warning) { notice = warning; render(); } }));
   });
   document.querySelectorAll('[data-wl-add]').forEach(el=>el.addEventListener('click',()=>requireAccount(()=>editWine())));

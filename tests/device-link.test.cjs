@@ -13,7 +13,7 @@ function fixture(overrides={}) {
  };
  const auth={auth:{verifyOtp:async(args)=>{calls.push(['verifyOtp',args]);return {data:{session:{access_token:token,refresh_token:'mock-refresh',expires_in:3600,user:{id:uid,email:'local@example.test'}}}};}}};
  if(overrides.configure)overrides.configure(admin,auth);
- const handler=createHandler({getClients:()=>({admin,auth}),secret:()=> 'mock-network-secret'});
+ const handler=createHandler({getClients:()=>({admin,auth}),secret:()=> 'mock-network-secret', beforeDelete:overrides.beforeDelete});
  async function request(body, extra={}) {
   const headers={}; const res={setHeader:(k,v)=>headers[k]=v,status(n){this.code=n;return this},json(value){this.body=value;return this},end(){return this}};
   await handler({method:'POST',headers:{origin:'https://sommni-beige.vercel.app',authorization:'Bearer '+token},body,socket:{remoteAddress:'192.0.2.1'},...extra},res);
@@ -41,3 +41,10 @@ test('unverified or revoked sessions cannot mint codes',async()=>{const f=fixtur
 test('concurrent handler redemptions release only one session when atomic claim rejects replay',async()=>{let claimed=false;const f=fixture({rpc:async(name)=>{if(name==='wl_claim_code'){if(claimed)return {data:{status:'invalid'}};claimed=true;return {data:{id:did,user_id:uid}};}return {data:{status:'linked'}};}});const result=await Promise.all([f.request({action:'redeem',code:'ABCD2345'}),f.request({action:'redeem',code:'ABCD2345'})]);assert.deepEqual(result.map(r=>r.code).sort(),[200,404]);assert.equal(f.calls.filter(c=>c[0]==='verifyOtp').length,1);});
 test('expired polling status is a normal response, while expired redeem is an error',async()=>{const f=fixture({rpc:async(name)=>({data:{status:name==='wl_code_status'?'expired':'active'}})});const r=await f.request({action:'issued-status',id:did});assert.equal(r.code,200);assert.equal(r.body.status,'expired');});
 test('cleanup accepts real PostgREST-style thenables without .catch',async()=>{const f=fixture({configure(admin){admin.rpc=(name)=>({then(resolve,reject){return Promise.resolve(name==='wl_claim_code'?{data:{id:did,user_id:uid}}:name==='wl_finish_link'?{error:{message:'failed'}}:{data:{status:'aborted'}}).then(resolve,reject);}});}});assert.equal((await f.request({action:'redeem',code:'ABCD2345'})).code,503);});
+
+test('billing deletion guard runs before sessions or private files are removed',async()=>{
+ const {LinkError}=require('../server/device-link.cjs');
+ const f=fixture({beforeDelete:async()=>{throw new LinkError(409,'Manage billing first.');}});
+ assert.equal((await f.request({action:'delete-account',confirm:'DELETE'})).code,409);
+ assert(!f.calls.some(c=>['wl_prepare_deletion','bucket','deleteUser'].includes(c[0])));
+});

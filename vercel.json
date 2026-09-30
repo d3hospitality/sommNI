@@ -3,14 +3,51 @@
   "buildCommand": "npm run build:site",
   "outputDirectory": "dist-site",
   "rewrites": [
-    { "source": "/link", "destination": "/link.html" },
-    { "source": "/privacypolicy", "destination": "/privacypolicy.html" },
-    { "source": "/terms", "destination": "/terms.html" }
+    {
+      "source": "/link",
+      "destination": "/link.html"
+    },
+    {
+      "source": "/privacypolicy",
+      "destination": "/privacypolicy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    }
   ],
-  "headers": [{ "source": "/(.*)", "headers": [
-    { "key": "X-Content-Type-Options", "value": "nosniff" },
-    { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-    { "key": "X-Frame-Options", "value": "DENY" },
-    { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
-  ] }]
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/wine-scan.js": {
+      "maxDuration": 90
+    },
+    "api/billing.js": {
+      "maxDuration": 60
+    },
+    "api/stripe-webhook.js": {
+      "maxDuration": 60
+    }
+  }
 }

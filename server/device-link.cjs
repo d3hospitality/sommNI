@@ -43,7 +43,7 @@ async function removeBottleFiles(client, userId) {
   }
   await clean(userId);
 }
-function createHandler({ getClients, secret = () => process.env.SUPABASE_SERVICE_ROLE_KEY }) {
+function createHandler({ getClients, secret = () => process.env.SUPABASE_SERVICE_ROLE_KEY, beforeDelete = async () => {} }) {
   return async (req, res) => {
     res.setHeader('Cache-Control', 'no-store'); res.setHeader('Vary', 'Origin');
     const origin = req.headers.origin;
@@ -108,6 +108,7 @@ function createHandler({ getClients, secret = () => process.env.SUPABASE_SERVICE
       if (action === 'device-status') return res.status(200).json(await rpc(admin, 'wl_device_status', { p_user_id: user.id, p_session_id: sid }));
       if (action === 'delete-account') {
         if (body.confirm !== 'DELETE') throw new LinkError(400, 'Confirm account deletion first.');
+        await beforeDelete(admin, user.id);
         await rpc(admin, 'wl_prepare_deletion', { p_user_id: user.id, p_keep_session: sid });
         await removeBottleFiles(admin, user.id);
         // Owned rows (including future study/quotas) cascade. Shared wines/ingest sources remain.
@@ -127,4 +128,4 @@ function createHandler({ getClients, secret = () => process.env.SUPABASE_SERVICE
     }
   };
 }
-module.exports = { createHandler, normalize, codeHash, sessionId, allowedOrigin, networkHash };
+module.exports = { LinkError, createHandler, normalize, codeHash, sessionId, allowedOrigin, networkHash };

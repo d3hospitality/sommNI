@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "currency": "usd",
+  "plans": {"monthly": {"amount": 499, "interval": "month"}, "annual": {"amount": 3999, "interval": "year"}},
+  "features": {
+    "label_scan": {"label": "Label scans", "free": 5, "pro": 60, "tokens": 1},
+    "studio_render": {"label": "Studio renderings", "free": 0, "pro": 10, "tokens": 8},
+    "wine_list_page": {"label": "Wine-list pages", "free": 0, "pro": 5, "tokens": 3}
+  },
+  "packs": {"t5": {"amount": 500, "units": 100}, "t10": {"amount": 1000, "units": 220}, "t15": {"amount": 1500, "units": 350}, "t20": {"amount": 2000, "units": 500}}
+}

@@ -17,6 +17,7 @@ const session={access_token:jwt,refresh_token:'local-test-only',expires_at:now+3
   const req=route.request(),url=new URL(req.url()),body=req.postDataJSON();
   if(url.pathname==='/api/device-link')return route.fulfill({json:body.action==='redeem'?{session,device_id:wine}:{status:'linked',removed:true}});
   assert.equal(req.headers().authorization,'Bearer '+jwt);
+  if(url.pathname==='/api/billing')return route.fulfill({json:{pro:true,tokens:100,auto_spend:false,rate_card:require('../shared/rate-card.json'),allowances:{studio_render:{remaining:10,limit:10}}}});
   if(url.pathname==='/api/collection'){
    if(req.method()==='GET')return route.fulfill({json:{items,count:items.length}});
    if(req.method()==='POST'){posts.push(body);const item={...body,id:posts.length===1?wine:'33333333-3333-4333-8333-333333333333',user_id:user,vintage:body.vintage_state==='year'?Number(body.vintage):null,metadata:{vintage_state:body.vintage_state,color:body.color,country:body.country,grape:body.grape}};items.unshift(item);return route.fulfill({status:201,json:{item}});}

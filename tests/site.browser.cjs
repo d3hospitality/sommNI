@@ -22,7 +22,7 @@ const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.ttf'
   if(width===390){await page.getByRole('button',{name:/Menu/}).click();await page.getByRole('navigation',{name:'Main',exact:true}).getByRole('link',{name:'Study',exact:true}).waitFor();await page.keyboard.press('Escape');assert.equal(await page.getByRole('button',{name:/Menu/}).getAttribute('aria-expanded'),'false');}
   await page.screenshot({path:path.join(output,`landing-${width}.png`),fullPage:true});
   await page.screenshot({path:path.join(output,`landing-hero-${width}.png`)});
-  await page.getByText('Is wineLENS free?',{exact:true}).click();assert(await page.getByText(/Yes, wineLENS is free during beta/).isVisible());
+  await page.getByText('Is wineLENS free?',{exact:true}).click();assert(await page.getByText(/Yes. The catalog, tasting notes, Atlas/).isVisible());
   // The 3D showcase loads itself as its section nears the viewport (poster first), then turns with the page.
   await page.locator('[data-g2b]').scrollIntoViewIfNeeded();
   await page.waitForFunction(()=>/is-live|is-video/.test(document.querySelector('.g2b').className),null,{timeout:30000});assert.equal(models,1);
