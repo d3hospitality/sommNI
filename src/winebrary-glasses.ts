@@ -1,7 +1,7 @@
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, TextContainerProperty, ImageContainerProperty, ListContainerProperty, ListItemContainerProperty } from '@evenrealities/even_hub_sdk';
 import type { LibraryWine } from './winebrary';
 import { pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch } from './image-utils';
-import { SCENE_X, MAP_Y, TILE_W, TILE_H, captionBox, type ScenePlan } from './wine-scene';
+import { SCENE_X, MAP_Y, TILE_W, TILE_H, CAPTION_MIN_X, captionBox, type ScenePlan } from './wine-scene';
 import { ruleCanvas, toGreenLevels } from './bottle-raster';
 import { lookupWineById } from './identity';
 import { claimDisplay, dropDisplay } from './display';
@@ -155,7 +155,7 @@ function captionText(country: string, region: string | null): string {
 }
 /** The moving caption: a text container in the strip above the map, centred over the highlight. */
 function captionContainer(plan: ScenePlan, text: string): TextContainerProperty {
-  const content = clipLabel(text, charsPerLine(TILE_W - 10));
+  const content = clipLabel(text, charsPerLine(576 - CAPTION_MIN_X - 18));
   const box = captionBox(plan.anchorX, content);
   return new TextContainerProperty({ xPosition: box.x, yPosition: 3, width: box.width, height: MAP_Y - 4, containerID: 9, containerName: 'map-caption', content, isEventCapture: 0 });
 }
@@ -168,9 +168,11 @@ interface ListMap { plan: ScenePlan; caption: string }
 function listScreen(name: string, labels: string[], header: string, map: ListMap | null = null): RebuildPageContainer {
   const rows = Math.min(labels.length, LIST_H / LIST_ROW_PITCH);
   const w = map ? SCENE_X - 6 : 572;
+  const caption = map ? captionContainer(map.plan, map.caption) : null;
+  const headerW = caption ? (caption.xPosition ?? SCENE_X) - 24 : w - 14;
   const title = new TextContainerProperty({
-    xPosition: 16, yPosition: 4, width: w - 14, height: 34,
-    containerID: 3, containerName: 'library-header', content: clipLabel(header, charsPerLine(w - 14)), isEventCapture: 0,
+    xPosition: 16, yPosition: 4, width: headerW, height: 34,
+    containerID: 3, containerName: 'library-header', content: clipLabel(header, charsPerLine(headerW)), isEventCapture: 0,
   });
   const list = new ListContainerProperty({
     xPosition: 2, yPosition: 42, width: w, height: rows * LIST_ROW_PITCH, containerID: 2, containerName: name,
@@ -178,7 +180,7 @@ function listScreen(name: string, labels: string[], header: string, map: ListMap
     isEventCapture: 1,
   });
   const imageObject = map ? mapTiles(1, 4) : [];
-  const textObject = map ? [title, captionContainer(map.plan, map.caption)] : [title];
+  const textObject = caption ? [title, caption] : [title];
   return new RebuildPageContainer({ containerTotalNum: 1 + textObject.length + imageObject.length, listObject: [list], textObject, ...(map ? { imageObject } : {}) });
 }
 /** Map panel for a list page: the country (regions list) or the region (wines list). */
@@ -251,32 +253,31 @@ export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' 
  * text, so nothing overlaps.
  */
 function buildSceneWinePage(wine: LibraryWine, backTo: string, place: WinePlace, plan: ScenePlan): RebuildPageContainer {
-  // Left: kicker › name › maker › vintage › rule › notes. Right: the map, with the place as a
-  // caption that sits over the region (see wine-scene.ts).
+  // Left (most of the screen): kicker › name › maker · vintage › rule › notes.
+  // Right (narrow panel): the bottle standing on its region, the place caption above it.
+  const caption=captionContainer(plan, captionText(place.country, place.region));
   const x=10, width=SCENE_X-x-8, per=charsPerLine(width);
+  const kickerW=(caption.xPosition ?? SCENE_X)-x-12;
   const grape=wine.metadata?.grape || lookupWineById(wine.wine_id)?.wine.grape || '';
-  const kicker=clipLabel([place.type !== 'Other' ? place.type : '', grape].filter(Boolean).join(' · ').toUpperCase() || 'MY WINEBRARY', per);
+  const kicker=clipLabel([place.type !== 'Other' ? place.type : '', grape].filter(Boolean).join(' · ').toUpperCase() || 'MY WINEBRARY', charsPerLine(kickerW));
   const title=clipLabel(wine.wine_name, per*2);
   const titleH=Math.min(2, estimateLines(title, width))*LINE_H+1;
-  const maker=clipLabel(wine.producer || 'Producer not set', per);
-  const facts=clipLabel(vintageLong(wine), per);
+  const maker=clipLabel([wine.producer, vintageLong(wine)].filter(Boolean).join(' · '), per);
   let y=4;
-  const kickerY=y; y+=LINE_H+1;
+  const kickerY=y; y+=LINE_H+3;
   const titleY=y; y+=titleH;
   const makerY=y; y+=LINE_H+1;
-  const factsY=y; y+=LINE_H+1;
-  const ruleY=y+5; y+=RULE.h+9;
-  const notesY=y, notesBottom=notesY+Math.max(1, Math.floor((252-notesY)/LINE_H))*LINE_H+4;
+  const ruleY=y+4; y+=RULE.h+8;
+  const notesY=y, notesBottom=notesY+Math.max(1, Math.floor((254-notesY)/LINE_H))*LINE_H+4;
   const notes=clipBytes(wine.notes || 'No notes yet. Add your impressions in Winebrary on your phone.');
   const overflow=estimateLines(notes, width) > Math.floor((notesBottom-notesY)/LINE_H);
   const textObject=[
-    new TextContainerProperty({xPosition:x,yPosition:kickerY,width,height:LINE_H+1,containerID:7,containerName:'library-kicker',content:kicker,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:kickerY,width:kickerW,height:LINE_H+1,containerID:7,containerName:'library-kicker',content:kicker,isEventCapture:0}),
     new TextContainerProperty({xPosition:x,yPosition:titleY,width,height:titleH,containerID:3,containerName:'library-title',content:title,isEventCapture:0}),
     new TextContainerProperty({xPosition:x,yPosition:makerY,width,height:LINE_H+1,containerID:4,containerName:'library-vintage',content:maker,isEventCapture:0}),
-    new TextContainerProperty({xPosition:x,yPosition:factsY,width,height:LINE_H+1,containerID:8,containerName:'library-facts',content:facts,isEventCapture:0}),
     new TextContainerProperty({xPosition:x,yPosition:notesY,width,height:notesBottom-notesY,containerID:5,containerName:'library-notes',content:notes,isEventCapture:1}),
-    new TextContainerProperty({xPosition:x,yPosition:256,width,height:30,containerID:6,containerName:'library-footer',content:overflow ? `Scroll · Double tap: ${backTo}` : `Double tap: ${backTo}`,isEventCapture:0}),
-    captionContainer(plan, captionText(place.country, place.region)),
+    new TextContainerProperty({xPosition:x,yPosition:258,width,height:28,containerID:6,containerName:'library-footer',content:overflow ? `Scroll for more · Double tap: ${backTo}` : `Double tap: ${backTo}`,isEventCapture:0}),
+    caption,
   ];
   const imageObject=[
     ...mapTiles(1, 2),
@@ -284,7 +285,7 @@ function buildSceneWinePage(wine: LibraryWine, backTo: string, place: WinePlace,
   ];
   return new RebuildPageContainer({containerTotalNum:textObject.length+imageObject.length,textObject,imageObject});
 }
-const RULE = { w: 240, h: 8 };
+const RULE = { w: 288, h: 8 };
 /** A map panel only when the place is on the map (unknown countries keep the full-width list). */
 async function mapFor(country: string, region: string | null): Promise<ListMap | null> {
   if (!placeScene || country === UNKNOWN_COUNTRY) return null;

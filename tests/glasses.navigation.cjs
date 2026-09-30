@@ -196,7 +196,7 @@ const assert=require('node:assert/strict');
  assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
  assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker','atlas-title+atlas-rows+atlas-hint','detail']);
  assert.equal(result.everyCatalogWineListed,true);
- assert.equal(result.atlas[7],'library-kicker+library-title+library-vintage+library-facts+library-notes+library-footer+map-caption');  // mapped wine: map-scene layout
+ assert.equal(result.atlas[7],'library-kicker+library-title+library-vintage+library-notes+library-footer+map-caption');  // mapped wine: map-scene layout
  assert.deepEqual(result.atlas.slice(8,11),['atlas-title+atlas-rows+atlas-hint','detail',true]);
  assert.deepEqual(result.atlas.slice(11),['home-list',false]);
  assert.equal(result.scope.countries.length,result.catalogCountryCount);assert.deepEqual(result.linkProblems,[]);
