@@ -111,7 +111,8 @@ const assert=require('node:assert/strict');
   out.finder=[results,fromResults,last()];
   for(let i=0;i<7;i++) await dbl();
   // Pairing › wine › notes › back returns to the pairing (it used to open a grapes list)
-  store.sommni_pairings=JSON.stringify([{id:'p1',name:'Friday tasting',notes:'',wineIds:['w0','w1'],createdAt:'',updatedAt:''}]);
+  // Outside the Even Hub host, companion data lives in browser storage. One legacy and one canonical ID: both resolve.
+  localStorage.setItem('sommni_pairings',JSON.stringify([{id:'p1',name:'Friday tasting',notes:'',wineIds:['w0','wl_cabernet-sauvignon-vasse-felix'],createdAt:'',updatedAt:''}]));
   await click(P.PAIRINGS_INDEX);const pl=last();await click(0);const pd=last();await click(1);const pn=last();await dbl();
   out.pairing=[pl,pd,pn,last()];
   for(let i=0;i<3;i++) await dbl();

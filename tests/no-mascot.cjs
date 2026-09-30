@@ -9,8 +9,8 @@ const fs=require('node:fs');
   await page.goto('http://localhost:5186/sommNI/');
   const result=await page.evaluate(async()=>{
    const P=await import('/sommNI/src/pages.ts');
-   const q={category:'Origin',question:'What country does this wine come from?',correct:'France',options:['France','Italy','Spain','Portugal']};
-   const pages=[P.buildFinderTypePage(),P.buildFinderVibePage(),P.buildFinderFlavorPage('Red'),P.buildFinderBodyPage(),P.buildFinderWorldPage(),P.buildCourseOverviewPage([]),P.buildQuizPickerPage(['Test wine']),P.buildQuizQuestionPage(q,1,5,'Gevrey-Chambertin'),P.buildQuizFeedbackPage(false,'France',1,5,0),P.buildQuizScorePage(4,5,'Gevrey-Chambertin')];
+   // The legacy quiz pages were replaced by the shared study engine (tests/study.glasses.cjs covers its pages).
+   const pages=[P.buildFinderTypePage(),P.buildFinderVibePage(),P.buildFinderFlavorPage('Red'),P.buildFinderBodyPage(),P.buildFinderWorldPage(),P.buildCourseOverviewPage([])];
    return pages.map(pg=>{
     const boxes=[...(pg.listObject||[]),...(pg.textObject||[]),...(pg.imageObject||[])];
     const text=pg.textObject[0]; const list=pg.listObject[0];

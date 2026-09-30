@@ -9,13 +9,17 @@ import { connectWinebraryGlasses, setWinebraryDeviceConnected } from './winebrar
 import { buildHomePage, rebuildHomePage } from './pages';
 import { pushLogoToGlasses } from './image-utils';
 import { registerEventHandlers } from './events';
-import { initSync } from './sync';
+import { initSync, migrateLegacyWineIds, inEvenHubHost } from './sync';
+import { useAccount, useStorage, eventCount } from './study/store';
+import { connectStudyGlasses } from './study/glasses';
 import { setStatus, setBattery, log } from './ui';
 import { TOTAL_WINES } from './constants';
 import { initDashboard, refreshAll, setDeviceInfo, setVersionInfo, setGlassesStatus } from './dashboard';
 
 async function main(): Promise<void> {
-  // Initialize dashboard tab switching immediately
+  // Guest study log first; the Winebrary session (if any) switches it to the account.
+  await useAccount(null);
+  await runMigration();
   initDashboard();
   initWinebrary();
   await refreshAll();
@@ -78,6 +82,15 @@ async function main(): Promise<void> {
   // Use full GitHub Pages URL for remote assets (ehpk doesn't bundle bottles)
   const baseUrl = new URL('./', location.href).href;
   connectWinebraryGlasses(bridge, baseUrl);
+  connectStudyGlasses(bridge, baseUrl);
+  // Inside Even Hub, companion data and study progress live in the host's storage.
+  log(`Storage: ${inEvenHubHost() ? 'Even Hub' : 'browser'} · ${eventCount()} study reviews on this device`);
+  if (inEvenHubHost()) {
+    await useStorage(initSync(bridge));
+    log(`Study log reloaded from Even Hub storage: ${eventCount()} reviews`);
+    await runMigration();
+    await refreshAll();
+  }
   if (import.meta.env.DEV && new URLSearchParams(location.search).get('g2-fixture') === 'library') {
     (await import('./dev-fixture')).installLibraryFixture(baseUrl);
   }
@@ -104,6 +117,16 @@ async function main(): Promise<void> {
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();
   log("Dashboard loaded", "success");
+}
+
+/** One-time conversion of stored positional wine IDs (w0…) to canonical IDs. */
+async function runMigration(): Promise<void> {
+  try {
+    const report = await migrateLegacyWineIds();
+    if (report.unresolved.length) log(`ID migration kept ${report.unresolved.length} unknown IDs unchanged: ${report.unresolved.join(', ')}`, "error");
+  } catch (err) {
+    log("ID migration did not complete; legacy data is unchanged: " + err, "error");
+  }
 }
 
 main().catch((err) => {

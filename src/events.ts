@@ -3,7 +3,7 @@
 // Nav: Home → Countries → Grapes → Wines → Tasting Notes
 // + Find My Wine (5-step questionnaire → results → tasting notes)
 // + Course Builder (multi-course wine planner)
-// + Quiz Me (flash cards / multiple-choice quiz)
+// + Study today (shared recall engine, study/glasses.ts)
 // + Pairings (read saved pairing collections)
 // + 86 List (out-of-stock wines from inventory)
 // Double-tap = BACK on ALL pages
@@ -14,33 +14,26 @@ import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer } fr
 import {
   WINE_TYPES, COUNTRIES, WineType, TYPE_DISPLAY,
   getGrapesForCountry, getWinesForGrape,
-  getWineId, getFlavorOptionsForType, getRankedWines, Wine, WINES,
+  getFlavorOptionsForType, getRankedWines, Wine,
 } from './constants';
+import { getWineId, lookupWineById } from './identity';
 import {
   rebuildHomePage, buildCountryListPage, buildGrapeListPage,
   buildWineListPage, buildTastingNotesPage,
   buildFinderTypePage, buildFinderVibePage, buildFinderFlavorPage,
   buildFinderBodyPage, buildFinderWorldPage, buildFinderResultsPage,
-  buildQuizPickerPage, buildQuizQuestionPage, buildQuizFeedbackPage, buildQuizScorePage,
   buildPairingsListPage, buildPairingDetailPage,
-  wineListPage, quizPickerPage, pairingsListPage,
-  HOME_LIST_ITEMS, LIBRARY_INDEX, FINDER_INDEX, QUIZ_INDEX, PAIRINGS_INDEX,
+  wineListPage, pairingsListPage,
+  HOME_LIST_ITEMS, LIBRARY_INDEX, FINDER_INDEX, STUDY_INDEX, PAIRINGS_INDEX,
   TYPE_START_INDEX,
 } from './pages';
 import {
   pushLogoToGlasses, pushGlobeToGlasses, pushGrapeSpriteToGlasses,
   pushBottleSprite, pushBottleSpriteDual,
 } from './image-utils';
-import {
-  startQuizSession, answerQuiz, nextQuizQuestion, endQuiz, clearQuiz,
-  getQuizState,
-} from './quiz';
-import {
-  initSync, getInventory, getPairings, getFavorites,
-  recordQuizAnswer, recordQuizSession, checkAndUpdateLearned,
-  type Pairing,
-} from './sync';
+import { getPairings, type Pairing } from './sync';
 import { handleLibraryGlassesEvent, openLibraryOnGlasses } from './winebrary-glasses';
+import { handleStudyGlassesEvent, openStudyOnGlasses } from './study/glasses';
 import { invalidateImages } from './image-utils';
 import { log } from './ui';
 
@@ -48,7 +41,6 @@ import { log } from './ui';
 type Page =
   | "home" | "countries" | "grapes" | "wines" | "notes"
   | "finder-type" | "finder-vibe" | "finder-flavor" | "finder-body" | "finder-world" | "finder-results"
-  | "quiz-picker" | "quiz-question" | "quiz-feedback" | "quiz-score"
   | "pairings-list" | "pairing-detail";
 
 let currentPage: Page = "home";
@@ -61,9 +53,6 @@ let currentWineId: string | null = null;
 let finderAnswers: Record<string, string> = {};
 let finderResults: { wine: Wine; type: WineType; country: string; score: number }[] = [];
 
-// Quiz state
-let quizWines: { wine: Wine; type: WineType; country: string; wineId: string }[] = [];
-
 // Pairings state
 let pairingsCache: Pairing[] = [];
 let activePairing: Pairing | null = null;
@@ -75,10 +64,8 @@ const NAV_DEBOUNCE_MS = 500;
 
 // Paged lists (G2 lists hold at most 20 rows) and where "Back" from notes should land.
 let wineListPageIndex = 0;
-let quizPage = 0;
 let pairingsPage = 0;
 let notesReturn: (() => Promise<void>) | null = null;
-let lastQuizWine: { wine: Wine; type: WineType; country: string; wineId: string } | null = null;
 
 /** Rebuild the glasses page; throws when the glasses reject it so callers never advance state. */
 async function rebuild(bridge: EvenAppBridge, page: RebuildPageContainer): Promise<void> {
@@ -94,7 +81,6 @@ export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string): (
   window.addEventListener('winelens-glasses-home', () => { currentPage="home"; lastHoveredIndex=-1; });
   bridgeRef = bridge;
   baseUrlRef = baseUrl;
-  initSync(bridge);
 
   return bridge.onEvenHubEvent((event: EvenHubEvent) => {
     handleEvent(bridge, event, baseUrl);
@@ -111,29 +97,11 @@ async function updateFinderResultPreview(
   invalidateImages();
   const r = finderResults[index];
   const wineId = getWineId(r.type, r.country, r.wine.name);
-  await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
+  if (wineId) await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
 }
 
 function lookupName(wineId: string): string {
-  let wIdx = 0;
-  for (const t of WINE_TYPES) for (const c of COUNTRIES[t]) for (const w of (WINES[t]?.[c] || [])) {
-    if (`w${wIdx}` === wineId) return w.name;
-    wIdx++;
-  }
-  return `Unknown (${wineId})`;
-}
-
-// ═══ HELPER: get all wines flat ═══
-function getAllWinesFlat(): { wine: Wine; type: WineType; country: string }[] {
-  const result: { wine: Wine; type: WineType; country: string }[] = [];
-  for (const t of WINE_TYPES) {
-    for (const c of COUNTRIES[t]) {
-      for (const w of (WINES[t]?.[c] || [])) {
-        result.push({ wine: w, type: t, country: c });
-      }
-    }
-  }
-  return result;
+  return lookupWineById(wineId)?.wine.name ?? 'Unavailable wine';
 }
 
 // ═══ GO BACK ═══
@@ -155,10 +123,6 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
       wineListPageIndex--;
       await rebuild(bridge, buildWineListPage(currentType, currentCountry, currentGrape, wineListPageIndex));
       lastNavigationTime = Date.now();
-    }
-    else if (currentPage === "quiz-picker" && quizPage > 0) {
-      quizPage--;
-      await showQuizPicker(bridge, baseUrl, quizPage);
     }
     else if (currentPage === "pairings-list" && pairingsPage > 0) {
       pairingsPage--;
@@ -238,21 +202,6 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
 
 
 
-    // ── Quiz back navigation ──
-    else if (currentPage === "quiz-picker") {
-      await goHome(bridge, baseUrl);
-    }
-    else if (currentPage === "quiz-question" || currentPage === "quiz-feedback") {
-      clearQuiz();
-      await showQuizPicker(bridge, baseUrl);
-      log("< Back to quiz picker", "success");
-    }
-    else if (currentPage === "quiz-score") {
-      clearQuiz();
-      await showQuizPicker(bridge, baseUrl);
-      log("< Back to quiz picker", "success");
-    }
-
     // ── Pairings back navigation ──
     else if (currentPage === "pairings-list") {
       await goHome(bridge, baseUrl);
@@ -281,64 +230,10 @@ async function goHome(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
   currentGrape = null; currentWineId = null;
   finderAnswers = {}; lastHoveredIndex = -1;
   activePairing = null;
-  wineListPageIndex = 0; quizPage = 0; pairingsPage = 0; notesReturn = null;
+  wineListPageIndex = 0; pairingsPage = 0; notesReturn = null;
   lastNavigationTime = Date.now();
   await pushLogoToGlasses(bridge, baseUrl);
   log("< Back to Home", "success");
-}
-
-// ═══ QUIZ HELPER ═══
-async function showQuizPicker(bridge: EvenAppBridge, baseUrl: string, page = 0): Promise<void> {
-  // Load favorites from sync, fall back to first 10 wines
-  const favIds = await getFavorites();
-  const allFlat = getAllWinesFlat();
-  quizWines = [];
-  if (favIds.length > 0) {
-    quizWines = favIds.map(id => {
-      // Find wine by ID
-      let idx = 0;
-      for (const t of WINE_TYPES) {
-        for (const c of COUNTRIES[t]) {
-          for (const w of (WINES[t]?.[c] || [])) {
-            if (`w${idx}` === id) return { wine: w, type: t, country: c, wineId: id };
-            idx++;
-          }
-        }
-      }
-      return null;
-    }).filter(Boolean) as typeof quizWines;
-  }
-  if (quizWines.length === 0) {
-    quizWines = allFlat.slice(0, 15).map(w => ({
-      ...w, wineId: getWineId(w.type, w.country, w.wine.name),
-    }));
-  }
-
-  const names = quizWines.map(w => w.wine.name);
-  await rebuild(bridge, buildQuizPickerPage(names, page));
-  quizPage = quizPickerPage(names, page).page;
-
-  currentPage = "quiz-picker";
-  lastNavigationTime = Date.now();
-}
-
-async function startQuizForWine(
-  bridge: EvenAppBridge, baseUrl: string,
-  wine: Wine, wineType: WineType, wineCountry: string, wineId: string,
-): Promise<void> {
-  const qs = startQuizSession(wine, wineType, wineCountry, wineId);
-  lastQuizWine = { wine, type: wineType, country: wineCountry, wineId };
-  if (!qs) {
-    log("[QUIZ] No questions generated", "error");
-    return;
-  }
-  const q = qs.questions[0];
-  const nameShort = wine.name.length > 30 ? wine.name.slice(0, 28) + ".." : wine.name;
-  await rebuild(bridge, buildQuizQuestionPage(q, 1, qs.questions.length, nameShort));
-
-  currentPage = "quiz-question";
-  lastNavigationTime = Date.now();
-  log(`> Quiz: ${wine.name} (${qs.questions.length}Q)`, "success");
 }
 
 // ═══ HANDLE CLICK ═══
@@ -367,10 +262,12 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
 
         log("> Find My Wine", "success");
       }
-      else if (idx === QUIZ_INDEX) {
-        quizPage = 0;
-        await showQuizPicker(bridge, baseUrl);
-        log("> Quiz Me", "success");
+      else if (idx === STUDY_INDEX) {
+        // Study owns the display (and its events) until it returns home.
+        navigating = false;
+        await openStudyOnGlasses();
+        log("> Study today", "success");
+        return;
       }
       else if (idx === PAIRINGS_INDEX) {
         pairingsCache = await getPairings();
@@ -559,106 +456,6 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       return;
     }
 
-    // ═══ QUIZ ═══
-
-    if (currentPage === "quiz-picker") {
-      const row = quizPickerPage(quizWines.map(w => w.wine.name), quizPage).rows[idx];
-      if (row?.kind === "back") { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (row?.kind === "more") { await showQuizPicker(bridge, baseUrl, quizPage + 1); return; }
-
-      let targetWine: typeof quizWines[0] | null = null;
-      if (row?.kind === "item" && row.index === 0) {
-        // Random wine
-        targetWine = quizWines[Math.floor(Math.random() * quizWines.length)];
-      } else if (row?.kind === "item") {
-        targetWine = quizWines[row.index - 1] ?? null;
-      }
-
-      if (targetWine) {
-        await startQuizForWine(bridge, baseUrl, targetWine.wine, targetWine.type, targetWine.country, targetWine.wineId);
-      }
-      return;
-    }
-
-    if (currentPage === "quiz-question") {
-      const qs = getQuizState();
-      if (!qs) return;
-      if (idx >= 0 && idx < qs.questions[qs.currentQ].options.length) {
-        const result = answerQuiz(idx);
-        if (result) {
-          // Record answer to sync
-          await recordQuizAnswer(qs.wineId, result.correct);
-          // Show feedback page
-          await rebuild(bridge, buildQuizFeedbackPage(
-            result.correct, result.correctAnswer,
-            qs.currentQ + 1, qs.questions.length, qs.score,
-          ));
-
-          currentPage = "quiz-feedback"; lastNavigationTime = Date.now();
-        }
-      }
-      return;
-    }
-
-    if (currentPage === "quiz-feedback") {
-      const qs = getQuizState();
-      if (!qs) return;
-      if (idx === 1) {
-        // Quit quiz
-        clearQuiz();
-        await showQuizPicker(bridge, baseUrl);
-        return;
-      }
-      if (idx === 0) {
-        // Next question or see score
-        const action = nextQuizQuestion();
-        if (action === "next") {
-          const q = qs.questions[qs.currentQ];
-          const nameShort = qs.wine.name.length > 30 ? qs.wine.name.slice(0, 28) + ".." : qs.wine.name;
-          await rebuild(bridge, buildQuizQuestionPage(
-            q, qs.currentQ + 1, qs.questions.length, nameShort,
-          ));
-
-          currentPage = "quiz-question"; lastNavigationTime = Date.now();
-        } else {
-          // Done — show score
-          const finalScore = endQuiz();
-          if (finalScore) {
-            await recordQuizSession(qs.wineId, qs.wine.name, finalScore.score, finalScore.total, finalScore.total);
-            await checkAndUpdateLearned(qs.wineId);
-            const nameShort = qs.wine.name.length > 30 ? qs.wine.name.slice(0, 28) + ".." : qs.wine.name;
-            await rebuild(bridge, buildQuizScorePage(finalScore.score, finalScore.total, nameShort));
-
-            currentPage = "quiz-score"; lastNavigationTime = Date.now();
-            log(`Quiz done: ${finalScore.score}/${finalScore.total} (${finalScore.pct}%)`, "success");
-          }
-        }
-      }
-      return;
-    }
-
-    if (currentPage === "quiz-score") {
-      if (idx === 0) {
-        // Try again — restart with same wine
-        // We need to refind the wine info
-        const lastWine = lastQuizWine;
-        if (lastWine) {
-          await startQuizForWine(bridge, baseUrl, lastWine.wine, lastWine.type, lastWine.country, lastWine.wineId);
-        }
-      } else if (idx === 1) {
-        // Random wine
-        const target = quizWines[Math.floor(Math.random() * quizWines.length)];
-        if (target) {
-          await startQuizForWine(bridge, baseUrl, target.wine, target.type, target.country, target.wineId);
-        }
-      } else if (idx === 2) {
-        // Back
-        navigating = false;
-        await goBack(bridge, baseUrl);
-      }
-      return;
-    }
-
     // ═══ PAIRINGS ═══
 
     if (currentPage === "pairings-list") {
@@ -671,19 +468,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       }
       if (row?.kind === "item") {
         activePairing = pairingsCache[row.index];
-        // Resolve wine names from IDs
-        const allFlat = getAllWinesFlat();
-        const nameMap = new Map<string, string>();
-        let wIdx = 0;
-        for (const t of WINE_TYPES) {
-          for (const c of COUNTRIES[t]) {
-            for (const w of (WINES[t]?.[c] || [])) {
-              nameMap.set(`w${wIdx}`, w.name);
-              wIdx++;
-            }
-          }
-        }
-        const wineNames = activePairing.wineIds.map(id => nameMap.get(id) || `Unknown (${id})`);
+        const wineNames = activePairing.wineIds.map(lookupName);
         await rebuild(bridge, buildPairingDetailPage(activePairing, wineNames));
         currentPage = "pairing-detail"; lastNavigationTime = Date.now();
         log(`> Pairing: ${activePairing.name}`, "success");
@@ -698,29 +483,20 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       // Tap a wine in the pairing → go to tasting notes
       if (idx >= 0 && idx < wineCount) {
         const targetId = activePairing.wineIds[idx];
-        let wIdx = 0;
-        for (const t of WINE_TYPES) {
-          for (const c of COUNTRIES[t]) {
-            for (const w of (WINES[t]?.[c] || [])) {
-              if (`w${wIdx}` === targetId) {
-                currentType = t; currentCountry = c; currentGrape = null;
-                currentWineId = targetId;
-                await rebuild(bridge, buildTastingNotesPage(w, targetId));
-                currentPage = "notes"; lastNavigationTime = Date.now();
-                const pairing = activePairing;
-                const names = pairing.wineIds.map(id => lookupName(id));
-                notesReturn = async () => {
-                  await rebuild(bridge, buildPairingDetailPage(pairing, names));
-                  currentPage = "pairing-detail"; activePairing = pairing; lastNavigationTime = Date.now();
-                };
-                await pushBottleSpriteDual(bridge, baseUrl, targetId, 100, 140);
-                log(`> ${w.name} (pairing)`, "success");
-                return;
-              }
-              wIdx++;
-            }
-          }
-        }
+        const found = lookupWineById(targetId);
+        if (!found) { log(`[PAIRING] ${targetId} is not in the catalog; not opened`, "error"); return; }
+        currentType = found.type; currentCountry = found.country; currentGrape = null;
+        currentWineId = found.id;
+        await rebuild(bridge, buildTastingNotesPage(found.wine, found.id));
+        currentPage = "notes"; lastNavigationTime = Date.now();
+        const pairing = activePairing;
+        const names = pairing.wineIds.map(lookupName);
+        notesReturn = async () => {
+          await rebuild(bridge, buildPairingDetailPage(pairing, names));
+          currentPage = "pairing-detail"; activePairing = pairing; lastNavigationTime = Date.now();
+        };
+        await pushBottleSpriteDual(bridge, baseUrl, found.id, 100, 140);
+        log(`> ${found.wine.name} (pairing)`, "success");
       }
       return;
     }
@@ -740,7 +516,7 @@ async function handleDoubleClick(bridge: EvenAppBridge, baseUrl: string): Promis
 
 // ═══ MAIN EVENT HANDLER ═══
 async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: string): Promise<void> {
-  if (handleLibraryGlassesEvent(event)) return;
+  if (handleStudyGlassesEvent(event) || handleLibraryGlassesEvent(event)) return;
   const gesture=event.listEvent?.eventType ?? event.textEvent?.eventType ?? event.sysEvent?.eventType;
   if (gesture === OsEventTypeList.DOUBLE_CLICK_EVENT) { await handleDoubleClick(bridge, baseUrl); return; }
 

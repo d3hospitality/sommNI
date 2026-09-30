@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY, API_URL } from './account-config';
-import { WINES, WINE_TYPES, COUNTRIES, getWineId } from './constants';
+import { lookupWineById } from './identity';
+import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
+import { syncStudy, setStudyAuth } from './study/sync';
 import { showWineOnGlasses, canShowWine, clearPrivateGlasses, drawGlassesPreview, setLibrarySource, libraryChanged, saveLibraryCache, clearLibraryCache } from './winebrary-glasses';
 
 export interface LibraryWine {
@@ -211,28 +213,37 @@ export function initWinebrary() {
   dialog.addEventListener('cancel', e => { if (busy) e.preventDefault(); });
   document.getElementById('wl-account')!.addEventListener('click', () => {
     if (!userId) return signIn();
-    openDialog('<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">Your Winebrary is private to your account. Sign out to switch accounts on this device.</p><button id="wl-signout" class="wl-primary">Sign out</button>');
+    const pending=unsyncedEvents().length;
+    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">Your Winebrary and study progress are private to your account. Signing out removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you sign out now.</p>` : ''}<button id="wl-signout" class="wl-primary">Sign out</button>`);
     dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const { error } = await auth.auth.signOut(); if (error) throw error; dialog.close(); }));
   });
   document.querySelectorAll('[data-wl-add]').forEach(el=>el.addEventListener('click',()=>requireAccount(()=>editWine())));
   document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach(el=>el.addEventListener('click',()=>document.querySelector<HTMLButtonElement>(`.tab[data-tab="${el.dataset.openTab}"]`)?.click()));
   document.addEventListener('click', e => {
     const button=(e.target as HTMLElement).closest<HTMLElement>('[data-save-library]'); if (!button) return;
-    const id=button.dataset.saveLibrary;
-    for (const type of WINE_TYPES) for (const country of COUNTRIES[type]) for (const wine of WINES[type]?.[country] || []) {
-      if (getWineId(type,country,wine.name)!==id) continue;
-      requireAccount(()=>editWine({ wine_name:wine.name, wine_id:id, region:wine.region, notes:[wine.nose,wine.palate,wine.finish].filter(Boolean).join('\n'), metadata:{color:type,country,grape:wine.grape,vintage_state:'unknown'} })); return;
-    }
+    const found=lookupWineById(button.dataset.saveLibrary);
+    if (!found) return; // unknown catalog ID: never save it as some other wine
+    // Personal notes start empty: catalog tasting notes are attributed reference text, not the user's observations.
+    requireAccount(()=>editWine({ wine_name:found.wine.name, wine_id:found.id, region:found.wine.region, notes:'', metadata:{color:found.type,country:found.country,grape:found.wine.grape,vintage_state:'unknown'} }));
   });
   auth.auth.onAuthStateChange((_event, session) => {
     const next=session?.user.id || null;
     if (next === userId) return;
-    if (userId) { void clearPrivateGlasses().catch(console.error); void clearLibraryCache(); }
+    const previous=userId;
+    if (previous) { void clearPrivateGlasses().catch(console.error); void clearLibraryCache(); void forgetAccount(previous).catch(console.error); }
+    // Study progress follows the account: the previous owner's reviews leave memory before the next log loads.
+    setStudyAuth(session ? { userId: session.user.id, token: () => auth.auth.getSession().then(r => r.data.session?.access_token ?? null) } : null);
+    void useAccount(next).then(() => { if (next) setTimeout(() => void syncStudy(), 0); });
     dialogRevision++;
     userId=next; items=[]; search=''; generation++; loading=false;
     // Do not await Supabase requests inside its auth callback.
     dialog.close(); setBusy(false); render(); setTimeout(()=>void refresh(),0);
   });
   render();
-  void auth.auth.getSession().then(({data:{session}})=> { if (session && session.user.id !== userId) { userId=session.user.id; void refresh(); } });
+  void auth.auth.getSession().then(({data:{session}})=> {
+    if (!session || session.user.id === userId) return;
+    userId=session.user.id; void refresh();
+    setStudyAuth({ userId: session.user.id, token: () => auth.auth.getSession().then(r => r.data.session?.access_token ?? null) });
+    void useAccount(session.user.id).then(() => void syncStudy());
+  });
 }

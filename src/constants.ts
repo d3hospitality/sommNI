@@ -390,54 +390,9 @@ export function getRankedWines(answers: Record<string, string>): { wine: Wine; t
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Wine ID System (w0, w1, w2... sequential)
-// Maps to bottle sprite filenames: bottles/w0.png, bottles/w1.png...
+// Wine identity lives in identity.ts (immutable canonical IDs + frozen
+// legacy w0…w214 map). There is deliberately no positional ID here.
 // ═══════════════════════════════════════════════════════════════════
-
-let _wineIdMap: Map<string, string> | null = null;
-
-function buildWineIdMap(): Map<string, string> {
-  if (_wineIdMap) return _wineIdMap;
-  _wineIdMap = new Map();
-  let idx = 0;
-  for (const type of WINE_TYPES) {
-    const countries = COUNTRIES[type];
-    for (const country of countries) {
-      const wines = WINES[type]?.[country] || [];
-      for (const wine of wines) {
-        const key = `${type}|${country}|${wine.name}`;
-        _wineIdMap.set(key, `w${idx}`);
-        idx++;
-      }
-    }
-  }
-  return _wineIdMap;
-}
-
-/** Get wine ID (w0, w1...) for a specific wine */
-export function getWineId(type: WineType, country: string, wineName: string): string {
-  const map = buildWineIdMap();
-  return map.get(`${type}|${country}|${wineName}`) || "w0";
-}
-
-/** Reverse lookup: wine ID → { wine, type, country } */
-let _reverseMap: Map<string, { wine: Wine; type: WineType; country: string }> | null = null;
-
-export function lookupWineById(wineId: string): { wine: Wine; type: WineType; country: string } | null {
-  if (!_reverseMap) {
-    _reverseMap = new Map();
-    let idx = 0;
-    for (const type of WINE_TYPES) {
-      for (const country of COUNTRIES[type]) {
-        for (const wine of (WINES[type]?.[country] || [])) {
-          _reverseMap.set(`w${idx}`, { wine, type, country });
-          idx++;
-        }
-      }
-    }
-  }
-  return _reverseMap.get(wineId) || null;
-}
 
 /** Get total wine count */
 export const TOTAL_WINES = 215;

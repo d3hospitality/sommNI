@@ -7,6 +7,8 @@
 import { EvenAppBridge, ImageRawDataUpdate, ImageRawDataUpdateResult } from '@evenrealities/even_hub_sdk';
 import { bottleCanvas, toGreenLevels } from './bottle-raster';
 import { encodeGrayscalePng } from './pngEncoder';
+import { assetIdFor } from './identity';
+import { bottleImageUrl } from './bottle-assets';
 
 // One queue for the bridge; old page uploads are discarded before sending.
 let imageEpoch=0;
@@ -26,7 +28,7 @@ export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, wid
   const canvas=await bottleCanvas(source,width,halfHeight*2);
   const ctx=canvas.getContext('2d')!;
   for(let i=0;i<2;i++) {
-    const gray=toGreenLevels(ctx.getImageData(0,i*halfHeight,width,halfHeight).data);
+    const gray=toGreenLevels(ctx.getImageData(0,i*halfHeight,width,halfHeight).data,width);
     await pushImg(bridge,i+1,i===0?'bottle-top':'bottle-bot',encodeGrayscalePng(width,halfHeight,gray),epoch);
   }
 }
@@ -180,16 +182,18 @@ export async function pushGrapeSpriteToGlasses(bridge: EvenAppBridge, baseUrl: s
 // ═══════════════════════════════════════════════════════════════════
 
 export async function pushBottleSprite(
-  bridge: EvenAppBridge, baseUrl: string, wineId: string,
+  bridge: EvenAppBridge, baseUrl: string, wineId: string | null,
   containerID: number, containerName: string,
 ): Promise<void> {
   const epoch=imageEpoch;
   // Try the bottle sprite — each wine has {wineId}/{wineId}-{shape}.png
   // We pick the first PNG found for the wine ID
-  const bottleUrl = `${baseUrl}bottles/${wineId}.png`;
+  const asset = assetIdFor(wineId);
+  if (!asset) return; // unknown wine: no image rather than another wine's bottle
+  const bottleUrl = bottleImageUrl(baseUrl, asset);
   try {
     const canvas = await bottleCanvas(bottleUrl, 80, 80);
-    const png = encodeGrayscalePng(80,80,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data));
+    const png = encodeGrayscalePng(80,80,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data,80));
     await pushImg(bridge, containerID, containerName, png, epoch);
     console.log(`[sommNI-TG] Bottle sprite pushed: ${wineId}`);
   } catch (e) {
@@ -203,14 +207,16 @@ export async function pushBottleSprite(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function pushBottleSpriteSplit(
-  bridge: EvenAppBridge, baseUrl: string, wineId: string,
+  bridge: EvenAppBridge, baseUrl: string, wineId: string | null,
   topID: number, topName: string, botID: number, botName: string,
 ): Promise<void> {
   const epoch=imageEpoch;
   const W = 80;       // match container width
   const HALF = 100;   // each half height (max SDK image height = 144)
   const TOTAL = HALF * 2;
-  const url = `${baseUrl}bottles/${wineId}.png`;
+  const asset = assetIdFor(wineId);
+  if (!asset) return;
+  const url = bottleImageUrl(baseUrl, asset);
   try {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`${resp.status}`);
@@ -251,9 +257,11 @@ export async function pushBottleSpriteSplit(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function pushBottleSpriteDual(
-  bridge: EvenAppBridge, baseUrl: string, wineId: string,
+  bridge: EvenAppBridge, baseUrl: string, wineId: string | null,
   halfW: number, halfH: number,
 ): Promise<void> {
-  try { await pushBottlePhoto(bridge, `${baseUrl}bottles/${wineId}.png`, halfW, halfH); }
+  const asset = assetIdFor(wineId);
+  if (!asset) return;
+  try { await pushBottlePhoto(bridge, bottleImageUrl(baseUrl, asset), halfW, halfH); }
   catch (error) { console.warn('Bottle image unavailable; tasting notes remain visible.', error); }
 }

@@ -16,7 +16,6 @@ import {
   getFlavorOptionsForType, getWineDisplayName,
   Wine, WineType,
 } from './constants';
-import type { QuizQuestion } from './quiz';
 import type { Pairing, CourseSlot } from './sync';
 import { pageList, wholeRowHeight, clipLabel, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
@@ -29,13 +28,13 @@ export const HOME_LIST_ITEMS = [
   "My Winebrary",
   "Find My Wine",
   "Wine Pairings",
-  "Quiz Me",
+  "Study today",
   ...WINE_TYPES.map(t => TYPE_DISPLAY[t]),
 ];
 export const LIBRARY_INDEX = 0;
 export const FINDER_INDEX = 1;
 export const PAIRINGS_INDEX = 2;
-export const QUIZ_INDEX = 3;
+export const STUDY_INDEX = 3;   // shared recall engine (study/glasses.ts)
 export const TYPE_START_INDEX = 4;  // wine types start here
 
 // List heights snap to whole 40 px rows so the last visible row is never clipped.
@@ -326,7 +325,7 @@ export function buildWineListPage(type: WineType, country: string, grape: string
 //   2+100+4=106px               470px
 // ══════════════════════════════════════════════════════════════════
 
-export function buildTastingNotesPage(wine: Wine, _wineId: string): RebuildPageContainer {
+export function buildTastingNotesPage(wine: Wine, _wineId: string | null): RebuildPageContainer {
   const IMG_X = 2;            // 2px safe zone from left
   const IMG_W = 100;          // display width (144 - 22 clipped each side)
   const IMG_H = 140;          // display height per half (2 × 140 = 280, under SDK max of 144)
@@ -572,167 +571,6 @@ export function buildCourseOverviewPage(courses: CourseSlot[]): RebuildPageConta
 
 // Course Builder uses the same finder flow pages (buildFinderTypePage, etc.)
 // The events.ts handler tracks which course slot is being configured
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — text-first question page with 4 options
-//   2 = options list (left, wide — options are long text)
-//   5 = question text + category + progress
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizQuestionPage(
-  q: QuizQuestion, questionNum: number, totalQuestions: number,
-  wineName: string,
-): RebuildPageContainer {
-  const listItems = [...q.options.map(o =>
-    o.length > 55 ? o.slice(0, 53) + ".." : o
-  )];
-
-  const optList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 300, height: LIST_VIEW_H,
-    containerID: 2, containerName: "quiz-opts",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems.map(label => clipLabel(label)),
-    }),
-    isEventCapture: 1,
-  });
-
-  // Truncate wine name for display
-  const nameShort = wineName.length > 28 ? wineName.slice(0, 26) + ".." : wineName;
-
-  const questionText = new TextContainerProperty({
-    xPosition: 314, yPosition: 12, width: 260, height: 264,
-    containerID: 5, containerName: "question",
-    content: `Q${questionNum}/${totalQuestions} · ${q.category}\n\n${q.question}\n\n${nameShort}`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 2,
-    listObject: [optList],
-    textObject: [questionText],
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — answer feedback page (shows correct/wrong + Next/Score)
-//   2 = action list (Next Question / See Score / Quit)
-//   5 = feedback text
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizFeedbackPage(
-  correct: boolean, correctAnswer: string,
-  questionNum: number, totalQuestions: number,
-  scoreSoFar: number,
-): RebuildPageContainer {
-  const isLast = questionNum >= totalQuestions;
-  const listItems = isLast
-    ? ["See Score", "Quit Quiz"]
-    : ["Next Question", "Quit Quiz"];
-
-  const actionList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 300, height: LIST_VIEW_H,
-    containerID: 2, containerName: "quiz-action",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems.map(label => clipLabel(label)),
-    }),
-    isEventCapture: 1,
-  });
-
-  const mark = correct ? "CORRECT!" : "WRONG";
-  const ansLine = correct ? "" : `\nAnswer:\n${correctAnswer.length > 45 ? correctAnswer.slice(0, 43) + ".." : correctAnswer}`;
-  const feedback = new TextContainerProperty({
-    xPosition: 314, yPosition: 12, width: 260, height: 264,
-    containerID: 5, containerName: "feedback",
-    content: `${mark}${ansLine}\n\nScore: ${scoreSoFar}/${questionNum}`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 2,
-    listObject: [actionList],
-    textObject: [feedback],
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — score screen
-//   2 = action list (Try Again / Random Wine / Back)
-//   5 = score display
-// ══════════════════════════════════════════════════════════════════
-
-export function buildQuizScorePage(
-  score: number, total: number, wineName: string,
-): RebuildPageContainer {
-  const pct = Math.round((score / total) * 100);
-  const emoji = pct === 100 ? "PERFECT" : pct >= 75 ? "GREAT" : pct >= 50 ? "GOOD" : "KEEP GOING";
-  const nameShort = wineName.length > 30 ? wineName.slice(0, 28) + ".." : wineName;
-
-  const listItems = ["Try Again", "Random Wine", BACK_LABEL];
-
-  const actionList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: 300, height: LIST_VIEW_H,
-    containerID: 2, containerName: "quiz-score-action",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems.map(label => clipLabel(label)),
-    }),
-    isEventCapture: 1,
-  });
-
-  const scoreText = new TextContainerProperty({
-    xPosition: 314, yPosition: 12, width: 260, height: 264,
-    containerID: 5, containerName: "score",
-    content: `${emoji}!\n\n${score}/${total} — ${pct}%\n\n${nameShort}`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 2,
-    listObject: [actionList],
-    textObject: [scoreText],
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// QUIZ — wine picker (list of favorited wines to quiz on)
-//   2 = wine list + Random + Back
-//   5 = header
-// ══════════════════════════════════════════════════════════════════
-
-export function quizPickerPage(wineNames: string[], page = 0): ListPage {
-  return pageList(["Random Wine", ...wineNames], page);
-}
-
-export function buildQuizPickerPage(
-  wineNames: string[], page = 0,
-): RebuildPageContainer {
-  const listItems = quizPickerPage(wineNames, page).labels;
-
-  const pickerList = new ListContainerProperty({
-    xPosition: 2, yPosition: 2, width: PANEL_X - 4, height: LIST_VIEW_H,
-    containerID: 2, containerName: "quiz-picker",
-    itemContainer: new ListItemContainerProperty({
-      itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems.map(label => clipLabel(label)),
-    }),
-    isEventCapture: 1,
-  });
-
-  const header = new TextContainerProperty({
-    xPosition: 314, yPosition: 12, width: 260, height: 264,
-    containerID: 5, containerName: "header",
-    content: `Quiz Me\n\nPick a wine or\ngo random`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 2,
-    listObject: [pickerList],
-    textObject: [header],
-  });
-}
 
 // ══════════════════════════════════════════════════════════════════
 // PAIRINGS — list of saved pairings
