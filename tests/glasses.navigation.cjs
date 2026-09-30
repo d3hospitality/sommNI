@@ -1,6 +1,7 @@
+const TEST_ORIGIN = process.env.WINELENS_TEST_ORIGIN || 'http://localhost:5186';
 // G2 navigation + content-limit tests against a mock Even bridge (no glasses, no network).
 // Limits come from simulator 0.9.5 probes: list rows ≤ 63 UTF-8 bytes, text ≤ 999 bytes, ≤ 20 rows.
-// Needs the dev server on http://localhost:5186/sommNI/ (npm run dev).
+// Needs the dev server on the dev server (npm run dev; WINELENS_TEST_ORIGIN can override its origin).
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
@@ -9,8 +10,8 @@ const assert=require('node:assert/strict');
  page.on('console',m=>{ if(m.type()==='error'||process.env.VERBOSE) console.log('[page]',m.type(),m.text()); });
  // Exercise the mock bridge in isolation: Main.ts would otherwise overwrite
  // connection state asynchronously while these direct module tests are running.
- await page.route('http://localhost:5186/sommNI/', route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 navigation test</title>'}));
- await page.goto('http://localhost:5186/sommNI/');
+ await page.route(TEST_ORIGIN+'/sommNI/', route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 navigation test</title>'}));
+ await page.goto(TEST_ORIGIN+'/sommNI/');
  const result=await page.evaluate(async()=>{
   const L=await import('/sommNI/src/glasses-list.ts');
   const P=await import('/sommNI/src/pages.ts');

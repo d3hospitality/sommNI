@@ -6,3 +6,6 @@ dist/
 .env
 dist-ehpk/
 *.ehpk
+
+# Local Supabase CLI state
+supabase/.temp/

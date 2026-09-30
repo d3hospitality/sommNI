@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY, API_URL } from './account-config';
+import { account as auth, claimAccountCode, embeddedHost } from './account-client';
+import { ACCOUNT_SITE, API_URL } from './account-config';
 import { lookupWineById } from './identity';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
@@ -11,7 +11,6 @@ export interface LibraryWine {
   metadata: { vintage_state?: string; country?: string; grape?: string; color?: string; image_path?: string; image_source?: string } | null;
 }
 interface ImageDraft { path: string; url: string; source: 'photograph' | 'generated' }
-const auth = createClient(ACCOUNT_URL, ACCOUNT_PUBLIC_KEY);
 const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 let userId: string | null = null;
 let items: LibraryWine[] = [];
@@ -63,30 +62,19 @@ async function run(task: () => Promise<void>) {
 }
 function requireAccount(action: () => void) { if (userId) action(); else signIn(); }
 function signIn() {
-  openDialog(`<p class="wl-kicker">YOUR WINES. ONE ACCOUNT.</p><h2>Welcome to Winebrary.</h2><p class="wl-muted">Sign in with your existing wineLENS account to keep your bottles and vintages together.</p>
-    <button id="wl-google" class="wl-primary">Continue with Google ↗</button>
-    <div class="wl-divider">or use your email</div>
-    <form id="wl-login"><label>Email<input type="email" name="email" required autocomplete="email" placeholder="you@example.com"></label>
-    <label>Password<input type="password" name="password" required autocomplete="current-password" minlength="6"></label><button class="wl-primary" type="submit">Sign in</button></form>
-    <button id="wl-magic" class="wl-text-button">Email me a sign-in link</button><p class="wl-muted small">New here? An email link can create your account.</p>`);
-  dialog.querySelector('#wl-google')!.addEventListener('click', () => run(async () => {
-    const { error } = await auth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: new URL('./', location.href).href } });
-    if (error) throw error;
-  }));
-  const form = dialog.querySelector<HTMLFormElement>('#wl-login')!;
-  form.addEventListener('submit', e => { e.preventDefault(); void run(async () => {
-    const values = new FormData(form);
-    const { error } = await auth.auth.signInWithPassword({ email: String(values.get('email')), password: String(values.get('password')) });
-    if (error) throw error;
-    dialog.close();
-  }); });
-  dialog.querySelector('#wl-magic')!.addEventListener('click', () => run(async () => {
-    const email = form.querySelector<HTMLInputElement>('[name=email]')!;
-    if (!email.reportValidity()) return;
-    const { error } = await auth.auth.signInWithOtp({ email: email.value, options: { emailRedirectTo: new URL('./', location.href).href } });
-    if (error) throw error;
-    feedback('Check your email for a sign-in link. Open it on this device.');
-  }));
+  const embedded = embeddedHost();
+  openDialog(`<p class="wl-kicker">YOUR WINES. ONE ACCOUNT.</p><h2>${embedded ? 'Link your wineLENS.' : 'Welcome to Winebrary.'}</h2>
+    <p class="wl-muted">Sign in on the wineLENS website in Safari or Chrome, choose “Pair my glasses”, then enter the code here.</p>
+    <p><a class="wl-primary" href="${esc(ACCOUNT_SITE)}" target="_blank" rel="noopener">${embedded ? 'Open account website ↗' : 'Sign in / create account ↗'}</a></p>
+    <p class="wl-muted small">${esc(ACCOUNT_SITE)}</p>
+    <form id="wl-link"><label>Pairing code<input name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-1234" maxlength="12" required></label><button type="submit" class="wl-primary">Link this device</button></form>
+    <p class="wl-muted small">The code expires after 10 minutes and works once. Only enter a code from your own account. Linking is free; Pro is managed on the website.</p>`);
+  dialog.querySelector<HTMLFormElement>('#wl-link')!.addEventListener('submit', e => {
+    e.preventDefault(); void run(async () => {
+      const code = dialog.querySelector<HTMLInputElement>('[name=code]')!.value;
+      await claimAccountCode(code); dialog.close();
+    });
+  });
 }
 async function refresh() {
   const epoch = ++generation;
@@ -214,8 +202,8 @@ export function initWinebrary() {
   document.getElementById('wl-account')!.addEventListener('click', () => {
     if (!userId) return signIn();
     const pending=unsyncedEvents().length;
-    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">Your Winebrary and study progress are private to your account. Signing out removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you sign out now.</p>` : ''}<button id="wl-signout" class="wl-primary">Sign out</button>`);
-    dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const { error } = await auth.auth.signOut(); if (error) throw error; dialog.close(); }));
+    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">Your Winebrary and study progress are private to your account. Signing out removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you sign out now.</p>` : ''}<p><a class="wl-outline" href="${esc(ACCOUNT_SITE)}" target="_blank" rel="noopener">Account &amp; billing ↗</a></p><button id="wl-signout" class="wl-primary">Sign out</button>`);
+    dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const { error } = await auth.auth.signOut({ scope: 'local' }); if (error) throw error; dialog.close(); }));
   });
   document.querySelectorAll('[data-wl-add]').forEach(el=>el.addEventListener('click',()=>requireAccount(()=>editWine())));
   document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach(el=>el.addEventListener('click',()=>document.querySelector<HTMLButtonElement>(`.tab[data-tab="${el.dataset.openTab}"]`)?.click()));

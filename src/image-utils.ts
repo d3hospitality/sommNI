@@ -8,6 +8,7 @@ import { EvenAppBridge, ImageRawDataUpdate, ImageRawDataUpdateResult, type Rebui
 import { validateGlassesPage } from './glasses-page';
 import { bottleCanvas, stageCanvas, ruleCanvas, toGreenLevels } from './bottle-raster';
 import { encodeGrayscalePng } from './pngEncoder';
+import { brandGlassesCanvas } from './brand-mark';
 import { assetIdFor } from './identity';
 import { bottleImageUrl } from './bottle-assets';
 import { NOTES_IMG, NOTES_RULE } from './pages';
@@ -57,7 +58,7 @@ export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, wid
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// LOGO — split 200x200 logo into two 200x100 containers
+// LOGO — native 190x190 Focus Pour panel, split into two 190x95 containers
 // Container 3 = top, Container 4 = bottom (matching sommNI 2)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -65,13 +66,9 @@ export async function pushLogoToGlasses(bridge: EvenAppBridge, baseUrl: string):
   const epoch=imageEpoch;
   const W = 190;
   const HALF_H = 95;
-  const FULL_H = HALF_H * 2; // 190
   try {
-    const cvs = document.createElement('canvas'); cvs.width=W; cvs.height=FULL_H;
-    const ctx=cvs.getContext('2d')!; ctx.fillStyle='#000'; ctx.fillRect(0,0,W,FULL_H);
-    ctx.strokeStyle='#fff'; ctx.lineWidth=3;
-    for (const x of [76,114]) { ctx.beginPath(); ctx.ellipse(x,82,47,66,0,0,Math.PI*2);ctx.stroke(); }
-    ctx.fillStyle='#fff'; ctx.font='22px sans-serif';ctx.textAlign='center';ctx.fillText('wineLENS',95,176);
+    const cvs = brandGlassesCanvas();
+    const ctx = cvs.getContext('2d')!;
 
     // Extract top half → container 3
     const topPx = ctx.getImageData(0, 0, W, HALF_H).data;

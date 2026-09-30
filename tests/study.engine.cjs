@@ -1,6 +1,7 @@
+const TEST_ORIGIN = process.env.WINELENS_TEST_ORIGIN || 'http://localhost:5186';
 // Study engine acceptance tests (PRD S-01…S-09, I-01, R-01…R-05 and the §12 matrix).
 // Runs the real modules in Chrome against a blank page (no app startup), with in-memory storage.
-// Needs the dev server on http://localhost:5186/sommNI/ (npm run dev).
+// Needs the dev server on the dev server (npm run dev; WINELENS_TEST_ORIGIN can override its origin).
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
@@ -8,8 +9,8 @@ const assert=require('node:assert/strict');
  try {
   const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&!/failed|refused the write|Could not/i.test(m.text()))console.log('[page]',m.text());});
-  await page.route('http://localhost:5186/sommNI/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>Study engine test</title>'}));
-  await page.goto('http://localhost:5186/sommNI/');
+  await page.route(TEST_ORIGIN+'/sommNI/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>Study engine test</title>'}));
+  await page.goto(TEST_ORIGIN+'/sommNI/');
   const r=await page.evaluate(async()=>{
    const S=await import('/sommNI/src/study/scheduler.ts');
    const St=await import('/sommNI/src/study/store.ts');
