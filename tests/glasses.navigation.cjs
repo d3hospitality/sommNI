@@ -54,6 +54,7 @@ const assert=require('node:assert/strict');
    textContainerUpgrade:async u=>{texts.push(u.containerName+':'+u.content);return true;},
    onEvenHubEvent:cb=>{handler=cb;return()=>{};},
    getLocalStorage:async k=>store[k]||'', setLocalStorage:async(k,v)=>{store[k]=v;return true;},
+   shutDownPageContainer:async mode=>mode===1,
   };
   const base=location.origin+'/sommNI/';
   const name=pg=>(pg.listObject?.[0]?.containerName)||(pg.textObject?.map(t=>t.containerName).join('+'));
@@ -179,14 +180,14 @@ const assert=require('node:assert/strict');
  assert.ok(result.catalogPages>300);assert.deepEqual(result.catalogProblems,[]);
  assert.deepEqual(result.grouping,[31,'2019,2017,NV']);
  assert.equal(result.signedOut,'library-message+library-hint');assert.equal(result.signedOutBack,'home-list');
- assert.deepEqual(result.library,['library-types:WINEBRARY · 33 wines','library-countries','library-regions','library-list','library-vintages','library-title+library-vintage+library-notes+library-footer','library-vintages','library-list','library-list:… / COUNTRY NOT SET / R · 31 wines · 2/2','library-list:… / COUNTRY NOT SET / R · 31 wines · 1/2','library-types','home-list']);
+ assert.deepEqual(result.library,['library-types:WINEBRARY · 33 wines','library-country','library-regions','library-list','library-vintages','library-title+library-vintage+library-notes+library-footer','library-vintages','library-list','library-list:… / COUNTRY NOT SET / R · 31 wines · 2/2','library-list:… / COUNTRY NOT SET / R · 31 wines · 1/2','library-types','home-list']);
  assert.equal(result.detailFacts,'2017 · P · R');
  assert.match(result.offline,/offline copy/);assert.equal(result.otherAccount,'library-message+library-hint');assert.equal(result.cacheHasNoImageUrls,true);
  assert.equal(result.flow[0],'countries');assert.equal(result.flow[1],'grapes');assert.equal(result.flow[2],'wines:20');
- assert.match(result.flow[3],/2\/2$/);assert.equal(result.flow[4],'wine-name+sub+notes+kicker');assert.match(result.flow[5],/2\/2$/);
- assert.equal(result.flow[6],'after-reject:wines');assert.equal(result.flow[7],'wine-name+sub+notes+kicker');assert.equal(result.flow[8],'home-list');
- assert.deepEqual(result.finder,['results','wine-name+sub+notes+kicker','results']);
- assert.deepEqual(result.pairing,['pairings-list','pairing-wines','wine-name+sub+notes+kicker','pairing-wines']);
+ assert.match(result.flow[3],/2\/2$/);assert.equal(result.flow[4],'wine-name+sub+notes+kicker+notes-hint');assert.match(result.flow[5],/2\/2$/);
+ assert.equal(result.flow[6],'after-reject:wines');assert.equal(result.flow[7],'wine-name+sub+notes+kicker+notes-hint');assert.equal(result.flow[8],'home-list');
+ assert.deepEqual(result.finder,['results','wine-name+sub+notes+kicker+notes-hint','results']);
+ assert.deepEqual(result.pairing,['pairings-list','pairing-wines','wine-name+sub+notes+kicker+notes-hint','pairing-wines']);
  assert.equal(result.home,'home-list');
  assert.equal(result.globe.atOpen,2);assert.deepEqual(result.globe.hover,['globe-top','globe-bottom']);
  assert.ok(result.globe.info.at(-1).startsWith('info:France'),result.globe.info.join('|'));
@@ -194,7 +195,7 @@ const assert=require('node:assert/strict');
  assert.equal(result.atlas[2],'Australia');
  assert.equal(result.atlas[3],'regions');assert.equal(result.atlas[4],'> Napa Valley (1)');
  assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
- assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker','atlas-title+atlas-rows+atlas-hint','detail']);
+ assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker+notes-hint','atlas-title+atlas-rows+atlas-hint','detail']);
  assert.equal(result.everyCatalogWineListed,true);
  assert.equal(result.atlas[7],'library-kicker+library-title+library-vintage+library-notes+library-footer+map-caption');  // mapped wine: map-scene layout
  assert.deepEqual(result.atlas.slice(8,11),['atlas-title+atlas-rows+atlas-hint','detail',true]);

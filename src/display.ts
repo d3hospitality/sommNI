@@ -9,15 +9,24 @@
 
 type Release = () => Promise<void> | void;
 let owner: { name: string; release: Release } | null = null;
+let suspended = false;
+export function suspendDisplay(value: boolean): void { suspended = value; }
+export async function releaseDisplay(): Promise<void> {
+  const previous = owner;
+  owner = null;
+  await previous?.release();
+}
 
 /** Take the display. Awaits the previous owner's release (its queues are idle afterwards). */
 export async function claimDisplay(name: string, release: Release): Promise<void> {
+  if (suspended) throw new Error('Glasses app is not in the foreground.');
   if (owner && owner.name !== name) {
     const previous = owner;
     owner = null;
     try { await previous.release(); }
     catch (error) { console.warn(`[display] ${previous.name} release: ` + (error instanceof Error ? error.message : String(error))); }
   }
+  if (suspended) throw new Error('Glasses app is not in the foreground.');
   owner = { name, release };
 }
 

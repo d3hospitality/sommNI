@@ -17,9 +17,10 @@ import { GlobeRenderer, type AtlasData, type Country, type Region } from './atla
 import { AtlasNavigator } from './atlas/navigator';
 import { AtlasGlasses } from './atlas/glasses';
 import { claimDisplay, dropDisplay } from './display';
-import { invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
+import { rebuildGlassesPage, invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
 import { rebuildHomePage, buildTastingNotesPage } from './pages';
-import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
+import { allCatalogWines, lookupWineById, assetIdFor, type CatalogWine } from './identity';
+import { bottleImageUrl } from './bottle-assets';
 import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
 import { planWineScene, type ScenePlan } from './wine-scene';
 import { TYPE_DISPLAY } from './constants';
@@ -102,6 +103,9 @@ export function atlasStatus(): AtlasStatus {
     error: lastError,
   };
 }
+/** Foreground lifecycle keeps the cursor while stopping queued Atlas frames. */
+export async function pauseAtlasGlasses(): Promise<void> { await glasses?.close(); }
+export async function resumeAtlasGlasses(): Promise<void> { if (active) await glasses?.open(); }
 function announce(): void { window.dispatchEvent(new CustomEvent('winelens-atlas-change', { detail: atlasStatus() })); }
 function fail(error: Error): void { lastError = error.message; console.error('[Atlas] ' + error.message); announce(); }
 
@@ -115,7 +119,7 @@ async function release(): Promise<void> {
 async function exitToHome(): Promise<void> {
   active = false; dropDisplay('atlas'); announce();
   if (!bridge) return;
-  if (!await bridge.rebuildPageContainer(rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
+  if (!await rebuildGlassesPage(bridge, rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
   window.dispatchEvent(new Event('winelens-glasses-home'));
   await pushLogoToGlasses(bridge, baseUrl);
 }
@@ -300,22 +304,37 @@ export async function atlasLibraryChanged(): Promise<void> {
 // Yours → the Winebrary wine page; catalog → the tasting notes page. Double tap returns to the
 // same Atlas view. Each page claims the display, so the Atlas transport is idle first.
 let notesOpen = false;
+let openingWine = false;
+function selectedBottle(): string | null | undefined {
+  if (!navigator || navigator.mode !== 'detail') return undefined;
+  const entry = navigator.wines[navigator.wineIndex];
+  if (!entry) return null;
+  if (entry.kind === 'library' && entry.wine.image_url) return entry.wine.image_url;
+  const asset = assetIdFor(entry.kind === 'catalog' ? entry.item.id : entry.wine.wine_id);
+  return asset ? bottleImageUrl(baseUrl, asset) : null;
+}
 async function openCatalogNotes(item: CatalogWine): Promise<void> {
   if (!bridge) return;
-  await claimDisplay('atlas-notes', () => { notesOpen = false; });
+  await claimDisplay('atlas-notes', async () => { notesOpen = false; invalidateImages(); await imageIdle(); });
   invalidateImages();
-  if (!await bridge.rebuildPageContainer(buildTastingNotesPage(item.wine, item.id))) throw new Error('The glasses did not accept the tasting notes.');
+  await imageIdle();
+  if (!await rebuildGlassesPage(bridge, buildTastingNotesPage(item.wine, item.id))) throw new Error('The glasses did not accept the tasting notes.');
   notesOpen = true;
   void pushTastingNotesImages(bridge, baseUrl, item.id).catch(error => console.warn('[Atlas] bottle image unavailable', error));
 }
 async function openPending(): Promise<void> {
   const entry = navigator?.pending;
-  if (!navigator || !entry) return;
+  if (!navigator || !entry || openingWine) return;
+  openingWine = true;
   navigator.pending = null;
   try {
     if (entry.kind === 'library') await showWineFromAtlas(entry.wine, () => openAtlasOnGlasses());
     else await openCatalogNotes(entry.item);
-  } catch (error) { fail(error instanceof Error ? error : new Error(String(error))); }
+  } catch (error) {
+    // A refused notes page must keep the user in the same wine list, never fall through to Home.
+    try { await openAtlasOnGlasses(); } catch (restoreError) { fail(restoreError instanceof Error ? restoreError : new Error(String(restoreError))); }
+    fail(error instanceof Error ? error : new Error(String(error)));
+  } finally { openingWine = false; }
 }
 function changed(): void {
   if (navigator?.pending) void openPending();
@@ -334,7 +353,7 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
   if (!navigator) navigator = new CatalogAtlasNavigator(catalogAtlas(renderer, items), signedIn);
   else navigator.setScope(catalogAtlas(renderer, items), signedIn);
   if (countryCode) navigator.chooseCountry(countryCode);
-  if (!glasses) glasses = new AtlasGlasses(bridge, navigator, renderer, changed, fail, exitToHome);
+  if (!glasses) glasses = new AtlasGlasses(bridge, navigator, renderer, changed, fail, exitToHome, selectedBottle);
   lastError = null;
   await glasses.open();
   active = true;
@@ -343,12 +362,13 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
 
 /** Atlas consumes events before any other module while it owns the display. */
 export function handleAtlasGlassesEvent(event: EvenHubEvent): boolean {
+  if (openingWine) return true;
   if (notesOpen) {
     // Tasting notes opened from the Atlas: the text scrolls by itself; double tap goes back.
     const type = event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType;
     if (type === OsEventTypeList.DOUBLE_CLICK_EVENT) {
-      notesOpen = false; dropDisplay('atlas-notes');
-      void openAtlasOnGlasses().catch(error => fail(error instanceof Error ? error : new Error(String(error))));
+      openingWine = true;
+      void openAtlasOnGlasses().catch(error => fail(error instanceof Error ? error : new Error(String(error)))).finally(() => { openingWine = false; });
     }
     return true;
   }

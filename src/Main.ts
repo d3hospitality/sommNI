@@ -51,7 +51,7 @@ async function main(): Promise<void> {
     setGlassesStatus(false);
   }
 
-  bridge.onDeviceStatusChanged((status) => {
+  const unsubscribeDevice = bridge.onDeviceStatusChanged((status) => {
     if (status.connectType === DeviceConnectType.Connected) {
       setStatus("connected");
       setWinebraryDeviceConnected(true);
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
   log("Sync bridge ready", "success");
 
   // Register event handlers
-  registerEventHandlers(bridge, baseUrl);
+  registerEventHandlers(bridge, baseUrl, unsubscribeDevice);
   log("Events active", "success");
 
   await bridge.setLocalStorage("sommni_version", "2.0.0");

@@ -126,6 +126,11 @@ function enqueueWrite(task: () => Promise<void>): Promise<void> {
 }
 /** Retry the last failed write (same events, same IDs). */
 export function retrySave(): Promise<void> { return persist(); }
+/** Lifecycle flush: finish pending device writes; retry a reported save failure. */
+export async function flushStudyWrites(): Promise<void> {
+  await writeChain.catch(() => {});
+  if (status.state === 'error' && log.owner) await persist();
+}
 
 // ── Reviews ──
 export interface ReviewInput {

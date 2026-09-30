@@ -1,6 +1,6 @@
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, TextContainerProperty, ImageContainerProperty, ListContainerProperty, ListItemContainerProperty } from '@evenrealities/even_hub_sdk';
 import type { LibraryWine } from './winebrary';
-import { pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch } from './image-utils';
+import { rebuildGlassesPage, pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch } from './image-utils';
 import { SCENE_X, MAP_Y, TILE_W, TILE_H, CAPTION_MIN_X, captionBox, type ScenePlan } from './wine-scene';
 import { ruleCanvas, toGreenLevels } from './bottle-raster';
 import { lookupWineById } from './identity';
@@ -285,7 +285,7 @@ function buildSceneWinePage(wine: LibraryWine, backTo: string, place: WinePlace,
   ];
   return new RebuildPageContainer({containerTotalNum:textObject.length+imageObject.length,textObject,imageObject});
 }
-const RULE = { w: 288, h: 8 };
+const RULE = { w: 288, h: 20 }; // G2 image minimum; the drawn rule is still one pixel.
 /** A map panel only when the place is on the map (unknown countries keep the full-width list). */
 async function mapFor(country: string, region: string | null): Promise<ListMap | null> {
   if (!placeScene || country === UNKNOWN_COUNTRY) return null;
@@ -314,7 +314,7 @@ async function render(next: Screen): Promise<void> {
   let listMap: ListMap | null = null;
   let plan: ScenePlan | null = null;
   if (next.kind === 'types') page = buildFacetPage('library-types', typeFacets(), next.page, `WINEBRARY  ·  ${items.length} ${items.length === 1 ? 'wine' : 'wines'}`);
-  else if (next.kind === 'countries') page = buildFacetPage('library-countries', countryFacets(next.type), next.page, crumb([next.type]));
+  else if (next.kind === 'countries') page = buildFacetPage('library-country', countryFacets(next.type), next.page, crumb([next.type]));
   else if (next.kind === 'regions') { listMap = await mapFor(next.country, null); page = buildFacetPage('library-regions', regionFacets(next.type, next.country), next.page, listMap ? crumb([next.type], 24) : crumb([next.type, next.country]), listMap); }
   else if (next.kind === 'list') { listMap = await mapFor(next.country, next.region); groups = groupLibrary(inRegion(next.type, next.country, next.region)); page = buildLibraryListPage(groups, next.page, offlineCopy, listMap ? next.type.toUpperCase() : crumb([next.type, next.country, next.region], 30), listMap); }
   else if (next.kind === 'vintages') page = buildVintageListPage(next.group, next.page);
@@ -327,7 +327,7 @@ async function render(next: Screen): Promise<void> {
   }
   else page = buildMessagePage(next.reason);
   await claimDisplay('library', relinquish);
-  if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page. Try again.');
+  if (!await rebuildGlassesPage(bridge, page)) throw new Error('The glasses did not accept this page. Try again.');
   active = true; screen = next; lastNavigation = Date.now();
   const epoch = currentImageEpoch();
   if (listMap) {
@@ -355,7 +355,7 @@ async function render(next: Screen): Promise<void> {
 async function goHome(): Promise<void> {
   if (!bridge) return;
   invalidateImages();
-  if (!await bridge.rebuildPageContainer(rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
+  if (!await rebuildGlassesPage(bridge, rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
   active=false; screen=null; lastNavigation=Date.now();
   dropDisplay('library');
   window.dispatchEvent(new Event('winelens-glasses-home'));
@@ -477,7 +477,7 @@ export async function clearPrivateGlasses() {
   window.dispatchEvent(new Event('winelens-library-changed'));   // the Atlas drops account wines too
   if (!active || !bridge) return;
   invalidateImages();
-  const accepted=await bridge.rebuildPageContainer(rebuildHomePage());
+  const accepted=await rebuildGlassesPage(bridge, rebuildHomePage());
   if (accepted) { active=false; screen=null; groups=[]; items=[]; places=new Map(); dropDisplay('library'); window.dispatchEvent(new Event('winelens-glasses-home')); }
 }
 

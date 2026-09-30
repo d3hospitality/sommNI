@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test:ui": "node tests/winebrary.browser.cjs",
     "test:glasses": "node tests/winebrary.glasses.cjs",
-    "test:nav": "node tests/glasses.navigation.cjs",
+    "test:nav": "node tests/glasses.navigation.cjs && node tests/catalog-lifecycle.cjs",
     "test:display": "node tests/no-mascot.cjs",
     "test:bottles": "node tests/catalog-bottles.cjs",
     "test:study": "node tests/study.engine.cjs && node tests/study.glasses.cjs && node tests/study.phone.cjs",
