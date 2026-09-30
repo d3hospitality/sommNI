@@ -1,5 +1,5 @@
 {
-  "pipeline": "photographic-v1",
+  "pipeline": "photographic-v2",
   "assets": [
     {
       "id": "w0",
@@ -15,8 +15,9 @@
       "file": "w0.png",
       "width": 384,
       "height": 768,
-      "sha256": "ff7261787bba3b5b663de1ac1a883fa10b8eb3529c46991f051fd827a0d41cf3",
-      "bytes": 130171
+      "sha256": "fd2f91e4e7ec132ddd6ac50277346cb34a91aab0aaefb1881dc5f61d17f5f251",
+      "bytes": 129157,
+      "edge_trim_px": 3
     },
     {
       "id": "w1",
@@ -32,8 +33,9 @@
       "file": "w1.png",
       "width": 384,
       "height": 768,
-      "sha256": "fad445de6d870691021bc670cd52d3182384b5d115cd5c1d7c0d91e1481f6170",
-      "bytes": 121902
+      "sha256": "651fb2795744a9cab9c7f692fa354a06f42383613672d7ceab6f07bd33144330",
+      "bytes": 121764,
+      "edge_trim_px": 3
     },
     {
       "id": "w2",
@@ -49,8 +51,9 @@
       "file": "w2.png",
       "width": 384,
       "height": 768,
-      "sha256": "8a808a01d4640a4eeb963572c1c8c32078ea0b0f956a188b16220bfff7d975a5",
-      "bytes": 146070
+      "sha256": "0f6249902750402162431e230fcea1c1023837db16de7c4002fd618683cd9166",
+      "bytes": 146061,
+      "edge_trim_px": 3
     },
     {
       "id": "w3",
@@ -66,8 +69,9 @@
       "file": "w3.png",
       "width": 384,
       "height": 768,
-      "sha256": "b999281ff3efcbb4116c549b39cdbc239c6c561077bda1712cda2075f68e8014",
-      "bytes": 177827
+      "sha256": "20f67cf9fd14e22b098c974248cb8ff562697a717132f9ec7f13a3a027f6b30e",
+      "bytes": 176981,
+      "edge_trim_px": 3
     },
     {
       "id": "w4",
@@ -83,8 +87,9 @@
       "file": "w4.png",
       "width": 384,
       "height": 768,
-      "sha256": "09092f3341402581c820a89367ea3dc381df356d4c05091ba67c395b1bf483b5",
-      "bytes": 124600
+      "sha256": "2a5493763d353b60b4ffc18775c11cdf0092c0241297400d94fa2dd48ab6fb30",
+      "bytes": 124925,
+      "edge_trim_px": 3
     },
     {
       "id": "w5",
@@ -100,8 +105,9 @@
       "file": "w5.png",
       "width": 384,
       "height": 768,
-      "sha256": "538a17cd9e05a313fcad09f0c20c599ea490fa12b21e13d1ba0d22907c5a4b92",
-      "bytes": 131563
+      "sha256": "77d7a79de698203a0c00011d0a7055f41a128f4f52f09d3490ad727f3a2ec336",
+      "bytes": 130283,
+      "edge_trim_px": 3
     },
     {
       "id": "w6",
@@ -117,8 +123,9 @@
       "file": "w6.png",
       "width": 384,
       "height": 768,
-      "sha256": "e05635f99ce8ca534f1c0c8fa5327d9d916ec423487c16f6b493211cd37445a4",
-      "bytes": 134221
+      "sha256": "5abbc9ad90f4f43c317fa61ed1ef06df05be04ad93b3173308cd976ee031709a",
+      "bytes": 134179,
+      "edge_trim_px": 3
     },
     {
       "id": "w7",
@@ -134,8 +141,9 @@
       "file": "w7.png",
       "width": 384,
       "height": 768,
-      "sha256": "d2e10637e9a17ad8361149b324c608dce98954ab92663bcb5af30c7d3db531e4",
-      "bytes": 149476
+      "sha256": "2f46230c080fa62a3bb6d631ba3ea8fb4834b0b2fbc72c5b43a3462115983015",
+      "bytes": 149129,
+      "edge_trim_px": 3
     },
     {
       "id": "w8",
@@ -151,8 +159,9 @@
       "file": "w8.png",
       "width": 384,
       "height": 768,
-      "sha256": "13eea7e1c7af1cb07f8be2c1207a98a6789a984771df7d6b9ec45ac5c90f5855",
-      "bytes": 151071
+      "sha256": "125f91808075dbd09baa128e48c80f904093d286f0d5ef148fbaf6f4b1655ce7",
+      "bytes": 151219,
+      "edge_trim_px": 3
     },
     {
       "id": "w9",
@@ -168,8 +177,9 @@
       "file": "w9.png",
       "width": 384,
       "height": 768,
-      "sha256": "8918e53b55b183e564b616f1cb2d9a57b10c4e0414cd661aab6d0c8966834aa4",
-      "bytes": 116215
+      "sha256": "1e1a0f920f99b172d064b7fd36a989ad1fc379a1469f871514c1ebf397d83d01",
+      "bytes": 112523,
+      "edge_trim_px": 3
     },
     {
       "id": "w10",
@@ -185,8 +195,9 @@
       "file": "w10.png",
       "width": 384,
       "height": 768,
-      "sha256": "fc6002c1bd622188b073be2cdc402b3773f928819fa5e35f6bcef368b8e9fa9b",
-      "bytes": 166303
+      "sha256": "c05a4056f19138b535dd53e8c7f6234700e6e4a4be1477061a8ef9405a4e8e0b",
+      "bytes": 166297,
+      "edge_trim_px": 3
     },
     {
       "id": "w11",
@@ -202,8 +213,9 @@
       "file": "w11.png",
       "width": 384,
       "height": 768,
-      "sha256": "b8998cb0c12338abf5952282225170ef134bc152a405f03798a496ebdc004263",
-      "bytes": 132622
+      "sha256": "8c773bcc204f22d6d52e5d111a2da8985e599915f0e1c34902d641e7d4f82f51",
+      "bytes": 132416,
+      "edge_trim_px": 3
     },
     {
       "id": "w12",
@@ -219,8 +231,9 @@
       "file": "w12.png",
       "width": 384,
       "height": 768,
-      "sha256": "37c1ebb20859768a3384c21bae59a5edebfee6b80f5dfc05cdc73875b34a5535",
-      "bytes": 148055
+      "sha256": "f8a86c8fa39a6841d2fb4d3fbcf09ed6b730fc9b595396ef0b6c5b189e7d9112",
+      "bytes": 148092,
+      "edge_trim_px": 3
     },
     {
       "id": "w13",
@@ -236,8 +249,9 @@
       "file": "w13.png",
       "width": 384,
       "height": 768,
-      "sha256": "8e8b93d2a5da36590e1549708993c3350890384618de16892f12375588094560",
-      "bytes": 117015
+      "sha256": "a6386e9dd7049c59b1c9024d78d3b9563fb26448132fb7f86e7b5f48a8fd39bb",
+      "bytes": 116827,
+      "edge_trim_px": 3
     },
     {
       "id": "w14",
@@ -253,8 +267,9 @@
       "file": "w14.png",
       "width": 384,
       "height": 768,
-      "sha256": "89135b0523c9bd3e28ea5dd051bd1c350e0e2b13aa6165cf87b130e25f71bef0",
-      "bytes": 139174
+      "sha256": "a35d71b6af07e03251375fab61ea2756e044415f50c38d7dff95fe4a176de75e",
+      "bytes": 138659,
+      "edge_trim_px": 3
     },
     {
       "id": "w15",
@@ -270,8 +285,9 @@
       "file": "w15.png",
       "width": 384,
       "height": 768,
-      "sha256": "fcce70fa41fc29ca670ac64b3e6bc3be1df21c4d3345a557af8d67c3a6f08003",
-      "bytes": 175767
+      "sha256": "2fea4a94b81edf29a91bcdfa1a3b9330a868b7e584b9e1cee83334cd173c39dd",
+      "bytes": 175778,
+      "edge_trim_px": 3
     },
     {
       "id": "w16",
@@ -287,8 +303,9 @@
       "file": "w16.png",
       "width": 384,
       "height": 768,
-      "sha256": "c81efea4e80c0e79a43f28283e179d680e20a2eb57443bb6678e19240e1814bd",
-      "bytes": 207140
+      "sha256": "eb2dca6154c8ce072ceedc8d525b9519beaec7c70186d04df49aecdd090bb0df",
+      "bytes": 204812,
+      "edge_trim_px": 3
     },
     {
       "id": "w17",
@@ -304,8 +321,9 @@
       "file": "w17.png",
       "width": 384,
       "height": 768,
-      "sha256": "84d672ede88cfa568cd5b96e1893589896d006bf9ca6327e79d7c564248b1456",
-      "bytes": 174448
+      "sha256": "966ce855eae6e5eb32043a736b2f39279e5cac4e15d065e49529635856471c96",
+      "bytes": 174427,
+      "edge_trim_px": 3
     },
     {
       "id": "w18",
@@ -321,8 +339,9 @@
       "file": "w18.png",
       "width": 384,
       "height": 768,
-      "sha256": "13005d7ac022ebb995f8a1b5424bc659250024ccad3a65125fdaf3910f1622e7",
-      "bytes": 199681
+      "sha256": "3162b8bfcb469e289c4d71db65a7806265ce80018191ae69510a4c30bb4d4396",
+      "bytes": 198317,
+      "edge_trim_px": 3
     },
     {
       "id": "w19",
@@ -338,8 +357,9 @@
       "file": "w19.png",
       "width": 384,
       "height": 768,
-      "sha256": "b4a07eee4ad64ead4f72f30695fc14dd73a08071d6ea598e1d70cb0accb79088",
-      "bytes": 210061
+      "sha256": "95d1cc143bbe465489c3a144299e92e3e0d58b26845a2104cbf7a492fc478963",
+      "bytes": 198824,
+      "edge_trim_px": 3
     },
     {
       "id": "w20",
@@ -355,8 +375,9 @@
       "file": "w20.png",
       "width": 384,
       "height": 768,
-      "sha256": "98b7cce99d0ef30ef3c17e001eaca9ba9f355f64bbd2bde4555ffbec84770e0a",
-      "bytes": 125654
+      "sha256": "6565769696e22171ff541a24f49e9b16ecbae0ea76bbc86f920e60d005550c6c",
+      "bytes": 125754,
+      "edge_trim_px": 3
     },
     {
       "id": "w21",
@@ -372,8 +393,9 @@
       "file": "w21.png",
       "width": 384,
       "height": 768,
-      "sha256": "3f1bf79518a97bb45c806ef4375cb807f0fbad4bc8ea9828b7e86d1d8fee42ad",
-      "bytes": 192849
+      "sha256": "bf52fdc5dc82bee0d31e302c9496d9a86fd01276868fdf2ca29a552e1739fab6",
+      "bytes": 192723,
+      "edge_trim_px": 3
     },
     {
       "id": "w22",
@@ -389,8 +411,9 @@
       "file": "w22.png",
       "width": 384,
       "height": 768,
-      "sha256": "f8ef7eff3da06c7c73fc0390dcc2000dd2a2d5f4ed78923996d4b20fa07d8d33",
-      "bytes": 168695
+      "sha256": "a253592c9e97d0d0a9253108e15b84e70d30b47d1a4b7388539dbde47c7df96b",
+      "bytes": 168500,
+      "edge_trim_px": 3
     },
     {
       "id": "w23",
@@ -406,8 +429,9 @@
       "file": "w23.png",
       "width": 384,
       "height": 768,
-      "sha256": "97636993cdad97d940d4c39680fc4056eee2897835f66305fd856b0cc69c794a",
-      "bytes": 149782
+      "sha256": "3e8e219566328eb27fa772babb07d4390303073943bdff84e26c8f1129538ee9",
+      "bytes": 149532,
+      "edge_trim_px": 3
     },
     {
       "id": "w24",
@@ -423,8 +447,9 @@
       "file": "w24.png",
       "width": 384,
       "height": 768,
-      "sha256": "fc0bca2eeba2da80845d0cfecffe82ae9dd85ac58ca732f90702a2c88d185c38",
-      "bytes": 121412
+      "sha256": "bd2988795d52f8c27b95329f0119ba42cfd0c661462d3285d7a3f086b1c755eb",
+      "bytes": 121532,
+      "edge_trim_px": 3
     },
     {
       "id": "w25",
@@ -440,8 +465,9 @@
       "file": "w25.png",
       "width": 384,
       "height": 768,
-      "sha256": "7ebabeed9d08b44032ac4f4cf0571c4a244e1d7cf20a002bac267cb921eb7893",
-      "bytes": 155210
+      "sha256": "60b5a2bed82e0e45d36b70e2c34c05572c078d63e8761ef5b9c48b3eb2c225af",
+      "bytes": 155316,
+      "edge_trim_px": 3
     },
     {
       "id": "w26",
@@ -457,8 +483,9 @@
       "file": "w26.png",
       "width": 384,
       "height": 768,
-      "sha256": "d384ac053be7dbd2755e51d42a6d2ec3b7b944f5737bbd6b041c3f13cae13a50",
-      "bytes": 136648
+      "sha256": "e3e18f5dedd629e79f18fc453d3345baf51e881dc55870b60ffa95f4fd5d5743",
+      "bytes": 136510,
+      "edge_trim_px": 3
     },
     {
       "id": "w27",
@@ -474,8 +501,9 @@
       "file": "w27.png",
       "width": 384,
       "height": 768,
-      "sha256": "c6c6a4b40ab2c597caff7fd8956e2a55bd02bf99bf2627802f3e803b3b09f0c7",
-      "bytes": 201918
+      "sha256": "871094530eff4dc4c8b9a2595619238785a07a3ad6e754bc8f584d0c0945bd1d",
+      "bytes": 201411,
+      "edge_trim_px": 3
     },
     {
       "id": "w28",
@@ -491,8 +519,9 @@
       "file": "w28.png",
       "width": 384,
       "height": 768,
-      "sha256": "0448b2241354533bf3f882aa814eb56f610e184b2438b7e343be7ecbaeeacf51",
-      "bytes": 147861
+      "sha256": "387f7704d7e20a51b81a8c3231042ac4c2039bb85edf8452bde2fd4fcccfac7d",
+      "bytes": 148049,
+      "edge_trim_px": 3
     },
     {
       "id": "w29",
@@ -508,8 +537,9 @@
       "file": "w29.png",
       "width": 384,
       "height": 768,
-      "sha256": "54157569abdc3665d7c04e67188ee6b4f677a7c8eaa0beccaedb36a13f30ee4d",
-      "bytes": 170991
+      "sha256": "94f515d9374fab6dbea253f95b3205c8fe378caa7bbf538a0b0a60a334e933d8",
+      "bytes": 169677,
+      "edge_trim_px": 3
     },
     {
       "id": "w30",
@@ -525,8 +555,9 @@
       "file": "w30.png",
       "width": 384,
       "height": 768,
-      "sha256": "406de3378a5a8b72a4f588827440d625475c585c626741e60de1252ce0dc5e1e",
-      "bytes": 105439
+      "sha256": "2f14c34303f19d527bfb7a3a08f7b06fe252201a45d06530b69f72618a27e772",
+      "bytes": 103711,
+      "edge_trim_px": 3
     },
     {
       "id": "w31",
@@ -542,8 +573,9 @@
       "file": "w31.png",
       "width": 384,
       "height": 768,
-      "sha256": "b141406e8cec16b9381e89706c1b8d5fffd6669f514d3f781787bf3d19b8ad66",
-      "bytes": 103876
+      "sha256": "20a1e4a33385ba16f33da4365c849fa16fd9ee68ce4cc03c96275c1bde543417",
+      "bytes": 101941,
+      "edge_trim_px": 3
     },
     {
       "id": "w32",
@@ -559,8 +591,9 @@
       "file": "w32.png",
       "width": 384,
       "height": 768,
-      "sha256": "a354a6c0cbe2a0e240f178537485fe4d5de8e120c91078153a4e0ee9fd7aa765",
-      "bytes": 130422
+      "sha256": "285fe9ce1a01b2b1e77bf3ec68380d1a8ad4abaa41b6be828f28f19274f3e368",
+      "bytes": 130638,
+      "edge_trim_px": 3
     },
     {
       "id": "w33",
@@ -576,8 +609,9 @@
       "file": "w33.png",
       "width": 384,
       "height": 768,
-      "sha256": "20402c7381b86ac09ad39e62f366bcf5e58bbb67a19b1e83703dc33e54977cd6",
-      "bytes": 155706
+      "sha256": "ce097b4fd243e207e6435ba65e79f34e99c1e7bda6fffa82f85a0c36da3f9970",
+      "bytes": 155377,
+      "edge_trim_px": 3
     },
     {
       "id": "w34",
@@ -593,8 +627,9 @@
       "file": "w34.png",
       "width": 384,
       "height": 768,
-      "sha256": "ed02ce44c3499933914631cffb0d640a420cee826a18ccce04a4d0923cada19d",
-      "bytes": 148750
+      "sha256": "523f6d5419790fa7d3b8bf971acc4e27ef711835be805e28410fcda22ac8ea50",
+      "bytes": 148706,
+      "edge_trim_px": 3
     },
     {
       "id": "w35",
@@ -610,8 +645,9 @@
       "file": "w35.png",
       "width": 384,
       "height": 768,
-      "sha256": "88d2a17204af05bc427584e0946e4889286f1b8b064d5ffb50bf9e218867d3c4",
-      "bytes": 172144
+      "sha256": "7b2aec806796d316e50888c0dfb23de01684dd545ef5c2052f5be40dffc8716f",
+      "bytes": 172233,
+      "edge_trim_px": 3
     },
     {
       "id": "w36",
@@ -627,8 +663,9 @@
       "file": "w36.png",
       "width": 384,
       "height": 768,
-      "sha256": "d196f33b935c669c758666245789537a12c2004fd65f28a4efaaba0c430e586e",
-      "bytes": 156150
+      "sha256": "94083b05df921429a25a1915b4bbfedb367e0ec6b3f0fe12e5ae14ddd2a2fc11",
+      "bytes": 155158,
+      "edge_trim_px": 3
     },
     {
       "id": "w37",
@@ -644,8 +681,9 @@
       "file": "w37.png",
       "width": 384,
       "height": 768,
-      "sha256": "3f5915dac0988fb2a60e00183ea5beac81d833dc579aad5b9533daa24e573edf",
-      "bytes": 174380
+      "sha256": "4da21b9193037cea37baf2f24e5c632e4e74b88da0ceef53a7da5147d13cb2b1",
+      "bytes": 174213,
+      "edge_trim_px": 3
     },
     {
       "id": "w38",
@@ -661,8 +699,9 @@
       "file": "w38.png",
       "width": 384,
       "height": 768,
-      "sha256": "2b5b6b9034233f204aadf54f09f5b633b938aa600bc34a9671b7923452e83f9c",
-      "bytes": 121359
+      "sha256": "67cc80c92052ca082967fa82c62bf531a0c5616cadefde1abca3353148945b27",
+      "bytes": 120906,
+      "edge_trim_px": 3
     },
     {
       "id": "w39",
@@ -678,8 +717,9 @@
       "file": "w39.png",
       "width": 384,
       "height": 768,
-      "sha256": "34bda8a3c652628069ce0bb1d07a46a279b0cae11d5751159f62cc614e92ca85",
-      "bytes": 117853
+      "sha256": "e5e077794a6f48873ba6ca8ee609004b2d2fb24cd58de97fd2a2be3e8e2421c7",
+      "bytes": 117473,
+      "edge_trim_px": 3
     },
     {
       "id": "w40",
@@ -695,8 +735,9 @@
       "file": "w40.png",
       "width": 384,
       "height": 768,
-      "sha256": "30c97ca83819d958642d54a41c5eaa87f7ecf6667f8c1f49f405beafd440bec6",
-      "bytes": 161083
+      "sha256": "19dfa5c2fc171dc42eb79709044ab3b250ad2eb604d4feea7babc83852f387c2",
+      "bytes": 160825,
+      "edge_trim_px": 3
     },
     {
       "id": "w41",
@@ -712,8 +753,9 @@
       "file": "w41.png",
       "width": 384,
       "height": 768,
-      "sha256": "f8fbd639af43a2a8f73a6973732a09623f758ebe68e53162b1f606aa796a6001",
-      "bytes": 173238
+      "sha256": "5641bb3536a3d4e01a3d16151b050dd9fb27a122840756aca882461c95276dd4",
+      "bytes": 173285,
+      "edge_trim_px": 3
     },
     {
       "id": "w42",
@@ -729,8 +771,9 @@
       "file": "w42.png",
       "width": 384,
       "height": 768,
-      "sha256": "f7a51933a88b512a5cc46336b446c72a1e380454e44ed0a3e37255991cc41cf3",
-      "bytes": 193736
+      "sha256": "9e37759b415462ae19c445947268bd74faefbfdd14f2fabcb8bada533a624960",
+      "bytes": 193629,
+      "edge_trim_px": 3
     },
     {
       "id": "w43",
@@ -746,8 +789,9 @@
       "file": "w43.png",
       "width": 384,
       "height": 768,
-      "sha256": "8149da160f966b56f0e3272264cac9109320a0eef1f856df3b23a5500850037b",
-      "bytes": 131167
+      "sha256": "bba157cbb410f59ec91656479d7fbb209854e603e3dd731ee3946d067fae1bf0",
+      "bytes": 130849,
+      "edge_trim_px": 3
     },
     {
       "id": "w44",
@@ -763,8 +807,9 @@
       "file": "w44.png",
       "width": 384,
       "height": 768,
-      "sha256": "726627efe8d50c98461e6ecc5a418345ccad153289a966407397d6b923ed96ee",
-      "bytes": 190398
+      "sha256": "28edb761784ff9313b3a0723348ac60ad9805d5520550d5d15b22580b86d6745",
+      "bytes": 190202,
+      "edge_trim_px": 3
     },
     {
       "id": "w45",
@@ -780,8 +825,9 @@
       "file": "w45.png",
       "width": 384,
       "height": 768,
-      "sha256": "bf1c264d4c747c64cb4af631afab88ce4d3efb66a703a1a8464b5e6309c8bc17",
-      "bytes": 166637
+      "sha256": "a494ae38d9bbe6320a852a0a958bb0f1a8d032609f5e855bde22f19efb1d3525",
+      "bytes": 165549,
+      "edge_trim_px": 3
     },
     {
       "id": "w46",
@@ -797,8 +843,9 @@
       "file": "w46.png",
       "width": 384,
       "height": 768,
-      "sha256": "ec6716c37e512a7afeed558c809f6617585c303dc7ec25be00e5c08d09327422",
-      "bytes": 137275
+      "sha256": "3271dfb6ebcdbe3ed0d3ecc4691a4e16b4149ce412dbeeca377364ed4b665877",
+      "bytes": 136011,
+      "edge_trim_px": 3
     },
     {
       "id": "w47",
@@ -814,8 +861,9 @@
       "file": "w47.png",
       "width": 384,
       "height": 768,
-      "sha256": "dee5606be59f1076efbd37ee711af937b676d5e2560d942e3f0400ada253769b",
-      "bytes": 190076
+      "sha256": "958558d97ae836b209532e3f396acd395f08f32f7bdd16a488fffbc8e1d541d7",
+      "bytes": 189573,
+      "edge_trim_px": 3
     },
     {
       "id": "w48",
@@ -831,8 +879,9 @@
       "file": "w48.png",
       "width": 384,
       "height": 768,
-      "sha256": "3d163b21d4bcbceb5629f2c137b61f39dc02cb5f6b9f07244ff2abf14660b020",
-      "bytes": 177974
+      "sha256": "ba4234a8c23e00dbd370169f1cef619e574231b75fdd1a268eee1d7d694d0366",
+      "bytes": 177382,
+      "edge_trim_px": 3
     },
     {
       "id": "w49",
@@ -848,8 +897,9 @@
       "file": "w49.png",
       "width": 384,
       "height": 768,
-      "sha256": "667be070de56e17d960205eed4f2c43581eefcf07bae099942b7ca976d4c0688",
-      "bytes": 113789
+      "sha256": "92cbf7b6049dbee6de4b4b41123a08af7f95a8bd9ba13aa3d15aa8a74ceb4c50",
+      "bytes": 113381,
+      "edge_trim_px": 3
     },
     {
       "id": "w50",
@@ -865,8 +915,9 @@
       "file": "w50.png",
       "width": 384,
       "height": 768,
-      "sha256": "0fc1f1fad824e789e14a539cfcb7b9756fb471944f306efde9f87523f398504b",
-      "bytes": 186870
+      "sha256": "6673148e22adb2ea7b445f6e80385f7b54d8ef7d173c67f8ff8591167456c0e4",
+      "bytes": 186860,
+      "edge_trim_px": 3
     },
     {
       "id": "w51",
@@ -882,8 +933,9 @@
       "file": "w51.png",
       "width": 384,
       "height": 768,
-      "sha256": "94a5cf90dbf1b50052eccf8d9b1580d5fd99a9e4afebfbf551858c1820d2bbf0",
-      "bytes": 183214
+      "sha256": "d50241bb9530ce1c7a13c5406695226acdd7acd198915ffefd7a7f1a0f0b50ca",
+      "bytes": 182064,
+      "edge_trim_px": 3
     },
     {
       "id": "w52",
@@ -899,8 +951,9 @@
       "file": "w52.png",
       "width": 384,
       "height": 768,
-      "sha256": "e509778a79c4bb9018e5ccc7579fc670fd215c9959d2b4162bdbcd8016d5144d",
-      "bytes": 130080
+      "sha256": "fd65367e1e576243444f71313adcc3a0f77d866ddd28d764aeaca646b2e2b5d2",
+      "bytes": 129817,
+      "edge_trim_px": 3
     },
     {
       "id": "w53",
@@ -916,8 +969,9 @@
       "file": "w53.png",
       "width": 384,
       "height": 768,
-      "sha256": "5c045a97b00622b10ccb451e516b3b3ebc068f6cd669ac7e6b493c43d376055c",
-      "bytes": 200067
+      "sha256": "207dcbbc62b71b82c298344330809209daaf3bc96fcb128e7e3df6496773aee3",
+      "bytes": 199452,
+      "edge_trim_px": 3
     },
     {
       "id": "w54",
@@ -933,8 +987,9 @@
       "file": "w54.png",
       "width": 384,
       "height": 768,
-      "sha256": "378d1df9e167c8d5f44d99ab7db43e2bc33571ff8c5d8d8f1fa34f25c00476b7",
-      "bytes": 163100
+      "sha256": "928a827da711e3fc698939cf4dff61fc4702f712666a761c1473f5491eca8222",
+      "bytes": 162897,
+      "edge_trim_px": 3
     },
     {
       "id": "w55",
@@ -950,8 +1005,9 @@
       "file": "w55.png",
       "width": 384,
       "height": 768,
-      "sha256": "be566d199d4a85cd17863d9450928895db3dfcff8356ca44498931d6c2ed7a23",
-      "bytes": 185010
+      "sha256": "9b16de117db0d8a5744ab207271603d0269c8b3bb1bcdf54c40d2c48d2f503ee",
+      "bytes": 184078,
+      "edge_trim_px": 3
     },
     {
       "id": "w56",
@@ -967,8 +1023,9 @@
       "file": "w56.png",
       "width": 384,
       "height": 768,
-      "sha256": "c6d74839db5fcb5c1813fd347b94a556eb35ec070377aa9b089f7ac6bb4804f8",
-      "bytes": 114365
+      "sha256": "8b1e1e8ee9bfedb9f9a9dc5f4d72e9d8167ff28546696fe1c1c3f0de1519256b",
+      "bytes": 114754,
+      "edge_trim_px": 3
     },
     {
       "id": "w57",
@@ -984,8 +1041,9 @@
       "file": "w57.png",
       "width": 384,
       "height": 768,
-      "sha256": "ab152f0d437c2c15271f72b4ae0e971592764cd2d72b193adfbcbd92b9a4091b",
-      "bytes": 195884
+      "sha256": "c141a5e5a5a5ff4d730b38f4411b1ec9774ee9b190036a3f631a348031011d4b",
+      "bytes": 194245,
+      "edge_trim_px": 3
     },
     {
       "id": "w58",
@@ -1001,8 +1059,9 @@
       "file": "w58.png",
       "width": 384,
       "height": 768,
-      "sha256": "e860d2c8f06e287fdf62ab8d04c6486d560d18b003464b7766adb5d5d549d49c",
-      "bytes": 168094
+      "sha256": "c81b973758aa582bd6cfe31a3f034f056667e0afd66c10c06efc1c7be1b22d8c",
+      "bytes": 168041,
+      "edge_trim_px": 3
     },
     {
       "id": "w59",
@@ -1018,8 +1077,9 @@
       "file": "w59.png",
       "width": 384,
       "height": 768,
-      "sha256": "df25b897a0e5956d08bbc8ba6d4004d4218b1ce7fa1912132fe5e1d286170a42",
-      "bytes": 154215
+      "sha256": "d5eb264ac826d602427bd2d9f6fa42cddc7a10166caa48deb486c0a8ac45bea8",
+      "bytes": 152279,
+      "edge_trim_px": 3
     },
     {
       "id": "w60",
@@ -1035,8 +1095,9 @@
       "file": "w60.png",
       "width": 384,
       "height": 768,
-      "sha256": "771c5dc52332228db4b6045ea2999f321646ae9d79e6b8c4c90dc9aaafaf14d9",
-      "bytes": 171594
+      "sha256": "cc1d5e4f4a28de3c5aca2b7b0e5c4abcd426a1a9b66d766b674273884d7fb097",
+      "bytes": 170850,
+      "edge_trim_px": 3
     },
     {
       "id": "w61",
@@ -1052,8 +1113,9 @@
       "file": "w61.png",
       "width": 384,
       "height": 768,
-      "sha256": "4d93709410df9fcd607958c943c24925f4839d66e9ebb21e5e6348118a7ba4ca",
-      "bytes": 121531
+      "sha256": "b6991b0b9f6b4ce5b2f28ef7a2029fa3c02b7e65bf2293742e2c3c3205211258",
+      "bytes": 120843,
+      "edge_trim_px": 3
     },
     {
       "id": "w62",
@@ -1069,8 +1131,9 @@
       "file": "w62.png",
       "width": 384,
       "height": 768,
-      "sha256": "80512ff2d2c6e64002eb868e1e0eceab25c72fb905bdc4a3671fbf4edc05cd04",
-      "bytes": 169524
+      "sha256": "e95b161fc09e5f023558a4119245fa1419a848d57cfe24c39fefa25753f506f0",
+      "bytes": 169904,
+      "edge_trim_px": 3
     },
     {
       "id": "w63",
@@ -1086,8 +1149,9 @@
       "file": "w63.png",
       "width": 384,
       "height": 768,
-      "sha256": "38ebbf09c3d286e95020d06d845ca91e9bba215ac7f9faf6a17bd46a28116deb",
-      "bytes": 157562
+      "sha256": "f0d9db1add6a67ee4896f0009bfa34406748dec1c121fe1267eac99457e6048e",
+      "bytes": 157519,
+      "edge_trim_px": 3
     },
     {
       "id": "w64",
@@ -1103,8 +1167,9 @@
       "file": "w64.png",
       "width": 384,
       "height": 768,
-      "sha256": "eff1a6f626ba79017d90a43cd2a44562998f2ae26585de65070172ef2f940d1f",
-      "bytes": 185327
+      "sha256": "e02fb3f8e03948316da29f86472e8f8d38c42d128554ad32c7eed095f8943355",
+      "bytes": 183816,
+      "edge_trim_px": 3
     },
     {
       "id": "w65",
@@ -1120,8 +1185,9 @@
       "file": "w65.png",
       "width": 384,
       "height": 768,
-      "sha256": "7789802ad27552964d39c383b20030a4b0f460ca8aa2e4b461b73ead58e48705",
-      "bytes": 178176
+      "sha256": "f4d3353385c794d56c918edbd92bc715b1fe99a758ab927fa8649cc54dd6ca35",
+      "bytes": 176648,
+      "edge_trim_px": 3
     },
     {
       "id": "w66",
@@ -1137,8 +1203,9 @@
       "file": "w66.png",
       "width": 384,
       "height": 768,
-      "sha256": "490c076ebc5ca0b4d3847510bc459857452ed00cf1ba74e39758c7128cbd8326",
-      "bytes": 150931
+      "sha256": "137e1405427f0fab17d32063d2a2f4ca3d44431d6665ac053bf73f194a18987d",
+      "bytes": 150691,
+      "edge_trim_px": 3
     },
     {
       "id": "w67",
@@ -1154,8 +1221,9 @@
       "file": "w67.png",
       "width": 384,
       "height": 768,
-      "sha256": "a3225e7e7fce37b2991d1b047a808ae262e399daf2a3089a0d1592cb2ceac36e",
-      "bytes": 199702
+      "sha256": "4d6fc3b73a467466cad625fca4d0c7264ed6b31916c5e238317415b1aa75e4bf",
+      "bytes": 197662,
+      "edge_trim_px": 3
     },
     {
       "id": "w68",
@@ -1171,8 +1239,9 @@
       "file": "w68.png",
       "width": 384,
       "height": 768,
-      "sha256": "a2747bdffafc4137990c214b739405b6ebfb860fa1e9d689c27aa85dfb3f4f92",
-      "bytes": 115038
+      "sha256": "8e27fb58f73effa700776f618a26b0d28e7f79d5f140f05ba68b36fc7b0f34a9",
+      "bytes": 113514,
+      "edge_trim_px": 3
     },
     {
       "id": "w69",
@@ -1188,8 +1257,9 @@
       "file": "w69.png",
       "width": 384,
       "height": 768,
-      "sha256": "0227390622cfbca76fe25f10482589feab7cb3b2464ee565cb7440d17f0f0f14",
-      "bytes": 117630
+      "sha256": "2bf12790cc1d7bb734683a173a804499739c82912db1ca6deee91a268b4111aa",
+      "bytes": 117501,
+      "edge_trim_px": 3
     },
     {
       "id": "w70",
@@ -1205,8 +1275,9 @@
       "file": "w70.png",
       "width": 384,
       "height": 768,
-      "sha256": "f275c6aed2a12dc16d92baa841479078eff961ef6c3a2b24bf094e5a442ae96e",
-      "bytes": 201437
+      "sha256": "edbf99c5bc2334e130896674580c2da02fd567652d0638442e10453c4b462e36",
+      "bytes": 201275,
+      "edge_trim_px": 3
     },
     {
       "id": "w71",
@@ -1222,8 +1293,9 @@
       "file": "w71.png",
       "width": 384,
       "height": 768,
-      "sha256": "6827f50bc5481dcc936540e7d2cc28f76caab98e2a8b200589d5ce5c4cc7cffc",
-      "bytes": 202768
+      "sha256": "78d2420857cb3789a12e9c75bb96da7206913a191520c78006f2264e73ad7f29",
+      "bytes": 202383,
+      "edge_trim_px": 3
     },
     {
       "id": "w72",
@@ -1239,8 +1311,9 @@
       "file": "w72.png",
       "width": 384,
       "height": 768,
-      "sha256": "df59134b1277ce0cb333d9e4fe16bfcd20fe8a3eaf0d64fd8e8d993fa3f1e1d2",
-      "bytes": 128311
+      "sha256": "22c742034636204766a54b0ffcdf81d5735aff11cf4bbabff3dc89e2732014c6",
+      "bytes": 126897,
+      "edge_trim_px": 3
     },
     {
       "id": "w73",
@@ -1256,8 +1329,9 @@
       "file": "w73.png",
       "width": 384,
       "height": 768,
-      "sha256": "2b42648745c67bbe510a093c3567fb68e42ba939bd67920fbd80a9a7b8e3c529",
-      "bytes": 116415
+      "sha256": "bef875445f104e845fd05b102b4d9d9f3521685ef6c7995388b886b6e66d453e",
+      "bytes": 116133,
+      "edge_trim_px": 3
     },
     {
       "id": "w74",
@@ -1273,8 +1347,9 @@
       "file": "w74.png",
       "width": 384,
       "height": 768,
-      "sha256": "26ecb138d081557447592a3733d1af0a571c7b2b085725ce60134f0ced56eebe",
-      "bytes": 143577
+      "sha256": "9a1877dd46344b72d5ad45a2a3ad3bcc38c4e168ecab813d41e298830ed617af",
+      "bytes": 143633,
+      "edge_trim_px": 3
     },
     {
       "id": "w75",
@@ -1290,8 +1365,9 @@
       "file": "w75.png",
       "width": 384,
       "height": 768,
-      "sha256": "ac23a949a7ab63543e7c5b3cb57b7ead710f4f6fb8de574da1aaed34551791fc",
-      "bytes": 192197
+      "sha256": "eaa828f3d16e2bab8b98895c2cb15efc063e4c3191ce3add554607143f55a650",
+      "bytes": 191794,
+      "edge_trim_px": 3
     },
     {
       "id": "w76",
@@ -1307,8 +1383,9 @@
       "file": "w76.png",
       "width": 384,
       "height": 768,
-      "sha256": "02fd938c3734216288a96a92bb87f80147cc39c0449d917f71bed6e16e627d9f",
-      "bytes": 86146
+      "sha256": "8037627ba3f7a0c9f1325fc10cbc5a2cfa9d43d5d2bf6dbc0f8fdea2bb79ce22",
+      "bytes": 86074,
+      "edge_trim_px": 3
     },
     {
       "id": "w77",
@@ -1324,8 +1401,9 @@
       "file": "w77.png",
       "width": 384,
       "height": 768,
-      "sha256": "b97b60e50bd3fc759c05af09f1e7b7b48c16da95f2441a7714110ba81270fda8",
-      "bytes": 169506
+      "sha256": "9efc76fa1df545f90ff4aa527cdf94c64ac372bfc44de31c208e19203133db07",
+      "bytes": 168944,
+      "edge_trim_px": 3
     },
     {
       "id": "w78",
@@ -1341,8 +1419,9 @@
       "file": "w78.png",
       "width": 384,
       "height": 768,
-      "sha256": "9d224cbf40eeb12c0f51ebb2330306521219804091a330163b5c8d2fe0f18824",
-      "bytes": 208494
+      "sha256": "b2657a317a2bf3649c5640eb43f54237a10f9be7d064526c052c91db3eaa0037",
+      "bytes": 198284,
+      "edge_trim_px": 3
     },
     {
       "id": "w79",
@@ -1358,8 +1437,9 @@
       "file": "w79.png",
       "width": 384,
       "height": 768,
-      "sha256": "ad31d3dde3ea4781d4673b31f5b8a1627c38360191537cf6d5d6214e849bc1ac",
-      "bytes": 158376
+      "sha256": "fd1ed3faf536adf245f772f9541f042ba904c0d8fd144ca6023dafe4af5fab31",
+      "bytes": 157802,
+      "edge_trim_px": 3
     },
     {
       "id": "w80",
@@ -1375,8 +1455,9 @@
       "file": "w80.png",
       "width": 384,
       "height": 768,
-      "sha256": "75c1717e724c663b0ea39b847c3f28270f19d8593176c6636281f6a547419ce4",
-      "bytes": 198905
+      "sha256": "5db9fe3c50a7a17445b3c72a95ff360aae7f56d9307d14d52c8bc6cd7cca405f",
+      "bytes": 198930,
+      "edge_trim_px": 3
     },
     {
       "id": "w81",
@@ -1392,8 +1473,9 @@
       "file": "w81.png",
       "width": 384,
       "height": 768,
-      "sha256": "2a83a77c5a95694ac76e82ab0547995885627ac6b89a9e40441899fc741d9202",
-      "bytes": 142371
+      "sha256": "9678662ed38da5e05e7a098ee3aee17a3e2208c79993e57f8a2017d51f77ae96",
+      "bytes": 142125,
+      "edge_trim_px": 3
     },
     {
       "id": "w82",
@@ -1409,8 +1491,9 @@
       "file": "w82.png",
       "width": 384,
       "height": 768,
-      "sha256": "ca36bb2c5144e003c3b2b9171cd9969640f61940ea3e4863c5c491057cb00798",
-      "bytes": 109946
+      "sha256": "11fbb460e9fceb9ae2a3613d3afe1de606de1e1f752b9e1e165b660ce32e34c1",
+      "bytes": 110210,
+      "edge_trim_px": 3
     },
     {
       "id": "w83",
@@ -1426,8 +1509,9 @@
       "file": "w83.png",
       "width": 384,
       "height": 768,
-      "sha256": "0a3332c8c71b244b259d08f97d9b92522c8206ca0f19f438d430275c61671d09",
-      "bytes": 223396
+      "sha256": "b9ebb6fb5c8e8367c41331925b369a5380b2e1024ad4cfda4ca30132cc965042",
+      "bytes": 223028,
+      "edge_trim_px": 3
     },
     {
       "id": "w84",
@@ -1443,8 +1527,9 @@
       "file": "w84.png",
       "width": 384,
       "height": 768,
-      "sha256": "2f9587652ca2a0650f42448fbc6b5693437f18c83ac363ede9cdc9d32698022c",
-      "bytes": 218375
+      "sha256": "6dc2dedad4ab2093b6eacca01136a4cf4c1b4a045d918e196d6f87de234198bd",
+      "bytes": 217081,
+      "edge_trim_px": 3
     },
     {
       "id": "w85",
@@ -1460,8 +1545,9 @@
       "file": "w85.png",
       "width": 384,
       "height": 768,
-      "sha256": "077819ae846dfa7b0154516fc32e4412022351557cf391ca127dcf90c6bc0eda",
-      "bytes": 211344
+      "sha256": "9f182fca84b2bc3127912206c75fd433fdaffda1bdfa4689cd4111364eb119bd",
+      "bytes": 210893,
+      "edge_trim_px": 3
     },
     {
       "id": "w86",
@@ -1477,8 +1563,9 @@
       "file": "w86.png",
       "width": 384,
       "height": 768,
-      "sha256": "fcde3d1f33c9f63b089c06fddba0d240774f556ccf19e5275f5735e48b7696a2",
-      "bytes": 185885
+      "sha256": "1676376ca3757aae6d9a9c8b11abd53a4643f57b59559460f347da5c1f9aa4fe",
+      "bytes": 185936,
+      "edge_trim_px": 3
     },
     {
       "id": "w87",
@@ -1494,8 +1581,9 @@
       "file": "w87.png",
       "width": 384,
       "height": 768,
-      "sha256": "4ef519eda81c2bb7644be0f65c2cef3771651d8cff2e26fac8a7298c2b85d025",
-      "bytes": 171121
+      "sha256": "416663851ac729541d709390f17d747ec471181236e27a05ef709e666078a231",
+      "bytes": 169471,
+      "edge_trim_px": 3
     },
     {
       "id": "w88",
@@ -1511,8 +1599,9 @@
       "file": "w88.png",
       "width": 384,
       "height": 768,
-      "sha256": "9465592705db9a0bb3ffdd58b6d7fd32d96f8ae78d633a01ca00bd62b30c8734",
-      "bytes": 162196
+      "sha256": "0d1d1bd0d4509c65602463b9a9c486b063703e6118c97bea21cdf75876893881",
+      "bytes": 162026,
+      "edge_trim_px": 3
     },
     {
       "id": "w89",
@@ -1528,8 +1617,9 @@
       "file": "w89.png",
       "width": 384,
       "height": 768,
-      "sha256": "5669af9c92ccfd2c2d426d8df90ed8e761c8fc8f3b4300509bc1870178fbd477",
-      "bytes": 204265
+      "sha256": "cad0d6e4e8fd577a05f14f2c042f1b4e5fd1764de0a8d410c577d867d8e82ddb",
+      "bytes": 204280,
+      "edge_trim_px": 3
     },
     {
       "id": "w90",
@@ -1545,8 +1635,9 @@
       "file": "w90.png",
       "width": 384,
       "height": 768,
-      "sha256": "013d118dd566aa2d174bcedb4b6e395c524f06a553992c22eb816218fb164c6b",
-      "bytes": 118374
+      "sha256": "e76571e02774623b182363d6f6feb0fdc8bfacdcfe0b0eadbe4f5e3d597edc9e",
+      "bytes": 115426,
+      "edge_trim_px": 3
     },
     {
       "id": "w91",
@@ -1562,8 +1653,9 @@
       "file": "w91.png",
       "width": 384,
       "height": 768,
-      "sha256": "c37db7539b1de2b3b59bc6e09a80e3f0891700c5c4fd91f1ba7d10767966388e",
-      "bytes": 149247
+      "sha256": "4e309364593c48a63dac0c56e0f736fb8737d154ce64b2405d418e44f43dd284",
+      "bytes": 149009,
+      "edge_trim_px": 3
     },
     {
       "id": "w92",
@@ -1579,8 +1671,9 @@
       "file": "w92.png",
       "width": 384,
       "height": 768,
-      "sha256": "ee8d8df53d573c9cfeac479a626377117a6f0f32ddfff25c41b1f63db5e13374",
-      "bytes": 176851
+      "sha256": "c29aecb596d838af46a478710f84146a70ee526ada468e9c7f4cd0b56decf76e",
+      "bytes": 176012,
+      "edge_trim_px": 3
     },
     {
       "id": "w93",
@@ -1596,8 +1689,9 @@
       "file": "w93.png",
       "width": 384,
       "height": 768,
-      "sha256": "a17958775e36769aadee6d4cf054ac859f3ad3fc1af9653f64ed66e207ed8462",
-      "bytes": 169481
+      "sha256": "be426eb8d2e1fa16d090345d5436455204da68555f990e19b50978c7bc1e2156",
+      "bytes": 169139,
+      "edge_trim_px": 3
     },
     {
       "id": "w94",
@@ -1613,8 +1707,9 @@
       "file": "w94.png",
       "width": 384,
       "height": 768,
-      "sha256": "7fb743962797f9f7ebf6980359d5f48a32273acf0b388a282222f59ab27fc24e",
-      "bytes": 184342
+      "sha256": "394f08f7b0a28140e6b08e8454a97e19819920451da711fbb13b43556c2dc5a4",
+      "bytes": 183432,
+      "edge_trim_px": 3
     },
     {
       "id": "w95",
@@ -1630,8 +1725,9 @@
       "file": "w95.png",
       "width": 384,
       "height": 768,
-      "sha256": "6392ac22bd523a8a782eebab4ff0da027563edeb91530f8d1ac37caf91dc5180",
-      "bytes": 116790
+      "sha256": "8d1ecf898e70fc80a8e88f65884d41b747c21090afa11af0f6c99aacc8aeeab8",
+      "bytes": 116064,
+      "edge_trim_px": 3
     },
     {
       "id": "w96",
@@ -1647,8 +1743,9 @@
       "file": "w96.png",
       "width": 384,
       "height": 768,
-      "sha256": "4c7c7c65db71ba693aacd4efb981440b2aec48e168502304cff548010a94892c",
-      "bytes": 116401
+      "sha256": "8318b2750969fc38a47f525de343d8ad32f38e6ee37710dab719b7928b2750dd",
+      "bytes": 115478,
+      "edge_trim_px": 3
     },
     {
       "id": "w97",
@@ -1664,8 +1761,9 @@
       "file": "w97.png",
       "width": 384,
       "height": 768,
-      "sha256": "1f5c31f00b061c005104befa6e11c3d798d057b240283ebaa96ef70c4e8d1174",
-      "bytes": 117206
+      "sha256": "45e1dd3af12cecc211b84f10c59b7d8b3976f77c1cb76854665badb68f2b5013",
+      "bytes": 117204,
+      "edge_trim_px": 3
     },
     {
       "id": "w98",
@@ -1681,8 +1779,9 @@
       "file": "w98.png",
       "width": 384,
       "height": 768,
-      "sha256": "5c94e4138f5e7e9b21195f1f3c2c16c3232ea1712165243934ea915a6661ea7c",
-      "bytes": 163847
+      "sha256": "e10c70286164ad92ae5fae8c3148b37fa1f68c01207b439489a5f76515ea9dea",
+      "bytes": 162809,
+      "edge_trim_px": 3
     },
     {
       "id": "w99",
@@ -1698,8 +1797,9 @@
       "file": "w99.png",
       "width": 384,
       "height": 768,
-      "sha256": "e05bb4dfbc99189ae4df1bcbd434cf453c5d333534ad477f1ddbcbc366e00082",
-      "bytes": 131397
+      "sha256": "498c44a1e1dd43c5fb7c5732ee70a730d926eed1912cb1a1933f67943b49308d",
+      "bytes": 128077,
+      "edge_trim_px": 3
     },
     {
       "id": "w100",
@@ -1715,8 +1815,9 @@
       "file": "w100.png",
       "width": 384,
       "height": 768,
-      "sha256": "eb009e69dad990b4d5ffe4761dd62a8f99b67515128346e9be3c7b68b1e1cf90",
-      "bytes": 198719
+      "sha256": "acd0fd498883e2f4fb05471588dcfed10f88634edfbf3440347f8e533fba0b6e",
+      "bytes": 198400,
+      "edge_trim_px": 3
     },
     {
       "id": "w101",
@@ -1732,8 +1833,9 @@
       "file": "w101.png",
       "width": 384,
       "height": 768,
-      "sha256": "68ab5f2f7f2a09463f7a61cc701368743f9e18e5e304de931814251414fc749c",
-      "bytes": 210488
+      "sha256": "5befbb64fabf385ff4b8c2145841e6f4d600c2c93227ed7e0dee186eb46ec4d7",
+      "bytes": 209272,
+      "edge_trim_px": 3
     },
     {
       "id": "w102",
@@ -1749,8 +1851,9 @@
       "file": "w102.png",
       "width": 384,
       "height": 768,
-      "sha256": "52332ad32e1be7331583f673c86f9678b7780e01a4d5755e8ce9b9f68b12d625",
-      "bytes": 205239
+      "sha256": "2604388564e729b8ef2baac79af2fcef827c3ec7cbce45513550be6086ae26aa",
+      "bytes": 203681,
+      "edge_trim_px": 3
     },
     {
       "id": "w103",
@@ -1766,8 +1869,9 @@
       "file": "w103.png",
       "width": 384,
       "height": 768,
-      "sha256": "3249c286a782830ea2fb73c166c6bc3c12ada59aa060438c0dcb14f7be7afac7",
-      "bytes": 145976
+      "sha256": "b088e98b922e7391bbee1e2efed8508a00661854f10f00ea8b897b824de908f4",
+      "bytes": 145038,
+      "edge_trim_px": 3
     },
     {
       "id": "w104",
@@ -1783,8 +1887,9 @@
       "file": "w104.png",
       "width": 384,
       "height": 768,
-      "sha256": "dafd20e8a93f486b747a43bf3faa2eafd6ebe992903242aab48930c76b27570a",
-      "bytes": 199632
+      "sha256": "bb2ae93dcab08cba1956c1d8fdce826dfb91e8f8b72406fd425ae9a80f9aba74",
+      "bytes": 198997,
+      "edge_trim_px": 3
     },
     {
       "id": "w106",
@@ -1800,8 +1905,9 @@
       "file": "w106.png",
       "width": 384,
       "height": 768,
-      "sha256": "ec1d9f8f2dfb2c3c777968fe354a488ed35573ef8558e08d741f9601cd84a2b9",
-      "bytes": 158703
+      "sha256": "50a4810dc5775c9e5b3233e6c78c94d0dff823fd66a26a3a1b45f025e9f4e4ae",
+      "bytes": 158039,
+      "edge_trim_px": 3
     },
     {
       "id": "w107",
@@ -1817,8 +1923,9 @@
       "file": "w107.png",
       "width": 384,
       "height": 768,
-      "sha256": "b450075021a94cccd26ae67de6d005c0303927a1d614e841d22c3172961c6cd4",
-      "bytes": 158461
+      "sha256": "282a1c351dde4f067bcf3e9c97366716e729b0af7a9a9ab2d8a9d6959d957be8",
+      "bytes": 158708,
+      "edge_trim_px": 3
     },
     {
       "id": "w108",
@@ -1834,8 +1941,9 @@
       "file": "w108.png",
       "width": 384,
       "height": 768,
-      "sha256": "268e073000216f044dcce745f5fbd557468da38622aa692cf9d993ef5d97c98a",
-      "bytes": 144370
+      "sha256": "001d8ea6d3e022f96452090314fc39b36c26e5752ecbe1a77c0cde7d204f3e76",
+      "bytes": 143593,
+      "edge_trim_px": 3
     },
     {
       "id": "w109",
@@ -1851,8 +1959,9 @@
       "file": "w109.png",
       "width": 384,
       "height": 768,
-      "sha256": "bb233c8b2e4cdf29ad897270d6b53c33f9e22990b75eedbd85fbfadf9838e52c",
-      "bytes": 138804
+      "sha256": "cd244506667b778f18f5a60bbd363a27794351bf10e9bdcc98958dc520175b97",
+      "bytes": 138644,
+      "edge_trim_px": 3
     },
     {
       "id": "w110",
@@ -1868,8 +1977,9 @@
       "file": "w110.png",
       "width": 384,
       "height": 768,
-      "sha256": "8434b1095dbba79ce7efa234a68a7da338acb4bcbd37befd222d2955d32d6b43",
-      "bytes": 149673
+      "sha256": "8ce706be43cfeb7aa20d30b00451d5a7a1c560565141efc9a23bac1fc0eec142",
+      "bytes": 148659,
+      "edge_trim_px": 3
     },
     {
       "id": "w111",
@@ -1885,8 +1995,9 @@
       "file": "w111.png",
       "width": 384,
       "height": 768,
-      "sha256": "0a877c1ba984a0de898ce4db15375e01807a32ce476c467e930af808803dcdd7",
-      "bytes": 166892
+      "sha256": "4d24c8c2c535f8080977c930eccc81fccee03d41a40f67dd697a97765e91b38b",
+      "bytes": 167024,
+      "edge_trim_px": 3
     },
     {
       "id": "w112",
@@ -1902,8 +2013,9 @@
       "file": "w112.png",
       "width": 384,
       "height": 768,
-      "sha256": "49b8d9d781a6fafc2501ab1ad51164ee1e46b326fee8071c29fe2f875a3be2fb",
-      "bytes": 187155
+      "sha256": "7c3ccb691e70dd1a9344a730485f4316c374fc1a6b5fbbcc9ec20810eb1e98ca",
+      "bytes": 185497,
+      "edge_trim_px": 3
     },
     {
       "id": "w113",
@@ -1919,8 +2031,9 @@
       "file": "w113.png",
       "width": 384,
       "height": 768,
-      "sha256": "60ad713556a9efc549c54e32f4b7a490e39d94bfe63f06c8216667765887e043",
-      "bytes": 184423
+      "sha256": "f0dda02c270ac957cce2ec5a30fcb73e1023371ebf6dc1de6b3e376fd1698a7f",
+      "bytes": 183784,
+      "edge_trim_px": 3
     },
     {
       "id": "w114",
@@ -1936,8 +2049,9 @@
       "file": "w114.png",
       "width": 384,
       "height": 768,
-      "sha256": "1572a8d2a238b6f3888e0a5b2151917150a0e9281e5768aed9c1d8a47da5250d",
-      "bytes": 192245
+      "sha256": "9369f9ef76e527ae035d1e8f423c0d9b79844777f95d3c11b26bf587dc3860e7",
+      "bytes": 191742,
+      "edge_trim_px": 3
     },
     {
       "id": "w115",
@@ -1953,8 +2067,9 @@
       "file": "w115.png",
       "width": 384,
       "height": 768,
-      "sha256": "99a34f810babc89c6391fae4a8bdd302da06570c9878fdf58edd24b0d12906fe",
-      "bytes": 149412
+      "sha256": "15653b26e3cae75cb91db44f405bc4cb488109501853f992636a5475ebaa8c37",
+      "bytes": 148818,
+      "edge_trim_px": 3
     },
     {
       "id": "w116",
@@ -1970,8 +2085,9 @@
       "file": "w116.png",
       "width": 384,
       "height": 768,
-      "sha256": "5c5902e9483b955a5c7cfff0d10458b3af344133645298b6c5858404ee42ca8d",
-      "bytes": 146315
+      "sha256": "f21b632c777574e27244964d3d155f6c716fdfdc04697ecae4ee2646a0d571d2",
+      "bytes": 144470,
+      "edge_trim_px": 3
     },
     {
       "id": "w117",
@@ -1987,8 +2103,9 @@
       "file": "w117.png",
       "width": 384,
       "height": 768,
-      "sha256": "94ae06dd610dce5909beaf59fb7d923ae36cbcf479ac69228ba4a5ae7f0c0830",
-      "bytes": 155773
+      "sha256": "531de11d7049a6d7de0665afb7a4e9acfcea424b0835293694ecd8b674aa2b59",
+      "bytes": 155536,
+      "edge_trim_px": 3
     },
     {
       "id": "w118",
@@ -2004,8 +2121,9 @@
       "file": "w118.png",
       "width": 384,
       "height": 768,
-      "sha256": "ecbd868d3868884c5a39dc6dc01db89747760fde621657506eb3e7757e0d9610",
-      "bytes": 231065
+      "sha256": "c585e37b320ab7fab81d839a02570c5478c624d5238910380979b2e89dcac12f",
+      "bytes": 229966,
+      "edge_trim_px": 3
     },
     {
       "id": "w119",
@@ -2021,8 +2139,9 @@
       "file": "w119.png",
       "width": 384,
       "height": 768,
-      "sha256": "65b1d241062bd88f3fcd3baab36f079e72c665ed9d843dcf0a58bfb1662f20d4",
-      "bytes": 149412
+      "sha256": "f504553468ad3aaa6fea0a411336f90f863644f8745aae6d245163c7e3502898",
+      "bytes": 149067,
+      "edge_trim_px": 3
     },
     {
       "id": "w120",
@@ -2038,8 +2157,9 @@
       "file": "w120.png",
       "width": 384,
       "height": 768,
-      "sha256": "a40e8eb76ac88206d676dcdfc9954a5960bd658867e0f4dbbbf3bcb8d83b36d8",
-      "bytes": 233557
+      "sha256": "559adc48dee7975bedf33979d4f89f42b558da7a492fb33e2e720246a99c0cc2",
+      "bytes": 232168,
+      "edge_trim_px": 3
     },
     {
       "id": "w121",
@@ -2055,8 +2175,9 @@
       "file": "w121.png",
       "width": 384,
       "height": 768,
-      "sha256": "b120569e1235c5effd435c8b9f6d0a8d9622ec4faeebcd335ca9d96f84395cdc",
-      "bytes": 150203
+      "sha256": "3ac3a84da074056950dbaae05a8c294cbfce3bf2d3283fe3a73085b50a695df7",
+      "bytes": 149010,
+      "edge_trim_px": 3
     },
     {
       "id": "w122",
@@ -2072,8 +2193,9 @@
       "file": "w122.png",
       "width": 384,
       "height": 768,
-      "sha256": "9993e0889e0226c653666b2ec8d49717d231b5702fd4497642c7bfb5c1318b98",
-      "bytes": 184435
+      "sha256": "af9838d4f65fab9310fd957684c83dad66208793a003358013a00290e292ab77",
+      "bytes": 182914,
+      "edge_trim_px": 3
     },
     {
       "id": "w123",
@@ -2089,8 +2211,9 @@
       "file": "w123.png",
       "width": 384,
       "height": 768,
-      "sha256": "12cd864b669db7d4d63c98054959cabdcac626977fca66c25d3a3ef4731754c7",
-      "bytes": 165355
+      "sha256": "62f8ba479a7d44d3cd53040ece77dbee5eda34b158f93150001e5175ff98a7d3",
+      "bytes": 164949,
+      "edge_trim_px": 3
     },
     {
       "id": "w124",
@@ -2106,8 +2229,9 @@
       "file": "w124.png",
       "width": 384,
       "height": 768,
-      "sha256": "b238a74fd9e7e3116737bfbe28afc2cdd1c8cd6ae3622460d6883424f234b968",
-      "bytes": 185995
+      "sha256": "54ea22edc4ceca81d48f423b9fbca51481dd78b3a38ca82a8ea16f66f56d84d0",
+      "bytes": 184945,
+      "edge_trim_px": 3
     },
     {
       "id": "w125",
@@ -2123,8 +2247,9 @@
       "file": "w125.png",
       "width": 384,
       "height": 768,
-      "sha256": "b1d2865d571d0b6d06cd12a438f056067312b97e1ef3fbdfb31ecceaf5986452",
-      "bytes": 168246
+      "sha256": "1858fa119a8f29f98da8a647ab31e2f45bdb91cc023781c3f1f0213988e27b9b",
+      "bytes": 167708,
+      "edge_trim_px": 3
     },
     {
       "id": "w126",
@@ -2140,8 +2265,9 @@
       "file": "w126.png",
       "width": 384,
       "height": 768,
-      "sha256": "a22331945b90fecb03583b2e548ccf666fca8506ed07d86b32a72074766a4eb6",
-      "bytes": 136988
+      "sha256": "d4ecd362f4d8edcaf8b788488ce5b0e0229d2959dec7b74f9797aa3035994d3a",
+      "bytes": 136012,
+      "edge_trim_px": 3
     },
     {
       "id": "w127",
@@ -2157,8 +2283,9 @@
       "file": "w127.png",
       "width": 384,
       "height": 768,
-      "sha256": "aaff22c9ebb09d210f145972d2faf591a232f7bc3f30aeef2ae907b218c1f353",
-      "bytes": 169736
+      "sha256": "e35a234c542ff10bd62933c83458de5cf97c433dfdd087a617b3841fe0d3ba44",
+      "bytes": 169624,
+      "edge_trim_px": 3
     },
     {
       "id": "w128",
@@ -2174,8 +2301,9 @@
       "file": "w128.png",
       "width": 384,
       "height": 768,
-      "sha256": "248f72898521adf03a1e6c45f31258440751fea2bc1e97757213f1bf5fde1637",
-      "bytes": 149780
+      "sha256": "7959caf7e2b5e942410bb7e9d5ab629efe37726c10d03374f3e20b5007fc9083",
+      "bytes": 149427,
+      "edge_trim_px": 3
     },
     {
       "id": "w129",
@@ -2191,8 +2319,9 @@
       "file": "w129.png",
       "width": 384,
       "height": 768,
-      "sha256": "ba21fd82e1ad5cc4a5b255d09c0c9fa5b50ee71a792162849cf6c4cb08ff80f3",
-      "bytes": 170714
+      "sha256": "b263a108975fe4b6ce17c27e751f4f6c3526000def698a4a1af40e183fc7b530",
+      "bytes": 169374,
+      "edge_trim_px": 3
     },
     {
       "id": "w130",
@@ -2208,8 +2337,9 @@
       "file": "w130.png",
       "width": 384,
       "height": 768,
-      "sha256": "0f5e22839f0486e941faf1de996eabed0547b607a2fa9fa4d1f6ae18af326aef",
-      "bytes": 158991
+      "sha256": "faa20cd62231257a7e81594c879e36721ef28af1eddeaae744fbb16f3203d690",
+      "bytes": 158141,
+      "edge_trim_px": 3
     },
     {
       "id": "w131",
@@ -2225,8 +2355,9 @@
       "file": "w131.png",
       "width": 384,
       "height": 768,
-      "sha256": "72627ce8a837ae65fd1fceb39340701d7563f663cd1bc3740a7cf075b2c1e318",
-      "bytes": 141256
+      "sha256": "d08bef5644954a7ea08e26f6b9d91f8bfa179a2617ebd51badf12ae81519301e",
+      "bytes": 140958,
+      "edge_trim_px": 3
     },
     {
       "id": "w132",
@@ -2242,8 +2373,9 @@
       "file": "w132.png",
       "width": 384,
       "height": 768,
-      "sha256": "95b1e1a66135d32030b7d592517352790995dcd331c0eebcb3c4b9a77af693e0",
-      "bytes": 160048
+      "sha256": "50a22125712a5f4c3b7fb9a3eda96b26f89e9ff7118e0a027d81c34d1bc0abeb",
+      "bytes": 159774,
+      "edge_trim_px": 3
     },
     {
       "id": "w133",
@@ -2259,8 +2391,9 @@
       "file": "w133.png",
       "width": 384,
       "height": 768,
-      "sha256": "716a12c7583341ba1e3ecd9e3207ff7b76db43edbfb8b2bf327d6579922b95a8",
-      "bytes": 203322
+      "sha256": "37ab39e909c3283a782d3d13dca67f921e72d496f1b184cb17578122c5152c27",
+      "bytes": 202415,
+      "edge_trim_px": 3
     },
     {
       "id": "w134",
@@ -2276,8 +2409,9 @@
       "file": "w134.png",
       "width": 384,
       "height": 768,
-      "sha256": "ae1900b0c9cfa737d331b8f38f317abbbd63b27c4ca30aadb3eae3261bfcd53d",
-      "bytes": 139208
+      "sha256": "697a2c18cfa9e678fc634e9933076d06e3444a376555aa6ec753290563b3ee3d",
+      "bytes": 139066,
+      "edge_trim_px": 3
     },
     {
       "id": "w135",
@@ -2293,8 +2427,9 @@
       "file": "w135.png",
       "width": 384,
       "height": 768,
-      "sha256": "a11c233ed17525ac257bb6416dcbd77f9f853edd6ba9c89f75990690ff7e198b",
-      "bytes": 117763
+      "sha256": "4c5bab4ea7acdd3ed94534fbc396bc2a2207fb46d80fcbcc3b82cb150e7584de",
+      "bytes": 116942,
+      "edge_trim_px": 3
     },
     {
       "id": "w136",
@@ -2310,8 +2445,9 @@
       "file": "w136.png",
       "width": 384,
       "height": 768,
-      "sha256": "8d2433a4e87e202ee2639a493fbacaaf96660c91b34a0209a8eccddd58b7b76d",
-      "bytes": 111555
+      "sha256": "909120da5d4d329ac3de707fd146208cf542c51b12c99cca7bdfe8e62b34c13a",
+      "bytes": 111047,
+      "edge_trim_px": 3
     },
     {
       "id": "w137",
@@ -2327,8 +2463,9 @@
       "file": "w137.png",
       "width": 384,
       "height": 768,
-      "sha256": "89acc14b6129f8189e43cc70011886f545455fb0efe3afd38f6ca284e11f0be4",
-      "bytes": 147805
+      "sha256": "d5e26b262660a742c3d435223592f5a5865ff22d6e7e0f68836abc8bd42875e0",
+      "bytes": 147485,
+      "edge_trim_px": 3
     },
     {
       "id": "w138",
@@ -2344,8 +2481,9 @@
       "file": "w138.png",
       "width": 384,
       "height": 768,
-      "sha256": "f47db9dedb9d2b6942c066df8dbc7b89516ade755d83baf9a264897f25054750",
-      "bytes": 175578
+      "sha256": "a015e2af4089fbe4f3c2399cd7db48c3718cdc0330a03e1c5c86e9c639fee2bd",
+      "bytes": 175094,
+      "edge_trim_px": 3
     },
     {
       "id": "w139",
@@ -2361,8 +2499,9 @@
       "file": "w139.png",
       "width": 384,
       "height": 768,
-      "sha256": "c53917d789c9ce41cc48e978e1df9060b649435f3c85712a9bc93ea000be2570",
-      "bytes": 156075
+      "sha256": "0c1c21f76f2e7093483ebfb5edb51e5b48fc8edf168f225052cd9ceef20f9781",
+      "bytes": 155433,
+      "edge_trim_px": 3
     },
     {
       "id": "w140",
@@ -2378,8 +2517,9 @@
       "file": "w140.png",
       "width": 384,
       "height": 768,
-      "sha256": "d67720e380ed436a1639bbbaa9e3111c57fc1354d219eeb1ece65b0f36fb2c75",
-      "bytes": 200909
+      "sha256": "a3ccb2d77366fd418f4ff81ff57c1e66c5ed022cc7e345ba246be58f84226555",
+      "bytes": 200345,
+      "edge_trim_px": 3
     },
     {
       "id": "w141",
@@ -2395,8 +2535,9 @@
       "file": "w141.png",
       "width": 384,
       "height": 768,
-      "sha256": "6ae3250c81263256e05dd1fe93db3f548e1a18e1f82815ca156d92cebd176f30",
-      "bytes": 153928
+      "sha256": "2d6d9c740b4c514c29a5a50a25f47a4d54c68d2e0846cbf11d853d2a5c1a3776",
+      "bytes": 151448,
+      "edge_trim_px": 3
     },
     {
       "id": "w142",
@@ -2412,8 +2553,9 @@
       "file": "w142.png",
       "width": 384,
       "height": 768,
-      "sha256": "f48f177015a98dc03b1e558392db7578f7061a4a0531f9529ab113466025f5fc",
-      "bytes": 204642
+      "sha256": "4d50d8d96f9094dfdb441360e16039bd010e1234ef678359e960dc560cc52186",
+      "bytes": 204303,
+      "edge_trim_px": 3
     },
     {
       "id": "w143",
@@ -2429,8 +2571,9 @@
       "file": "w143.png",
       "width": 384,
       "height": 768,
-      "sha256": "cd448aa0ea4bffa847f65b6b58985ca93e5b7cd40d5981d6a49eef5f9b191b84",
-      "bytes": 173187
+      "sha256": "cec34ddd976fabd08d6ca117407fc1aa0ddeb37133a530dbddb1491f7f87cac0",
+      "bytes": 173359,
+      "edge_trim_px": 3
     },
     {
       "id": "w144",
@@ -2446,8 +2589,9 @@
       "file": "w144.png",
       "width": 384,
       "height": 768,
-      "sha256": "f9b6eb84a136d64cb32f57b94c1b2a30d82a5b09322cf6875b73045f1b4b9abc",
-      "bytes": 127499
+      "sha256": "f59c18b49b53746b711bf941b5242af2a9a000434a52f589cb9fad3d93ea4942",
+      "bytes": 125622,
+      "edge_trim_px": 3
     },
     {
       "id": "w145",
@@ -2463,8 +2607,9 @@
       "file": "w145.png",
       "width": 384,
       "height": 768,
-      "sha256": "054ce27679c387d2e674a3f0ee83de87467c33ddd705a94ad3914a2116325797",
-      "bytes": 154468
+      "sha256": "c9c2cc86b89ef2857822040e3fa23993ad2aafbace418ffb750ba25683b60b59",
+      "bytes": 153869,
+      "edge_trim_px": 3
     },
     {
       "id": "w146",
@@ -2480,8 +2625,9 @@
       "file": "w146.png",
       "width": 384,
       "height": 768,
-      "sha256": "5a167d2a4dbe24bde863d147fbc2974990f4389c376f9c44aaed9ba3b4c35517",
-      "bytes": 161605
+      "sha256": "559e1681d96e001ebdc25e15f91e4207bc75a144decd733cd0cf5757fef89d96",
+      "bytes": 161301,
+      "edge_trim_px": 3
     },
     {
       "id": "w147",
@@ -2497,8 +2643,9 @@
       "file": "w147.png",
       "width": 384,
       "height": 768,
-      "sha256": "24f608b3bd099e9f1d49a9744077c7d890ad8fce5b143363819f2f9a90b72fff",
-      "bytes": 163362
+      "sha256": "5df577339e11cce8fd7dd82635bffb2a9a6a0b2f0fec1300034aab7fffddb75d",
+      "bytes": 162984,
+      "edge_trim_px": 3
     },
     {
       "id": "w148",
@@ -2514,8 +2661,9 @@
       "file": "w148.png",
       "width": 384,
       "height": 768,
-      "sha256": "f0dd1ffa171641c55164412e17a31fc4a0f11371ff14962fc9a0499cbd875ff2",
-      "bytes": 93393
+      "sha256": "9106911d1bbbb62597682451ebc3f0c33bbb1e6dca32ba81f5bdcd929d504263",
+      "bytes": 93451,
+      "edge_trim_px": 3
     },
     {
       "id": "w149",
@@ -2531,8 +2679,9 @@
       "file": "w149.png",
       "width": 384,
       "height": 768,
-      "sha256": "440eab5149b0b9a9e5f036624072938680941e53b9a6867dcc0459b17f878ae9",
-      "bytes": 160441
+      "sha256": "af03d74192c72a17d0a2ae382b2c636c914b449fbc834e7831b354f2cac9a25f",
+      "bytes": 159340,
+      "edge_trim_px": 3
     },
     {
       "id": "w150",
@@ -2548,8 +2697,9 @@
       "file": "w150.png",
       "width": 384,
       "height": 768,
-      "sha256": "0ac9615cd0e2f564b56aa9c8e577ee60181722dab7d2459f6aa889b4f4fe49f7",
-      "bytes": 201048
+      "sha256": "a14d50fcb299aa4d2b6ab970f28b9795c14f6310cf7704fe0999605eb7c9ef1b",
+      "bytes": 199339,
+      "edge_trim_px": 3
     },
     {
       "id": "w151",
@@ -2565,8 +2715,9 @@
       "file": "w151.png",
       "width": 384,
       "height": 768,
-      "sha256": "5188f5e7a6c1a8a18985e3c85841f48c8f150e690c65ed7eed66f4dfb9300fee",
-      "bytes": 124280
+      "sha256": "afc7fd84694522e7c826be7425c17094c44a068c228fd7751d9663db0863e2bc",
+      "bytes": 122082,
+      "edge_trim_px": 3
     },
     {
       "id": "w152",
@@ -2582,8 +2733,9 @@
       "file": "w152.png",
       "width": 384,
       "height": 768,
-      "sha256": "8373e455bf7cfb065cf2617e15e4d5c08a2213c03b35a96da4c3f20eb5e2e517",
-      "bytes": 185142
+      "sha256": "2f3ed8b7d08c10ca45f89a9d72fd35b15684a7c272cdba09450bec08a262a9cd",
+      "bytes": 185061,
+      "edge_trim_px": 3
     },
     {
       "id": "w153",
@@ -2599,8 +2751,9 @@
       "file": "w153.png",
       "width": 384,
       "height": 768,
-      "sha256": "160729932431a9569f2cd8af0735a01730d7515fd2c4658148ab38089cc5785b",
-      "bytes": 152876
+      "sha256": "a8215a7c01c93da5b24dab751aff8e8c8386ab0c1015e77be3e42bc66c7a1775",
+      "bytes": 152596,
+      "edge_trim_px": 3
     },
     {
       "id": "w154",
@@ -2616,8 +2769,9 @@
       "file": "w154.png",
       "width": 384,
       "height": 768,
-      "sha256": "f29d7ea93f5eb4e2f1a680d9fbb385f8f5fe6fd4db0f4baa6764b8501af851e6",
-      "bytes": 192718
+      "sha256": "9b22de510a3ecc5b0770234f2844f5668f2b0596fb99d0281bc966ca73b5795e",
+      "bytes": 183363,
+      "edge_trim_px": 3
     },
     {
       "id": "w155",
@@ -2633,8 +2787,9 @@
       "file": "w155.png",
       "width": 384,
       "height": 768,
-      "sha256": "3021bbad69cd57704edc4484a83cc57d3e750c69efa42eab49d1d2be3ba2f285",
-      "bytes": 190900
+      "sha256": "9165490bdc40b3edf7b54c319df7a8af936f7cac9cbfb05b89353907540a3f81",
+      "bytes": 189514,
+      "edge_trim_px": 3
     },
     {
       "id": "w156",
@@ -2650,8 +2805,9 @@
       "file": "w156.png",
       "width": 384,
       "height": 768,
-      "sha256": "713d508008bb3d1f77bb04944c71a42dad2db2dfef6d9b82a6f836163c5260ab",
-      "bytes": 190690
+      "sha256": "396724b2419e13616ec1e938d91c2d216a6352a8899629b06335ab51879818ca",
+      "bytes": 189959,
+      "edge_trim_px": 3
     },
     {
       "id": "w157",
@@ -2667,8 +2823,9 @@
       "file": "w157.png",
       "width": 384,
       "height": 768,
-      "sha256": "aa455329844007359a0907d9372ec3e45b55747607bcb1da9e3ba521be7ab326",
-      "bytes": 165058
+      "sha256": "4ecc9c0901597e1dbcdd90695eab4893dedbed182a00a2d8ff877955b7ed0eb4",
+      "bytes": 164621,
+      "edge_trim_px": 3
     },
     {
       "id": "w158",
@@ -2684,8 +2841,9 @@
       "file": "w158.png",
       "width": 384,
       "height": 768,
-      "sha256": "920af624e2477582c331b22caac752c045ccdc9b36e599d8df44b5f26ead73ef",
-      "bytes": 149766
+      "sha256": "4af902922c263d7edf2cc72705a3d2b92f60d8e054ea2ef3b0bebe910544e612",
+      "bytes": 147915,
+      "edge_trim_px": 3
     },
     {
       "id": "w159",
@@ -2701,8 +2859,9 @@
       "file": "w159.png",
       "width": 384,
       "height": 768,
-      "sha256": "2b2babcb2666a38d09d7e56268e8d5563cf076f870be44a222231b2198bbe906",
-      "bytes": 181928
+      "sha256": "c7f4f2aecf35d20169ec7da66795d84e7a28540c9fdc87800e092a129ddfc014",
+      "bytes": 180952,
+      "edge_trim_px": 3
     },
     {
       "id": "w160",
@@ -2718,8 +2877,9 @@
       "file": "w160.png",
       "width": 384,
       "height": 768,
-      "sha256": "d53839cd76e41e8a68e9ae1d371e44a21a0d3d1fb3f663aab40e280548e2c417",
-      "bytes": 114241
+      "sha256": "67267f1f0bd74309b77ae802ec678656f676d3a95cc86c622100a6285a498124",
+      "bytes": 112817,
+      "edge_trim_px": 3
     },
     {
       "id": "w161",
@@ -2735,8 +2895,9 @@
       "file": "w161.png",
       "width": 384,
       "height": 768,
-      "sha256": "4448bf8c047ba02a2caea77f4dead23bbcda3217dd3410922b2551867d065964",
-      "bytes": 198264
+      "sha256": "90b0e4c8beb5ba4f54a89d9ad136031badc601ab05f8525f580952a33b994513",
+      "bytes": 196857,
+      "edge_trim_px": 3
     },
     {
       "id": "w162",
@@ -2752,8 +2913,9 @@
       "file": "w162.png",
       "width": 384,
       "height": 768,
-      "sha256": "b00114915bfc216c17cb539b13d133a020b045d6912bfce465781f3afc00137d",
-      "bytes": 179794
+      "sha256": "8c51f6716e2478ed3384cada54d4eed6dfc64f13510f46df688d6a6630729fcb",
+      "bytes": 179503,
+      "edge_trim_px": 3
     },
     {
       "id": "w163",
@@ -2769,8 +2931,9 @@
       "file": "w163.png",
       "width": 384,
       "height": 768,
-      "sha256": "141b751780f877c46d8192b44925bcb3a37413ea86cdd24c21a3e49a8d4c3ced",
-      "bytes": 160982
+      "sha256": "1c99620008d174ca00e4ed232ec5a075fb84fdbb59176cde435c9d91d87adf60",
+      "bytes": 159425,
+      "edge_trim_px": 3
     },
     {
       "id": "w164",
@@ -2786,8 +2949,9 @@
       "file": "w164.png",
       "width": 384,
       "height": 768,
-      "sha256": "0a1775b6e9737b29683207e97f9dd8d1457aa9933e22fb1dbc916fef62d98954",
-      "bytes": 167216
+      "sha256": "38fc64636c12f46f7a4195968a27cff214395b8116ce0248bda47759cc8ac38a",
+      "bytes": 166280,
+      "edge_trim_px": 3
     },
     {
       "id": "w165",
@@ -2803,8 +2967,9 @@
       "file": "w165.png",
       "width": 384,
       "height": 768,
-      "sha256": "3177916c1039528aca31c72b0de8dd43784343250734c44046e459094dc6d859",
-      "bytes": 199947
+      "sha256": "a99518d8626602db0ce7abb926c8478f6f62cc2c8615e44d433a8fc178fd831d",
+      "bytes": 200092,
+      "edge_trim_px": 3
     },
     {
       "id": "w166",
@@ -2820,8 +2985,9 @@
       "file": "w166.png",
       "width": 384,
       "height": 768,
-      "sha256": "d4ea811ba4de37cd6be0d604017c80f31c2f4858138beabf490612b2e5cf9a5a",
-      "bytes": 203698
+      "sha256": "829e220e22a27b081684c9e64edd7444e58db57a5bbdc2adce538626f49d898e",
+      "bytes": 203318,
+      "edge_trim_px": 3
     },
     {
       "id": "w167",
@@ -2837,8 +3003,9 @@
       "file": "w167.png",
       "width": 384,
       "height": 768,
-      "sha256": "d3c668018709410ef402f8f440201b74e1f14178a13bffc531541a1abc77fcab",
-      "bytes": 159193
+      "sha256": "91c05274669d3879a7d488c76bd6c9eaff624d834d651b3eea0b9777743c8947",
+      "bytes": 158928,
+      "edge_trim_px": 3
     },
     {
       "id": "w168",
@@ -2854,8 +3021,9 @@
       "file": "w168.png",
       "width": 384,
       "height": 768,
-      "sha256": "d933e5caad7ce774d37fa0626afca33949c2c59a12fd3ad99b6ca22bc5a67245",
-      "bytes": 206954
+      "sha256": "f0add2c02baaf52ef2918c7b54082c335473bd102b219449530b471ac08aa3d5",
+      "bytes": 205657,
+      "edge_trim_px": 3
     },
     {
       "id": "w169",
@@ -2871,8 +3039,9 @@
       "file": "w169.png",
       "width": 384,
       "height": 768,
-      "sha256": "494a1743fa46025ce5b19006c6f96aeb945230c7b11e07857d2f238afb35f05d",
-      "bytes": 205654
+      "sha256": "807d0fe7a195634d8834518232ea4223a335f0f1759131ba02949738a69b0361",
+      "bytes": 205296,
+      "edge_trim_px": 3
     },
     {
       "id": "w170",
@@ -2888,8 +3057,9 @@
       "file": "w170.png",
       "width": 384,
       "height": 768,
-      "sha256": "71df279b069266247ce2a84ea569144441de7bbe12a3f5feff6ee00e4da7f77a",
-      "bytes": 170296
+      "sha256": "f111f9f5bb12bdb384ff1ef85b4a7145dde8158a8caa95321b1352a3cd6c893a",
+      "bytes": 168687,
+      "edge_trim_px": 3
     },
     {
       "id": "w171",
@@ -2905,8 +3075,9 @@
       "file": "w171.png",
       "width": 384,
       "height": 768,
-      "sha256": "441764b71044e5fd8cc54e575de476674bdabd1fbf074721c3694b04276926cc",
-      "bytes": 175732
+      "sha256": "84c01e2aa65ae6a8aea752aadeb004bfc52c42e7afc6e51659d2f88da4d6e584",
+      "bytes": 175629,
+      "edge_trim_px": 3
     },
     {
       "id": "w172",
@@ -2922,8 +3093,9 @@
       "file": "w172.png",
       "width": 384,
       "height": 768,
-      "sha256": "68c683193d5ec8293e7ded9ae63cca9662eaedda6e64601d0ad3cfd51cc5b40f",
-      "bytes": 188624
+      "sha256": "055e75f50a36e39c86c6a843b8b32089a16886f01d5a32a8fa1d9053bc028fa5",
+      "bytes": 188061,
+      "edge_trim_px": 3
     },
     {
       "id": "w173",
@@ -2939,8 +3111,9 @@
       "file": "w173.png",
       "width": 384,
       "height": 768,
-      "sha256": "25278a1ddd5ed43f42ae5d093ff29dfe9773bbc39e709ccbb7c52fb28688da53",
-      "bytes": 255152
+      "sha256": "35f4e1bc1b5f1b0ed32211fe4373f85ee71b7fb1af01a09ac060a2b06c69a67c",
+      "bytes": 253803,
+      "edge_trim_px": 3
     },
     {
       "id": "w174",
@@ -2956,8 +3129,9 @@
       "file": "w174.png",
       "width": 384,
       "height": 768,
-      "sha256": "05360e044edc3f3b593dc3de0f2708e57d6bbeb5fb343894a3f10c7558ddd3c6",
-      "bytes": 186351
+      "sha256": "50d3943df76884ee55a65e1f45271bc61a6ca48e2bae01474886449e91c1bf02",
+      "bytes": 185811,
+      "edge_trim_px": 3
     },
     {
       "id": "w175",
@@ -2973,8 +3147,9 @@
       "file": "w175.png",
       "width": 384,
       "height": 768,
-      "sha256": "b41813b4fb8e60d2741a286cb5f8f0fbe04de47370fe7e820e57446373f055a7",
-      "bytes": 211215
+      "sha256": "b868b4b45443a973895e1b1fd3237b8c84906ba38072d7fa04bb40aaf596d6ca",
+      "bytes": 210550,
+      "edge_trim_px": 3
     },
     {
       "id": "w176",
@@ -2990,8 +3165,9 @@
       "file": "w176.png",
       "width": 384,
       "height": 768,
-      "sha256": "ced00a8c49b63752b05730ec7d835e7d4528c0b2e978dddfa553c44257b368ad",
-      "bytes": 166760
+      "sha256": "cdcff077f663d3b498665600fb79d7f36cec06ef57fe69bc6b656fb59e693dd0",
+      "bytes": 166638,
+      "edge_trim_px": 3
     },
     {
       "id": "w177",
@@ -3007,8 +3183,9 @@
       "file": "w177.png",
       "width": 384,
       "height": 768,
-      "sha256": "48ea2febf96fd7ba1541a9a98179fed6254a875195772915a79c5c440217874e",
-      "bytes": 208297
+      "sha256": "7805b8ee576b551626b73447ca2a8b857e85702332a2e686d1d6ec65ff73d486",
+      "bytes": 208069,
+      "edge_trim_px": 3
     },
     {
       "id": "w178",
@@ -3024,8 +3201,9 @@
       "file": "w178.png",
       "width": 384,
       "height": 768,
-      "sha256": "3a33ac691aa065be4e4fd5761779a84f82b6d546ed70746603a858c5cfee3f19",
-      "bytes": 195190
+      "sha256": "6707fbfabab2882666c55dc4f7b0892ebe7a0d29e6231ef4008c04c219054197",
+      "bytes": 195260,
+      "edge_trim_px": 3
     },
     {
       "id": "w179",
@@ -3041,8 +3219,9 @@
       "file": "w179.png",
       "width": 384,
       "height": 768,
-      "sha256": "9a5f5f93be42be7acaf94f7d1760c2b3203bd1675b368f555207bdc2f1f30967",
-      "bytes": 246907
+      "sha256": "ebc7e5a9e4e52e375e6ca3a5fb793f3eb56ed1195e2c3f03f04142f8f4545fd4",
+      "bytes": 246289,
+      "edge_trim_px": 3
     },
     {
       "id": "w180",
@@ -3058,8 +3237,9 @@
       "file": "w180.png",
       "width": 384,
       "height": 768,
-      "sha256": "63b4b7866f5d8351d55cf18126316bc50eab3d04753575902f6c14fb38b78ce4",
-      "bytes": 143419
+      "sha256": "b1803c46b3f9c31e519030f17deb847807bcac5a48824ae22dc497987eec0a95",
+      "bytes": 142561,
+      "edge_trim_px": 3
     },
     {
       "id": "w181",
@@ -3075,8 +3255,9 @@
       "file": "w181.png",
       "width": 384,
       "height": 768,
-      "sha256": "97f86fefd34549047761b6e133bbc7e5c71ed1ef16435b920ef547e3695f08b4",
-      "bytes": 211230
+      "sha256": "c2616387165c512d82b6ef34a870afd75d6f0b21591dd425e3467a90119abf3e",
+      "bytes": 209576,
+      "edge_trim_px": 3
     },
     {
       "id": "w182",
@@ -3092,8 +3273,9 @@
       "file": "w182.png",
       "width": 384,
       "height": 768,
-      "sha256": "c05020b571afe21b80f15d36bd3aed600bf41a26bab92fe3b62d537c64f9ba75",
-      "bytes": 143945
+      "sha256": "1f545d87a0b977b590f7a37e6345d2e58018e9773897b309c8a99cbb0152c7f2",
+      "bytes": 143595,
+      "edge_trim_px": 3
     },
     {
       "id": "w183",
@@ -3109,8 +3291,9 @@
       "file": "w183.png",
       "width": 384,
       "height": 768,
-      "sha256": "40fa0edd10e8a1e17965a016de9356f67379c494e4d103bfc144ea4ad6a4dcc3",
-      "bytes": 154202
+      "sha256": "2e4eb6f93457f5a11b4328f275e381dde2c46807dd5dd54ab803ec74024c1a4d",
+      "bytes": 154345,
+      "edge_trim_px": 3
     },
     {
       "id": "w184",
@@ -3126,8 +3309,9 @@
       "file": "w184.png",
       "width": 384,
       "height": 768,
-      "sha256": "f013820df2ec08a7ab327aed96ba5f1d0cea5d3dcbf7a2547e4e6ca1bd533b11",
-      "bytes": 203206
+      "sha256": "93cae9a1590855ff091d16e34283e1c853416b51e97867d16e66cb070bb7f8f7",
+      "bytes": 202822,
+      "edge_trim_px": 3
     },
     {
       "id": "w185",
@@ -3143,8 +3327,9 @@
       "file": "w185.png",
       "width": 384,
       "height": 768,
-      "sha256": "3ff0d4ec7c2a2a1e41be13b714977b47625102dd5ef9420be0730959ca4e0adf",
-      "bytes": 173400
+      "sha256": "f8ee2fdc7b2cb9c61684e334c8ec8f44a0238fa35da0aefa1d5ec8fa2f90e726",
+      "bytes": 172585,
+      "edge_trim_px": 3
     },
     {
       "id": "w186",
@@ -3160,8 +3345,9 @@
       "file": "w186.png",
       "width": 384,
       "height": 768,
-      "sha256": "e1bed2aa068483fc4a0dd5ef03811d77f30f1642227f2f2d661bf685f608388e",
-      "bytes": 158995
+      "sha256": "df663e61691fbd17263bfbeb5eebf07085f683d7b98cfde7ba977f72b196b1bd",
+      "bytes": 156892,
+      "edge_trim_px": 3
     },
     {
       "id": "w187",
@@ -3177,8 +3363,9 @@
       "file": "w187.png",
       "width": 384,
       "height": 768,
-      "sha256": "ed723e553dfd4fee686f5c4e9caca65f8645ac437086f5cb1d8a69fab4bf0d2e",
-      "bytes": 230218
+      "sha256": "137b2ca3b66f618d20608ef9780a30f5541a1f3d39c63d38bdd138afc5add4ba",
+      "bytes": 229538,
+      "edge_trim_px": 3
     },
     {
       "id": "w188",
@@ -3194,8 +3381,9 @@
       "file": "w188.png",
       "width": 384,
       "height": 768,
-      "sha256": "f88c3e68bc3d1a5924320b6e4e04216f43fbfff084f5646feeb383f89647ce57",
-      "bytes": 190991
+      "sha256": "e4e5e374f62e3a422d3aff55c8a2ab2489b6ff02639735963f50662843699f4e",
+      "bytes": 190287,
+      "edge_trim_px": 3
     },
     {
       "id": "w189",
@@ -3211,8 +3399,9 @@
       "file": "w189.png",
       "width": 384,
       "height": 768,
-      "sha256": "8ffefaa8df14f9ed289568bfe5f9aeacf500492334cd30705dce8b4d2948f8be",
-      "bytes": 231354
+      "sha256": "7166a4f7a2e323e7ea69111954e954fc3d2ac7dcef86356f5bdb6fe194524fbd",
+      "bytes": 229555,
+      "edge_trim_px": 3
     },
     {
       "id": "w190",
@@ -3228,8 +3417,9 @@
       "file": "w190.png",
       "width": 384,
       "height": 768,
-      "sha256": "7b3a0c0e64fe2823fdedc34293aed844ed8920bec81b1dee30221cdbb6ac3c2c",
-      "bytes": 183425
+      "sha256": "7ad49589dfa9c3e8cf9d8ab4c425899210946e314bb1e6dd68986592e2ae2b0e",
+      "bytes": 182654,
+      "edge_trim_px": 3
     },
     {
       "id": "w191",
@@ -3245,8 +3435,9 @@
       "file": "w191.png",
       "width": 384,
       "height": 768,
-      "sha256": "9dd31218f698dc362d14eb2907dad2edc07997862d1814f9c592e70edf784ddf",
-      "bytes": 186613
+      "sha256": "0f055ddd7c4a6c6324753c5f3c4e5d6d34b2ce9cd4919f5673e17f9a21087236",
+      "bytes": 185679,
+      "edge_trim_px": 3
     },
     {
       "id": "w192",
@@ -3262,8 +3453,9 @@
       "file": "w192.png",
       "width": 384,
       "height": 768,
-      "sha256": "98c67c8c6e4e56fbc33cf249cddee5a7837fa04e5f6af805a94f539617a66634",
-      "bytes": 170264
+      "sha256": "98008836c57a70d38872b69b0b8958f3910f1f6c939b7ecd286da7d5479c87c6",
+      "bytes": 170074,
+      "edge_trim_px": 3
     },
     {
       "id": "w193",
@@ -3279,8 +3471,9 @@
       "file": "w193.png",
       "width": 384,
       "height": 768,
-      "sha256": "927e7374d4d2884002390618e5851c724d1f406cd66cb50f3c0aa4bb6c81728a",
-      "bytes": 197634
+      "sha256": "6506fa6ed2c6eac58ed03d4af8fe8d2bc77bf9be1ab19ad899eff18cc7002e52",
+      "bytes": 195892,
+      "edge_trim_px": 3
     },
     {
       "id": "w194",
@@ -3296,8 +3489,9 @@
       "file": "w194.png",
       "width": 384,
       "height": 768,
-      "sha256": "3ccffaf57384b80787c39308ed5303b3b2dd30536c63f86c30abe8ae0f1bd0ee",
-      "bytes": 155556
+      "sha256": "2abeb6a9d19d0ad839ccd21def12075749055dbb7cc617ff4d4f0aaf06cbab71",
+      "bytes": 155397,
+      "edge_trim_px": 3
     },
     {
       "id": "w195",
@@ -3313,8 +3507,9 @@
       "file": "w195.png",
       "width": 384,
       "height": 768,
-      "sha256": "f827cfb7c58018bc1a2aa4f5ea1a226fe3a3a507eb2062883ba62dab47afc86f",
-      "bytes": 173492
+      "sha256": "aab87d3e6fd878a8148ae0abef9a5bba9fa7725b8f07cc180fab7eb9b708e65e",
+      "bytes": 173097,
+      "edge_trim_px": 3
     },
     {
       "id": "w196",
@@ -3330,8 +3525,9 @@
       "file": "w196.png",
       "width": 384,
       "height": 768,
-      "sha256": "35f00e9e3c713ea3b0e6bbd7570e4c31e0b7a718a384393c39fb64c60fa42d36",
-      "bytes": 135315
+      "sha256": "2187e1729986bf441eda5d9ecc85adb86d2bbf26aba5a4f8f00212c6a2e37e58",
+      "bytes": 133625,
+      "edge_trim_px": 3
     },
     {
       "id": "w197",
@@ -3347,8 +3543,9 @@
       "file": "w197.png",
       "width": 384,
       "height": 768,
-      "sha256": "7c5cd2ade03e838f6b0e6e9702357dc764b41c8259505d72cf2cbef4f5fba8fe",
-      "bytes": 196175
+      "sha256": "78b498130f26d6d190e8c1d7257496b1272f9c4438049df37a8d0f850e289b3b",
+      "bytes": 195072,
+      "edge_trim_px": 3
     },
     {
       "id": "w198",
@@ -3364,8 +3561,9 @@
       "file": "w198.png",
       "width": 384,
       "height": 768,
-      "sha256": "fb52d6231f2774ac0222b19ae0926ba6d3dd7261d39894ec967a5e72ddb060af",
-      "bytes": 114837
+      "sha256": "107ec26eaa72a7fab3fa0c74e0d3099a2eda0a359afacdad349eeff573b8d21d",
+      "bytes": 114337,
+      "edge_trim_px": 3
     },
     {
       "id": "w199",
@@ -3381,8 +3579,9 @@
       "file": "w199.png",
       "width": 384,
       "height": 768,
-      "sha256": "7c5183d90f38cadaa048cf6193e1579a25df38c943d0cd66b7c66d1093a01139",
-      "bytes": 207158
+      "sha256": "67c1520b649cd0c66cebaf0c92c741a2793a4ee331c1626006320f34ea770497",
+      "bytes": 206598,
+      "edge_trim_px": 3
     },
     {
       "id": "w200",
@@ -3398,8 +3597,9 @@
       "file": "w200.png",
       "width": 384,
       "height": 768,
-      "sha256": "832f3c23a3206725a82b07dab600e621c582863a37d3f2a68779b672200dc088",
-      "bytes": 217290
+      "sha256": "9221937ce48933976fb9d3771a4e8bf4ea30e26988f9b5b0e7dbc77fc16d48ef",
+      "bytes": 214930,
+      "edge_trim_px": 3
     },
     {
       "id": "w201",
@@ -3415,8 +3615,9 @@
       "file": "w201.png",
       "width": 384,
       "height": 768,
-      "sha256": "3baa3a592bbb235f5a41d4c2aa2f545c5efc47a2ac7eda1eab98c31bb7e4d5e7",
-      "bytes": 126621
+      "sha256": "c85cd26857769f3a7fa6c9722e1d48e4ffa9f09b33c9cdc7c898f73c479fbd62",
+      "bytes": 126052,
+      "edge_trim_px": 3
     },
     {
       "id": "w202",
@@ -3432,8 +3633,9 @@
       "file": "w202.png",
       "width": 384,
       "height": 768,
-      "sha256": "4e47b1f98aa855424a1c33c080e0e96f7fe601424360d0ef90b2059c2e42f039",
-      "bytes": 195010
+      "sha256": "aa0b93a10bf1979f4737b1cdd39feaedabb2361c82750fa1c536ea1393052a75",
+      "bytes": 194697,
+      "edge_trim_px": 3
     },
     {
       "id": "w203",
@@ -3449,8 +3651,9 @@
       "file": "w203.png",
       "width": 384,
       "height": 768,
-      "sha256": "a318a739bfded2ac600485104f24043a04cc8de15baa4c59f937e7c4e29f5acd",
-      "bytes": 153518
+      "sha256": "9ed963bc8852ead8c5175f54b27ad13afe7206c5ef60d44eb746e711a8313c9b",
+      "bytes": 153385,
+      "edge_trim_px": 3
     },
     {
       "id": "w204",
@@ -3466,8 +3669,9 @@
       "file": "w204.png",
       "width": 384,
       "height": 768,
-      "sha256": "a1554f1578b6b10a690e0426ff813b6417d1a0255b568c0b0df3a02c84505723",
-      "bytes": 125984
+      "sha256": "aedb60dde5f07d71cd48db2dc605938007af3cf8547b448eacb201c33f2f0a30",
+      "bytes": 125912,
+      "edge_trim_px": 3
     },
     {
       "id": "w205",
@@ -3483,8 +3687,9 @@
       "file": "w205.png",
       "width": 384,
       "height": 768,
-      "sha256": "33526df39e216a5d09c7e3a11e043653ae4a71d596bab7b608a058bc231f3833",
-      "bytes": 125667
+      "sha256": "1d5b43d83a7a1d6903ce13acfd549c65adb5369b9c2886034214fe6ab2a50a11",
+      "bytes": 125455,
+      "edge_trim_px": 3
     },
     {
       "id": "w206",
@@ -3500,8 +3705,9 @@
       "file": "w206.png",
       "width": 384,
       "height": 768,
-      "sha256": "57ffe4603db30ea1d9667a879d24fcd3d1ddb2c7a4889050ac5dd045f3b3d229",
-      "bytes": 163068
+      "sha256": "3dacfa4160df11f1b3899fe21f608980c0af093a6df993b05598a72f49b716ea",
+      "bytes": 162770,
+      "edge_trim_px": 3
     },
     {
       "id": "w207",
@@ -3517,8 +3723,9 @@
       "file": "w207.png",
       "width": 384,
       "height": 768,
-      "sha256": "ea592ce2e93ab5c02565942147b84e861b65980a1dab38b256da72ae88a4c71a",
-      "bytes": 163836
+      "sha256": "c05655fad39fc3dbb9b97eabdb76895937fad54e30e13534adafb7e092386443",
+      "bytes": 162620,
+      "edge_trim_px": 3
     },
     {
       "id": "w208",
@@ -3534,8 +3741,9 @@
       "file": "w208.png",
       "width": 384,
       "height": 768,
-      "sha256": "a1843ac2f29bc3b1c72b77ebc4367eb6832ff4b1bc845b00f58558e7c7792a64",
-      "bytes": 201408
+      "sha256": "09dc80651c3bacca7be5c3c72d8c0845b2d062db50e2f7c1fdf96bcefce2010f",
+      "bytes": 200515,
+      "edge_trim_px": 3
     },
     {
       "id": "w209",
@@ -3551,8 +3759,9 @@
       "file": "w209.png",
       "width": 384,
       "height": 768,
-      "sha256": "0b3e372b98c80b34c253fb45c9605aeefb0dc5ec2e5a876cc6ea04eb2c77218f",
-      "bytes": 144207
+      "sha256": "4631524d0e0ea398952c130c93e813f757d1f5115265f3ec06460d99329964e8",
+      "bytes": 143905,
+      "edge_trim_px": 3
     },
     {
       "id": "w210",
@@ -3568,8 +3777,9 @@
       "file": "w210.png",
       "width": 384,
       "height": 768,
-      "sha256": "88ffb7f2e3c4ae95c49016e541156d85d26332fba0518052cde1c70e1099b19d",
-      "bytes": 121015
+      "sha256": "a4c8fe8f50305e64bbe1d1dccf784bc5af240188af27db75f4ae10ba88505c05",
+      "bytes": 121438,
+      "edge_trim_px": 3
     },
     {
       "id": "w211",
@@ -3585,8 +3795,9 @@
       "file": "w211.png",
       "width": 384,
       "height": 768,
-      "sha256": "c369eb5d44bcb9c42131ea446e14289475ee0ab943a3e4c36fccbfd45a651c27",
-      "bytes": 191753
+      "sha256": "c13b476d4176f6db6fbf6518665af66781ec005d99a2b524ec8e71ff596872a9",
+      "bytes": 190050,
+      "edge_trim_px": 3
     },
     {
       "id": "w212",
@@ -3602,8 +3813,9 @@
       "file": "w212.png",
       "width": 384,
       "height": 768,
-      "sha256": "f5e89219e6d7e8fe4c6cd36da0c3a2c0d2cd40ec80d55b09eb2a72f36e4463cb",
-      "bytes": 149408
+      "sha256": "5907219cbbf5a8c377a75a4350de45e44e380f7b0f5b3d0497a170ba0704b305",
+      "bytes": 149215,
+      "edge_trim_px": 3
     },
     {
       "id": "w213",
@@ -3619,8 +3831,9 @@
       "file": "w213.png",
       "width": 384,
       "height": 768,
-      "sha256": "9161d595659ecbee91a9daf07e62cc486f6220b9c4802d9032de054fa65bd7e8",
-      "bytes": 96750
+      "sha256": "554fb974f1886de63bc9413dec9a489d218d9d6480fcbbe2d226fd6621fd49c6",
+      "bytes": 95477,
+      "edge_trim_px": 3
     },
     {
       "id": "w214",
@@ -3636,8 +3849,9 @@
       "file": "w214.png",
       "width": 384,
       "height": 768,
-      "sha256": "9fe50af24a1a0ae0a6e07224e2e323f1635a5c761383679b0c6438012e3085c9",
-      "bytes": 149069
+      "sha256": "84e4e9a8bdc3fd7b6cef46fc563b137fe63ed444563246a9f271864312341a14",
+      "bytes": 149233,
+      "edge_trim_px": 3
     }
   ],
   "issues": [
@@ -3647,5 +3861,6 @@
     }
   ],
   "physical_scale_verified": false,
-  "note": "Representative catalog photographs. Visible release years are not user vintage assignments."
+  "note": "Representative catalog photographs. Visible release years are not user vintage assignments.",
+  "edge_trim": "alpha eroded 3px then feathered 0.8px to remove cut-out fringe"
 }
