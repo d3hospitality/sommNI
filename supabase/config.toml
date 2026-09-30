@@ -1,0 +1,9 @@
+project_id = "winelens-accounts"
+
+[functions.winelens-link]
+# Mint validates the Supabase user; claim validates an atomic one-use code.
+verify_jwt = false
+
+[functions.winelens-billing]
+# All actions validate the Supabase user explicitly (supports publishable keys).
+verify_jwt = false

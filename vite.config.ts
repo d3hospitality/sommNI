@@ -7,5 +7,5 @@ export default defineConfig({
     strictPort: true,
     proxy: { '/api': { target: 'https://sommni-api.vercel.app', changeOrigin: true } },
   },
-  build: { rollupOptions: { output: { manualChunks: { account: ['@supabase/supabase-js'] } } } },
+  build: { rollupOptions: { input: { app: 'index.html', account: 'account.html' }, output: { manualChunks: { account: ['@supabase/supabase-js'] } } } },
 })

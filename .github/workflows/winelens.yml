@@ -16,6 +16,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: node scripts/build-atlas.mjs && npm run typecheck && npm run build && npm run check:ids
+      - run: npm run test:accounts && npm run test:accounts:edge
       - name: Browser and glasses regression checks
         run: |
           npm run dev > /tmp/winelens-vite.log 2>&1 &
@@ -25,6 +26,7 @@ jobs:
             curl --fail --silent http://localhost:5186/sommNI/ > /dev/null && break
             sleep 1
           done
+          npm run test:accounts:browser
           npm run test:ui
           npm run test:glasses
           npm run test:nav

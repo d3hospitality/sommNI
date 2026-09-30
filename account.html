@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex"><title>Your account · wineLENS</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23dfff5e'/%3E%3Ctext x='50' y='75' text-anchor='middle' font-size='80'%3E◎%3C/text%3E%3C/svg%3E"></head>
+<body>
+  <header><a class="wordmark" href="./">wine<span>LENS</span><i>◎</i></a><span class="eyebrow">YOUR WORLD, IN FOCUS</span><button id="signout" class="quiet" hidden>Sign out</button></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow"><span class="dot"></span> ONE ACCOUNT. EVERY DISCOVERY.</p><h1>Good taste.<br><em>Connected.</em></h1><p class="lede">Your wines, your next discovery, your glasses.<br>A little closer together.</p></div><div class="lens-art" aria-hidden="true"><div class="lens one"></div><div class="lens two"></div><span>W / L</span><small>SEE MORE. KNOW MORE.</small></div></section>
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+    <section id="signin" class="signin panel"><div><p class="eyebrow">01 / YOUR ACCOUNT</p><h2>A taste of your own.</h2><p>Sign in to keep your Winebrary and study progress together.</p><p id="provider-status" class="muted">Checking sign-in options…</p></div><div class="signin-actions"><button id="google" class="primary" disabled>Continue with Google ↗</button><div class="divider">or use email</div><form id="email-form"><label>Email address<input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button class="outline" type="submit">Email me a sign-in link</button></form><p class="fine">New here? A verified email link creates your account. Open it in this browser.</p></div></section>
+    <section id="dashboard" hidden>
+      <div class="identity"><span class="avatar" aria-hidden="true">◎</span><div><p class="eyebrow">SIGNED IN AS</p><p id="identity"></p></div><span class="private">Your account · Private to you</span></div>
+      <div class="cards">
+        <article class="panel pairing"><p class="eyebrow">02 / YOUR GLASSES</p><div class="card-heading"><h2>Pair. Pour. Explore.</h2><span class="tag">EVEN G2</span></div><p>Open wineLENS in Even Hub on your phone. Choose <strong>Sign in</strong> and enter your code there.</p><div class="code-area"><output id="code" aria-label="Pairing code">— — — —</output><p id="expiry" class="muted">Your code will appear here.</p></div><button id="mint" class="primary">Pair my glasses ↗</button><p class="fine">Works once. Expires in 10 minutes. Treat it like a password: only enter your code on a device you own. A new code replaces the old one.</p></article>
+        <article class="panel membership"><p class="eyebrow">03 / A LITTLE MORE DEPTH</p><div class="card-heading"><h2>Meet wineLENS Pro.</h2><span id="plan-badge" class="tag">CHECKING</span></div><p>Bottle Studio is the first Pro feature planned for release. Pairing your account and exploring the catalog remain free.</p><p id="billing-status" class="billing-status">Checking your membership…</p><div id="plans" class="plans"></div><p id="trial" class="fine"></p><div class="billing-actions"><button id="manage" class="outline" hidden>Manage billing ↗</button><button id="refresh-billing" class="quiet">Refresh membership</button></div><p class="fine">Checkout and subscription management are handled by Stripe. Review the price and renewal terms there before paying.</p></article>
+      </div>
+      <a class="return-link" href="./">Return to your Winebrary <span>↗</span></a>
+    </section>
+    <footer><span class="wordmark">wine<span>LENS</span></span><span>DISCOVER / COLLECT / SEE MORE</span><span>GOOD TASTE. SHARPER FOCUS.</span></footer>
+  </main>
+  <script type="module" src="/src/account-page.ts"></script>
+</body></html>
