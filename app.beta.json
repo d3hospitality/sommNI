@@ -2,7 +2,7 @@
   "package_id": "com.d3hospitality.sommni",
   "edition": "202601",
   "name": "wineLENS Beta",
-  "version": "3.1.3",
+  "version": "3.1.4",
   "min_app_version": "2.0.0",
   "min_sdk_version": "0.0.9",
   "entrypoint": "index.html",

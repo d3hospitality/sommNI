@@ -20,7 +20,7 @@ import { claimDisplay, dropDisplay } from './display';
 import { invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
 import { rebuildHomePage, buildTastingNotesPage } from './pages';
 import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
-import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
+import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
 import { renderWineScene, sceneTiles } from './wine-scene';
 import { TYPE_DISPLAY } from './constants';
 import type { LibraryWine } from './winebrary';
@@ -44,6 +44,15 @@ export function connectAtlasGlasses(b: EvenAppBridge, url: string): void {
   // and its detail page draws the wine's map scene.
   setWinePlacer(placeLibraryWines);
   setWineSceneBuilder(libraryWineScene);
+  setPlaceSceneBuilder(placeScene);
+}
+/** Regions list → the country; wines list → the region glowing inside it (no bottle). */
+async function placeScene(countryName: string, regionName: string | null): Promise<Uint8Array[] | null> {
+  const renderer = await loadAtlasRenderer();
+  const country = renderer.data.countries.find(c => c.name === countryName) ?? countryByAnyName(renderer, countryName);
+  if (!country) return null;
+  const region = regionName ? renderer.data.regions.find(r => r.name === regionName && r.country === country.code) ?? null : null;
+  return sceneTiles(await renderWineScene(renderer, { country, region, imageUrl: null }));
 }
 
 /** Type › country › region for Winebrary wines, using the Atlas's places (country names from the map). */

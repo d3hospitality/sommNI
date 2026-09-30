@@ -179,7 +179,7 @@ const assert=require('node:assert/strict');
  assert.ok(result.catalogPages>300);assert.deepEqual(result.catalogProblems,[]);
  assert.deepEqual(result.grouping,[31,'2019,2017,NV']);
  assert.equal(result.signedOut,'library-message+library-hint');assert.equal(result.signedOutBack,'home-list');
- assert.deepEqual(result.library,['library-types:WINEBRARY · 33 wines','library-countries','library-regions','library-list','library-vintages','library-title+library-vintage+library-notes+library-footer','library-vintages','library-list','library-list:R · 31 wines · 2/2','library-list:R · 31 wines · 1/2','library-types','home-list']);
+ assert.deepEqual(result.library,['library-types:WINEBRARY · 33 wines','library-countries','library-regions','library-list','library-vintages','library-title+library-vintage+library-notes+library-footer','library-vintages','library-list','library-list:… / COUNTRY NOT SET / R · 31 wines · 2/2','library-list:… / COUNTRY NOT SET / R · 31 wines · 1/2','library-types','home-list']);
  assert.equal(result.detailFacts,'2017 · P · R');
  assert.match(result.offline,/offline copy/);assert.equal(result.otherAccount,'library-message+library-hint');assert.equal(result.cacheHasNoImageUrls,true);
  assert.equal(result.flow[0],'countries');assert.equal(result.flow[1],'grapes');assert.equal(result.flow[2],'wines:20');
@@ -196,7 +196,7 @@ const assert=require('node:assert/strict');
  assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
  assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker','atlas-title+atlas-rows+atlas-hint','detail']);
  assert.equal(result.everyCatalogWineListed,true);
- assert.equal(result.atlas[7],'library-title+library-vintage+library-place+library-notes+library-footer');  // mapped wine: map-scene layout
+ assert.equal(result.atlas[7],'library-place+library-title+library-vintage+library-facts+library-notes+library-footer');  // mapped wine: map-scene layout
  assert.deepEqual(result.atlas.slice(8,11),['atlas-title+atlas-rows+atlas-hint','detail',true]);
  assert.deepEqual(result.atlas.slice(11),['home-list',false]);
  assert.equal(result.scope.countries.length,result.catalogCountryCount);assert.deepEqual(result.linkProblems,[]);
