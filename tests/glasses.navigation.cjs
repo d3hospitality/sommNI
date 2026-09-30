@@ -78,14 +78,19 @@ const assert=require('node:assert/strict');
   await click(0);out.signedOut=last();await dbl();out.signedOutBack=last();
   G.setLibrarySource(()=>({userId:'u1',loading:false,error:'',items}));
   const lib=[];
-  await click(0);lib.push(last());           // home › My Winebrary
+  const head=()=>shown.at(-1).textObject[0].content;
+  await click(0);lib.push(last()+':'+head());  // home › My Winebrary › type
+  await click(0);lib.push(last());           // Other › countries
+  await click(0);lib.push(last());           // Country not set › regions
+  await click(0);lib.push(last());           // R › wines
   await click(0);lib.push(last());           // Grand Malbec › vintages
   await click(1);lib.push(last());           // 2017 › detail
   const detail=shown.at(-1).textObject.find(t=>t.containerName==='library-vintage').content;
   await dbl();lib.push(last());              // › vintages
   await dbl();lib.push(last());              // › list
-  await click(18);lib.push(last()+':'+shown.at(-1).textObject[0].content); // More › page 2
-  await dbl();lib.push(last()+':'+shown.at(-1).textObject[0].content);     // › page 1
+  await click(18);lib.push(last()+':'+head()); // More › page 2
+  await dbl();lib.push(last()+':'+head());     // › page 1
+  await dbl();await dbl();await dbl();lib.push(last());   // › regions › countries › types
   await dbl();lib.push(last());              // › home
   out.library=lib;out.detailFacts=detail;
   // offline copy: saved for the account, used when loading fails, ignored for another account
@@ -174,7 +179,7 @@ const assert=require('node:assert/strict');
  assert.ok(result.catalogPages>300);assert.deepEqual(result.catalogProblems,[]);
  assert.deepEqual(result.grouping,[31,'2019,2017,NV']);
  assert.equal(result.signedOut,'library-message+library-hint');assert.equal(result.signedOutBack,'home-list');
- assert.deepEqual(result.library,['library-list','library-vintages','library-title+library-vintage+library-notes+library-footer','library-vintages','library-list','library-list:WINEBRARY · 31 wines · 2/2','library-list:WINEBRARY · 31 wines · 1/2','home-list']);
+ assert.deepEqual(result.library,['library-types:WINEBRARY · 33 wines','library-countries','library-regions','library-list','library-vintages','library-title+library-vintage+library-notes+library-footer','library-vintages','library-list','library-list:R · 31 wines · 2/2','library-list:R · 31 wines · 1/2','library-types','home-list']);
  assert.equal(result.detailFacts,'2017 · P · R');
  assert.match(result.offline,/offline copy/);assert.equal(result.otherAccount,'library-message+library-hint');assert.equal(result.cacheHasNoImageUrls,true);
  assert.equal(result.flow[0],'countries');assert.equal(result.flow[1],'grapes');assert.equal(result.flow[2],'wines:20');
@@ -191,11 +196,11 @@ const assert=require('node:assert/strict');
  assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
  assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker','atlas-title+atlas-rows+atlas-hint','detail']);
  assert.equal(result.everyCatalogWineListed,true);
- assert.equal(result.atlas[7],'library-title+library-vintage+library-notes+library-footer');
+ assert.equal(result.atlas[7],'library-title+library-vintage+library-place+library-notes+library-footer');  // mapped wine: map-scene layout
  assert.deepEqual(result.atlas.slice(8,11),['atlas-title+atlas-rows+atlas-hint','detail',true]);
  assert.deepEqual(result.atlas.slice(11),['home-list',false]);
  assert.equal(result.scope.countries.length,result.catalogCountryCount);assert.deepEqual(result.linkProblems,[]);
  assert.ok(result.scope.regions>0&&result.scope.regions<60,'only linked clusters: '+result.scope.regions);
- assert.ok(result.atlasImages.includes('atlas-top')&&result.atlasImages.includes('atlas-bottom'));
+ assert.ok(result.atlasImages.includes('atlas-top')&&result.atlasImages.includes('atlas-bottom'));assert.ok(result.atlasImages.includes('scene-top')&&result.atlasImages.includes('scene-bottom'),'wine map scene sent');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

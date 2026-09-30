@@ -20,7 +20,9 @@ import { claimDisplay, dropDisplay } from './display';
 import { invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
 import { rebuildHomePage, buildTastingNotesPage } from './pages';
 import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
-import { readLibrary, showWineFromAtlas, vintageShort } from './winebrary-glasses';
+import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
+import { renderWineScene, sceneTiles } from './wine-scene';
+import { TYPE_DISPLAY } from './constants';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
 
@@ -38,6 +40,38 @@ let listening = false;
 export function connectAtlasGlasses(b: EvenAppBridge, url: string): void {
   bridge = b; baseUrl = url;
   if (!listening) { listening = true; window.addEventListener('winelens-library-changed', () => { void atlasLibraryChanged(); }); }
+  // My Winebrary browses Red/White… › country › region with the same placement as the Atlas,
+  // and its detail page draws the wine's map scene.
+  setWinePlacer(placeLibraryWines);
+  setWineSceneBuilder(libraryWineScene);
+}
+
+/** Type › country › region for Winebrary wines, using the Atlas's places (country names from the map). */
+async function placeLibraryWines(wines: LibraryWine[]): Promise<Map<string, WinePlace>> {
+  let renderer: GlobeRenderer | null = null;
+  try { renderer = await loadAtlasRenderer(); } catch { renderer = null; }
+  const links = linkTable();
+  const out = new Map<string, WinePlace>();
+  for (const wine of wines) {
+    const base = fallbackPlace(wine);
+    const twin = wine.wine_id ? lookupWineById(wine.wine_id) : null;
+    const type = twin ? TYPE_DISPLAY[twin.type] : base.type;
+    if (!renderer) { out.set(wine.id, { ...base, type }); continue; }
+    const placed = placeLibraryWine(renderer, links, wine);
+    out.set(wine.id, {
+      type,
+      country: placed.country?.name ?? (twin?.country || base.country),
+      region: placed.regions[0]?.name ?? (placed.place || base.region),
+      mapped: !!placed.country,
+    });
+  }
+  return out;
+}
+async function libraryWineScene(wine: LibraryWine): Promise<Uint8Array[] | null> {
+  const renderer = await loadAtlasRenderer();
+  const placed = placeLibraryWine(renderer, linkTable(), wine);
+  if (!placed.country) return null;
+  return sceneTiles(await renderWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: wine.image_url ?? null }));
 }
 
 /** Map data is ~1 MB: load it once, on first use (Atlas entry or first country list). */
