@@ -6,3 +6,10 @@ dist/
 .env
 dist-ehpk/
 *.ehpk
+
+node_modules
+dist-site/
+.env.*
+!.env.example
+
+site/.vite-site/

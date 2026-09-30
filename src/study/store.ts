@@ -55,7 +55,7 @@ export function bridgeStore(bridge: BridgeLike): KeyValueStore {
   return {
     async get(k) { return (await bridge.getLocalStorage(k)) || null; },
     async set(k, v) { if (!(await bridge.setLocalStorage(k, v))) throw new Error('Even Hub storage refused the write'); },
-    async remove(k) { await bridge.setLocalStorage(k, ''); },
+    async remove(k) { if (!(await bridge.setLocalStorage(k, ''))) throw new Error('Even Hub storage refused removal'); },
   };
 }
 

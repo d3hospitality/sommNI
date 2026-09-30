@@ -1,7 +1,7 @@
 {
   "name": "sommni",
   "version": "1.0.0",
-  "description": "sommNI — Seven Second Sommelier for Even Realities G2 — Sprite Bottles, Voice Search, Find My Wine",
+  "description": "sommNI \u2014 Seven Second Sommelier for Even Realities G2 \u2014 Sprite Bottles, Voice Search, Find My Wine",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
@@ -14,17 +14,25 @@
     "test:bottles": "node tests/catalog-bottles.cjs",
     "test:study": "node tests/study.engine.cjs && node tests/study.glasses.cjs && node tests/study.phone.cjs",
     "check:ids": "node --experimental-strip-types --no-warnings scripts/assign-canonical-ids.mjs",
-    "pack:beta": "sh scripts/pack-beta.sh"
+    "pack:beta": "sh scripts/pack-beta.sh",
+    "dev:site": "vite --config vite.site.config.ts --host 127.0.0.1 --port 5187",
+    "build:site": "vite build --config vite.site.config.ts",
+    "typecheck:site": "tsc --noEmit -p tsconfig.site.json",
+    "test:accounts": "node --test tests/device-link.test.cjs",
+    "test:link": "node tests/device-link.browser.cjs",
+    "test:site": "node tests/site.browser.cjs"
   },
   "dependencies": {
     "@evenrealities/even_hub_sdk": "^0.0.9",
     "@supabase/supabase-js": "2.117.2",
-    "openai": "^6.22.0"
+    "openai": "^6.22.0",
+    "three": "0.180.0"
   },
   "devDependencies": {
     "gh-pages": "^6.3.0",
     "playwright": "1.62.1",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "@types/three": "0.180.0"
   }
 }

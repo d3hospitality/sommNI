@@ -19,6 +19,8 @@ import { TOTAL_WINES } from './constants';
 import { initDashboard, refreshAll, setDeviceInfo, setVersionInfo, setGlassesStatus } from './dashboard';
 
 async function main(): Promise<void> {
+  const hostBridge = inEvenHubHost() ? await waitForEvenAppBridge() : null;
+  if (hostBridge) await useStorage(initSync(hostBridge));
   // Guest study log first; the Winebrary session (if any) switches it to the account.
   await useAccount(null);
   await runMigration();
@@ -30,7 +32,7 @@ async function main(): Promise<void> {
   log("Initializing...");
   setStatus("connecting", "Waiting for bridge...");
 
-  const bridge = await waitForEvenAppBridge();
+  const bridge = hostBridge || await waitForEvenAppBridge();
   log("Bridge ready", "success");
 
   const user = await bridge.getUserInfo();

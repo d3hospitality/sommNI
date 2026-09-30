@@ -1,3 +1,4 @@
+const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // Phone study flow in the real app: sourced card → attempt → reveal with source →
 // one persisted review → correct next due date (next day, with a fixed clock).
 // Needs the dev server on http://localhost:5186/sommNI/ (npm run dev).
@@ -13,7 +14,7 @@ const output=process.env.WINELENS_TEST_OUTPUT||require('os').tmpdir()+'/winelens
   // No account: the guest log stays on this device. No network API is reached.
   await page.route('**/api/**',r=>r.fulfill({status:404,json:{error:'not in this test'}}));
   await page.clock.setFixedTime(new Date('2026-10-01T09:00:00Z'));
-  await page.goto('http://localhost:5186/sommNI/');
+  await page.goto((BASE + '/sommNI/'));
   const study=()=>page.locator('#study-content');
   await page.getByRole('button',{name:'Study',exact:true}).click();
   await study().getByRole('heading',{name:'5 cards ready'}).waitFor();

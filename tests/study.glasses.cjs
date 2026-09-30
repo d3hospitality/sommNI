@@ -1,3 +1,4 @@
+const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // G2 "Study today" against a mock Even bridge: page limits, tap/double-tap flow,
 // one review per presentation, and phone ↔ G2 parity on the shared session.
 // Needs the dev server on http://localhost:5186/sommNI/ (npm run dev).
@@ -8,8 +9,8 @@ const assert=require('node:assert/strict');
  try {
   const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error')console.log('[page]',m.text());});
-  await page.route('http://localhost:5186/sommNI/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 study test</title>'}));
-  await page.goto('http://localhost:5186/sommNI/');
+  await page.route((BASE + '/sommNI/'),r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 study test</title>'}));
+  await page.goto((BASE + '/sommNI/'));
   const r=await page.evaluate(async()=>{
    const G=await import('/sommNI/src/study/glasses.ts');
    const E=await import('/sommNI/src/events.ts');

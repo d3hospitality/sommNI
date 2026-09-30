@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY, API_URL } from './account-config';
+import type { SupabaseClient, Session } from '@supabase/supabase-js';
+import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
+import { SITE_URL, API_URL } from './account-config';
 import { lookupWineById } from './identity';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
@@ -11,7 +12,8 @@ export interface LibraryWine {
   metadata: { vintage_state?: string; country?: string; grape?: string; color?: string; image_path?: string; image_source?: string } | null;
 }
 interface ImageDraft { path: string; url: string; source: 'photograph' | 'generated' }
-const auth = createClient(ACCOUNT_URL, ACCOUNT_PUBLIC_KEY);
+let auth: SupabaseClient;
+let accountEmail = "";
 const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 let userId: string | null = null;
 let items: LibraryWine[] = [];
@@ -29,7 +31,7 @@ export function vintageLabel(wine: LibraryWine): string {
 }
 async function api(path: string, method = 'GET', body?: unknown): Promise<any> {
   const { data: { session } } = await auth.auth.getSession();
-  if (!session || session.user.id !== userId) throw new Error('Sign in again to continue.');
+  if (!session || session.user.id !== userId || !await checkDeviceSession(session)) throw new Error('Sign in again to continue.');
   const response = await fetch(API_URL + path, {
     method, headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -63,30 +65,19 @@ async function run(task: () => Promise<void>) {
 }
 function requireAccount(action: () => void) { if (userId) action(); else signIn(); }
 function signIn() {
-  openDialog(`<p class="wl-kicker">YOUR WINES. ONE ACCOUNT.</p><h2>Welcome to Winebrary.</h2><p class="wl-muted">Sign in with your existing wineLENS account to keep your bottles and vintages together.</p>
-    <button id="wl-google" class="wl-primary">Continue with Google ↗</button>
-    <div class="wl-divider">or use your email</div>
-    <form id="wl-login"><label>Email<input type="email" name="email" required autocomplete="email" placeholder="you@example.com"></label>
-    <label>Password<input type="password" name="password" required autocomplete="current-password" minlength="6"></label><button class="wl-primary" type="submit">Sign in</button></form>
-    <button id="wl-magic" class="wl-text-button">Email me a sign-in link</button><p class="wl-muted small">New here? An email link can create your account.</p>`);
-  dialog.querySelector('#wl-google')!.addEventListener('click', () => run(async () => {
-    const { error } = await auth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: new URL('./', location.href).href } });
-    if (error) throw error;
-  }));
+  openDialog(`<p class="wl-kicker">YOUR WINES. ONE ACCOUNT.</p><h2>Link your account.</h2>
+    <ol class="wl-link-steps"><li>Open the link page in your phone’s browser.</li><li>Continue with Google to get a code.</li><li>Enter that code here to open your private Winebrary.</li></ol>
+    <a class="wl-primary" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer">Open link page ↗</a>
+    <p class="wl-muted small">${SITE_URL}/link</p>
+    <form id="wl-login"><label>Link code<input id="wl-link-code" name="code" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX"></label>
+    <button class="wl-primary" type="submit">Link this device</button></form><p class="wl-muted small">Codes last 10 minutes and work once. Free during beta.</p>`);
   const form = dialog.querySelector<HTMLFormElement>('#wl-login')!;
+  const code = form.querySelector<HTMLInputElement>('[name=code]')!;
+  code.addEventListener('blur', () => { code.value = formatLinkCode(code.value); });
   form.addEventListener('submit', e => { e.preventDefault(); void run(async () => {
-    const values = new FormData(form);
-    const { error } = await auth.auth.signInWithPassword({ email: String(values.get('email')), password: String(values.get('password')) });
-    if (error) throw error;
+    await redeemLinkCode(code.value);
     dialog.close();
   }); });
-  dialog.querySelector('#wl-magic')!.addEventListener('click', () => run(async () => {
-    const email = form.querySelector<HTMLInputElement>('[name=email]')!;
-    if (!email.reportValidity()) return;
-    const { error } = await auth.auth.signInWithOtp({ email: email.value, options: { emailRedirectTo: new URL('./', location.href).href } });
-    if (error) throw error;
-    feedback('Check your email for a sign-in link. Open it on this device.');
-  }));
 }
 async function refresh() {
   const epoch = ++generation;
@@ -121,7 +112,7 @@ function render() {
   });
   root.querySelectorAll<HTMLButtonElement>('[data-wine]').forEach(b => b.addEventListener('click', () => detail(items.find(w => w.id === b.dataset.wine)!)));
   const accountButton = document.getElementById('wl-account')!;
-  accountButton.textContent = userId ? 'My account ↗' : 'Sign in ↗';
+  accountButton.textContent = userId ? 'My account ↗' : 'Link account ↗';
 }
 function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
   const editing = !!wine?.id && !newVintage;
@@ -206,6 +197,7 @@ function photoStudio(wine: LibraryWine) {
   }));
 }
 export function initWinebrary() {
+  auth = accountClient();
   root = document.getElementById('winebrary-content')!;
   // The glasses read the same in-memory collection; an error only counts when nothing loaded.
   setLibrarySource(() => ({ userId, loading, error: items.length ? '' : notice, items }));
@@ -214,8 +206,8 @@ export function initWinebrary() {
   document.getElementById('wl-account')!.addEventListener('click', () => {
     if (!userId) return signIn();
     const pending=unsyncedEvents().length;
-    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">Your Winebrary and study progress are private to your account. Signing out removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you sign out now.</p>` : ''}<button id="wl-signout" class="wl-primary">Sign out</button>`);
-    dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const { error } = await auth.auth.signOut(); if (error) throw error; dialog.close(); }));
+    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">${esc(accountEmail)}<br>Your Winebrary and study progress are private. Unlinking removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you unlink now.</p>` : ''}<button id="wl-signout" class="wl-primary">Unlink this device</button>`);
+    dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const warning = await unlinkDevice(); dialog.close(); if (warning) { notice = warning; render(); } }));
   });
   document.querySelectorAll('[data-wl-add]').forEach(el=>el.addEventListener('click',()=>requireAccount(()=>editWine())));
   document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach(el=>el.addEventListener('click',()=>document.querySelector<HTMLButtonElement>(`.tab[data-tab="${el.dataset.openTab}"]`)?.click()));
@@ -226,24 +218,29 @@ export function initWinebrary() {
     // Personal notes start empty: catalog tasting notes are attributed reference text, not the user's observations.
     requireAccount(()=>editWine({ wine_name:found.wine.name, wine_id:found.id, region:found.wine.region, notes:'', metadata:{color:found.type,country:found.country,grape:found.wine.grape,vintage_state:'unknown'} }));
   });
-  auth.auth.onAuthStateChange((_event, session) => {
-    const next=session?.user.id || null;
-    if (next === userId) return;
-    const previous=userId;
+  let authRevision = 0;
+  const applySession = async (session: Session | null) => {
+    const revision = ++authRevision;
+    const valid = session ? await checkDeviceSession(session) : false;
+    if (revision !== authRevision) return;
+    const next = valid ? session!.user.id : null;
+    if (next === userId) {
+      if (!valid && session) { void clearPrivateGlasses().catch(console.error); void clearLibraryCache(); void forgetAccount(session.user.id).catch(console.error); }
+      return;
+    }
+    const previous = userId || (!valid ? session?.user.id : null);
     if (previous) { void clearPrivateGlasses().catch(console.error); void clearLibraryCache(); void forgetAccount(previous).catch(console.error); }
-    // Study progress follows the account: the previous owner's reviews leave memory before the next log loads.
-    setStudyAuth(session ? { userId: session.user.id, token: () => auth.auth.getSession().then(r => r.data.session?.access_token ?? null) } : null);
+    setStudyAuth(next ? { userId: next, token: linkedAccessToken } : null);
     void useAccount(next).then(() => { if (next) setTimeout(() => void syncStudy(), 0); });
     dialogRevision++;
-    userId=next; items=[]; search=''; generation++; loading=false;
-    // Do not await Supabase requests inside its auth callback.
-    dialog.close(); setBusy(false); render(); setTimeout(()=>void refresh(),0);
-  });
+    userId = next; accountEmail = valid ? session!.user.email || '' : ''; items = []; search = ''; generation++; loading = false;
+    dialog.close(); setBusy(false); render(); setTimeout(() => void refresh(), 0);
+  };
+  // Supabase callbacks must not await auth operations while its session lock is held.
+  auth.auth.onAuthStateChange((_event, session) => { setTimeout(() => void applySession(session), 0); });
+  const recheck = () => { void auth.auth.getSession().then(({ data }) => applySession(data.session)); };
+  window.addEventListener('online', recheck);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) recheck(); });
+  setInterval(() => { if (!document.hidden && userId) recheck(); }, 60000);
   render();
-  void auth.auth.getSession().then(({data:{session}})=> {
-    if (!session || session.user.id === userId) return;
-    userId=session.user.id; void refresh();
-    setStudyAuth({ userId: session.user.id, token: () => auth.auth.getSession().then(r => r.data.session?.access_token ?? null) });
-    void useAccount(session.user.id).then(() => void syncStudy());
-  });
 }

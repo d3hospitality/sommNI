@@ -1,8 +1,9 @@
+const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || (process.platform==='darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined),headless:true});
- const page=await browser.newPage();await page.goto('http://localhost:5186/sommNI/');
+ const page=await browser.newPage();await page.goto((BASE + '/sommNI/'));
  const result=await page.evaluate(async()=>{
   const g=await import('/sommNI/src/winebrary-glasses.ts');
   const raster=await import('/sommNI/src/bottle-raster.ts');const images=await import('/sommNI/src/image-utils.ts');

@@ -1,3 +1,4 @@
+const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // Validate the installed photographic catalog through the actual browser/G2 rasterizer.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
@@ -9,7 +10,7 @@ const path = require('node:path');
     (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined), headless: true });
   try {
     const page = await browser.newPage();
-    await page.goto('http://localhost:5186/sommNI/');
+    await page.goto((BASE + '/sommNI/'));
     const result = await page.evaluate(async () => {
       const { bottleCanvas, toGreenLevels } = await import('/sommNI/src/bottle-raster.ts');
       const manifest = await (await fetch('/sommNI/bottles/manifest.json')).json();

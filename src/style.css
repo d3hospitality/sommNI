@@ -805,3 +805,8 @@ img{max-width:100%}
 .wl-atlas-actions .wl-primary[disabled]{opacity:.45;cursor:not-allowed}
 @media (max-width:480px){.wl-atlas{grid-template-columns:1fr;justify-items:start}.wl-atlas canvas{width:120px;height:120px}}
 @media (prefers-reduced-motion:reduce){.wl-atlas canvas{transition:none}}
+.wl-link-steps { padding-left: 1.4rem; line-height: 1.65; margin: 1.2rem 0; }
+.wl-link-steps li { margin-bottom: .5rem; }
+#wl-link-code { font-size: 1.35rem; letter-spacing: .16em; text-transform: uppercase; }
+.wl-dialog a.wl-primary { display: inline-block; text-decoration: none; }
+.wl-dialog .small { overflow-wrap: anywhere; }

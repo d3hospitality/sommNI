@@ -1,7 +1,8 @@
+const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 (async()=>{
-  const base=process.env.ATLAS_URL||'http://localhost:5186/sommNI/';
+  const base=process.env.ATLAS_URL||(BASE + '/sommNI/');
   const browser=await chromium.launch({headless:true,channel:process.env.CI?undefined:'chrome'});
   try {
     const page=await browser.newPage({viewport:{width:1400,height:1200}});
