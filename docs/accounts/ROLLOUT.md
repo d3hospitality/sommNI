@@ -1,6 +1,6 @@
 # wineLENS accounts, G2 pairing and paid Bottle Studio
 
-Status: implemented and tested locally; **not deployed and not taking payments**. This branch depends on the catalog/navigation beta fixes in PR #1. Do not publish this frontend before the API and account website use the same project.
+Status: account, pairing and billing implementation tested locally; **pairing/billing code not deployed and not taking payments**. Google OAuth is enabled in the dedicated Supabase project and a real Google login passed on the local account preview. This branch depends on the catalog/navigation beta fixes in PR #1. Do not publish this frontend before the API and account website use the same project.
 
 ## What the audit found (30 September 2026)
 
@@ -56,9 +56,15 @@ Setup progress on 30 September 2026:
 
 - Confirmed the dedicated **wineLENS** Supabase project is healthy and accessible in the dashboard.
 - Created a separate Google Cloud project **wineLENS**, ID `winelens-510218`, under `d3hospitality.com`. No billing services were enabled.
-- Prepared Google consent configuration with app name **wineLENS**, an external audience, and support/developer contact `ops@d3hospitality.com`. Creation is pending the owner's acceptance of Google's API Services User Data Policy; no OAuth client has been created yet.
+- The owner completed Google consent creation. App name **wineLENS**, external audience, and support/developer contact `ops@d3hospitality.com` are configured.
+- Created **wineLENS Web**, client ID `167445156252-6lol2bq8tj7l8qbrdqkh31qj3k85vnjb.apps.googleusercontent.com`. Its sole callback is `https://mcmtasetompygfktzhpr.supabase.co/auth/v1/callback`. Authorized JavaScript origins are `http://localhost:5188` and `https://sommni-beige.vercel.app`.
+- Saved the client secret directly in the dedicated Supabase Google provider, enabled Google, and left nonce checks and email requirements intact. No client secret was put in the repository or exported to a file.
+- Saved only the standard `openid`, `userinfo.email`, and `userinfo.profile` scopes. No sensitive or restricted Google scopes are configured.
+- Google audience is still **Testing**, with `ops@d3hospitality.com` registered as the test user. The current public homepage and authorized domain are `https://sommni-beige.vercel.app` / `sommni-beige.vercel.app`. Privacy policy and terms links remain unset; the live homepage does not expose either link.
 - Supabase originally had Site URL `http://localhost:3000` and no redirect allowlist. Added only the exact development account return URL `http://localhost:5188/sommNI/account.html`. Set the final Site URL when the account site is published.
-- Google provider remains disabled until its dedicated client ID and secret are configured. This is not a completed live Google sign-in acceptance test.
+- **Live acceptance passed:** public Supabase Auth settings returned `google: true`; the actual Google flow returned to the account page signed in as `ops@d3hospitality.com`; reloading retained the session. A read-only database query confirmed a verified Google identity in `mcmtasetompygfktzhpr`.
+- Google still displays the Supabase hostname on its consent screen. The configured wineLENS name is not a verified public brand yet. [Supabase's Google guide](https://supabase.com/docs/guides/auth/social-login/auth-google#setup-consent-screen-branding) explains brand verification/custom domains. Publish the account site and public policy pages, complete brand/domain verification, then move the audience out of Testing. Do not describe this as a public production launch.
+- Pairing and billing functions remain undeployed. A real signed-in page therefore displays membership unavailable; Google login success does not prove pairing, Winebrary API alignment, or payments are ready.
 
 
 Select the final public account URL. The current provisional build default is `https://sommni-beige.vercel.app/sommNI/account.html`, which is **not published yet**. A custom wineLENS domain can replace it without changing the pairing protocol.
@@ -66,7 +72,7 @@ Select the final public account URL. The current provisional build default is `h
 - Set `VITE_WL_ACCOUNT_URL` to the exact deployed account page.
 - Build and publish `account.html` with its generated JS/CSS assets. This Vite project uses `/sommNI/` as its asset base; hosting at the site root requires placing assets at `/sommNI/assets/` or building with an appropriate base. The relative Winebrary return link assumes the companion is served in the same directory as the account page. Prefer hosting both at `/sommNI/` and set the account URL accordingly.
 - Update the marketing site's CSP `connect-src` to allow `https://mcmtasetompygfktzhpr.supabase.co` and the API. The current CSP only allows the older shared Supabase host. Keep existing assets/marketing pages intact.
-- In the dedicated Supabase project's Google provider settings, configure the Google OAuth client ID and secret. Add `https://mcmtasetompygfktzhpr.supabase.co/auth/v1/callback` as a Google-authorized redirect URI.
+- The dedicated Google provider and callback above are configured. Keep the public account build bound to that same project; update only exact site/redirect URLs when publishing it.
 - Set the Supabase Site URL and redirect allowlist to the exact account page, plus explicit local/test URLs. Avoid wildcard production redirects. Configure and test email delivery for verified-email links.
 - Never paste OAuth client secrets, Stripe secret keys or Supabase service keys into chat or frontend files.
 
@@ -104,7 +110,7 @@ When the check returns 402/503, no rendering quota or OpenAI work begins. This r
 
 ### 5. Acceptance before launch
 
-- Real Google login → correct account email → private Winebrary create/read/update → refreshed session.
+- Real Google login and reload persistence passed locally against live Auth. Still verify the published account URL → private Winebrary create/read/update → refreshed session after the API rollout.
 - A second account cannot read the first account's collection/photos/reviews.
 - Website code → actual Even Hub companion → same account; expired/reused/wrong codes rejected; app restart retains session; sign-out clears private glasses content.
 - Stripe **test-mode** subscribe, trial, repeat checkout, portal cancellation and failed renewal; status/paid work reflect actual Stripe state. Test with the real API route, not only the mocked suite.
