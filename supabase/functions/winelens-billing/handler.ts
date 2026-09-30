@@ -58,4 +58,3 @@ export const serve = handler(async req => {
   if (!session.url || session.status !== 'open') throw new HttpError(409, 'This checkout has finished. Refresh your account to check its status.');
   return { url: session.url };
 });
-

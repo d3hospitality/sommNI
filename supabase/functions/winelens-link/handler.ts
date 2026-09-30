@@ -27,4 +27,3 @@ export const serve = handler(async req => {
   if (linkError || !data.properties?.hashed_token) throw new HttpError(503, 'Please get a new code and try again.');
   return { token_hash: data.properties.hashed_token, type: 'magiclink' };
 });
-
