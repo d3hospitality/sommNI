@@ -1,0 +1,28 @@
+name: Wine Atlas checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/build-atlas.mjs && npm run typecheck && npm run build
+      - name: Globe, navigation and bridge invariants
+        run: |
+          npm run dev > /tmp/atlas-vite.log 2>&1 &
+          ATLAS_TEST_PID=$!
+          trap 'kill "$ATLAS_TEST_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://localhost:5186/sommNI/atlas.html > /dev/null && break
+            sleep 1
+          done
+          node tests/atlas.cjs
