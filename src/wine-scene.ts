@@ -20,7 +20,7 @@ export const SCENE_X = 288;
 const DEG = Math.PI / 180;
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 /** Where the region sits inside the panel (right of the bottle). */
-const FOCUS_X = 190, FOCUS_Y = 140;
+const FOCUS_X_BOTTLE = 190, FOCUS_Y = 140;
 const BOTTLE = { x: 6, y: 10, w: 96, h: 270 };
 // Levels (0–255 before quantising to multiples of 17). The map is a backdrop: every level sits
 // well below the bottle and the text (which reach full brightness); the region is still the
@@ -41,8 +41,9 @@ function lensMask(x: number, y: number): number {
 
 export interface SceneInput { country: Country; region: Region | null; imageUrl: string | null }
 
-function camera(country: Country, region: Region | null) {
+function camera(country: Country, region: Region | null, withBottle: boolean) {
   const focus = region?.center ?? country.center;
+  const FOCUS_X = withBottle ? FOCUS_X_BOTTLE : SCENE / 2;
   const angular = region ? Math.min(16, Math.max(5, region.radius * 4)) : 9;
   const scale = (SCENE / 2 - 10) / Math.sin(angular * DEG);   // px per radian
   const dx = FOCUS_X - SCENE / 2, dy = FOCUS_Y - SCENE / 2;
@@ -99,7 +100,7 @@ async function bottleLayer(url: string): Promise<{ gray: Uint8Array; alpha: Uint
 /** The 288×288 panel (values are multiples of 17, max 238). */
 export async function renderWineScene(renderer: GlobeRenderer, input: SceneInput): Promise<Uint8Array> {
   const { country, region, imageUrl } = input;
-  const cam = camera(country, region);
+  const cam = camera(country, region, !!imageUrl);
   const ids = countryIds(renderer, cam.center, cam.scale);
   const value = new Float32Array(SCENE * SCENE);
   for (let y = 0; y < SCENE; y++) for (let x = 0; x < SCENE; x++) {
@@ -150,7 +151,7 @@ export async function renderWineScene(renderer: GlobeRenderer, input: SceneInput
   for (const [x, y] of dots) if (x >= 0 && y >= 0 && x < SCENE && y < SCENE) value[y * SCENE + x] = DOT;
   for (let y = 0; y < SCENE; y++) for (let x = 0; x < SCENE; x++) value[y * SCENE + x] *= lensMask(x, y);
   // Behind the bottle the map fades, so the glass reads cleanly.
-  const fadeEnd = BOTTLE.x + BOTTLE.w + 14;
+  const fadeEnd = imageUrl ? BOTTLE.x + BOTTLE.w + 14 : 0;
   for (let y = 0; y < SCENE; y++) for (let x = 0; x < fadeEnd; x++) value[y * SCENE + x] *= x < BOTTLE.x + BOTTLE.w ? 0.5 : 0.5 + 0.5 * (x - BOTTLE.x - BOTTLE.w) / 14;
   const out = new Uint8Array(SCENE * SCENE);
   for (let y = 0; y < SCENE; y++) for (let x = 0; x < SCENE; x++) {

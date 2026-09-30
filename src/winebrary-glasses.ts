@@ -2,6 +2,8 @@ import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, Tex
 import type { LibraryWine } from './winebrary';
 import { pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch } from './image-utils';
 import { SCENE_X, TILE_W, TILE_H } from './wine-scene';
+import { ruleCanvas, toGreenLevels } from './bottle-raster';
+import { lookupWineById } from './identity';
 import { claimDisplay, dropDisplay } from './display';
 import { bottleCanvas } from './bottle-raster';
 import { rebuildHomePage } from './pages';
@@ -146,33 +148,44 @@ function estimateLines(text: string, width: number): number {
   const per = charsPerLine(width);
   return text.split('\n').reduce((n, p) => n + Math.max(1, Math.ceil([...p].length / per)), 0);
 }
-function listScreen(name: string, labels: string[], header: string): RebuildPageContainer {
+/** A list page; with `map`, the list keeps the left half and the place's map panel fills the right. */
+function listScreen(name: string, labels: string[], header: string, map = false): RebuildPageContainer {
   const rows = Math.min(labels.length, LIST_H / LIST_ROW_PITCH);
+  const w = map ? SCENE_X - 6 : 572;
   const title = new TextContainerProperty({
-    xPosition: 16, yPosition: 4, width: 544, height: 34,
-    containerID: 3, containerName: 'library-header', content: clipLabel(header, charsPerLine(544)), isEventCapture: 0,
+    xPosition: 16, yPosition: 4, width: w - 14, height: 34,
+    containerID: 3, containerName: 'library-header', content: clipLabel(header, charsPerLine(w - 14)), isEventCapture: 0,
   });
   const list = new ListContainerProperty({
-    xPosition: 2, yPosition: 42, width: 572, height: rows * LIST_ROW_PITCH, containerID: 2, containerName: name,
+    xPosition: 2, yPosition: 42, width: w, height: rows * LIST_ROW_PITCH, containerID: 2, containerName: name,
     itemContainer: new ListItemContainerProperty({ itemCount: labels.length, itemWidth: 0, isItemSelectBorderEn: 1, itemName: labels }),
     isEventCapture: 1,
   });
-  return new RebuildPageContainer({ containerTotalNum: 2, listObject: [list], textObject: [title] });
+  const imageObject = map ? [
+    new ImageContainerProperty({xPosition:SCENE_X,yPosition:0,width:TILE_W,height:TILE_H,containerID:1,containerName:'scene-top'}),
+    new ImageContainerProperty({xPosition:SCENE_X,yPosition:TILE_H,width:TILE_W,height:TILE_H,containerID:4,containerName:'scene-bottom'}),
+  ] : [];
+  return new RebuildPageContainer({ containerTotalNum: 2 + imageObject.length, listObject: [list], textObject: [title], ...(map ? { imageObject } : {}) });
 }
-export function buildLibraryListPage(list: WineGroup[], page: number, offline = false, heading = 'WINEBRARY'): RebuildPageContainer {
+/** Map panel for a list page: the country (regions list) or the region (wines list). */
+export type PlaceSceneBuilder = (country: string, region: string | null) => Promise<Uint8Array[] | null>;
+let placeScene: PlaceSceneBuilder | null = null;
+export function setPlaceSceneBuilder(b: PlaceSceneBuilder | null) { placeScene = b; }
+const LIST_MAP_TILES: [number, string][] = [[1, 'scene-top'], [4, 'scene-bottom']];
+export function buildLibraryListPage(list: WineGroup[], page: number, offline = false, heading = 'WINEBRARY', map = false): RebuildPageContainer {
   const paged = libraryListPage(list, page);
   const parts = [heading, `${list.length} ${list.length === 1 ? 'wine' : 'wines'}`];
   if (paged.pageCount > 1) parts.push(`${paged.page + 1}/${paged.pageCount}`);
   if (offline) parts.push('offline copy');
-  return listScreen('library-list', paged.labels, parts.join('  ·  '));
+  return listScreen('library-list', paged.labels, parts.join('  ·  '), map);
 }
 /** Types, countries and regions: one list, rows with wine counts. */
-function buildFacetPage(name: string, rows: Facet[], page: number, heading: string): RebuildPageContainer {
+function buildFacetPage(name: string, rows: Facet[], page: number, heading: string, map = false): RebuildPageContainer {
   const paged = pageList(rows.map(facetLabel), page);
   const parts = [heading];
   if (paged.pageCount > 1) parts.push(`${paged.page + 1}/${paged.pageCount}`);
   if (offlineCopy) parts.push('offline copy');
-  return listScreen(name, paged.labels, parts.join('  ·  '));
+  return listScreen(name, paged.labels, parts.join('  ·  '), map);
 }
 function buildVintageListPage(g: WineGroup, page: number): RebuildPageContainer {
   const paged = vintageListPage(g, page);
@@ -224,27 +237,52 @@ export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' 
  * text, so nothing overlaps.
  */
 function buildSceneWinePage(wine: LibraryWine, backTo: string, place: WinePlace): RebuildPageContainer {
+  // Same hierarchy as the catalog tasting-notes page: kicker › name › maker › facts › rule › notes.
   const x=10, width=SCENE_X-x-8, per=charsPerLine(width);
+  const where=[place.region !== UNKNOWN_REGION ? place.region : '', place.country !== UNKNOWN_COUNTRY ? place.country : ''].filter(Boolean).join(' · ');
+  const kicker=clipLabel((where || place.type).toUpperCase(), per);
   const title=clipLabel(wine.wine_name, per*2);
-  const titleH=Math.min(2, estimateLines(title, width))*LINE_H+4;
-  const facts=clipLabel([vintageLong(wine), wine.producer].filter(Boolean).join(' · '), per);
-  const where=clipLabel([place.region !== UNKNOWN_REGION ? place.region : '', place.country !== UNKNOWN_COUNTRY ? place.country : ''].filter(Boolean).join(' · '), per);
-  const factsY=6+titleH, placeY=factsY+LINE_H+1, notesY=placeY+LINE_H+8;
-  const notesBottom=notesY+Math.floor((250-notesY)/LINE_H)*LINE_H+4;
-  const notes=clipBytes([wine.metadata?.grape, wine.notes || 'No notes yet. Add your impressions in Winebrary on your phone.'].filter(Boolean).join('\n'));
+  const titleH=Math.min(2, estimateLines(title, width))*LINE_H+1;
+  const maker=clipLabel(wine.producer || 'Producer not set', per);
+  const grape=wine.metadata?.grape || lookupWineById(wine.wine_id)?.wine.grape || '';
+  const facts=clipLabel([vintageLong(wine), grape, place.type !== 'Other' ? place.type : ''].filter(Boolean).join(' · '), per);
+  let y=4;
+  const kickerY=y; y+=LINE_H+1;
+  const titleY=y; y+=titleH;
+  const makerY=y; y+=LINE_H+1;
+  const factsY=y; y+=LINE_H+1;
+  const ruleY=y+5; y+=RULE.h+9;
+  const notesY=y, notesBottom=notesY+Math.max(1, Math.floor((252-notesY)/LINE_H))*LINE_H+4;
+  const notes=clipBytes(wine.notes || 'No notes yet. Add your impressions in Winebrary on your phone.');
   const overflow=estimateLines(notes, width) > Math.floor((notesBottom-notesY)/LINE_H);
   const textObject=[
-    new TextContainerProperty({xPosition:x,yPosition:6,width,height:titleH,containerID:3,containerName:'library-title',content:title,isEventCapture:0}),
-    new TextContainerProperty({xPosition:x,yPosition:factsY,width,height:LINE_H+1,containerID:4,containerName:'library-vintage',content:facts,isEventCapture:0}),
-    new TextContainerProperty({xPosition:x,yPosition:placeY,width,height:LINE_H+1,containerID:7,containerName:'library-place',content:where,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:kickerY,width,height:LINE_H+1,containerID:7,containerName:'library-place',content:kicker,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:titleY,width,height:titleH,containerID:3,containerName:'library-title',content:title,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:makerY,width,height:LINE_H+1,containerID:4,containerName:'library-vintage',content:maker,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:factsY,width,height:LINE_H+1,containerID:8,containerName:'library-facts',content:facts,isEventCapture:0}),
     new TextContainerProperty({xPosition:x,yPosition:notesY,width,height:notesBottom-notesY,containerID:5,containerName:'library-notes',content:notes,isEventCapture:1}),
-    new TextContainerProperty({xPosition:x,yPosition:254,width,height:30,containerID:6,containerName:'library-footer',content:overflow ? `Scroll · Double tap: ${backTo}` : `Double tap: ${backTo}`,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:256,width,height:30,containerID:6,containerName:'library-footer',content:overflow ? `Scroll · Double tap: ${backTo}` : `Double tap: ${backTo}`,isEventCapture:0}),
   ];
   const imageObject=[
     new ImageContainerProperty({xPosition:SCENE_X,yPosition:0,width:TILE_W,height:TILE_H,containerID:1,containerName:'scene-top'}),
     new ImageContainerProperty({xPosition:SCENE_X,yPosition:TILE_H,width:TILE_W,height:TILE_H,containerID:2,containerName:'scene-bottom'}),
+    new ImageContainerProperty({xPosition:x+2,yPosition:ruleY,width:RULE.w,height:RULE.h,containerID:10,containerName:'library-rule'}),
   ];
   return new RebuildPageContainer({containerTotalNum:textObject.length+imageObject.length,textObject,imageObject});
+}
+const RULE = { w: 240, h: 8 };
+/** A map panel only when the place is on the map (unknown countries keep the full-width list). */
+function mapFor(country: string, region: string | null): { country: string; region: string | null } | null {
+  if (!placeScene || country === UNKNOWN_COUNTRY) return null;
+  const mapped = items.some(w => { const p = placeOf(w); return p.country === country && p.mapped; });
+  return mapped ? { country, region: region && region !== UNKNOWN_REGION ? region : null } : null;
+}
+/** "WINEBRARY / RED / ARGENTINA": where you are, shortened from the left when it runs long. */
+function crumb(parts: string[], max = 50): string {
+  const all = ['WINEBRARY', ...parts.map(p => p.toUpperCase())];
+  let text = all.join(' / ');
+  for (let i = 1; [...text].length > max && i < all.length - 1; i++) text = ['…', ...all.slice(i + 1)].join(' / ');
+  return text;
 }
 const SCENE_TILE_NAMES: [number, string][] = [[1, 'scene-top'], [2, 'scene-bottom']];
 
@@ -254,10 +292,11 @@ async function render(next: Screen): Promise<void> {
   invalidateImages();
   let page: RebuildPageContainer;
   let scenePlace: WinePlace | null = null;
+  let listMap: { country: string; region: string | null } | null = null;
   if (next.kind === 'types') page = buildFacetPage('library-types', typeFacets(), next.page, `WINEBRARY  ·  ${items.length} ${items.length === 1 ? 'wine' : 'wines'}`);
-  else if (next.kind === 'countries') page = buildFacetPage('library-countries', countryFacets(next.type), next.page, next.type.toUpperCase());
-  else if (next.kind === 'regions') page = buildFacetPage('library-regions', regionFacets(next.type, next.country), next.page, `${next.type.toUpperCase()}  ·  ${next.country.toUpperCase()}`);
-  else if (next.kind === 'list') { groups = groupLibrary(inRegion(next.type, next.country, next.region)); page = buildLibraryListPage(groups, next.page, offlineCopy, next.region.toUpperCase()); }
+  else if (next.kind === 'countries') page = buildFacetPage('library-countries', countryFacets(next.type), next.page, crumb([next.type]));
+  else if (next.kind === 'regions') { listMap = mapFor(next.country, null); page = buildFacetPage('library-regions', regionFacets(next.type, next.country), next.page, crumb([next.type, next.country], listMap ? 30 : 50), !!listMap); }
+  else if (next.kind === 'list') { listMap = mapFor(next.country, next.region); groups = groupLibrary(inRegion(next.type, next.country, next.region)); page = buildLibraryListPage(groups, next.page, offlineCopy, crumb([next.type, next.country, next.region], listMap ? 18 : 30), !!listMap); }
   else if (next.kind === 'vintages') page = buildVintageListPage(next.group, next.page);
   else if (next.kind === 'detail') {
     let place = places.get(next.wine.id) ?? null;
@@ -269,10 +308,20 @@ async function render(next: Screen): Promise<void> {
   await claimDisplay('library', relinquish);
   if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page. Try again.');
   active = true; screen = next; lastNavigation = Date.now();
-  if (next.kind !== 'detail') return;
   const epoch = currentImageEpoch();
+  if (listMap && placeScene) {
+    try {
+      const tiles = await placeScene(listMap.country, listMap.region);
+      if (tiles) for (let i = 0; i < LIST_MAP_TILES.length; i++) await pushGrayImage(bridge, LIST_MAP_TILES[i][0], LIST_MAP_TILES[i][1], TILE_W, TILE_H, tiles[i], epoch);
+    } catch (error) { console.warn('[wineLENS] place map unavailable', error); }
+  }
+  if (next.kind !== 'detail') return;
   if (scenePlace && sceneBuilder) {
-    // Text is already up; the map scene follows (four tiles through the app image queue).
+    // Text is already up; the hairline rule, then the map scene (app image queue).
+    try {
+      const rule = ruleCanvas(RULE.w, RULE.h);
+      await pushGrayImage(bridge, 10, 'library-rule', RULE.w, RULE.h, toGreenLevels(rule.getContext('2d')!.getImageData(0, 0, RULE.w, RULE.h).data, RULE.w), epoch);
+    } catch (error) { console.warn('[wineLENS] rule unavailable', error); }
     try {
       const tiles = await sceneBuilder(next.wine);
       if (tiles) for (let i = 0; i < SCENE_TILE_NAMES.length; i++) await pushGrayImage(bridge, SCENE_TILE_NAMES[i][0], SCENE_TILE_NAMES[i][1], TILE_W, TILE_H, tiles[i], epoch);
