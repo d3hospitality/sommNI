@@ -511,3 +511,7 @@ footer > span:not(.wordmark) {
     font-size: 15px;
   }
 }
+
+/* Focus Pour */
+.wordmark{display:inline-flex;align-items:center;line-height:1}.wordmark img{height:42px;width:auto;max-width:none}.brand-hero-symbol{width:160px;height:160px}.lens-art{background:#E8D0CA;border-radius:4px}.lens-art small{bottom:22px}
+@media(max-width:600px){.wordmark img{height:34px}}

@@ -1,0 +1,36 @@
+{
+  "name": "wineLENS",
+  "short_name": "wineLENS",
+  "description": "Wine. In. Focus.",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#FBF7EF",
+  "theme_color": "#772B39",
+  "icons": [
+    {
+      "src": "app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

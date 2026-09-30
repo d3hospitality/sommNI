@@ -805,3 +805,7 @@ img{max-width:100%}
 .wl-atlas-actions .wl-primary[disabled]{opacity:.45;cursor:not-allowed}
 @media (max-width:480px){.wl-atlas{grid-template-columns:1fr;justify-items:start}.wl-atlas canvas{width:120px;height:120px}}
 @media (prefers-reduced-motion:reduce){.wl-atlas canvas{transition:none}}
+
+/* Focus Pour identity — SVG wordmark carries its own outlined typography. */
+.wl-wordmark{display:inline-flex;align-items:center;line-height:1}.wl-wordmark img{height:44px;width:auto;max-width:none}
+@media(max-width:600px){.wl-wordmark img{height:35px}}
