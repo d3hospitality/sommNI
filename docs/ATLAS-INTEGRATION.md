@@ -9,6 +9,17 @@ Builds on Codex's prototype (`docs/atlas/ATLAS-HANDOFF.md`, `src/atlas/`, unchan
 - `unmapped` (19): broad regions that span many clusters (Tuscany, Burgundy, Piedmont, Loire…) or names with no cluster. They stay fully browsable through Home › wine type › country › grape. No boundaries are invented; clusters are winery locations, not appellations.
 - `tests/glasses.navigation.cjs` fails if a catalog region has no entry or a linked cluster does not exist in that country, so new wines force a mapping decision.
 
+## Your Winebrary in the Atlas
+- Signed in, your Winebrary widens the scope: its countries are listed (with a count, e.g. "United States (1)") and its regions appear when they match a linked cluster or a cluster name exactly (in the wine's country when known, or unambiguously).
+- Wines saved from the catalog use their catalog twin's region; free-text regions use "Place, CC" or `metadata.country`.
+- Region view (tap a region): "MY WINEBRARY · n" and your wines there; scroll to pick, tap to open the Winebrary page, double tap returns to the same Atlas view. Signed out, it says to sign in on the phone and shows the catalog count instead.
+- Sign-out or a library change re-scopes the Atlas immediately (no private wines linger on the glasses).
+- Wines whose place doesn't match stay in My Winebrary only.
+
+## Beta package
+- `npm run pack:beta` builds with a relative base into `dist-ehpk/` and packs `app.beta.json` (same package id, name "wineLENS Beta", version 3.1.0; Even Hub only accepts x.y.z versions) into `wineLENS-3.1.0-beta.ehpk`. Upload is manual.
+- The package is ~36 MB, almost all bottle photographs (`bottles/`, 34 MB). Check the Even Hub size limit on upload; if it is refused, the bottles can move to WebP or be served from the whitelisted GitHub Pages host.
+
 ## Display ownership (`src/display.ts`)
 - One owner at a time: `study`, `library`, `atlas`, or the catalog (default).
 - `claimDisplay(name, release)` awaits the previous owner's release before a page is sent. Atlas release = `AtlasGlasses.close()` (its transport idle). Before Atlas opens, the app image queue is invalidated and awaited (`imageIdle`).

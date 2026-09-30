@@ -20,7 +20,7 @@ type MessageReason = 'signed-out' | 'loading' | 'empty' | 'error';
 type Screen =
   | { kind: 'list'; page: number }
   | { kind: 'vintages'; group: number; page: number; listPage: number }
-  | { kind: 'detail'; wine: LibraryWine; from: 'list' | 'vintages' | 'phone'; group: number; listPage: number; vintagePage: number }
+  | { kind: 'detail'; wine: LibraryWine; from: 'list' | 'vintages' | 'phone' | 'atlas'; group: number; listPage: number; vintagePage: number }
   | { kind: 'message'; reason: MessageReason };
 
 let bridge: EvenAppBridge | null = null;
@@ -40,6 +40,9 @@ export function setWinebraryDeviceConnected(value: boolean) { connected=value; }
 export function canShowWine() { return !!bridge && connected && !sending; }
 export function isLibraryActive() { return active; }
 export function setLibrarySource(read: () => LibrarySource) { readSource=read; }
+/** Current Winebrary snapshot (the Atlas matches these wines to places). */
+export function readLibrary(): LibrarySource { return readSource(); }
+let atlasReturn: (() => Promise<void>) | null = null;
 
 // ═══ VINTAGES & GROUPING ═══
 export function vintageShort(wine: LibraryWine): string {
@@ -130,7 +133,7 @@ function buildMessagePage(reason: MessageReason): RebuildPageContainer {
  * Title (1–2 lines) → vintage · producer · region (1 line) → notes (the one capture container,
  * scrollable) → hint. Heights follow the title, so a short name never leaves a gap.
  */
-export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' = 'Home'): RebuildPageContainer {
+export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' | 'Atlas' = 'Home'): RebuildPageContainer {
   const x=wine.image_url ? 132 : 24, width=560-x, per=charsPerLine(width);
   const title=clipLabel(wine.wine_name, per*2);
   const titleH=Math.min(2, estimateLines(title, width))*LINE_H+4;
@@ -159,7 +162,7 @@ async function render(next: Screen): Promise<void> {
   let page: RebuildPageContainer;
   if (next.kind === 'list') page = buildLibraryListPage(groups, next.page, offlineCopy);
   else if (next.kind === 'vintages') page = buildVintageListPage(groups[next.group], next.page);
-  else if (next.kind === 'detail') page = buildLibraryWinePage(next.wine, next.from === 'phone' ? 'Home' : 'Back');
+  else if (next.kind === 'detail') page = buildLibraryWinePage(next.wine, next.from === 'phone' ? 'Home' : next.from === 'atlas' ? 'Atlas' : 'Back');
   else page = buildMessagePage(next.reason);
   await claimDisplay('library', relinquish);
   if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page. Try again.');
@@ -205,6 +208,7 @@ export async function openLibraryOnGlasses(): Promise<void> {
 }
 /** Called by the phone companion when the collection finishes loading or changes. */
 export function libraryChanged(): void {
+  window.dispatchEvent(new Event('winelens-library-changed'));
   if (!active || screen?.kind !== 'message' || screen.reason === 'signed-out') return;
   void openLibraryOnGlasses();
 }
@@ -214,6 +218,12 @@ async function back(): Promise<void> {
   if (!s || s.kind === 'message') return goHome();
   if (s.kind === 'detail') {
     if (s.from === 'phone') return goHome();
+    if (s.from === 'atlas') {
+      const back = atlasReturn; atlasReturn = null;
+      active = false; screen = null; dropDisplay('library');
+      if (back) return back();
+      return goHome();
+    }
     if (s.from === 'vintages') return render({ kind: 'vintages', group: s.group, page: s.vintagePage, listPage: s.listPage });
     return render({ kind: 'list', page: s.listPage });
   }
@@ -241,6 +251,13 @@ async function select(index: number): Promise<void> {
   return render({ kind: 'detail', wine: group.wines[row.index], from: 'vintages', group: s.group, listPage: s.listPage, vintagePage: s.page });
 }
 
+/** Wine Atlas › region › wine: show one account wine; double tap goes back to the Atlas. */
+export async function showWineFromAtlas(wine: LibraryWine, back: () => Promise<void>) {
+  if (!bridge) throw new Error('Glasses are not connected.');
+  atlasReturn = back;
+  await settle(() => render({ kind: 'detail', wine, from: 'atlas', group: -1, listPage: 0, vintagePage: 0 }));
+}
+
 /** Sent from the phone: show one account wine; double tap returns home. */
 export async function showWineOnGlasses(wine: LibraryWine) {
   if (!canShowWine()) throw new Error('Connect your Even G2 glasses first.');
@@ -263,6 +280,7 @@ export function handleLibraryGlassesEvent(event: EvenHubEvent): boolean {
 }
 
 export async function clearPrivateGlasses() {
+  window.dispatchEvent(new Event('winelens-library-changed'));   // the Atlas drops account wines too
   if (!active || !bridge) return;
   invalidateImages();
   const accepted=await bridge.rebuildPageContainer(rebuildHomePage());

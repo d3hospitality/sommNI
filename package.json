@@ -13,7 +13,8 @@
     "test:display": "node tests/no-mascot.cjs",
     "test:bottles": "node tests/catalog-bottles.cjs",
     "test:study": "node tests/study.engine.cjs && node tests/study.glasses.cjs && node tests/study.phone.cjs",
-    "check:ids": "node --experimental-strip-types --no-warnings scripts/assign-canonical-ids.mjs"
+    "check:ids": "node --experimental-strip-types --no-warnings scripts/assign-canonical-ids.mjs",
+    "pack:beta": "sh scripts/pack-beta.sh"
   },
   "dependencies": {
     "@evenrealities/even_hub_sdk": "^0.0.9",

@@ -126,15 +126,27 @@ const assert=require('node:assert/strict');
   out.pairing=[pl,pd,pn,last()];
   for(let i=0;i<3;i++) await dbl();
   out.home=last();
-  // ── 6. Wine Atlas from Home: owns events, scroll/tap/back, exit rebuilds Home ──
+  // ── 6. Wine Atlas from Home: owns events, scroll/tap/back, your Winebrary wines per region ──
   images.length=0;
+  const napa=wine('n1','Estate Cabernet',2019,'year',{region:'Napa Valley, US',metadata:{vintage_state:'year',country:'US'}});
+  const twin=wine('t1','Cabernet Sauvignon',2018,'year',{wine_id:'wl_cabernet-sauvignon-vasse-felix',region:null,metadata:{vintage_state:'year'}});
+  const stray=wine('s1','Mystery Red',2020,'year',{region:'Nowhere Hills',metadata:{vintage_state:'year'}});
+  G.setLibrarySource(()=>({userId:'u1',loading:false,error:'',items:[napa,twin,stray]}));
+  const rows=()=>shown.at(-1).textObject.find(t=>t.containerName==='atlas-rows').content;
+  const rowsNow=()=>texts.filter(t=>t.startsWith('atlas-rows:')).at(-1)?.slice(11)??rows();
   await click(P.ATLAS_INDEX);await wait(1200);
-  const atlas=[last(),shown.at(-1).textObject.find(t=>t.containerName==='atlas-rows').content.split('\n')[0]];
+  const atlas=[last(),rows().split('\n')[0]];
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);
   atlas.push(A.atlasStatus().country);
+  handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:1}});await wait(600);   // back up to the first country
   handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(600);   // tap (firmware omits CLICK=0)
-  atlas.push(A.atlasStatus().mode);
-  handler({sysEvent:{eventType:3}});await wait(600);atlas.push(A.atlasStatus().mode);
+  atlas.push(A.atlasStatus().mode,rowsNow().split('\n')[0]);
+  handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(900);   // region view
+  atlas.push(A.atlasStatus().mode,rowsNow());
+  handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(1500);  // open the wine
+  atlas.push(last());
+  handler({sysEvent:{eventType:3}});await wait(1800);atlas.push(last(),A.atlasStatus().mode,A.atlasStatus().active); // back to the Atlas
+  handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
   handler({sysEvent:{eventType:3}});await wait(1200);atlas.push(last(),A.atlasStatus().active);
   out.atlas=atlas;out.atlasImages=[...new Set(images)];
   // Catalog scope: only countries with wines; regions only through explicit links
@@ -167,11 +179,15 @@ const assert=require('node:assert/strict');
  assert.equal(result.home,'home-list');
  assert.equal(result.globe.atOpen,2);assert.deepEqual(result.globe.hover,['globe-top','globe-bottom']);
  assert.ok(result.globe.info.at(-1).startsWith('info:France'),result.globe.info.join('|'));
- assert.deepEqual(result.atlas.slice(0,2),['atlas-title+atlas-rows+atlas-hint','> '+result.scope.countries[0]]);
- assert.equal(result.atlas[2],result.scope.countries[1]);assert.equal(result.atlas[3],'regions');
+ assert.deepEqual(result.atlas.slice(0,2),['atlas-title+atlas-rows+atlas-hint','> United States (1)']);
+ assert.equal(result.atlas[2],'Australia');
+ assert.equal(result.atlas[3],'regions');assert.equal(result.atlas[4],'> Napa Valley (1)');
+ assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMY WINEBRARY · 1\n> Estate Cabernet 2019$/);
+ assert.equal(result.atlas[7],'library-title+library-vintage+library-notes+library-footer');
+ assert.deepEqual(result.atlas.slice(8,11),['atlas-title+atlas-rows+atlas-hint','detail',true]);
+ assert.deepEqual(result.atlas.slice(11),['home-list',false]);
  assert.equal(result.scope.countries.length,result.catalogCountryCount);assert.deepEqual(result.linkProblems,[]);
- assert.ok(result.scope.regions>0&&result.scope.regions<60,'only linked clusters: '+result.scope.regions);assert.equal(result.atlas[4],'countries');
- assert.equal(result.atlas[5],'home-list');assert.equal(result.atlas[6],false);
+ assert.ok(result.scope.regions>0&&result.scope.regions<60,'only linked clusters: '+result.scope.regions);
  assert.ok(result.atlasImages.includes('atlas-top')&&result.atlasImages.includes('atlas-bottom'));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
