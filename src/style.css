@@ -810,3 +810,7 @@ img{max-width:100%}
 #wl-link-code { font-size: 1.35rem; letter-spacing: .16em; text-transform: uppercase; }
 .wl-dialog a.wl-primary { display: inline-block; text-decoration: none; }
 .wl-dialog .small { overflow-wrap: anywhere; }
+
+/* Focus Pour identity — SVG wordmark carries its own outlined typography. */
+.wl-wordmark{display:inline-flex;align-items:center;line-height:1}.wl-wordmark img{height:44px;width:auto;max-width:none}
+@media(max-width:600px){.wl-wordmark img{height:35px}}
