@@ -29,7 +29,7 @@ import {
 } from './pages';
 import {
   pushLogoToGlasses, pushGlobeToGlasses, pushGrapeSpriteToGlasses,
-  pushBottleSprite, pushBottleSpriteDual,
+  pushBottleSprite, pushTastingNotesImages,
 } from './image-utils';
 import { getPairings, type Pairing } from './sync';
 import { handleLibraryGlassesEvent, openLibraryOnGlasses } from './winebrary-glasses';
@@ -326,7 +326,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
             currentPage = "grapes"; currentGrape = null; lastHoveredIndex = -1; lastNavigationTime = Date.now();
             await pushGrapeSpriteToGlasses(bridge, baseUrl);
           };
-          await pushBottleSpriteDual(bridge, baseUrl, wineId, 100, 140);
+          await pushTastingNotesImages(bridge, baseUrl, wineId);
           log(`> ${wine.name} (direct)`, "success");
         } else {
           wineListPageIndex = 0;
@@ -360,7 +360,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
           await rebuild(bridge, buildWineListPage(type, country, grape, page));
           currentPage = "wines"; wineListPageIndex = page; lastHoveredIndex = -1; lastNavigationTime = Date.now();
         };
-        await pushBottleSpriteDual(bridge, baseUrl, wineId, 100, 140);
+        await pushTastingNotesImages(bridge, baseUrl, wineId);
         log(`> ${wine.name}`, "success");
       }
       return;
@@ -450,7 +450,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
           currentPage = "finder-results"; lastHoveredIndex = -1; lastNavigationTime = Date.now();
           await updateFinderResultPreview(bridge, baseUrl, 0);
         };
-        await pushBottleSpriteDual(bridge, baseUrl, wineId, 100, 140);
+        await pushTastingNotesImages(bridge, baseUrl, wineId);
         log(`> ${r.wine.name} (finder)`, "success");
       }
       return;
@@ -495,7 +495,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
           await rebuild(bridge, buildPairingDetailPage(pairing, names));
           currentPage = "pairing-detail"; activePairing = pairing; lastNavigationTime = Date.now();
         };
-        await pushBottleSpriteDual(bridge, baseUrl, found.id, 100, 140);
+        await pushTastingNotesImages(bridge, baseUrl, found.id);
         log(`> ${found.wine.name} (pairing)`, "success");
       }
       return;

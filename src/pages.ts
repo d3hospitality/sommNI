@@ -17,7 +17,8 @@ import {
   Wine, WineType,
 } from './constants';
 import type { Pairing, CourseSlot } from './sync';
-import { pageList, wholeRowHeight, clipLabel, LIST_ROW_PITCH, type ListPage } from './glasses-list';
+import { lookupWineById } from './identity';
+import { pageList, wholeRowHeight, clipLabel, clipBytes, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
 const BACK_LABEL = "Back";
 
@@ -298,101 +299,102 @@ export function buildWineListPage(type: WineType, country: string, grape: string
 }
 
 // ══════════════════════════════════════════════════════════════════
-// TASTING NOTES — 7 containers (4 image + 3 text)
-//   Images 1-4 = bottle sprite in 4 strips
-//                Display: 120w × 70h each, stacked at y=4 → total 280px, nearly full height
-//                Image data: 120×140 per strip (center-cropped from 1024×1024 RGBA)
-//                SDK limits: max 288w × 144h per image container
-//   Text   5   = wine name           — y=2 (flush to ceiling)
-//   Text   6   = region · style
-//   Text   7   = tasting notes       — flush down to y=286 (scrollable)
+// TASTING NOTES v2 — "lit stage" layout, 7 containers (3 image + 4 text)
+//   Images 1-2 = bottle on a lit stage (spotlight, floor pool, faint reflection), 112×140 halves
+//   Image  6   = hairline rule under the header, fading out to the right
+//   Text   3   = wine (1–2 lines)             Text 4 = producer · region
+//   Text   5   = tasting notes (scrollable)   Text 7 = GRAPE · TYPE · STYLE kicker
 //
-//   Source: 1024×1024 RGBA → scale to fit 100×288 → 2 halves of 100×144
-//   Display: 2 containers at 100×144 display pixels, stacked from y=0
-//
-//   Layout (576×288):
-//   ┌──────────┬───────────────────────────────────────┐ y=0
-//   │          │ Sancerre "Le Mont" - Fourcher Lebrun  │
-//   │ 100×144  │ Loire Valley, FR · Dry - Mineral      │
-//   │ (top)    │───────────────────────────────────────│
-//   │          │ Appearance: Pale gold with green...   │
-//   │──────────│ Nose: White peach, chalky mineral...  │
-//   │          │ Palate: Crisp, racy acidity...        │
-//   │ 100×144  │ Finish: Long, saline, refreshing...   │
-//   │ (bot)    │ Story: ...                             │
-//   │          │                                        │
-//   └──────────┴───────────────────────────────────────┘ y=288
-//   2+100+4=106px               470px
+//   ┌────────────┬──────────────────────────────────────┐ y=0
+//   │   ░░▒▒░░   │ PINOT NOIR · RED · DRY, ELEGANT      │
+//   │    ▐█▌     │ Aloxe-Corton                         │
+//   │    ▐█▌     │ Louis Latour · Côte-de-Beaune, FR    │
+//   │    ▐█▌     │ ━━━━━━━━━━━━━━━━━━━───────           │
+//   │    ▐█▌     │ LOOK  Bright ruby with garnet hints. │
+//   │  ░▒███▒░   │ NOSE  Red cherry, raspberry compote… │
+//   │    ░░░     │ …                                    │
+//   └────────────┴──────────────────────────────────────┘ y=288
 // ══════════════════════════════════════════════════════════════════
 
-export function buildTastingNotesPage(wine: Wine, _wineId: string | null): RebuildPageContainer {
-  const IMG_X = 2;            // 2px safe zone from left
-  const IMG_W = 100;          // display width (144 - 22 clipped each side)
-  const IMG_H = 140;          // display height per half (2 × 140 = 280, under SDK max of 144)
-  const IMG_Y = 4;            // centered: (288 - 280) / 2 = 4
-  const TEXT_X = IMG_X + IMG_W + 4; // 106
-  const TEXT_W = 576 - TEXT_X;      // 470
-  const TEXT_TOP = 2;         // flush to ceiling
+/** Split "Aloxe-Corton – Louis Latour" into wine and producer. */
+export function splitWineName(name: string): { title: string; producer: string } {
+  const at = name.lastIndexOf(' – ');
+  return at > 0 ? { title: name.slice(0, at).trim(), producer: name.slice(at + 3).trim() } : { title: name, producer: '' };
+}
 
-  // 2 image halves — scale-to-fit, no stretch, no crop
+function clipChars(text: string, max: number): string {
+  const chars = [...text];
+  return chars.length <= max ? text : chars.slice(0, max - 1).join('').trimEnd() + '…';
+}
+
+export const NOTES_IMG = { x: 4, y: 4, w: 112, h: 140 } as const;
+export const NOTES_RULE = { w: 288, h: 10 } as const;
+
+export function buildTastingNotesPage(wine: Wine, wineId: string | null): RebuildPageContainer {
+  const TEXT_X = NOTES_IMG.x + NOTES_IMG.w + 8; // 124
+  const TEXT_W = 576 - TEXT_X - 4;              // 448
+  const PER_LINE = Math.floor(TEXT_W / 9.5);    // ~47 characters
+  const LINE = 27;
+
   const p1 = new ImageContainerProperty({
-    xPosition: IMG_X, yPosition: IMG_Y, width: IMG_W, height: IMG_H,
+    xPosition: NOTES_IMG.x, yPosition: NOTES_IMG.y, width: NOTES_IMG.w, height: NOTES_IMG.h,
     containerID: 1, containerName: "bottle-top",
   });
   const p2 = new ImageContainerProperty({
-    xPosition: IMG_X, yPosition: IMG_Y + IMG_H, width: IMG_W, height: IMG_H,
+    xPosition: NOTES_IMG.x, yPosition: NOTES_IMG.y + NOTES_IMG.h, width: NOTES_IMG.w, height: NOTES_IMG.h,
     containerID: 2, containerName: "bottle-bot",
   });
 
-  // Wine name — flush to ceiling
-  // Long names wrap to a second line instead of being cut off (~49 characters per line
-  // at 470 px); everything below moves down and the notes keep whole lines only.
-  const NAME_LINES = [...wine.name].length > Math.floor(TEXT_W / 9.5) ? 2 : 1;
-  const NAME_H = NAME_LINES * 27 + 1;
+  const { title, producer } = splitWineName(wine.name);
+  const type = lookupWineById(wineId)?.type;
+  const style = (wine.style || '').replace(/\s*[–-]\s*/g, ', ');
+  const kickerText = clipChars([wine.grape, type, style].filter(Boolean).join(' · ').toUpperCase(), PER_LINE);
+  const subText = clipChars([producer, wine.region].filter(Boolean).join(' · '), PER_LINE);
+
+  let y = 2;
+  const kicker = new TextContainerProperty({
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: LINE + 1,
+    containerID: 7, containerName: "kicker", content: kickerText, isEventCapture: 0,
+  });
+  y += LINE + 1;
+
+  const TITLE_LINES = [...title].length > PER_LINE ? 2 : 1;
+  const TITLE_H = TITLE_LINES * LINE + 1;
   const header = new TextContainerProperty({
-    xPosition: TEXT_X, yPosition: TEXT_TOP, width: TEXT_W, height: NAME_H,
-    containerID: 3, containerName: "wine-name",
-    content: wine.name,
-    isEventCapture: 0,
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: TITLE_H,
+    containerID: 3, containerName: "wine-name", content: title, isEventCapture: 0,
   });
+  y += TITLE_H;
 
-  // Region · style
-  // 28 px: one full 27 px text line (22 px clipped descenders: "Tuscany" read "Tuscanv").
   const sub = new TextContainerProperty({
-    xPosition: TEXT_X, yPosition: TEXT_TOP + NAME_H, width: TEXT_W, height: 28,
-    containerID: 4, containerName: "sub",
-    content: `${wine.region} · ${wine.style}`,
-    isEventCapture: 0,
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: LINE + 1,
+    containerID: 4, containerName: "sub", content: subText, isEventCapture: 0,
   });
+  y += LINE + 1;
 
-  // Tasting notes — whole 27 px lines down to the floor (8 lines, or 7 under a two-line name)
-  const NOTES_Y = TEXT_TOP + NAME_H + 28 + 4;
-  const NOTES_H = Math.floor((286 - NOTES_Y) / 27) * 27 + 4;
+  const rule = new ImageContainerProperty({
+    xPosition: TEXT_X + 4, yPosition: y + 1, width: NOTES_RULE.w, height: NOTES_RULE.h,
+    containerID: 6, containerName: "rule",
+  });
+  y += NOTES_RULE.h + 4;
 
-  const notesLines: string[] = [];
-  notesLines.push("Appearance: " + wine.appearance);
-  notesLines.push("");
-  notesLines.push("Nose: " + wine.nose);
-  notesLines.push("");
-  notesLines.push("Palate: " + wine.palate);
-  notesLines.push("");
-  notesLines.push("Finish: " + wine.finish);
-  if (wine.anecdote) {
-    notesLines.push("");
-    notesLines.push("Story: " + wine.anecdote);
-  }
+  const NOTES_H = Math.floor((286 - y) / LINE) * LINE + 4;
+  const sections: [string, string][] = [
+    ["LOOK", wine.appearance], ["NOSE", wine.nose], ["PALATE", wine.palate], ["FINISH", wine.finish],
+  ];
+  if (wine.anecdote) sections.push(["STORY", wine.anecdote]);
+  const body = sections.filter(([, text]) => text).map(([label, text]) => `${label}  ${text}`);
+  body.push("— Catalog notes · not producer-verified");
 
   const notes = new TextContainerProperty({
-    xPosition: TEXT_X, yPosition: NOTES_Y, width: TEXT_W, height: NOTES_H,
-    containerID: 5, containerName: "notes",
-    content: notesLines.join("\n"),
-    isEventCapture: 1,
+    xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: NOTES_H,
+    containerID: 5, containerName: "notes", content: clipBytes(body.join("\n\n")), isEventCapture: 1,
   });
 
   return new RebuildPageContainer({
-    containerTotalNum: 5,
-    textObject: [header, sub, notes],
-    imageObject: [p1, p2],
+    containerTotalNum: 7,
+    textObject: [header, sub, notes, kicker],
+    imageObject: [p1, p2, rule],
   });
 }
 

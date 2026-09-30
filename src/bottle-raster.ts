@@ -24,6 +24,60 @@ export async function bottleCanvas(source: string, width: number, height: number
   } finally { bitmap.close(); }
 }
 
+// ═══ Lit stage (depth on a flat green panel) ═══
+// The bottle stands on a small "stage": a faint spotlight behind it, a pool of light on
+// the floor and a short reflection fading below the base. All of it lives in the lowest
+// brightness levels, so after tone mapping it reads as dithered atmosphere, not a shape.
+export async function stageCanvas(source: string, width: number, height: number): Promise<HTMLCanvasElement> {
+  const response=await fetch(source);
+  if(!response.ok) throw new Error('Bottle photograph unavailable');
+  const bitmap=await createImageBitmap(await response.blob());
+  try {
+    const probe=document.createElement('canvas'); probe.width=bitmap.width; probe.height=bitmap.height;
+    const pctx=probe.getContext('2d')!; pctx.drawImage(bitmap,0,0);
+    const b=alphaBounds(pctx.getImageData(0,0,bitmap.width,bitmap.height).data,bitmap.width,bitmap.height);
+    const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
+    const ctx=canvas.getContext('2d')!; ctx.fillStyle='#000'; ctx.fillRect(0,0,width,height);
+    const base=Math.round(height*0.87), cx=width/2;
+    const scale=Math.min((width-12)/b.width,(base-6)/b.height);
+    const w=b.width*scale, h=b.height*scale, x=cx-w/2, y=base-h;
+    // spotlight behind the bottle's shoulders
+    // (fades to zero inside the image bounds, so the container edge never shows as a hard line)
+    ctx.save(); ctx.translate(cx,y+h*0.45); ctx.scale(1,2.2);
+    const spot=ctx.createRadialGradient(0,0,0,0,0,width*0.46);
+    spot.addColorStop(0,'rgba(255,255,255,0.20)'); spot.addColorStop(0.5,'rgba(255,255,255,0.07)'); spot.addColorStop(0.9,'rgba(255,255,255,0)');
+    ctx.fillStyle=spot; ctx.fillRect(-width,-height,width*2,height*2); ctx.restore();
+    // pool of light on the floor
+    ctx.save(); ctx.translate(cx,base); ctx.scale(1,0.18);
+    const pool=ctx.createRadialGradient(0,0,0,0,0,width*0.47);
+    pool.addColorStop(0,'rgba(255,255,255,0.30)'); pool.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=pool; ctx.fillRect(-width,-height,width*2,height*2); ctx.restore();
+    // reflection: the base mirrored, fading out within ~12% of the height
+    const reflection=document.createElement('canvas'); reflection.width=width; reflection.height=height;
+    const rctx=reflection.getContext('2d')!;
+    rctx.save(); rctx.translate(0,base*2); rctx.scale(1,-1); rctx.drawImage(bitmap,b.x,b.y,b.width,b.height,x,y,w,h); rctx.restore();
+    rctx.globalCompositeOperation='destination-in';
+    const fade=rctx.createLinearGradient(0,base,0,base+height*0.12);
+    fade.addColorStop(0,'rgba(0,0,0,0.32)'); fade.addColorStop(1,'rgba(0,0,0,0)');
+    rctx.fillStyle=fade; rctx.fillRect(0,0,width,height);
+    ctx.drawImage(reflection,0,0);
+    // the bottle itself
+    ctx.imageSmoothingQuality='high';
+    ctx.drawImage(bitmap,b.x,b.y,b.width,b.height,x,y,w,h);
+    return canvas;
+  } finally { bitmap.close(); }
+}
+
+/** A hairline rule that fades out to the right (drawn as an image; text can't draw lines). */
+export function ruleCanvas(width: number, height: number): HTMLCanvasElement {
+  const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
+  const ctx=canvas.getContext('2d')!; ctx.fillStyle='#000'; ctx.fillRect(0,0,width,height);
+  const g=ctx.createLinearGradient(0,0,width,0);
+  g.addColorStop(0,'rgba(255,255,255,0.95)'); g.addColorStop(0.35,'rgba(255,255,255,0.45)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,Math.floor(height/2),width,1);
+  return canvas;
+}
+
 // ═══ G2 tone mapping ═══
 // The G2 panel is emissive green with 16 levels. Mapping photo luminance straight to
 // levels 0–15 makes labels and glass reflections blaze at full brightness and bands

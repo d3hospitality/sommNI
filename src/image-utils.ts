@@ -5,10 +5,11 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { EvenAppBridge, ImageRawDataUpdate, ImageRawDataUpdateResult } from '@evenrealities/even_hub_sdk';
-import { bottleCanvas, toGreenLevels } from './bottle-raster';
+import { bottleCanvas, stageCanvas, ruleCanvas, toGreenLevels } from './bottle-raster';
 import { encodeGrayscalePng } from './pngEncoder';
 import { assetIdFor } from './identity';
 import { bottleImageUrl } from './bottle-assets';
+import { NOTES_IMG, NOTES_RULE } from './pages';
 
 // One queue for the bridge; old page uploads are discarded before sending.
 let imageEpoch=0;
@@ -25,7 +26,7 @@ async function pushImg(bridge: EvenAppBridge, id: number, name: string, data: Ui
 }
 export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, width: number, halfHeight: number): Promise<void> {
   const epoch=imageEpoch;
-  const canvas=await bottleCanvas(source,width,halfHeight*2);
+  const canvas=await stageCanvas(source,width,halfHeight*2);
   const ctx=canvas.getContext('2d')!;
   for(let i=0;i<2;i++) {
     const gray=toGreenLevels(ctx.getImageData(0,i*halfHeight,width,halfHeight).data,width);
@@ -264,4 +265,16 @@ export async function pushBottleSpriteDual(
   if (!asset) return;
   try { await pushBottlePhoto(bridge, bottleImageUrl(baseUrl, asset), halfW, halfH); }
   catch (error) { console.warn('Bottle image unavailable; tasting notes remain visible.', error); }
+}
+
+/** Tasting notes page: the header rule first (instant), then the bottle on its lit stage. */
+export async function pushTastingNotesImages(bridge: EvenAppBridge, baseUrl: string, wineId: string | null): Promise<void> {
+  const epoch=imageEpoch;
+  try {
+    const {w,h}=NOTES_RULE;
+    const gray=toGreenLevels(ruleCanvas(w,h).getContext('2d')!.getImageData(0,0,w,h).data,w);
+    await pushImg(bridge,6,'rule',encodeGrayscalePng(w,h,gray),epoch);
+  } catch (error) { console.warn('Header rule unavailable.', error); }
+  if(epoch!==imageEpoch) return;
+  await pushBottleSpriteDual(bridge, baseUrl, wineId, NOTES_IMG.w, NOTES_IMG.h);
 }
