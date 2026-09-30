@@ -15,7 +15,7 @@ import { dueLabel, type Rating } from './scheduler';
 import { assetIdFor } from '../identity';
 import { bottleImageUrl } from '../bottle-assets';
 import { clipBytes, clipLabel, LIST_ROW_PITCH } from '../glasses-list';
-import { pushBottlePhoto, invalidateImages, pushLogoToGlasses } from '../image-utils';
+import { rebuildGlassesPage, pushBottlePhoto, invalidateImages, pushLogoToGlasses } from '../image-utils';
 import { claimDisplay, dropDisplay } from '../display';
 import { rebuildHomePage } from '../pages';
 
@@ -76,7 +76,7 @@ export function buildStudyRevealPage(card: StudyCard, preview: Record<Rating, st
 export function buildStudyMessagePage(title: string, body: string, hint: string): RebuildPageContainer {
   return new RebuildPageContainer({ containerTotalNum: 2, textObject: [
     textBox(3, 'study-message', 48, 40, 480, 190, `${title}\n\n${body}`, 1),
-    textBox(4, 'study-message-hint', 48, 238, 480, 32, hint),
+    textBox(4, 'study-hint', 48, 238, 480, 32, hint),
   ] });
 }
 function summaryPage(s: StudySession): RebuildPageContainer {
@@ -113,7 +113,7 @@ async function render(force = true): Promise<void> {
   else page = buildStudyMessagePage('Nothing due right now.', emptyBody(), 'Tap: Home');
   await claimDisplay('study', relinquish);
   invalidateImages();
-  if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page.');
+  if (!await rebuildGlassesPage(bridge, page)) throw new Error('The glasses did not accept this page.');
   active = true; screen = next; shownKey = key; lastNavigation = Date.now();
   if (next === 'prompt' && asset) {
     try { await pushBottlePhoto(bridge, bottleImageUrl(baseUrl, asset), 100, 120); }
@@ -128,7 +128,7 @@ function emptyBody(): string {
 async function goHome(): Promise<void> {
   if (!bridge) return;
   invalidateImages();
-  if (!await bridge.rebuildPageContainer(rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
+  if (!await rebuildGlassesPage(bridge, rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
   active = false; screen = null; shownKey = ''; lastNavigation = Date.now();
   dropDisplay('study');
   window.dispatchEvent(new Event('winelens-glasses-home'));

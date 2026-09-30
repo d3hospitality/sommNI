@@ -30,6 +30,7 @@ const BACKUP_KEY = 'sommni_legacy_backup_v1';
 
 let store: KeyValueStore = browserStore();
 const chains = new Map<string, Promise<unknown>>();
+export async function flushCompanionWrites(): Promise<void> { await Promise.allSettled([...chains.values()]); }
 
 type BridgeLike = Parameters<typeof bridgeStore>[0];
 /** True inside the Even Hub host (the SDK bridge only answers there). */

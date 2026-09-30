@@ -4,7 +4,8 @@
 // Supports: split logo (200x100 halves), single bottle (100x100)
 // ═══════════════════════════════════════════════════════════════════
 
-import { EvenAppBridge, ImageRawDataUpdate, ImageRawDataUpdateResult } from '@evenrealities/even_hub_sdk';
+import { EvenAppBridge, ImageRawDataUpdate, ImageRawDataUpdateResult, type RebuildPageContainer } from '@evenrealities/even_hub_sdk';
+import { validateGlassesPage } from './glasses-page';
 import { bottleCanvas, stageCanvas, ruleCanvas, toGreenLevels } from './bottle-raster';
 import { encodeGrayscalePng } from './pngEncoder';
 import { brandGlassesCanvas } from './brand-mark';
@@ -14,11 +15,13 @@ import { NOTES_IMG, NOTES_RULE } from './pages';
 
 // One queue for the bridge; old page uploads are discarded before sending.
 let imageEpoch=0;
+let suspended=false;
 let imageQueue: Promise<void> = Promise.resolve();
 export function invalidateImages() { imageEpoch++; }
+export function suspendImages(value: boolean) { suspended=value; invalidateImages(); }
 async function pushImg(bridge: EvenAppBridge, id: number, name: string, data: Uint8Array, epoch=imageEpoch): Promise<void> {
   const task=imageQueue.catch(()=>{}).then(async()=>{
-    if(epoch!==imageEpoch) return;
+    if(suspended || epoch!==imageEpoch) return;
     const result=await bridge.updateImageRawData(new ImageRawDataUpdate({containerID:id,containerName:name,imageData:Array.from(data)}));
     if(!ImageRawDataUpdateResult.isSuccess(result)) throw new Error('Glasses image transfer failed');
     await new Promise(resolve=>setTimeout(resolve,100));
@@ -27,11 +30,18 @@ async function pushImg(bridge: EvenAppBridge, id: number, name: string, data: Ui
 }
 /** Any other small bridge operation (e.g. a text upgrade) that must not interleave with image transfers. */
 export async function sendSerial(task: () => Promise<unknown>, epoch=imageEpoch): Promise<void> {
-  const run=imageQueue.catch(()=>{}).then(async()=>{ if(epoch===imageEpoch) await task(); });
+  const run=imageQueue.catch(()=>{}).then(async()=>{ if(!suspended && epoch===imageEpoch) await task(); });
   imageQueue=run; await run;
 }
 /** Resolves once the app-wide image queue has nothing in flight (used before another module takes the display). */
 export async function imageIdle(): Promise<void> { await imageQueue.catch(()=>{}); }
+/** Page changes wait for any in-flight image transfer to finish. */
+export async function rebuildGlassesPage(bridge: EvenAppBridge, page: RebuildPageContainer): Promise<boolean> {
+  validateGlassesPage(page);
+  let accepted=false;
+  await sendSerial(async () => { accepted=await bridge.rebuildPageContainer(page); });
+  return accepted;
+}
 export function currentImageEpoch(): number { return imageEpoch; }
 /** Send a ready 16-level grayscale buffer through the app-wide queue; stale epochs never send. */
 export async function pushGrayImage(bridge: EvenAppBridge, id: number, name: string, width: number, height: number, gray: Uint8Array, epoch=imageEpoch): Promise<void> {

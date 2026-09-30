@@ -111,7 +111,7 @@ function homeContainers() {
   const tagLine2 = new TextContainerProperty({
     xPosition: 288, yPosition: PANEL_TAG_Y + 25, width: 280, height: 30,
     containerID: 6, containerName: "tag2",
-    content: `A clearer view of wine.`,
+    content: `Double tap: exit`,
     isEventCapture: 0,
   });
 
@@ -341,7 +341,8 @@ function clipChars(text: string, max: number): string {
 }
 
 export const NOTES_IMG = { x: 4, y: 4, w: 112, h: 140 } as const;
-export const NOTES_RULE = { w: 288, h: 10 } as const;
+// The hairline still draws one pixel; its image container must be at least 20px high.
+export const NOTES_RULE = { w: 288, h: 20 } as const;
 
 export function buildTastingNotesPage(wine: Wine, wineId: string | null): RebuildPageContainer {
   const TEXT_X = NOTES_IMG.x + NOTES_IMG.w + 8; // 124
@@ -391,7 +392,7 @@ export function buildTastingNotesPage(wine: Wine, wineId: string | null): Rebuil
   });
   y += NOTES_RULE.h + 4;
 
-  const NOTES_H = Math.floor((286 - y) / LINE) * LINE + 4;
+  const NOTES_H = Math.floor((254 - y) / LINE) * LINE + 4;
   const sections: [string, string][] = [
     ["LOOK", wine.appearance], ["NOSE", wine.nose], ["PALATE", wine.palate], ["FINISH", wine.finish],
   ];
@@ -403,10 +404,14 @@ export function buildTastingNotesPage(wine: Wine, wineId: string | null): Rebuil
     xPosition: TEXT_X, yPosition: y, width: TEXT_W, height: NOTES_H,
     containerID: 5, containerName: "notes", content: clipBytes(body.join("\n\n")), isEventCapture: 1,
   });
+  const footer = new TextContainerProperty({
+    xPosition: TEXT_X, yPosition: 258, width: TEXT_W, height: 28,
+    containerID: 8, containerName: 'notes-hint', content: 'Scroll notes · Double tap: Back', isEventCapture: 0,
+  });
 
   return new RebuildPageContainer({
-    containerTotalNum: 7,
-    textObject: [header, sub, notes, kicker],
+    containerTotalNum: 8,
+    textObject: [header, sub, notes, kicker, footer],
     imageObject: [p1, p2, rule],
   });
 }

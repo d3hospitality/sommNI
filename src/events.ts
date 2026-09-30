@@ -31,11 +31,13 @@ import {
   pushLogoToGlasses, pushGlobeToGlasses, pushGrapeSpriteToGlasses,
   pushBottleSprite, pushTastingNotesImages,
 } from './image-utils';
-import { getPairings, type Pairing } from './sync';
+import { getPairings, flushCompanionWrites, type Pairing } from './sync';
+import { flushStudyWrites } from './study/store';
+import { releaseDisplay, suspendDisplay } from './display';
 import { handleLibraryGlassesEvent, openLibraryOnGlasses } from './winebrary-glasses';
 import { handleStudyGlassesEvent, openStudyOnGlasses } from './study/glasses';
-import { handleAtlasGlassesEvent, openAtlasOnGlasses, pushCatalogGlobe } from './atlas-app';
-import { invalidateImages, sendSerial } from './image-utils';
+import { handleAtlasGlassesEvent, openAtlasOnGlasses, pushCatalogGlobe, pauseAtlasGlasses, resumeAtlasGlasses } from './atlas-app';
+import { rebuildGlassesPage, invalidateImages, sendSerial, imageIdle, suspendImages } from './image-utils';
 import { log } from './ui';
 
 // ═══ STATE ═══
@@ -70,7 +72,7 @@ let notesReturn: (() => Promise<void>) | null = null;
 
 /** Rebuild the glasses page; throws when the glasses reject it so callers never advance state. */
 async function rebuild(bridge: EvenAppBridge, page: RebuildPageContainer): Promise<void> {
-  if (!(await bridge.rebuildPageContainer(page))) throw new Error('Glasses rejected the page');
+  if (!(await rebuildGlassesPage(bridge, page))) throw new Error('Glasses rejected the page');
 }
 
 let bridgeRef: EvenAppBridge | null = null;
@@ -78,14 +80,47 @@ let baseUrlRef: string = "";
 let lastHoveredIndex: number = -1;
 
 // ═══ REGISTER ═══
-export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string): () => void {
-  window.addEventListener('winelens-glasses-home', () => { currentPage="home"; lastHoveredIndex=-1; });
+export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string, onExit: () => void = () => {}): () => void {
+  const home = () => { currentPage="home"; lastHoveredIndex=-1; lastNavigationTime=Date.now(); };
+  window.addEventListener('winelens-glasses-home', home);
   bridgeRef = bridge;
   baseUrlRef = baseUrl;
-
-  return bridge.onEvenHubEvent((event: EvenHubEvent) => {
-    handleEvent(bridge, event, baseUrl);
+  let ended = false, background = false;
+  let lifecycle = Promise.resolve();
+  const report = (error: unknown) => log(`Glasses: ${error instanceof Error ? error.message : String(error)}`, 'error');
+  const flush = async () => { await flushCompanionWrites(); await flushStudyWrites(); };
+  const enqueue = (task: () => Promise<void>) => { lifecycle=lifecycle.then(task).catch(report); };
+  const unsubscribe = bridge.onEvenHubEvent((event: EvenHubEvent) => {
+    if (ended) return;
+    const type = event.sysEvent?.eventType;
+    // Lifecycle messages must never fall through to the current page's click/back handler.
+    if (type === 6 || type === 7) {
+      ended = true;
+      suspendDisplay(true); suspendImages(true);
+      unsubscribe(); window.removeEventListener('winelens-glasses-home', home); onExit();
+      enqueue(async () => { await releaseDisplay(); await imageIdle(); await flush(); });
+      return;
+    }
+    if (type === 5) {
+      background = true;
+      suspendDisplay(true); suspendImages(true);
+      enqueue(async () => { await pauseAtlasGlasses(); await imageIdle(); await flush(); });
+      return;
+    }
+    if (type === 4) {
+      enqueue(async () => {
+        if (ended) return;
+        suspendDisplay(false); suspendImages(false);
+        try { await resumeAtlasGlasses(); } finally { background = false; }
+      });
+      return;
+    }
+    if (!background) void handleEvent(bridge, event, baseUrl).catch(report);
   });
+  return () => {
+    if (ended) return;
+    ended=true; unsubscribe(); window.removeEventListener('winelens-glasses-home', home);
+  };
 }
 
 // ═══ REACTIVE SPRITES ═══
@@ -117,7 +152,7 @@ async function showCountryFootprint(bridge: EvenAppBridge, baseUrl: string): Pro
 }
 /** Grape list: the chosen country on the globe (the grape sprites were decorative). */
 async function showGrapeCountry(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
-  if (!currentCountry || !await pushCatalogGlobe(bridge, currentCountry, { names: ['grape-top', 'grape-bottom'] })) await showGrapeCountry(bridge, baseUrl);
+  if (!currentCountry || !await pushCatalogGlobe(bridge, currentCountry, { names: ['grape-top', 'grape-bottom'] })) await pushGrapeSpriteToGlasses(bridge, baseUrl);
 }
 async function hoverCountry(bridge: EvenAppBridge, index: number): Promise<void> {
   if (!currentType || index === lastHoveredIndex) return;
@@ -270,8 +305,8 @@ async function goHome(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
 
 // ═══ HANDLE CLICK ═══
 async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string): Promise<void> {
-  invalidateImages();
   if (navigating) return;
+  invalidateImages();
   navigating = true;
 
   try {
@@ -550,6 +585,17 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
 // ═══ DOUBLE-CLICK = BACK on ALL pages ═══
 async function handleDoubleClick(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
   log(`[DBLCLICK] page=${currentPage}`);
+  if (currentPage === 'home') {
+    if (navigating || Date.now() - lastNavigationTime < NAV_DEBOUNCE_MS) return;
+    navigating = true;
+    try {
+      // Keep listeners and state alive: cancelling the system dialog must remain usable.
+      await sendSerial(async () => {
+        if (!await bridge.shutDownPageContainer(1)) throw new Error('Exit dialog was not accepted. Try again.');
+      });
+    } finally { navigating = false; lastNavigationTime = Date.now(); }
+    return;
+  }
   await goBack(bridge, baseUrl);
 }
 
