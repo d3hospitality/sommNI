@@ -1,5 +1,5 @@
--- REVIEW ONLY. Apply to mcmtasetompygfktzhpr after 0001..0004 and the two
--- sommni-api bottle/study migrations. No migration has been applied by this task.
+-- Applied to mcmtasetompygfktzhpr on 2026-09-30 with Romario's approval (before the
+-- sommni-api bottle/study migrations; it does not depend on them).
 begin;
 create table public.wl_link_codes (
  id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,

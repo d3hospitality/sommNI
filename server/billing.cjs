@@ -1,6 +1,6 @@
 const Stripe = require('stripe');
 const card = require('../shared/rate-card.json');
-const { canonicalOrigin } = require('../shared/accounts.json');
+const { CANONICAL_ORIGIN: canonicalOrigin } = require('./device-link.cjs');
 const { endpoint, rpc, only, HttpError, UNAVAILABLE } = require('./service.cjs');
 const LIVE_STATUSES = new Set(['trialing', 'active', 'past_due', 'unpaid', 'incomplete', 'paused']);
 const own = (obj, key) => typeof key === 'string' && Object.hasOwn(obj, key);

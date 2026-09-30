@@ -13,3 +13,4 @@ dist-site/
 !.env.example
 
 site/.vite-site/
+.vercel

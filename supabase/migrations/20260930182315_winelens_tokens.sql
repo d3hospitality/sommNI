@@ -1,4 +1,4 @@
--- Draft: only the throwaway test database is authorized to execute this file.
+-- Applied to mcmtasetompygfktzhpr on 2026-09-30 with Romario's approval.
 begin;
 create table public.winelens_rate_cards(version integer primary key, card jsonb not null, effective_at timestamptz not null default now());
 -- Kept identical to shared/rate-card.json; test:sql verifies this contract.
@@ -261,7 +261,9 @@ do $$ declare t text; f record; begin
  execute format('create policy read_own on public.%I for select to authenticated using(user_id=(select auth.uid()))',t);
  end if;
  end loop;
- for f in select oid::regprocedure as signature from pg_proc where pronamespace='public'::regnamespace and proname like 'winelens\_%' escape '\' loop
+ -- Only this migration's functions: the pre-existing ingest RPCs (0004) keep their own grants.
+ for f in select oid::regprocedure as signature from pg_proc where pronamespace='public'::regnamespace and proname like 'winelens\_%' escape '\'
+   and proname not in ('winelens_import_wines','winelens_update_wine_notes','winelens_verify_ingest') loop
  execute format('revoke all on function %s from public,anon,authenticated',f.signature);
  execute format('grant execute on function %s to service_role',f.signature);
  end loop;

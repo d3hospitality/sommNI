@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import defaults from '../shared/accounts.json';
-export const CANONICAL_ORIGIN = defaults.canonicalOrigin;
+export const CANONICAL_ORIGIN: string = import.meta.env.VITE_CANONICAL_ORIGIN || defaults.canonicalOrigin;
 export const API_BASE = String(import.meta.env.VITE_API_BASE_URL || CANONICAL_ORIGIN).replace(/\/$/, '');
 const URL = import.meta.env.VITE_SUPABASE_URL || defaults.supabaseUrl;
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || defaults.publishableKey;

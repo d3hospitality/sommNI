@@ -1,5 +1,8 @@
 const { createHash, createHmac, randomInt } = require('node:crypto');
 const defaults = require('../shared/accounts.json');
+// A staging project may override the canonical origin (https origin only); production uses shared/accounts.json.
+const ENV_ORIGIN = String(process.env.WINELENS_CANONICAL_ORIGIN || '');
+const CANONICAL_ORIGIN = /^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(ENV_ORIGIN) ? ENV_ORIGIN : defaults.canonicalOrigin;
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 class LinkError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -11,7 +14,7 @@ function sessionId(token) {
 }
 function allowedOrigin(origin) {
   if (!origin) return true; // native clients are authenticated by their credential, not CORS
-  if ([defaults.canonicalOrigin, 'https://d3hospitality.github.io', 'https://hub.evenrealities.com', 'null', 'https://appassets.androidplatform.net', 'http://localhost', 'https://localhost', 'capacitor://localhost'].includes(origin)) return true;
+  if ([CANONICAL_ORIGIN, 'https://d3hospitality.github.io', 'https://hub.evenrealities.com', 'null', 'https://appassets.androidplatform.net', 'http://localhost', 'https://localhost', 'capacitor://localhost'].includes(origin)) return true;
   try { const u = new URL(origin); return u.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(u.hostname) && !!u.port && u.origin === origin; } catch { return false; }
 }
 function networkHash(req, secret) {
@@ -128,4 +131,4 @@ function createHandler({ getClients, secret = () => process.env.SUPABASE_SERVICE
     }
   };
 }
-module.exports = { LinkError, createHandler, normalize, codeHash, sessionId, allowedOrigin, networkHash };
+module.exports = { CANONICAL_ORIGIN, LinkError, createHandler, normalize, codeHash, sessionId, allowedOrigin, networkHash };
