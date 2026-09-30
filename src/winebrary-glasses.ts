@@ -1,6 +1,7 @@
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, TextContainerProperty, ImageContainerProperty, ListContainerProperty, ListItemContainerProperty } from '@evenrealities/even_hub_sdk';
 import type { LibraryWine } from './winebrary';
-import { pushBottlePhoto, invalidateImages, pushLogoToGlasses } from './image-utils';
+import { pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch } from './image-utils';
+import { SCENE_X, TILE_W, TILE_H } from './wine-scene';
 import { claimDisplay, dropDisplay } from './display';
 import { bottleCanvas } from './bottle-raster';
 import { rebuildHomePage } from './pages';
@@ -8,7 +9,9 @@ import { pageList, clipLabel, clipBytes, labelBytes, wholeRowHeight, LIST_LABEL_
 
 // ═══════════════════════════════════════════════════════════════════
 // Winebrary on G2 — the account library as a native glasses flow.
-//   Home › My Winebrary › (wine with several vintages › vintage) › detail
+//   Home › My Winebrary › Red/White… › country › region › wine (› vintage) › detail
+// The detail page puts the wine on its map: country dithered behind everything,
+// the country semi-lit and the region's wineries glowing (wine-scene.ts).
 // Click selects, double tap goes back one level, lists page at 18 entries.
 // While `active`, this module owns the display and legacy catalog
 // handlers never see its events.
@@ -18,9 +21,12 @@ export interface LibrarySource { userId: string | null; loading: boolean; error:
 export interface WineGroup { title: string; wines: LibraryWine[] }
 type MessageReason = 'signed-out' | 'loading' | 'empty' | 'error';
 type Screen =
-  | { kind: 'list'; page: number }
-  | { kind: 'vintages'; group: number; page: number; listPage: number }
-  | { kind: 'detail'; wine: LibraryWine; from: 'list' | 'vintages' | 'phone' | 'atlas'; group: number; listPage: number; vintagePage: number }
+  | { kind: 'types'; page: number }
+  | { kind: 'countries'; type: string; page: number }
+  | { kind: 'regions'; type: string; country: string; page: number }
+  | { kind: 'list'; type: string; country: string; region: string; page: number }
+  | { kind: 'vintages'; group: WineGroup; page: number; parent: Screen }
+  | { kind: 'detail'; wine: LibraryWine; from: 'library' | 'phone' | 'atlas'; parent: Screen | null }
   | { kind: 'message'; reason: MessageReason };
 
 let bridge: EvenAppBridge | null = null;
@@ -29,7 +35,8 @@ let active = false;
 let sending = false;
 let baseUrl = '';
 let screen: Screen | null = null;
-let groups: WineGroup[] = [];
+let groups: WineGroup[] = [];   // wines on the current list screen
+let items: LibraryWine[] = [];   // the whole library (or its offline copy)
 let offlineCopy = false;
 let lastNavigation = 0;
 const NAV_SETTLE_MS = 350; // swallow the ghost click that can follow a page rebuild
@@ -43,6 +50,53 @@ export function setLibrarySource(read: () => LibrarySource) { readSource=read; }
 /** Current Winebrary snapshot (the Atlas matches these wines to places). */
 export function readLibrary(): LibrarySource { return readSource(); }
 let atlasReturn: (() => Promise<void>) | null = null;
+
+// ═══ PLACES: type › country › region ═══
+// Injected by atlas-app (which knows the map). Without it, the wine's own fields are used.
+export interface WinePlace { type: string; country: string; region: string; mapped: boolean }
+export type WinePlacer = (wines: LibraryWine[]) => Promise<Map<string, WinePlace>>;
+/** Two 288×144 tiles (16 levels) for the detail map panel, or null when the wine has no map place. */
+export type WineSceneBuilder = (wine: LibraryWine) => Promise<Uint8Array[] | null>;
+let placer: WinePlacer | null = null;
+let sceneBuilder: WineSceneBuilder | null = null;
+export function setWinePlacer(p: WinePlacer | null) { placer = p; }
+export function setWineSceneBuilder(b: WineSceneBuilder | null) { sceneBuilder = b; }
+let places = new Map<string, WinePlace>();
+
+export const TYPE_ORDER = ['Red', 'White', 'Sparkling', 'Rosé', 'Orange', 'Dessert', 'Other'];
+const UNKNOWN_COUNTRY = 'Country not set', UNKNOWN_REGION = 'Region not set';
+export function wineTypeOf(wine: LibraryWine): string {
+  const c = (wine.metadata?.color || '').trim().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  return ({ red: 'Red', white: 'White', sparkling: 'Sparkling', rose: 'Rosé', orange: 'Orange', dessert: 'Dessert' } as Record<string, string>)[c] ?? 'Other';
+}
+/** The wine's own fields: "Place, CC" or metadata.country. */
+export function fallbackPlace(wine: LibraryWine): WinePlace {
+  const [place = '', suffix = ''] = (wine.region ?? '').split(',').map(p => p.trim());
+  return { type: wineTypeOf(wine), country: wine.metadata?.country?.trim() || suffix || UNKNOWN_COUNTRY, region: place || UNKNOWN_REGION, mapped: false };
+}
+const placeOf = (wine: LibraryWine) => places.get(wine.id) ?? fallbackPlace(wine);
+async function refreshPlaces(list: LibraryWine[]): Promise<void> {
+  places = new Map();
+  if (!placer) return;
+  try { places = await placer(list); } catch (error) { console.warn('[wineLENS] Winebrary places unavailable; using the wines\' own fields.', error); }
+}
+interface Facet { label: string; count: number }
+/** Rows with counts, in the given order (else most wines first); unknown places last. */
+function facets(list: LibraryWine[], key: (p: WinePlace) => string, order?: string[]): Facet[] {
+  const counts = new Map<string, number>();
+  for (const w of list) { const k = key(placeOf(w)); counts.set(k, (counts.get(k) ?? 0) + 1); }
+  const rank = (label: string) => order ? (order.indexOf(label) + 1 || order.length + 1) : 0;
+  const unknown = (label: string) => label === UNKNOWN_COUNTRY || label === UNKNOWN_REGION ? 1 : 0;
+  return [...counts].map(([label, count]) => ({ label, count }))
+    .sort((a, b) => unknown(a.label) - unknown(b.label) || rank(a.label) - rank(b.label) || b.count - a.count || a.label.localeCompare(b.label));
+}
+const inType = (type: string) => items.filter(w => placeOf(w).type === type);
+const inCountry = (type: string, country: string) => inType(type).filter(w => placeOf(w).country === country);
+const inRegion = (type: string, country: string, region: string) => inCountry(type, country).filter(w => placeOf(w).region === region);
+const facetLabel = (f: Facet) => rowLabel(f.label, String(f.count));
+function typeFacets(): Facet[] { return facets(items, p => p.type, TYPE_ORDER); }
+function countryFacets(type: string): Facet[] { return facets(inType(type), p => p.country); }
+function regionFacets(type: string, country: string): Facet[] { return facets(inCountry(type, country), p => p.region); }
 
 // ═══ VINTAGES & GROUPING ═══
 export function vintageShort(wine: LibraryWine): string {
@@ -105,12 +159,20 @@ function listScreen(name: string, labels: string[], header: string): RebuildPage
   });
   return new RebuildPageContainer({ containerTotalNum: 2, listObject: [list], textObject: [title] });
 }
-export function buildLibraryListPage(list: WineGroup[], page: number, offline = false): RebuildPageContainer {
+export function buildLibraryListPage(list: WineGroup[], page: number, offline = false, heading = 'WINEBRARY'): RebuildPageContainer {
   const paged = libraryListPage(list, page);
-  const parts = ['WINEBRARY', `${list.length} ${list.length === 1 ? 'wine' : 'wines'}`];
+  const parts = [heading, `${list.length} ${list.length === 1 ? 'wine' : 'wines'}`];
   if (paged.pageCount > 1) parts.push(`${paged.page + 1}/${paged.pageCount}`);
   if (offline) parts.push('offline copy');
   return listScreen('library-list', paged.labels, parts.join('  ·  '));
+}
+/** Types, countries and regions: one list, rows with wine counts. */
+function buildFacetPage(name: string, rows: Facet[], page: number, heading: string): RebuildPageContainer {
+  const paged = pageList(rows.map(facetLabel), page);
+  const parts = [heading];
+  if (paged.pageCount > 1) parts.push(`${paged.page + 1}/${paged.pageCount}`);
+  if (offlineCopy) parts.push('offline copy');
+  return listScreen(name, paged.labels, parts.join('  ·  '));
 }
 function buildVintageListPage(g: WineGroup, page: number): RebuildPageContainer {
   const paged = vintageListPage(g, page);
@@ -133,7 +195,8 @@ function buildMessagePage(reason: MessageReason): RebuildPageContainer {
  * Title (1–2 lines) → vintage · producer · region (1 line) → notes (the one capture container,
  * scrollable) → hint. Heights follow the title, so a short name never leaves a gap.
  */
-export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' | 'Atlas' = 'Home'): RebuildPageContainer {
+export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' | 'Atlas' = 'Home', scene: WinePlace | null = null): RebuildPageContainer {
+  if (scene) return buildSceneWinePage(wine, backTo, scene);
   const x=wine.image_url ? 132 : 24, width=560-x, per=charsPerLine(width);
   const title=clipLabel(wine.wine_name, per*2);
   const titleH=Math.min(2, estimateLines(title, width))*LINE_H+4;
@@ -155,19 +218,66 @@ export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' 
   return new RebuildPageContainer({containerTotalNum:textObject.length+imageObject.length,textObject,imageObject});
 }
 
+/**
+ * Detail with the map scene: text column on the left half, the 288×288 map panel on the right
+ * (bottle over the country backdrop, region glowing — see wine-scene.ts). G2 draws images above
+ * text, so nothing overlaps.
+ */
+function buildSceneWinePage(wine: LibraryWine, backTo: string, place: WinePlace): RebuildPageContainer {
+  const x=10, width=SCENE_X-x-8, per=charsPerLine(width);
+  const title=clipLabel(wine.wine_name, per*2);
+  const titleH=Math.min(2, estimateLines(title, width))*LINE_H+4;
+  const facts=clipLabel([vintageLong(wine), wine.producer].filter(Boolean).join(' · '), per);
+  const where=clipLabel([place.region !== UNKNOWN_REGION ? place.region : '', place.country !== UNKNOWN_COUNTRY ? place.country : ''].filter(Boolean).join(' · '), per);
+  const factsY=6+titleH, placeY=factsY+LINE_H+1, notesY=placeY+LINE_H+8;
+  const notesBottom=notesY+Math.floor((250-notesY)/LINE_H)*LINE_H+4;
+  const notes=clipBytes([wine.metadata?.grape, wine.notes || 'No notes yet. Add your impressions in Winebrary on your phone.'].filter(Boolean).join('\n'));
+  const overflow=estimateLines(notes, width) > Math.floor((notesBottom-notesY)/LINE_H);
+  const textObject=[
+    new TextContainerProperty({xPosition:x,yPosition:6,width,height:titleH,containerID:3,containerName:'library-title',content:title,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:factsY,width,height:LINE_H+1,containerID:4,containerName:'library-vintage',content:facts,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:placeY,width,height:LINE_H+1,containerID:7,containerName:'library-place',content:where,isEventCapture:0}),
+    new TextContainerProperty({xPosition:x,yPosition:notesY,width,height:notesBottom-notesY,containerID:5,containerName:'library-notes',content:notes,isEventCapture:1}),
+    new TextContainerProperty({xPosition:x,yPosition:254,width,height:30,containerID:6,containerName:'library-footer',content:overflow ? `Scroll · Double tap: ${backTo}` : `Double tap: ${backTo}`,isEventCapture:0}),
+  ];
+  const imageObject=[
+    new ImageContainerProperty({xPosition:SCENE_X,yPosition:0,width:TILE_W,height:TILE_H,containerID:1,containerName:'scene-top'}),
+    new ImageContainerProperty({xPosition:SCENE_X,yPosition:TILE_H,width:TILE_W,height:TILE_H,containerID:2,containerName:'scene-bottom'}),
+  ];
+  return new RebuildPageContainer({containerTotalNum:textObject.length+imageObject.length,textObject,imageObject});
+}
+const SCENE_TILE_NAMES: [number, string][] = [[1, 'scene-top'], [2, 'scene-bottom']];
+
 // ═══ RENDER & NAVIGATION ═══
 async function render(next: Screen): Promise<void> {
   if (!bridge) throw new Error('Glasses are not connected.');
   invalidateImages();
   let page: RebuildPageContainer;
-  if (next.kind === 'list') page = buildLibraryListPage(groups, next.page, offlineCopy);
-  else if (next.kind === 'vintages') page = buildVintageListPage(groups[next.group], next.page);
-  else if (next.kind === 'detail') page = buildLibraryWinePage(next.wine, next.from === 'phone' ? 'Home' : next.from === 'atlas' ? 'Atlas' : 'Back');
+  let scenePlace: WinePlace | null = null;
+  if (next.kind === 'types') page = buildFacetPage('library-types', typeFacets(), next.page, `WINEBRARY  ·  ${items.length} ${items.length === 1 ? 'wine' : 'wines'}`);
+  else if (next.kind === 'countries') page = buildFacetPage('library-countries', countryFacets(next.type), next.page, next.type.toUpperCase());
+  else if (next.kind === 'regions') page = buildFacetPage('library-regions', regionFacets(next.type, next.country), next.page, `${next.type.toUpperCase()}  ·  ${next.country.toUpperCase()}`);
+  else if (next.kind === 'list') { groups = groupLibrary(inRegion(next.type, next.country, next.region)); page = buildLibraryListPage(groups, next.page, offlineCopy, next.region.toUpperCase()); }
+  else if (next.kind === 'vintages') page = buildVintageListPage(next.group, next.page);
+  else if (next.kind === 'detail') {
+    let place = places.get(next.wine.id) ?? null;
+    if (!place && placer) { try { place = (await placer([next.wine])).get(next.wine.id) ?? null; } catch { place = null; } }
+    scenePlace = sceneBuilder && place?.mapped ? place : null;
+    page = buildLibraryWinePage(next.wine, next.from === 'phone' ? 'Home' : next.from === 'atlas' ? 'Atlas' : 'Back', scenePlace);
+  }
   else page = buildMessagePage(next.reason);
   await claimDisplay('library', relinquish);
   if (!await bridge.rebuildPageContainer(page)) throw new Error('The glasses did not accept this page. Try again.');
   active = true; screen = next; lastNavigation = Date.now();
-  if (next.kind === 'detail' && next.wine.image_url) {
+  if (next.kind !== 'detail') return;
+  const epoch = currentImageEpoch();
+  if (scenePlace && sceneBuilder) {
+    // Text is already up; the map scene follows (four tiles through the app image queue).
+    try {
+      const tiles = await sceneBuilder(next.wine);
+      if (tiles) for (let i = 0; i < SCENE_TILE_NAMES.length; i++) await pushGrayImage(bridge, SCENE_TILE_NAMES[i][0], SCENE_TILE_NAMES[i][1], TILE_W, TILE_H, tiles[i], epoch);
+    } catch (error) { console.warn('[wineLENS] Wine map unavailable; text stays readable.', error); }
+  } else if (next.wine.image_url) {
     try { await pushBottlePhoto(bridge, next.wine.image_url, 100, 120); }
     catch (error) { console.warn('[wineLENS] Bottle image unavailable; text stays readable.', error); }
   }
@@ -196,14 +306,15 @@ export async function openLibraryOnGlasses(): Promise<void> {
   await settle(async () => {
     const source = readSource();
     offlineCopy = false;
-    groups = groupLibrary(source.items);
-    if (!source.userId) return render({ kind: 'message', reason: 'signed-out' });
-    if (!groups.length && source.error) {
+    items = source.items;
+    if (!source.userId) { items = []; return render({ kind: 'message', reason: 'signed-out' }); }
+    if (!items.length && source.error) {
       const cached = await loadLibraryCache(source.userId);
-      if (cached?.items.length) { groups = groupLibrary(cached.items); offlineCopy = true; }
+      if (cached?.items.length) { items = cached.items; offlineCopy = true; }
     }
-    if (!groups.length) return render({ kind: 'message', reason: source.loading ? 'loading' : source.error ? 'error' : 'empty' });
-    return render({ kind: 'list', page: 0 });
+    if (!items.length) return render({ kind: 'message', reason: source.loading ? 'loading' : source.error ? 'error' : 'empty' });
+    await refreshPlaces(items);
+    return render({ kind: 'types', page: 0 });
   });
 }
 /** Called by the phone companion when the collection finishes loading or changes. */
@@ -224,45 +335,58 @@ async function back(): Promise<void> {
       if (back) return back();
       return goHome();
     }
-    if (s.from === 'vintages') return render({ kind: 'vintages', group: s.group, page: s.vintagePage, listPage: s.listPage });
-    return render({ kind: 'list', page: s.listPage });
+    return s.parent ? render(s.parent) : goHome();
   }
-  if (s.kind === 'vintages') return s.page > 0 ? render({ ...s, page: s.page - 1 }) : render({ kind: 'list', page: s.listPage });
-  return s.page > 0 ? render({ kind: 'list', page: s.page - 1 }) : goHome();
+  if (s.kind === 'vintages') return s.page > 0 ? render({ ...s, page: s.page - 1 }) : render(s.parent);
+  if (s.page > 0) return render({ ...s, page: s.page - 1 });
+  if (s.kind === 'list') return render({ kind: 'regions', type: s.type, country: s.country, page: 0 });
+  if (s.kind === 'regions') return render({ kind: 'countries', type: s.type, page: 0 });
+  if (s.kind === 'countries') return render({ kind: 'types', page: 0 });
+  return goHome();
 }
 async function select(index: number): Promise<void> {
   const s = screen;
   if (!s || s.kind === 'detail') return;
   if (s.kind === 'message') return goHome();
+  if (s.kind === 'types' || s.kind === 'countries' || s.kind === 'regions') {
+    const rows = s.kind === 'types' ? typeFacets() : s.kind === 'countries' ? countryFacets(s.type) : regionFacets(s.type, s.country);
+    const row = pageList(rows.map(facetLabel), s.page).rows[index];
+    if (!row) return;
+    if (row.kind === 'back') return back();
+    if (row.kind === 'more') return render({ ...s, page: s.page + 1 });
+    const label = rows[row.index].label;
+    if (s.kind === 'types') return render({ kind: 'countries', type: label, page: 0 });
+    if (s.kind === 'countries') return render({ kind: 'regions', type: s.type, country: label, page: 0 });
+    return render({ kind: 'list', type: s.type, country: s.country, region: label, page: 0 });
+  }
   if (s.kind === 'list') {
     const row = libraryListPage(groups, s.page).rows[index];
     if (!row) return;
     if (row.kind === 'back') return back();
-    if (row.kind === 'more') return render({ kind: 'list', page: s.page + 1 });
+    if (row.kind === 'more') return render({ ...s, page: s.page + 1 });
     const group = groups[row.index];
-    if (group.wines.length === 1) return render({ kind: 'detail', wine: group.wines[0], from: 'list', group: row.index, listPage: s.page, vintagePage: 0 });
-    return render({ kind: 'vintages', group: row.index, page: 0, listPage: s.page });
+    if (group.wines.length === 1) return render({ kind: 'detail', wine: group.wines[0], from: 'library', parent: s });
+    return render({ kind: 'vintages', group, page: 0, parent: s });
   }
-  const group = groups[s.group];
-  const row = vintageListPage(group, s.page).rows[index];
+  const row = vintageListPage(s.group, s.page).rows[index];
   if (!row) return;
   if (row.kind === 'back') return back();
   if (row.kind === 'more') return render({ ...s, page: s.page + 1 });
-  return render({ kind: 'detail', wine: group.wines[row.index], from: 'vintages', group: s.group, listPage: s.listPage, vintagePage: s.page });
+  return render({ kind: 'detail', wine: s.group.wines[row.index], from: 'library', parent: s });
 }
 
 /** Wine Atlas › region › wine: show one account wine; double tap goes back to the Atlas. */
 export async function showWineFromAtlas(wine: LibraryWine, back: () => Promise<void>) {
   if (!bridge) throw new Error('Glasses are not connected.');
   atlasReturn = back;
-  await settle(() => render({ kind: 'detail', wine, from: 'atlas', group: -1, listPage: 0, vintagePage: 0 }));
+  await settle(() => render({ kind: 'detail', wine, from: 'atlas', parent: null }));
 }
 
 /** Sent from the phone: show one account wine; double tap returns home. */
 export async function showWineOnGlasses(wine: LibraryWine) {
   if (!canShowWine()) throw new Error('Connect your Even G2 glasses first.');
   sending=true;
-  try { await render({ kind: 'detail', wine, from: 'phone', group: -1, listPage: 0, vintagePage: 0 }); }
+  try { await render({ kind: 'detail', wine, from: 'phone', parent: null }); }
   finally { sending=false; }
 }
 
@@ -284,7 +408,7 @@ export async function clearPrivateGlasses() {
   if (!active || !bridge) return;
   invalidateImages();
   const accepted=await bridge.rebuildPageContainer(rebuildHomePage());
-  if (accepted) { active=false; screen=null; groups=[]; dropDisplay('library'); window.dispatchEvent(new Event('winelens-glasses-home')); }
+  if (accepted) { active=false; screen=null; groups=[]; items=[]; places=new Map(); dropDisplay('library'); window.dispatchEvent(new Event('winelens-glasses-home')); }
 }
 
 // ═══ OFFLINE COPY ═══
