@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════
-// Wine detail scene for G2 — a 288×288 map panel on the right half of the screen:
+// Wine detail scene for G2 — a 288×288 map panel on the right half of the screen, seen through
+// a rounded lens mask that dithers out to black at the edges:
 //   • the wine's country and its neighbours, dithered, as the backdrop
 //   • the country semi-highlighted (a textured mid-level fill + bright border)
 //   • the region super-highlighted: a glow over its mapped winery locations + the dots
@@ -21,8 +22,22 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 /** Where the region sits inside the panel (right of the bottle). */
 const FOCUS_X = 190, FOCUS_Y = 140;
 const BOTTLE = { x: 6, y: 10, w: 96, h: 270 };
-// Levels (0–255 before quantising to multiples of 17)
-const LAND = 9, NEIGHBOUR_BORDER = 40, COUNTRY_FILL = 24, COUNTRY_BORDER = 120, GLOW_MIN = 45, GLOW_MAX = 175, DOT = 238;
+// Levels (0–255 before quantising to multiples of 17). The map is a backdrop: every level sits
+// well below the bottle and the text (which reach full brightness); the region is still the
+// brightest thing on the map, the country next, neighbours faintest.
+const LAND = 6, NEIGHBOUR_BORDER = 24, COUNTRY_FILL = 16, COUNTRY_BORDER = 64, GLOW_MIN = 28, GLOW_MAX = 105, DOT = 136;
+/**
+ * Lens mask: a rounded window (superellipse) that dissolves the map to black toward the panel
+ * edges, so the backdrop reads as a soft view rather than a hard square on the display.
+ * 1 inside `inner`, 0 at `outer`, smooth in between; the ordered dither turns the falloff into grain.
+ */
+const MASK = { power: 3.2, inner: 0.62, outer: 1.0 };
+function lensMask(x: number, y: number): number {
+  const u = Math.abs((x + 0.5) / (SCENE / 2) - 1), v = Math.abs((y + 0.5) / (SCENE / 2) - 1);
+  const r = Math.pow(Math.pow(u, MASK.power) + Math.pow(v, MASK.power), 1 / MASK.power);
+  const t = Math.min(1, Math.max(0, (r - MASK.inner) / (MASK.outer - MASK.inner)));
+  return 1 - t * t * (3 - 2 * t);
+}
 
 export interface SceneInput { country: Country; region: Region | null; imageUrl: string | null }
 
@@ -133,6 +148,7 @@ export async function renderWineScene(renderer: GlobeRenderer, input: SceneInput
     }
   }
   for (const [x, y] of dots) if (x >= 0 && y >= 0 && x < SCENE && y < SCENE) value[y * SCENE + x] = DOT;
+  for (let y = 0; y < SCENE; y++) for (let x = 0; x < SCENE; x++) value[y * SCENE + x] *= lensMask(x, y);
   // Behind the bottle the map fades, so the glass reads cleanly.
   const fadeEnd = BOTTLE.x + BOTTLE.w + 14;
   for (let y = 0; y < SCENE; y++) for (let x = 0; x < fadeEnd; x++) value[y * SCENE + x] *= x < BOTTLE.x + BOTTLE.w ? 0.5 : 0.5 + 0.5 * (x - BOTTLE.x - BOTTLE.w) / 14;
