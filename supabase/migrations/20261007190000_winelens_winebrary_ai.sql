@@ -4,6 +4,7 @@
 -- 2. Rate card v2: Tasting notes become a metered feature. Wine-list pages, which never shipped
 --    in the app, are retired from the current card (v1 stays immutable for history/pack grants).
 -- 3. AI jobs: one row per paid request. Replays return the stored result and never charge twice.
+-- 4. Shared tasting notes: the first paid draft for a bottle + vintage is reused for free by everyone after.
 -- Additive. Safe if sommni-api's bottle/study migrations were already applied.
 begin;
 
@@ -157,4 +158,69 @@ revoke all on function public.winelens_begin_job(uuid,text,uuid,text,boolean) fr
 revoke all on function public.winelens_finish_job(uuid,uuid,uuid,jsonb) from public, anon, authenticated;
 grant execute on function public.winelens_begin_job(uuid,text,uuid,text,boolean) to service_role;
 grant execute on function public.winelens_finish_job(uuid,uuid,uuid,jsonb) to service_role;
+-- ── 4. Shared tasting notes: one paid draft per bottle + vintage, reused by everyone after.
+-- Key = sha256 of normalised producer | wine name | vintage (computed by the API).
+-- The first request claims the key and is charged; later requests get the stored notes free.
+-- A second request while the first is still drafting is told to wait (never charged twice).
+-- Notes describe a wine, never a person: user edits stay in user_collection, not here.
+create table if not exists public.winelens_shared_notes (
+  key text primary key check (key ~ '^[0-9a-f]{64}$'),
+  status text not null check (status in ('pending','ready')),
+  notes jsonb,
+  wine jsonb not null default '{}'::jsonb,
+  owner_user uuid references auth.users(id) on delete set null,
+  owner_request uuid,
+  claimed_at timestamptz not null default now(),
+  ready_at timestamptz,
+  served integer not null default 0,
+  check ((status = 'ready') = (notes is not null))
+);
+alter table public.winelens_shared_notes enable row level security;
+revoke all on public.winelens_shared_notes from public, anon, authenticated;
+grant all on public.winelens_shared_notes to service_role;
+
+create or replace function public.winelens_share_claim(p_key text,p_user uuid,p_request_id uuid,p_wine jsonb) returns jsonb language plpgsql security definer set search_path='' as $$
+declare s public.winelens_shared_notes;
+begin
+ if p_key is null or p_key !~ '^[0-9a-f]{64}$' or p_user is null or p_request_id is null then raise exception 'invalid share'; end if;
+ perform pg_advisory_xact_lock(hashtextextended('winelens-share:'||p_key,0));
+ select * into s from public.winelens_shared_notes where key=p_key for update;
+ if found and s.status='ready' then
+   update public.winelens_shared_notes set served=served+1 where key=p_key;
+   return jsonb_build_object('status','ready','notes',s.notes);
+ end if;
+ -- Someone else is drafting this bottle right now (claims older than 5 minutes are abandoned).
+ if found and (s.owner_user is distinct from p_user or s.owner_request is distinct from p_request_id) and s.claimed_at>now()-interval '5 minutes' then
+   return jsonb_build_object('status','busy');
+ end if;
+ insert into public.winelens_shared_notes(key,status,wine,owner_user,owner_request,claimed_at)
+ values(p_key,'pending',coalesce(p_wine,'{}'::jsonb),p_user,p_request_id,now())
+ on conflict(key) do update set owner_user=excluded.owner_user,owner_request=excluded.owner_request,claimed_at=excluded.claimed_at,
+   wine=coalesce(nullif(excluded.wine,'{}'::jsonb),public.winelens_shared_notes.wine);
+ return jsonb_build_object('status','claimed');
+end $$;
+
+create or replace function public.winelens_share_fill(p_key text,p_user uuid,p_request_id uuid,p_notes jsonb) returns jsonb language plpgsql security definer set search_path='' as $$
+begin
+ if p_notes is null then raise exception 'notes required'; end if;
+ perform pg_advisory_xact_lock(hashtextextended('winelens-share:'||p_key,0));
+ update public.winelens_shared_notes set status='ready',notes=p_notes,ready_at=now()
+ where key=p_key and status='pending' and owner_user=p_user and owner_request=p_request_id;
+ return jsonb_build_object('filled',found);
+end $$;
+
+-- A refused or failed draft frees the bottle for the next person.
+create or replace function public.winelens_share_release(p_key text,p_user uuid,p_request_id uuid) returns jsonb language plpgsql security definer set search_path='' as $$
+begin
+ perform pg_advisory_xact_lock(hashtextextended('winelens-share:'||p_key,0));
+ delete from public.winelens_shared_notes where key=p_key and status='pending' and owner_user=p_user and owner_request=p_request_id;
+ return jsonb_build_object('released',found);
+end $$;
+
+revoke all on function public.winelens_share_claim(text,uuid,uuid,jsonb) from public, anon, authenticated;
+revoke all on function public.winelens_share_fill(text,uuid,uuid,jsonb) from public, anon, authenticated;
+revoke all on function public.winelens_share_release(text,uuid,uuid) from public, anon, authenticated;
+grant execute on function public.winelens_share_claim(text,uuid,uuid,jsonb) to service_role;
+grant execute on function public.winelens_share_fill(text,uuid,uuid,jsonb) to service_role;
+grant execute on function public.winelens_share_release(text,uuid,uuid) to service_role;
 commit;

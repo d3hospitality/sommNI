@@ -12,6 +12,8 @@ do $$begin
  perform test_assert(not has_table_privilege('authenticated','public.winelens_ai_jobs','select'),'jobs hidden from users');
  perform test_assert(not has_function_privilege('authenticated','public.winelens_begin_job(uuid,text,uuid,text,boolean)','execute'),'begin_job service only');
  perform test_assert(not has_function_privilege('anon','public.winelens_finish_job(uuid,uuid,uuid,jsonb)','execute'),'finish_job service only');
+ perform test_assert(not has_function_privilege('authenticated','public.winelens_share_claim(text,uuid,uuid,jsonb)','execute'),'share claim service only');
+ perform test_assert(not has_table_privilege('authenticated','public.winelens_shared_notes','select'),'shared notes hidden from direct access');
 end$$;
 set role service_role;
 do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7777-4777-8777-777777777777'; r jsonb; rid uuid; i int; begin
@@ -55,9 +57,30 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  r:=winelens_begin_job(u,'tasting_notes',md5('paid-note')::uuid,repeat('b',64),true);
  perform test_assert(r->>'source'='tokens' and r->>'tokens'='99','paid note one token');
 end$$;
+-- Shared notes: one paid draft per bottle + vintage; later requests reuse it.
+do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7777-4777-8777-777777777777'; k text:=repeat('a',64); b text:=repeat('b',64); r jsonb; begin
+ r:=winelens_share_claim(k,u,md5('share1')::uuid,'{"name":"Grand Malbec","vintage":2017}');
+ perform test_assert(r->>'status'='claimed','first request claims the bottle');
+ perform test_assert(winelens_share_claim(k,v,md5('share2')::uuid,'{}')->>'status'='busy','second person waits while it is drafting');
+ perform test_assert(winelens_share_claim(k,u,md5('share1')::uuid,'{}')->>'status'='claimed','same request retry keeps its claim');
+ perform test_assert(winelens_share_fill(k,v,md5('share2')::uuid,'{"nose":"x"}')->>'filled'='false','only the claimer fills');
+ perform test_assert(winelens_share_fill(k,u,md5('share1')::uuid,'{"nose":"Plum."}')->>'filled'='true','fill');
+ r:=winelens_share_claim(k,v,md5('share3')::uuid,'{}');
+ perform test_assert(r->>'status'='ready' and r->'notes'->>'nose'='Plum.','later person gets the stored notes');
+ perform test_assert(winelens_share_claim(k,u,md5('share7')::uuid,'{}')->>'status'='ready','the payer asking again is not charged again');
+ perform test_assert((select served=2 and wine->>'name'='Grand Malbec' from winelens_shared_notes where key=k),'served counted, identity kept');
+ perform winelens_share_claim(b,u,md5('share4')::uuid,'{}');
+ perform test_assert(winelens_share_release(b,u,md5('share4')::uuid)->>'released'='true','failed draft releases the bottle');
+ perform test_assert(winelens_share_claim(b,v,md5('share5')::uuid,'{}')->>'status'='claimed','next person can claim after a release');
+ update winelens_shared_notes set claimed_at=now()-interval '6 minutes' where key=b;
+ perform test_assert(winelens_share_claim(b,u,md5('share6')::uuid,'{}')->>'status'='claimed','abandoned claim taken over after 5 minutes');
+ perform test_assert(winelens_share_release(k,u,md5('share1')::uuid)->>'released'='false','ready notes are never released');
+ begin perform winelens_share_claim('not-a-key',u,gen_random_uuid(),'{}'); raise exception 'FAIL bad key'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
+end$$;
 reset role;
 do $$begin
  delete from auth.users where id='66666666-6666-4666-8666-666666666666';
  perform test_assert(not exists(select 1 from winelens_ai_jobs where user_id='66666666-6666-4666-8666-666666666666'),'jobs cascade on account deletion');
+ perform test_assert(exists(select 1 from winelens_shared_notes where key=repeat('a',64) and status='ready' and owner_user is null),'shared wine notes outlive the account, unowned');
 end$$;
 drop function public.test_assert(boolean,text);

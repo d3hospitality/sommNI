@@ -29,9 +29,14 @@ let started = false;
   assert.equal(results.filter(r=>r.stdout.includes('"allowed": true')).length,5);
   await Promise.all(Array.from({length:8},()=>promisify(execFile)(path.join(bin,'psql'),[...args,'-Atc',`set role service_role; select winelens_grant_tokens('${u}','cs_concurrent','t5',100);`])));
   assert.equal(sql(`select units from winelens_token_wallets where user_id='${u}'`).trim(),'100');
+  // Eight people asking for the same bottle + vintage at once: exactly one draft (and one charge).
+  const sk='c'.repeat(64);
+  const shares=await Promise.all(Array.from({length:8},(_,i)=>promisify(execFile)(path.join(bin,'psql'),[...args,'-Atc',`set role service_role; select winelens_share_claim('${sk}','${u}',md5('race-share-${i}')::uuid,'{}');`])));
+  assert.equal(shares.filter(r=>r.stdout.includes('"status": "claimed"')).length,1);
+  assert.equal(shares.filter(r=>r.stdout.includes('"status": "busy"')).length,7);
   const c='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'; sql(`insert into auth.users(id) values('${c}'); select wl_issue_code('${c}',repeat('b',64));`);
   const claims=await Promise.all(Array.from({length:8},(_,i)=>promisify(execFile)(path.join(bin,'psql'),[...args,'-Atc',`set role service_role; select wl_claim_code(repeat('b',64),md5('race-${i}')||md5('race-${i}'));`])));
   assert.equal(claims.filter(r=>r.stdout.includes('"status": "claimed"')).length,1);
-  console.log('PASS: real migrations, rate-card parity, Winebrary storage/study, paid AI jobs, pairing/account RPCs, tokens, RLS, JWT scope/receipt, concurrent reserve/grant/claim');
+  console.log('PASS: real migrations, rate-card parity, Winebrary storage/study, paid AI jobs, shared notes (incl. concurrent claim), pairing/account RPCs, tokens, RLS, JWT scope/receipt, concurrent reserve/grant/claim');
  } finally { if(started) run('pg_ctl',['-D',path.join(temp,'db'),'-m','immediate','-w','stop']); fs.rmSync(temp,{recursive:true,force:true}); }
 })().catch(e=>{ console.error(e.stderr?.toString() || e.message); process.exitCode=1; });

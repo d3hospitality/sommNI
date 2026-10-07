@@ -9,6 +9,7 @@ import { accountRequest, billingStatus, costOf, requestIds, ACCOUNT_PAGE, type B
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
 import { lookupWineById } from './identity';
+import { splitWineName } from './pages';
 import { libraryNotes, parseSections, SOURCE_LABEL, type NoteSection } from './notes-format';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
@@ -69,7 +70,7 @@ const notesHTML = (sections: NoteSection[] | null, text: string) => sections
   : `<p class="wl-notes">${esc(text)}</p>`;
 
 // ── One cost panel for every paid action ─────────────────────────────
-interface Gate { ready: () => boolean; consent: () => boolean; refresh: () => Promise<void>; beforeSpend: () => Promise<void> }
+interface Gate { ready: () => boolean; consent: () => boolean; refresh: () => Promise<void>; beforeSpend: () => Promise<void>; free: (line: string | null) => void }
 const costHTML = `<div class="wl-cost" role="status" aria-live="polite"><p class="wl-cost-line">Checking your plan…</p>
   <label class="wl-consent" hidden><input type="checkbox" class="wl-consent-once"> <span></span></label>
   <label class="wl-consent wl-consent-always-row" hidden><input type="checkbox" class="wl-consent-always"> Always allow token use for wineLENS help</label>
@@ -78,7 +79,7 @@ function costGate(feature: Feature, onChange: () => void): Gate {
   const box = dialog.querySelector<HTMLElement>('.wl-cost')!, revision = dialogRevision, account = userId;
   const line = box.querySelector('.wl-cost-line')!, once = box.querySelector<HTMLInputElement>('.wl-consent-once')!, always = box.querySelector<HTMLInputElement>('.wl-consent-always')!;
   const link = box.querySelector<HTMLAnchorElement>('.wl-cost-link')!;
-  let state: BillingStatus | null = null, allowed = false, needsConsent = false;
+  let state: BillingStatus | null = null, allowed = false, needsConsent = false, freeLine: string | null = null;
   once.addEventListener('change', onChange); always.addEventListener('change', () => { if (always.checked) once.checked = true; onChange(); });
   const gate: Gate = {
     ready: () => allowed && (!needsConsent || once.checked),
@@ -86,6 +87,7 @@ function costGate(feature: Feature, onChange: () => void): Gate {
     async refresh() {
       try { state = await billingStatus(); } catch (e) { if (revision === dialogRevision) { line.textContent = e instanceof Error ? e.message : 'Plan unavailable.'; allowed = false; onChange(); } return; }
       if (revision !== dialogRevision || account !== userId) return;
+      if (freeLine) return gate.free(freeLine);
       const cost = costOf(state, feature);
       allowed = cost.allowed && state.scan_available; needsConsent = cost.needsConsent;
       line.textContent = state.scan_available ? cost.line : 'Not available yet. You have not been charged.';
@@ -95,7 +97,15 @@ function costGate(feature: Feature, onChange: () => void): Gate {
       link.hidden = !(cost.upgrade || cost.short); link.textContent = cost.upgrade ? 'See wineLENS Pro ↗' : 'Buy tokens ↗';
       onChange();
     },
-    async beforeSpend() { if (always.checked && state && !state.auto_spend) await accountRequest('billing', { action: 'auto-spend', enabled: true }); },
+    async beforeSpend() { if (!freeLine && always.checked && state && !state.auto_spend) await accountRequest('billing', { action: 'auto-spend', enabled: true }); },
+    /** Nothing will be charged (e.g. notes already exist for this bottle): no consent, no upsell. null restores the real cost. */
+    free(lineText) {
+      freeLine = lineText;
+      if (!lineText) { void gate.refresh(); return; }
+      allowed = true; needsConsent = false; line.textContent = lineText; link.hidden = true;
+      (once.parentElement as HTMLElement).hidden = (always.parentElement as HTMLElement).hidden = true;
+      onChange();
+    },
   };
   idleHook = onChange;
   void gate.refresh();
@@ -232,8 +242,8 @@ function detail(wine: LibraryWine) {
   openDialog(`<p class="wl-kicker">${esc(vintageLabel(wine))} · ${esc(styleOf(wine))}${wine.metadata?.grape ? ' · ' + esc(wine.metadata.grape) : ''}</p><h2>${esc(wine.wine_name)}</h2><p class="wl-muted">${esc([wine.producer, wine.region, wine.region && wine.metadata?.country && wine.region.includes(wine.metadata.country) ? '' : wine.metadata?.country].filter(Boolean).join(' · '))}</p>
     <div class="wl-detail-grid"><div class="wl-detail-photo">${wine.image_url ? `<img src="${esc(wine.image_url)}" alt="${esc(wine.wine_name)} bottle">` : '<span class="wl-photo-placeholder">YOUR BOTTLE<br>IN FOCUS<span>＋</span></span>'}<button id="wl-photo" class="wl-outline">${wine.image_url ? 'Change bottle image' : 'Add bottle photo'} ↗</button></div>
     <section class="wl-notes-block" aria-labelledby="wl-notes-title"><div class="wl-notes-head"><p class="wl-kicker" id="wl-notes-title">TASTING NOTES</p>${notes.source ? `<span class="wl-source wl-source-${notes.source}">${esc(SOURCE_LABEL[notes.source])}</span>` : ''}</div>
-    ${notes.source ? notesHTML(notes.sections, notes.text) : '<p class="wl-muted">No notes yet. Write your own, or let wineLENS draft the expected profile of this wine.</p>'}
-    <div class="wl-notes-actions"><button id="wl-draft-notes" class="wl-primary">✦ ${notes.source === 'generated' ? 'Redraft' : 'Draft'} tasting notes</button><button id="wl-edit" class="wl-outline">${hasOwn ? 'Edit wine & notes' : 'Write my own notes'}</button></div>
+    ${notes.source ? notesHTML(notes.sections, notes.text) : '<p class="wl-muted">No notes yet. Write your own, or get wineLENS notes for this bottle and vintage.</p>'}
+    <div class="wl-notes-actions">${notes.source === 'generated' ? '' : '<button id="wl-draft-notes" class="wl-primary">✦ Get tasting notes</button>'}<button id="wl-edit" class="wl-outline">${hasOwn ? 'Edit wine & notes' : 'Write my own notes'}</button></div>
     ${twin && hasOwn ? '<button id="wl-catalog-notes" class="wl-text-button">Read the catalog notes for this wine</button>' : ''}</section></div>
     <div class="wl-hud-label"><span>EVEN G2 · DISPLAY PREVIEW</span><span>576 × 288</span></div><canvas id="wl-g2-preview" class="wl-hud-canvas" role="img" aria-label="Preview of this wine on the Even G2 display"></canvas>
     <p class="wl-muted small">Layout preview. Glasses use the built-in G2 typeface and green display. Your Winebrary is also under My Winebrary on the glasses.</p>
@@ -242,7 +252,7 @@ function detail(wine: LibraryWine) {
   dialog.querySelector('#wl-edit')!.addEventListener('click', () => editWine(wine));
   dialog.querySelector('#wl-vintage')!.addEventListener('click', () => editWine(wine, true));
   dialog.querySelector('#wl-photo')!.addEventListener('click', () => photoStudio(wine));
-  dialog.querySelector('#wl-draft-notes')!.addEventListener('click', () => notesStudio(wine));
+  dialog.querySelector('#wl-draft-notes')?.addEventListener('click', () => notesStudio(wine));
   dialog.querySelector('#wl-catalog-notes')?.addEventListener('click', () => {
     const block = dialog.querySelector('.wl-notes-block')!, sections = libraryNotes({ ...wine, notes: null });
     block.insertAdjacentHTML('beforeend', `<div class="wl-notes-twin"><p class="wl-source wl-source-catalog">${esc(SOURCE_LABEL.catalog)}</p>${notesHTML(sections.sections, sections.text)}</div>`);
@@ -259,33 +269,38 @@ function detail(wine: LibraryWine) {
   });
 }
 
-// ── Tasting notes (paid help) ─────────────────────────────────────────
+// ── Tasting notes (paid help, drafted once per bottle + vintage) ──────
 function notesStudio(wine: LibraryWine) {
   const account = userId, ids = requestIds(), own = wine.notes?.trim() && wine.metadata?.notes_source !== 'generated';
   openDialog(`<p class="wl-kicker">TASTING NOTES ✦</p><h2>The expected profile.<br>In the house style.</h2>
     <p class="wl-muted">wineLENS drafts look, nose, palate, finish and a short story for <strong>${esc(wine.wine_name)}${wine.vintage ? ' ' + wine.vintage : ''}</strong> from what is known about its producer, place, grape and vintage. It is not a tasting. You read it before anything is saved.</p>
+    <p class="wl-muted small">Notes are drafted once per bottle and vintage. If anyone has already drafted this one, you get them free.</p>
     ${own ? '<p class="wl-notice">Saving the draft replaces the notes you wrote. Copy anything you want to keep first.</p>' : ''}
-    ${costHTML}<button id="wl-notes-go" class="wl-primary" disabled>Draft tasting notes ✦</button><div id="wl-notes-review" class="wl-notes-review"></div>`);
+    ${costHTML}<button id="wl-notes-go" class="wl-primary" disabled>Get tasting notes ✦</button><div id="wl-notes-review" class="wl-notes-review"></div>`);
   const revision = dialogRevision, go = dialog.querySelector<HTMLButtonElement>('#wl-notes-go')!;
   const gate = costGate('tasting_notes', () => { go.disabled = busy || !gate.ready(); });
+  // Free look-up first: already drafted for this bottle + vintage means no charge and no consent.
+  void accountRequest('wine-notes', { collection_id: wine.id, check: true }).then(r => {
+    if (revision === dialogRevision && r.available) gate.free('Already in wineLENS for this bottle and vintage · free');
+  }).catch(() => {});
   go.addEventListener('click', () => void run(async () => {
-    feedback('Writing… this usually takes a few seconds.');
+    feedback('Getting notes… this usually takes a few seconds.');
     await gate.beforeSpend();
-    let result: { draft: NotesDraft };
+    let result: { draft: NotesDraft; shared?: boolean };
     try { result = await accountRequest('wine-notes', { collection_id: wine.id, request_id: ids.current, spend_consent: gate.consent() }); ids.settle(); }
-    catch (e) { ids.settle(e); void gate.refresh(); throw e; }
+    catch (e) { ids.settle(e); gate.free(null); throw e; }
     if (account !== userId || revision !== dialogRevision) return;
     const draft = result.draft;
     dialog.querySelector('#wl-notes-review')!.innerHTML = `<p class="wl-source wl-source-generated">${esc(SOURCE_LABEL.generated)}${draft.confidence < 0.5 ? ' · less-known wine: read as a style guide' : ''}</p>${notesHTML(parseSections(draft.text), draft.text)}
       <div class="wl-notes-actions"><button id="wl-notes-save" class="wl-primary">Save to my notes ↗</button><button id="wl-notes-discard" class="wl-text-button">Discard</button></div>`;
-    feedback('Read the draft. Save it, or discard it. Either way this draft is paid for.');
+    feedback(result.shared ? 'These notes were already in wineLENS for this bottle and vintage. Nothing was charged.' : 'Read the draft, then save or discard it. This bottle and vintage now has notes for anyone who asks.');
     dialog.querySelector('#wl-notes-discard')!.addEventListener('click', () => detail(wine));
     dialog.querySelector('#wl-notes-save')!.addEventListener('click', () => run(async () => {
       const saved = await wb('set-notes', { id: wine.id, notes: draft.text, notes_source: 'generated' });
       if (account !== userId) return;
       setBusy(false); detail(saved.item); await refresh();
     }));
-    void gate.refresh();
+    gate.free('Already in wineLENS for this bottle and vintage · free');
   }));
 }
 
@@ -367,7 +382,8 @@ export function initWinebrary() {
     const found = lookupWineById(button.dataset.saveLibrary);
     if (!found) return; // unknown catalog ID: never save it as some other wine
     // Personal notes start empty; the catalog notes still show for this wine via its catalog ID.
-    requireAccount(() => editWine({ wine_name: found.wine.name, wine_id: found.id, region: found.wine.region, notes: '', metadata: { color: found.type, country: found.country, grape: found.wine.grape, vintage_state: 'unknown' } }));
+    const { title, producer } = splitWineName(found.wine.name);
+    requireAccount(() => editWine({ wine_name: title, producer: producer || null, wine_id: found.id, region: found.wine.region, notes: '', metadata: { color: found.type, country: found.country, grape: found.wine.grape, vintage_state: 'unknown' } }));
   });
   let authRevision = 0;
   const applySession = async (session: Session | null) => {

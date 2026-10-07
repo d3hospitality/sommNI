@@ -41,7 +41,7 @@ function userStore() {
   return { db: { from, storage }, tables, files };
 }
 /** Service-role fake for begin/finish job with replay semantics. */
-function jobs(f, { reason } = {}) {
+function jobs(f, { reason, shared = new Map() } = {}) {
   const store = new Map(), old = f.db.rpc;
   f.db.rpc = async (name, args) => {
     if (name === 'winelens_begin_job') {
@@ -53,8 +53,19 @@ function jobs(f, { reason } = {}) {
       store.set(args.p_request_id, { fingerprint: args.p_fingerprint, result: null, status: 'reserved' }); return { data: hold };
     }
     if (name === 'winelens_finish_job') { f.calls.push([name, args]); const j = store.get(args.p_request_id); j.result = args.p_result; j.status = args.p_result ? 'committed' : 'released'; return { data: { status: j.status } }; }
+    if (name === 'winelens_share_claim') {
+      f.calls.push([name, args]); const s = shared.get(args.p_key);
+      if (s?.status === 'ready') { s.served++; return { data: { status: 'ready', notes: s.notes } }; }
+      if (s && s.request !== args.p_request_id) return { data: { status: 'busy' } };
+      shared.set(args.p_key, { status: 'pending', request: args.p_request_id, served: 0, wine: args.p_wine }); return { data: { status: 'claimed' } };
+    }
+    if (name === 'winelens_share_fill') { f.calls.push([name, args]); const s = shared.get(args.p_key); if (s?.request === args.p_request_id) Object.assign(s, { status: 'ready', notes: args.p_notes }); return { data: { filled: true } }; }
+    if (name === 'winelens_share_release') { f.calls.push([name, args]); const s = shared.get(args.p_key); if (s?.status === 'pending' && s.request === args.p_request_id) shared.delete(args.p_key); return { data: { released: true } }; }
     return old(name, args);
   };
+  const from = f.db.from.bind(f.db);
+  f.db.from = table => table !== 'winelens_shared_notes' ? from(table) : { select() { return this; }, eq(_k, key) { this.key = key; return this; }, maybeSingle: async function () { const s = shared.get(this.key); return { data: s ? { status: s.status } : null, error: null }; } };
+  store.shared = shared;
   return store;
 }
 const setup = () => { const f = fixture(), u = userStore(); return { f, u, wb: createWinebraryHandler({ getDb: () => f.db, getUserDb: () => u.db }) }; };
@@ -136,4 +147,54 @@ test('Study sync: push dedupes and rejects bad events; pull returns own events',
   assert.deepEqual((await invoke(h, { action: 'push', events: [ev] })).body.duplicates, [ev.event_id]);
   assert.equal((await invoke(h, { action: 'pull' })).body.events.length, 1);
   assert.equal((await invoke(h, { action: 'push', events: [] })).status, 400);
+});
+
+test('Shared notes: one paid draft per bottle + vintage; everyone after gets it free with no new job', async () => {
+  const { f, u, wb } = setup(); const shared = new Map(); jobs(f, { shared }); let calls = 0, fail = false;
+  const notes = { appearance: 'Opaque purple-black.', nose: 'Blackberry, plum, violet, cocoa.', palate: 'Full Body, Firm Tannins. Dark fruit and spice.', finish: 'Long, warm and smooth.', story: '', confidence: 0.9 };
+  const openai = { chat: { completions: { create: async () => { calls++; if (fail) throw Error('down'); return { choices: [{ message: { content: JSON.stringify(notes) } }] }; } } } };
+  const h = createNotesHandler({ getDb: () => f.db, getUserDb: () => u.db, env, getOpenAI: () => openai });
+  const add = async body => (await invoke(wb, { action: 'add', color: 'Red', vintage_state: 'year', ...body })).body.item.id;
+  const mine = await add({ wine_name: 'Grand Malbec', producer: 'Terrazas de los Andes', vintage: '2017' });
+  // Someone else's entry for the same bottle, typed differently.
+  const theirs = await add({ wine_name: 'TERRAZAS DE LOS ANDES Grand Malbec', producer: 'terrazas de los andes', vintage: '2017' });
+  const otherYear = await add({ wine_name: 'Grand Malbec', producer: 'Terrazas de los Andes', vintage: '2018' });
+  assert.equal((await invoke(h, { collection_id: theirs, check: true })).body.available, false);
+  const first = await invoke(h, { collection_id: mine, request_id: randomUUID() });
+  assert.equal(first.body.shared, false); assert.equal(first.body.charged, true); assert.equal(calls, 1);
+  assert.equal((await invoke(h, { collection_id: theirs, check: true })).body.available, true, 'free look-up sees it');
+  const jobsBefore = f.calls.filter(c => c[0] === 'winelens_begin_job').length;
+  const reuse = await invoke(h, { collection_id: theirs, request_id: randomUUID() });
+  assert.equal(reuse.body.shared, true); assert.equal(reuse.body.charged, false); assert.equal(reuse.body.draft.text, first.body.draft.text);
+  const again = await invoke(h, { collection_id: mine, request_id: randomUUID() });
+  assert.equal(again.body.shared, true, 'the payer asking again is not charged again');
+  assert.equal(calls, 1, 'the model ran once'); assert.equal(f.calls.filter(c => c[0] === 'winelens_begin_job').length, jobsBefore, 'no reservation, no charge');
+  // A different vintage is a different bottle.
+  assert.equal((await invoke(h, { collection_id: otherYear, request_id: randomUUID() })).body.shared, false); assert.equal(calls, 2);
+  // A failed draft frees the bottle for the next person instead of blocking it.
+  fail = true; const nv = await add({ wine_name: 'Brut Réserve', producer: 'Billecart-Salmon', vintage_state: 'non_vintage' });
+  assert.equal((await invoke(h, { collection_id: nv, request_id: randomUUID() })).status, 502);
+  fail = false; assert.equal((await invoke(h, { collection_id: nv, request_id: randomUUID() })).body.charged, true);
+  // Refused (e.g. free notes used up) also frees the bottle; no producer means nothing is shared.
+  const g = fixture(); jobs(g, { reason: 'pro_required', shared }); const denied = createNotesHandler({ getDb: () => g.db, getUserDb: () => u.db, env, getOpenAI: () => openai });
+  const fresh = await add({ wine_name: 'Txakoli', producer: 'Ameztoi', vintage: '2023' });
+  assert.equal((await invoke(denied, { collection_id: fresh, request_id: randomUUID() })).status, 402);
+  assert.equal([...shared.values()].some(x => x.wine?.producer === 'Ameztoi'), false, 'refusal released the claim');
+  const anon = await add({ wine_name: 'House Red', producer: '', vintage: '2022' });
+  await invoke(h, { collection_id: anon, request_id: randomUUID() }); await invoke(h, { collection_id: anon, request_id: randomUUID() });
+  assert.equal(calls, 6, 'no producer: drafted per request, never shared (1 + 1 other year + failed + retry + 2)');
+});
+
+test('Shared notes: while one person is drafting a bottle, a second request waits and is not charged', async () => {
+  const { f, u, wb } = setup(); const shared = new Map(); jobs(f, { shared }); let release;
+  const notes = { appearance: 'Gold.', nose: 'Lemon, brioche, chalk, almond.', palate: 'Medium Body, High Acidity. Fine mousse.', finish: 'Long and saline.', story: '', confidence: 0.8 };
+  const openai = { chat: { completions: { create: () => new Promise(r => { release = () => r({ choices: [{ message: { content: JSON.stringify(notes) } }] }); }) } } };
+  const h = createNotesHandler({ getDb: () => f.db, getUserDb: () => u.db, env, getOpenAI: () => openai });
+  const id = (await invoke(wb, { action: 'add', wine_name: 'Cristal', producer: 'Louis Roederer', vintage_state: 'year', vintage: '2015', color: 'Sparkling' })).body.item.id;
+  const slow = invoke(h, { collection_id: id, request_id: randomUUID() });
+  await new Promise(r => setTimeout(r, 20));
+  const second = await invoke(h, { collection_id: id, request_id: randomUUID() });
+  assert.equal(second.status, 409); assert.match(second.body.error, /not charged/);
+  release(); assert.equal((await slow).body.charged, true);
+  assert.equal((await invoke(h, { collection_id: id, request_id: randomUUID() })).body.shared, true);
 });

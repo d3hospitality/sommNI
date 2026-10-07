@@ -28,21 +28,36 @@ async function runJob({ db, user, feature, requestId, fingerprint, consent, work
   const hold = await rpc(db, 'winelens_begin_job', { p_user: user.id, p_feature: feature, p_request_id: requestId, p_fingerprint: fingerprint, p_consent: consent === true });
   if (hold.replayed) {
     if (hold.result) return { result: await onReplay(hold.result), replayed: true };
-    if (hold.status === 'released') throw new HttpError(409, `That ${REFUSALS[feature].label} did not finish and was not charged. Try again.`);
+    if (hold.status === 'released') throw Object.assign(new HttpError(409, `That ${REFUSALS[feature].label} did not finish and was not charged. Try again.`), { released: true });
     throw new HttpError(409, `Still working on this ${REFUSALS[feature].label}. Check again in a moment.`);
   }
-  if (!hold.allowed) throw refuse(feature, hold);
+  if (!hold.allowed) throw Object.assign(refuse(feature, hold), { released: true });
   let result;
   try { result = await work(); }
   catch (e) {
     await rpc(db, 'winelens_finish_job', { p_user: user.id, p_request_id: requestId, p_reservation_id: hold.reservation_id, p_result: null }).catch(() => {});
-    throw e instanceof HttpError ? e : new HttpError(502, `The ${REFUSALS[feature].label} did not finish. Your allowance or tokens were returned.`);
+    throw Object.assign(e instanceof HttpError ? e : new HttpError(502, `The ${REFUSALS[feature].label} did not finish. Your allowance or tokens were returned.`), { released: true });
   }
   // Never release after a provider success: if this response is lost, a retry reads the stored result.
   const settled = await rpc(db, 'winelens_finish_job', { p_user: user.id, p_request_id: requestId, p_reservation_id: hold.reservation_id, p_result: result.stored });
-  if (settled.status !== 'committed') { await result.discard?.(); throw new HttpError(409, `The ${REFUSALS[feature].label} took too long. Your allowance or tokens were returned.`); }
+  if (settled.status !== 'committed') { await result.discard?.(); throw Object.assign(new HttpError(409, `The ${REFUSALS[feature].label} took too long. Your allowance or tokens were returned.`), { released: true }); }
   return { result: result.response, replayed: false };
 }
+
+// ── Shared notes: one paid draft per bottle + vintage ─────────────────────
+const norm = v => String(v ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
+/** Same producer + wine + vintage → same key, however it was typed. Null without a producer (too ambiguous to share). */
+function bottleKey(wine) {
+  let name = wine.wine_name || '', producer = wine.producer || '';
+  if (!producer.trim()) { const at = name.lastIndexOf(' – '); if (at > 0) { producer = name.slice(at + 3); name = name.slice(0, at); } }
+  const p = norm(producer); let n = norm(name);
+  if (p && n.startsWith(p + ' ')) n = n.slice(p.length + 1); // "Terrazas de los Andes Grand Malbec" = "Grand Malbec" by Terrazas
+  if (!n || !p) return null;
+  const vintage = wine.vintage ? String(wine.vintage) : wine.metadata?.vintage_state === 'non_vintage' ? 'nv' : 'unknown';
+  return { key: sha(`winelens-notes-v1|${p}|${n}|${vintage}`), wine: { name: name.trim(), producer: producer.trim(), vintage } };
+}
+const NOTE_FIELDS = ['appearance', 'nose', 'palate', 'finish', 'story', 'confidence'];
+const pickNotes = n => Object.fromEntries(NOTE_FIELDS.map(k => [k, n[k]]));
 
 function validateNotes(value) {
   if (!value || Object.keys(value).some(k => !NOTES_SCHEMA.required.includes(k))) throw new Error('Invalid notes output');
@@ -52,20 +67,43 @@ function validateNotes(value) {
 }
 function createNotesHandler({ getDb, getUserDb = userDb, env = process.env, getOpenAI = () => new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 45000, maxRetries: 0 }) } = {}) {
   return endpoint(async ({ req, body, db, user }) => {
+    const model = env.WINELENS_NOTES_MODEL || 'gpt-4.1-mini';
+    const draft = notes => ({ ...pickNotes(notes), text: formatNotes(notes), model });
+    // Free look-up: does wineLENS already have notes for this exact bottle + vintage?
+    if (body.check === true) {
+      only(body, ['collection_id', 'check']);
+      const bottle = bottleKey(await ownWine(getUserDb(req), user.id, body.collection_id));
+      if (!bottle) return { available: false };
+      const { data, error } = await db.from('winelens_shared_notes').select('status').eq('key', bottle.key).maybeSingle();
+      return { available: !error && data?.status === 'ready' };
+    }
     checkRequest(body, env);
-    const wine = await ownWine(getUserDb(req), user.id, body.collection_id);
-    const context = wineContext(wine), model = env.WINELENS_NOTES_MODEL || 'gpt-4.1-mini';
-    const draft = notes => ({ ...notes, text: formatNotes(notes), model });
-    const { result, replayed } = await runJob({ db, user, feature: 'tasting_notes', requestId: body.request_id, fingerprint: sha(`notes:${wine.id}:${context}`), consent: body.spend_consent,
-      onReplay: stored => draft(stored),
-      work: async () => {
-        const answer = await getOpenAI().chat.completions.create({ model, max_completion_tokens: 900,
-          messages: [{ role: 'system', content: NOTES_SYSTEM }, { role: 'user', content: context }],
-          response_format: { type: 'json_schema', json_schema: { name: 'tasting_notes', strict: true, schema: NOTES_SCHEMA } } });
-        const notes = validateNotes(JSON.parse(answer.choices?.[0]?.message?.content || 'null'));
-        return { stored: notes, response: draft(notes) };
-      } });
-    return { draft: result, replayed, review_required: true };
+    const wine = await ownWine(getUserDb(req), user.id, body.collection_id), bottle = bottleKey(wine);
+    const share = (name, extra = {}) => rpc(db, name, { p_key: bottle.key, p_user: user.id, p_request_id: body.request_id, ...extra });
+    if (bottle) {
+      // Already drafted (by anyone, including this person): reuse it, no job, no charge.
+      const claim = await share('winelens_share_claim', { p_wine: bottle.wine });
+      if (claim.status === 'ready') return { draft: draft(claim.notes), shared: true, charged: false, review_required: true };
+      if (claim.status === 'busy') throw new HttpError(409, 'Notes for this exact bottle and vintage are being written right now. Try again in a minute. You were not charged.');
+    }
+    let outcome;
+    try {
+      outcome = await runJob({ db, user, feature: 'tasting_notes', requestId: body.request_id, fingerprint: sha(`notes:${wine.id}:${wineContext(wine)}`), consent: body.spend_consent,
+        onReplay: stored => draft(stored),
+        work: async () => {
+          const answer = await getOpenAI().chat.completions.create({ model, max_completion_tokens: 900,
+            messages: [{ role: 'system', content: NOTES_SYSTEM }, { role: 'user', content: wineContext(wine) }],
+            response_format: { type: 'json_schema', json_schema: { name: 'tasting_notes', strict: true, schema: NOTES_SCHEMA } } });
+          const notes = validateNotes(JSON.parse(answer.choices?.[0]?.message?.content || 'null'));
+          return { stored: notes, response: draft(notes) };
+        } });
+    } catch (e) {
+      // Nothing ran for this request: free the bottle so the next person can draft it.
+      if (bottle && e.released) await share('winelens_share_release').catch(() => {});
+      throw e;
+    }
+    if (bottle) await share('winelens_share_fill', { p_notes: pickNotes(outcome.result) }).catch(() => {});
+    return { draft: outcome.result, replayed: outcome.replayed, shared: false, charged: !outcome.replayed, review_required: true };
   }, { getDb, maxBytes: 2048 });
 }
 
@@ -102,4 +140,4 @@ function createRenderHandler({ getDb, getUserDb = userDb, env = process.env, fet
     return { draft: await draft(result), replayed, review_required: true };
   }, { getDb, maxBytes: 2048 });
 }
-module.exports = { createNotesHandler, createRenderHandler, runJob, validateNotes };
+module.exports = { createNotesHandler, createRenderHandler, runJob, validateNotes, bottleKey };
