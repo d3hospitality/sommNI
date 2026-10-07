@@ -1,21 +1,29 @@
-import { accountRequest, billingStatus, usageCost, type BillingStatus } from './billing';
+// ═══════════════════════════════════════════════════════════════════
+// wineLENS — Winebrary on the phone: your private wines, their notes and photos.
+// Everything goes through the one wineLENS account API (billing.ts).
+// Paid help (label scan, tasting notes, Studio) shares one cost/consent panel:
+// allowance first, then Pro tokens with explicit consent. Drafts are always
+// reviewed before they are saved.
+// ═══════════════════════════════════════════════════════════════════
+import { accountRequest, billingStatus, costOf, requestIds, ACCOUNT_PAGE, type BillingStatus, type Feature } from './billing';
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
-import { SITE_URL, API_URL } from './account-config';
 import { lookupWineById } from './identity';
+import { libraryNotes, parseSections, SOURCE_LABEL, type NoteSection } from './notes-format';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
 import { showWineOnGlasses, canShowWine, clearPrivateGlasses, drawGlassesPreview, setLibrarySource, libraryChanged, saveLibraryCache, clearLibraryCache } from './winebrary-glasses';
 
 export interface LibraryWine {
   id: string; wine_name: string; producer: string | null; vintage: number | null;
-  region: string | null; notes: string | null; wine_id?: string; image_url?: string;
-  metadata: { vintage_state?: string; country?: string; grape?: string; color?: string; image_path?: string; image_source?: string } | null;
+  region: string | null; notes: string | null; wine_id?: string | null; image_url?: string;
+  metadata: { vintage_state?: string; country?: string; grape?: string; color?: string; image_path?: string; image_source?: string; notes_source?: string } | null;
 }
 interface ImageDraft { path: string; url: string; source: 'photograph' | 'generated' }
+interface NotesDraft { appearance: string; nose: string; palate: string; finish: string; story: string; confidence: number; text: string }
 let auth: SupabaseClient;
-let accountEmail = "";
-const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+let accountEmail = '';
+const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 let userId: string | null = null;
 let items: LibraryWine[] = [];
 let loading = false;
@@ -26,66 +34,95 @@ let dialog: HTMLDialogElement;
 let root: HTMLElement;
 let busy = false;
 let dialogRevision = 0;
+let idleHook: (() => void) | null = null; // re-checks cost-gated buttons once a request finishes
 
+const STYLE_LABEL: Record<string, string> = { Rose: 'Rosé', Unknown: 'Wine' };
+const styleOf = (wine: LibraryWine) => wine.metadata?.color ? STYLE_LABEL[wine.metadata.color] ?? wine.metadata.color : 'Wine';
 export function vintageLabel(wine: LibraryWine): string {
   return wine.vintage ? String(wine.vintage) : wine.metadata?.vintage_state === 'non_vintage' ? 'Non-vintage' : 'Vintage unknown';
 }
-async function api(path: string, method = 'GET', body?: unknown): Promise<any> {
-  const { data: { session } } = await auth.auth.getSession();
-  if (!session || session.user.id !== userId || !await checkDeviceSession(session)) throw new Error('Sign in again to continue.');
-  const response = await fetch(API_URL + path, {
-    method, headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || 'Could not complete this action. Try again.');
-  return result;
-}
-function feedback(message: string) {
-  const el = document.getElementById('wl-feedback');
-  if (el) el.textContent = message;
-}
+const wb = (action: string, body: Record<string, unknown> = {}) => accountRequest('winebrary', { action, ...body });
+function feedback(message: string) { const el = dialog.querySelector('#wl-feedback'); if (el) el.textContent = message; }
 function openDialog(html: string) {
   if (busy) return;
-  dialogRevision++;
+  dialogRevision++; idleHook = null;
   dialog.innerHTML = `<button class="wl-close" aria-label="Close dialog">×</button>${html}<p id="wl-feedback" class="wl-feedback" role="status" aria-live="polite"></p>`;
   dialog.querySelector('.wl-close')!.addEventListener('click', () => dialog.close());
   if (!dialog.open) dialog.showModal();
 }
 function setBusy(value: boolean) {
   busy = value;
-  dialog.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.disabled = value);
+  dialog.querySelectorAll<HTMLButtonElement>('button').forEach(b => { if (value) { b.dataset.wasDisabled = String(b.disabled); b.disabled = true; } else { b.disabled = b.dataset.wasDisabled === 'true'; delete b.dataset.wasDisabled; } });
   dialog.setAttribute('aria-busy', String(value));
+  if (!value) idleHook?.();
 }
 async function run(task: () => Promise<void>) {
   if (busy) return;
-  const revision=dialogRevision;
+  const revision = dialogRevision;
   setBusy(true);
-  try { await task(); } catch (error) { if(revision===dialogRevision) feedback(error instanceof Error ? error.message : 'Something went wrong. Try again.'); }
-  finally { if(revision===dialogRevision) setBusy(false); }
+  try { await task(); } catch (error) { if (revision === dialogRevision) feedback(error instanceof Error ? error.message : 'Something went wrong. Try again.'); }
+  finally { if (revision === dialogRevision) setBusy(false); }
 }
 function requireAccount(action: () => void) { if (userId) action(); else signIn(); }
+const notesHTML = (sections: NoteSection[] | null, text: string) => sections
+  ? `<dl class="wl-notes-dl">${sections.map(s => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.text)}</dd></div>`).join('')}</dl>`
+  : `<p class="wl-notes">${esc(text)}</p>`;
+
+// ── One cost panel for every paid action ─────────────────────────────
+interface Gate { ready: () => boolean; consent: () => boolean; refresh: () => Promise<void>; beforeSpend: () => Promise<void> }
+const costHTML = `<div class="wl-cost" role="status" aria-live="polite"><p class="wl-cost-line">Checking your plan…</p>
+  <label class="wl-consent" hidden><input type="checkbox" class="wl-consent-once"> <span></span></label>
+  <label class="wl-consent wl-consent-always-row" hidden><input type="checkbox" class="wl-consent-always"> Always allow token use for wineLENS help</label>
+  <a class="wl-text-button wl-cost-link" href="${ACCOUNT_PAGE}" target="_blank" rel="noopener noreferrer" hidden></a></div>`;
+function costGate(feature: Feature, onChange: () => void): Gate {
+  const box = dialog.querySelector<HTMLElement>('.wl-cost')!, revision = dialogRevision, account = userId;
+  const line = box.querySelector('.wl-cost-line')!, once = box.querySelector<HTMLInputElement>('.wl-consent-once')!, always = box.querySelector<HTMLInputElement>('.wl-consent-always')!;
+  const link = box.querySelector<HTMLAnchorElement>('.wl-cost-link')!;
+  let state: BillingStatus | null = null, allowed = false, needsConsent = false;
+  once.addEventListener('change', onChange); always.addEventListener('change', () => { if (always.checked) once.checked = true; onChange(); });
+  const gate: Gate = {
+    ready: () => allowed && (!needsConsent || once.checked),
+    consent: () => needsConsent && once.checked,
+    async refresh() {
+      try { state = await billingStatus(); } catch (e) { if (revision === dialogRevision) { line.textContent = e instanceof Error ? e.message : 'Plan unavailable.'; allowed = false; onChange(); } return; }
+      if (revision !== dialogRevision || account !== userId) return;
+      const cost = costOf(state, feature);
+      allowed = cost.allowed && state.scan_available; needsConsent = cost.needsConsent;
+      line.textContent = state.scan_available ? cost.line : 'Not available yet. You have not been charged.';
+      (once.parentElement as HTMLElement).hidden = (always.parentElement as HTMLElement).hidden = !(allowed && needsConsent);
+      once.checked = false; always.checked = false;
+      box.querySelector('.wl-consent span')!.textContent = `Use ${cost.tokens} ${cost.tokens === 1 ? 'token' : 'tokens'} for this`;
+      link.hidden = !(cost.upgrade || cost.short); link.textContent = cost.upgrade ? 'See wineLENS Pro ↗' : 'Buy tokens ↗';
+      onChange();
+    },
+    async beforeSpend() { if (always.checked && state && !state.auto_spend) await accountRequest('billing', { action: 'auto-spend', enabled: true }); },
+  };
+  idleHook = onChange;
+  void gate.refresh();
+  return gate;
+}
+
+// ── Linking ───────────────────────────────────────────────────────────
 function signIn() {
   openDialog(`<p class="wl-kicker">YOUR WINES. ONE ACCOUNT.</p><h2>Link your account.</h2>
     <ol class="wl-link-steps"><li>Open the link page in your phone’s browser.</li><li>Continue with Google to get a code.</li><li>Enter that code here to open your private Winebrary.</li></ol>
-    <a class="wl-primary" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer">Open link page ↗</a>
-    <p class="wl-muted small">${SITE_URL}/link</p>
+    <a class="wl-primary" href="${ACCOUNT_PAGE}" target="_blank" rel="noopener noreferrer">Open link page ↗</a>
+    <p class="wl-muted small">${esc(ACCOUNT_PAGE)}</p>
     <form id="wl-login"><label>Link code<input id="wl-link-code" name="code" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX"></label>
-    <button class="wl-primary" type="submit">Link this device</button></form><p class="wl-muted small">Codes last 10 minutes and work once. Free essentials, optional Pro.</p>`);
+    <button class="wl-primary" type="submit">Link this device</button></form><p class="wl-muted small">Codes last 10 minutes and work once. The catalog and your own notes are free; Pro adds more AI help.</p>`);
   const form = dialog.querySelector<HTMLFormElement>('#wl-login')!;
   const code = form.querySelector<HTMLInputElement>('[name=code]')!;
   code.addEventListener('blur', () => { code.value = formatLinkCode(code.value); });
-  form.addEventListener('submit', e => { e.preventDefault(); void run(async () => {
-    await redeemLinkCode(code.value);
-    dialog.close();
-  }); });
+  form.addEventListener('submit', e => { e.preventDefault(); void run(async () => { await redeemLinkCode(code.value); dialog.close(); }); });
 }
+
+// ── Library ───────────────────────────────────────────────────────────
 async function refresh() {
   const epoch = ++generation;
   if (!userId) { items = []; render(); return; }
   loading = true; notice = ''; render();
   try {
-    const result = await api('/api/collection?limit=500');
+    const result = await wb('list');
     if (epoch !== generation) return;
     items = result.items;
     if (items.length === 500) notice = 'Showing your 500 most recent wines.';
@@ -94,41 +131,49 @@ async function refresh() {
   finally { if (epoch === generation) { loading = false; render(); libraryChanged(); } }
 }
 function render() {
-  const visible = items.filter(w => `${w.wine_name} ${w.producer} ${w.vintage} ${w.region} ${w.metadata?.grape}`.toLowerCase().includes(search.toLowerCase()));
-  root.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">COLLECT A LITTLE CURIOSITY</p><h2>Your Winebrary<span>.</span></h2></div><button class="wl-primary" id="wl-add">＋ Add a wine</button></div>
-    <div class="wl-library-toolbar"><p class="wl-muted">${userId ? `${items.length} saved ${items.length === 1 ? 'wine' : 'wines'} · Private to your account` : 'A home for every bottle, every vintage, every discovery.'}</p>${userId ? `<label class="wl-search-label"><span class="sr-only">Search your wines</span><input id="wl-search" type="search" value="${esc(search)}" placeholder="Search your wines…"></label><button id="wl-refresh" class="wl-text-button">Refresh</button>` : ''}</div>
+  const visible = items.filter(w => `${w.wine_name} ${w.producer} ${w.vintage} ${w.region} ${w.metadata?.grape} ${w.metadata?.country}`.toLowerCase().includes(search.toLowerCase()));
+  const count = document.getElementById('home-library'); if (count) count.textContent = userId ? String(items.length) : '—';
+  root.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">YOUR WINES. YOUR NOTES.</p><h2>Your Winebrary<span>.</span></h2></div><button class="wl-primary" id="wl-add">＋ Add a wine</button></div>
+    <div class="wl-library-toolbar"><p class="wl-muted">${userId ? `${items.length} saved ${items.length === 1 ? 'wine' : 'wines'} · Private to your account` : 'Save bottles you love, add each vintage, keep your notes and photos.'}</p>${userId ? `<label class="wl-search-label"><span class="sr-only">Search your wines</span><input id="wl-search" type="search" value="${esc(search)}" placeholder="Search your wines…"></label><button id="wl-refresh" class="wl-text-button">Refresh</button>` : ''}</div>
     ${notice ? `<p role="status" class="wl-notice">${esc(notice)} <button id="wl-retry" class="wl-text-button">Retry</button></p>` : ''}
-    ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Save a wine you love. Add another year. Make it yours.</p><button id="wl-start" class="wl-primary">Open my Winebrary ↗</button></div>` : visible.length ? `<div class="wl-library-grid">${visible.map(w => `<article class="wl-bottle-card"><button class="wl-bottle-open" data-wine="${esc(w.id)}"><div class="wl-bottle-stage">${w.image_url ? `<img src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle" loading="lazy">` : '<span class="wl-photo-placeholder">PHOTO<br>TO COME<span>＋</span></span>'}<span class="wl-vintage">${esc(vintageLabel(w))}</span></div><div class="wl-bottle-copy"><p class="wl-kicker">${esc(w.metadata?.color || 'WINE')} · ${esc(w.region || 'YOUR COLLECTION')}</p><h3>${esc(w.wine_name)}</h3><p>${esc(w.producer || w.metadata?.grape || 'Explore this bottle')} <span>↗</span></p>${w.metadata?.image_source === 'generated' ? '<small>Studio rendering · reviewed by you</small>' : ''}</div></button></article>`).join('')}</div>` : `<div class="wl-empty"><h3>${search ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${search ? 'Try a different name, region or year.' : 'Add a new wine or bring a favorite over from the catalog.'}</p><button class="wl-primary" id="wl-first">Add a wine ↗</button></div>`}`;
+    ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Link your wineLENS account to save wines, notes and bottle photos, and see them on your glasses.</p><button id="wl-start" class="wl-primary">Link my account ↗</button></div>` : visible.length ? `<div class="wl-library-grid">${visible.map(card).join('')}</div>` : `<div class="wl-empty"><h3>${search ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${search ? 'Try a different name, region or year.' : 'Add a wine, scan a label, or save one from the Wines catalog.'}</p><button class="wl-primary" id="wl-first">Add a wine ↗</button></div>`}`;
   root.querySelector('#wl-add')!.addEventListener('click', () => requireAccount(() => editWine()));
   root.querySelector('#wl-first')?.addEventListener('click', () => editWine());
   root.querySelector('#wl-start')?.addEventListener('click', signIn);
   root.querySelector('#wl-retry')?.addEventListener('click', refresh);
   root.querySelector('#wl-refresh')?.addEventListener('click', refresh);
   root.querySelectorAll<HTMLImageElement>('.wl-bottle-stage img').forEach(img => img.addEventListener('error', () => {
-    const placeholder=document.createElement('span'); placeholder.className='wl-photo-placeholder'; placeholder.textContent='PHOTO UNAVAILABLE'; img.replaceWith(placeholder);
+    const placeholder = document.createElement('span'); placeholder.className = 'wl-photo-placeholder'; placeholder.textContent = 'PHOTO UNAVAILABLE'; img.replaceWith(placeholder);
   }));
   root.querySelector<HTMLInputElement>('#wl-search')?.addEventListener('input', e => {
     search = (e.target as HTMLInputElement).value; render();
-    const input = root.querySelector<HTMLInputElement>('#wl-search')!; input.focus();
+    root.querySelector<HTMLInputElement>('#wl-search')!.focus();
   });
   root.querySelectorAll<HTMLButtonElement>('[data-wine]').forEach(b => b.addEventListener('click', () => detail(items.find(w => w.id === b.dataset.wine)!)));
-  const accountButton = document.getElementById('wl-account')!;
-  accountButton.textContent = userId ? 'My account ↗' : 'Link account ↗';
+  document.getElementById('wl-account')!.textContent = userId ? 'My account ↗' : 'Link account ↗';
 }
+function card(w: LibraryWine): string {
+  const notes = libraryNotes(w);
+  const tag = notes.source === 'generated' ? 'wineLENS notes' : notes.source === 'catalog' ? 'Catalog notes' : notes.source === 'scan' ? 'Scan draft' : notes.source ? 'Your notes' : 'No notes yet';
+  return `<article class="wl-bottle-card"><button class="wl-bottle-open" data-wine="${esc(w.id)}"><div class="wl-bottle-stage">${w.image_url ? `<img src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle" loading="lazy">` : '<span class="wl-photo-placeholder">PHOTO<br>TO COME<span>＋</span></span>'}<span class="wl-vintage">${esc(vintageLabel(w))}</span></div><div class="wl-bottle-copy"><p class="wl-kicker">${esc(styleOf(w))} · ${esc(w.region || w.metadata?.country || 'YOUR COLLECTION')}</p><h3>${esc(w.wine_name)}</h3><p>${esc(w.producer || w.metadata?.grape || 'Explore this bottle')} <span>↗</span></p><small>${esc(tag)}${w.metadata?.image_source === 'generated' ? ' · Studio image' : ''}</small></div></button></article>`;
+}
+
+// ── Add / edit ────────────────────────────────────────────────────────
 function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
   const editing = !!wine?.id && !newVintage;
   const vintageState = newVintage ? 'year' : wine?.metadata?.vintage_state || (wine?.vintage ? 'year' : 'unknown');
+  const originalNotes = newVintage ? '' : wine?.notes ?? '', originalSource = newVintage ? undefined : wine?.metadata?.notes_source;
   const field = (name: string, label: string, value: unknown = '', extra = '') => `<label>${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   openDialog(`<p class="wl-kicker">${editing ? 'YOUR COLLECTION' : 'MAKE ROOM FOR SOMETHING GOOD'}</p><h2>${editing ? 'Edit this wine.' : newVintage ? 'Another year. New story.' : 'Add a wine.'}</h2>
-    ${!editing && !newVintage ? '<button id="wl-scan-label" class="wl-outline" type="button">Scan the label</button><p class="wl-muted small">Or enter the wine manually for free.</p>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name','Wine name',wine?.wine_name,'required maxlength="300"')}${field('producer','Producer',wine?.producer,'maxlength="200"')}
-    <label>Vintage<select name="vintage_state" aria-label="Vintage"><option value="year" ${vintageState==='year'?'selected':''}>Known year</option><option value="non_vintage" ${vintageState==='non_vintage'?'selected':''}>Non-vintage</option><option value="unknown" ${vintageState==='unknown'?'selected':''}>I don’t know yet</option></select></label>
-    ${field('vintage','Year',newVintage ? '' : wine?.vintage,'type="number" min="1800" max="'+(new Date().getFullYear()+1)+'" step="1"')}
-    ${field('region','Region',wine?.region,'maxlength="200"')}${field('country','Country',wine?.metadata?.country,'maxlength="100"')}${field('grape','Grape',wine?.metadata?.grape,'maxlength="200"')}
-    <label>Wine style<select name="color" aria-label="Wine style">${[...(wine?.metadata?.color === 'Unknown' ? ['Unknown'] : []),'Red','White','Sparkling','Rose','Orange','Dessert'].map(c=>`<option ${c===wine?.metadata?.color?'selected':''}>${c}</option>`).join('')}</select></label></div>
-    <label>Your tasting notes<textarea name="notes" maxlength="2000" rows="3" placeholder="What made this bottle memorable?">${esc(newVintage ? '' : wine?.notes)}</textarea></label>
-    <p class="wl-muted small">${newVintage ? 'This creates a separate entry. The previous year keeps its own notes and photo.' : 'Save now. You can add a bottle photo or studio rendering next.'}</p>
+    ${!editing && !newVintage && !wine?.wine_name ? '<div class="wl-choice"><button id="wl-scan-label" class="wl-outline" type="button">Scan the label ✦</button><span class="wl-muted small">or fill in what you know. Manual entry is always free.</span></div>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name', 'Wine name', wine?.wine_name, 'required maxlength="300"')}${field('producer', 'Producer', wine?.producer, 'maxlength="200"')}
+    <label>Vintage<select name="vintage_state" aria-label="Vintage"><option value="year" ${vintageState === 'year' ? 'selected' : ''}>Known year</option><option value="non_vintage" ${vintageState === 'non_vintage' ? 'selected' : ''}>Non-vintage</option><option value="unknown" ${vintageState === 'unknown' ? 'selected' : ''}>I don’t know yet</option></select></label>
+    ${field('vintage', 'Year', newVintage ? '' : wine?.vintage, 'type="number" min="1800" max="' + (new Date().getFullYear() + 1) + '" step="1"')}
+    ${field('region', 'Region', wine?.region, 'maxlength="200"')}${field('country', 'Country', wine?.metadata?.country, 'maxlength="100"')}${field('grape', 'Grape', wine?.metadata?.grape, 'maxlength="200"')}
+    <label>Wine style<select name="color" aria-label="Wine style">${['Red', 'White', 'Sparkling', 'Rose', 'Orange', 'Dessert', 'Unknown'].map(c => `<option value="${c}" ${c === (wine?.metadata?.color || 'Red') ? 'selected' : ''}>${c === 'Rose' ? 'Rosé' : c === 'Unknown' ? 'Not sure' : c}</option>`).join('')}</select></label></div>
+    <label>Your tasting notes<textarea name="notes" maxlength="2000" rows="4" placeholder="What made this bottle memorable? Leave empty to use catalog notes, or draft them later.">${esc(originalNotes)}</textarea></label>
+    <p class="wl-muted small">${newVintage ? 'This creates a separate entry. The previous year keeps its own notes and photo.' : originalSource === 'scan' ? 'The notes above are a draft from the label. Edit them freely.' : 'Save now. You can add a bottle photo, draft tasting notes or a studio image next.'}</p>
     <button class="wl-primary" type="submit">${editing ? 'Save changes' : 'Save to Winebrary'} ↗</button></form>`);
-  dialog.querySelector('#wl-scan-label')?.addEventListener('click', () => void scanLabel());
+  dialog.querySelector('#wl-scan-label')?.addEventListener('click', () => scanLabel());
   const form = dialog.querySelector<HTMLFormElement>('form')!;
   const state = form.querySelector<HTMLSelectElement>('[name=vintage_state]')!;
   const year = form.querySelector<HTMLInputElement>('[name=vintage]')!;
@@ -136,135 +181,193 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
   syncYear(); state.addEventListener('change', syncYear);
   form.addEventListener('submit', e => { e.preventDefault(); void run(async () => {
     const account = userId;
-    const values = Object.fromEntries(new FormData(form));
-    const result = await api('/api/collection', editing ? 'PATCH' : 'POST', { ...values, ...(editing ? { id: wine!.id } : { wine_id: wine?.wine_id || null }) });
+    const values = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    const notes = (values.notes || '').trim();
+    const notes_source = !notes ? undefined : notes === originalNotes.trim() && originalSource ? originalSource : 'user';
+    const result = editing
+      ? await wb('update', { ...values, id: wine!.id, ...(notes_source ? { notes_source } : {}) })
+      : await wb('add', { ...values, wine_id: wine?.wine_id || null, ...(notes_source ? { notes_source } : {}) });
     if (account !== userId) return;
-    setBusy(false); detail(result.item); await refresh();
+    setBusy(false); detail(result.item);
+    if (result.image_detached) feedback('The name, producer or year changed, so the old bottle photo was detached. Add a photo of this bottle.');
+    await refresh();
   }); });
 }
-async function scanLabel() {
-  const account = userId;
-  openDialog(`<p class="wl-kicker">LABEL SCAN</p><h2>Start with the label.</h2><p class="wl-muted">Choose a clear label photo. OpenAI extracts details and a draft note for you to review before saving.</p><label class="wl-upload">Pick or take a label photo<input id="wl-label-file" type="file" accept="image/png,image/jpeg,image/webp" capture="environment"></label><p class="wl-muted small">PNG, JPEG or WebP · up to 2 MB.</p><p id="wl-scan-cost" role="status">Checking your allowance…</p><div id="wl-token-consent" hidden><label><input id="wl-consent-once" type="checkbox"> <span id="wl-consent-text">Use tokens?</span></label><label><input id="wl-consent-always" type="checkbox"> Always allow</label></div><a id="wl-scan-upgrade" class="wl-outline" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer" hidden>Upgrade on wineLENS.com ↗</a><button id="wl-scan-submit" class="wl-primary" disabled>Scan and review ↗</button><button id="wl-scan-manual" class="wl-text-button">Enter manually</button>`);
+
+// ── Label scan (paid help) ────────────────────────────────────────────
+function scanLabel() {
+  const account = userId, ids = requestIds();
+  openDialog(`<p class="wl-kicker">LABEL SCAN ✦</p><h2>Start with the label.</h2><p class="wl-muted">Take or choose a clear photo of the front label. wineLENS fills in the details and a draft note. You check every field before saving.</p>
+    <label class="wl-upload">Pick or take a label photo<input id="wl-label-file" type="file" accept="image/png,image/jpeg,image/webp" capture="environment"></label><p class="wl-muted small">PNG, JPEG or WebP · up to 2 MB · sent to OpenAI to read the label.</p>
+    ${costHTML}<button id="wl-scan-submit" class="wl-primary" disabled>Scan and review ↗</button><button id="wl-scan-manual" class="wl-text-button">Enter manually instead</button>`);
   const revision = dialogRevision;
-  let state: BillingStatus, photo = '', requestId = crypto.randomUUID();
+  let photo = '';
   const send = dialog.querySelector<HTMLButtonElement>('#wl-scan-submit')!;
+  const gate = costGate('label_scan', () => { send.disabled = busy || !photo || !gate.ready(); });
   const file = dialog.querySelector<HTMLInputElement>('#wl-label-file')!;
   dialog.querySelector('#wl-scan-manual')!.addEventListener('click', () => editWine());
-  const ready = () => { send.disabled = !photo || !state || !state.scan_available || (!state.pro && state.allowances.label_scan.remaining === 0); };
-  file.addEventListener('change', async () => {
-    photo = ''; requestId = crypto.randomUUID(); ready(); const selected = file.files?.[0]; if (!selected) return;
-    if (!['image/png','image/jpeg','image/webp'].includes(selected.type) || selected.size > 2 * 1024 * 1024) { feedback('Choose a PNG, JPEG or WebP under 2 MB.'); return; }
-    const reader = new FileReader(); reader.onload = () => { if (revision !== dialogRevision) return; photo = String(reader.result); feedback('Photo ready. Check the cost before scanning.'); ready(); }; reader.readAsDataURL(selected);
+  file.addEventListener('change', () => {
+    photo = ''; send.disabled = true; const selected = file.files?.[0]; if (!selected) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(selected.type) || selected.size > 2 * 1024 * 1024) { feedback('Choose a PNG, JPEG or WebP under 2 MB.'); return; }
+    const reader = new FileReader(); reader.onload = () => { if (revision !== dialogRevision) return; photo = String(reader.result); feedback('Photo ready.'); send.disabled = !gate.ready(); }; reader.readAsDataURL(selected);
   });
-  try {
-    state = await billingStatus(); if (revision !== dialogRevision || account !== userId) return;
-    dialog.querySelector('#wl-scan-cost')!.textContent = usageCost(state, 'label_scan');
-    const paid = state.allowances.label_scan.remaining === 0 && state.pro;
-    (dialog.querySelector('#wl-token-consent') as HTMLElement).hidden = !paid || state.auto_spend;
-    dialog.querySelector('#wl-consent-text')!.textContent = `Use ${state.rate_card.features.label_scan.tokens} token?`;
-    (dialog.querySelector('#wl-scan-upgrade') as HTMLElement).hidden = state.pro || state.allowances.label_scan.remaining > 0;
-    if (!state.scan_available) feedback('Not available yet, you have not been charged.'); ready();
-  } catch (e) { if (revision === dialogRevision) feedback(e instanceof Error ? e.message : 'Allowance unavailable.'); }
-  if (revision !== dialogRevision) return;
   send.addEventListener('click', () => void run(async () => {
-    const always = dialog.querySelector<HTMLInputElement>('#wl-consent-always')!.checked;
-    const consent = dialog.querySelector<HTMLInputElement>('#wl-consent-once')!.checked || always;
-    if (state.allowances.label_scan.remaining === 0 && !state.auto_spend && !consent) throw new Error('Confirm token use before scanning.');
-    if (always && !state.auto_spend) await accountRequest('billing', { action: 'auto-spend', enabled: true });
-    const result = await accountRequest('wine-scan', { photo, request_id: requestId, spend_consent: consent });
+    await gate.beforeSpend();
+    let result;
+    try { result = await accountRequest('wine-scan', { photo, request_id: ids.current, spend_consent: gate.consent() }); ids.settle(); }
+    catch (e) { ids.settle(e); void gate.refresh(); throw e; }
     if (account !== userId || revision !== dialogRevision) return;
     setBusy(false);
-    editWine({ wine_name: result.wine_name, producer: result.producer, vintage: typeof result.vintage === 'number' ? result.vintage : null, region: result.region, notes: result.draft_tasting_note,
-      metadata: { vintage_state: result.vintage === 'non-vintage' ? 'non_vintage' : typeof result.vintage === 'number' ? 'year' : 'unknown', country: result.country, grape: result.grape, color: result.color } });
-    feedback(`Review every field before saving. Scan confidence: ${Math.round(result.confidence * 100)}%. The tasting note is a draft.`);
+    editWine({ wine_name: result.wine_name, producer: result.producer, vintage: typeof result.vintage === 'number' ? result.vintage : null, region: result.region,
+      notes: String(result.draft_tasting_note || '').replace(/^Draft\s*[—:-]?\s*/i, ''),
+      metadata: { vintage_state: result.vintage === 'non-vintage' ? 'non_vintage' : typeof result.vintage === 'number' ? 'year' : 'unknown', country: result.country, grape: result.grape, color: result.color, notes_source: 'scan' } });
+    feedback(`Check every field before saving. Label confidence: ${Math.round(result.confidence * 100)}%.`);
   }));
 }
+
+// ── Wine page ─────────────────────────────────────────────────────────
 function detail(wine: LibraryWine) {
-  openDialog(`<p class="wl-kicker">${esc(vintageLabel(wine))} · ${esc(wine.metadata?.color || 'WINE')}</p><h2>${esc(wine.wine_name)}</h2><p class="wl-muted">${esc([wine.producer, wine.region, wine.metadata?.country].filter(Boolean).join(' · '))}</p>
-    <div class="wl-detail-grid"><div class="wl-detail-photo">${wine.image_url ? `<img src="${esc(wine.image_url)}" alt="${esc(wine.wine_name)} bottle">` : '<span class="wl-photo-placeholder">YOUR BOTTLE<br>IN FOCUS<span>＋</span></span>'}</div><div><p class="wl-kicker">YOUR NOTES</p><p class="wl-notes">${esc(wine.notes || 'Add your first impression. This is your space.')}</p><p class="wl-muted small">${esc(wine.metadata?.grape || '')}</p><button id="wl-photo" class="wl-primary">${wine.image_url ? 'Change bottle image' : 'Add bottle photo'} ↗</button><button id="wl-edit" class="wl-outline">Edit wine</button><button id="wl-vintage" class="wl-outline">＋ Add another vintage</button></div></div>
+  const notes = libraryNotes(wine), twin = lookupWineById(wine.wine_id);
+  const hasOwn = !!wine.notes?.trim();
+  openDialog(`<p class="wl-kicker">${esc(vintageLabel(wine))} · ${esc(styleOf(wine))}${wine.metadata?.grape ? ' · ' + esc(wine.metadata.grape) : ''}</p><h2>${esc(wine.wine_name)}</h2><p class="wl-muted">${esc([wine.producer, wine.region, wine.region && wine.metadata?.country && wine.region.includes(wine.metadata.country) ? '' : wine.metadata?.country].filter(Boolean).join(' · '))}</p>
+    <div class="wl-detail-grid"><div class="wl-detail-photo">${wine.image_url ? `<img src="${esc(wine.image_url)}" alt="${esc(wine.wine_name)} bottle">` : '<span class="wl-photo-placeholder">YOUR BOTTLE<br>IN FOCUS<span>＋</span></span>'}<button id="wl-photo" class="wl-outline">${wine.image_url ? 'Change bottle image' : 'Add bottle photo'} ↗</button></div>
+    <section class="wl-notes-block" aria-labelledby="wl-notes-title"><div class="wl-notes-head"><p class="wl-kicker" id="wl-notes-title">TASTING NOTES</p>${notes.source ? `<span class="wl-source wl-source-${notes.source}">${esc(SOURCE_LABEL[notes.source])}</span>` : ''}</div>
+    ${notes.source ? notesHTML(notes.sections, notes.text) : '<p class="wl-muted">No notes yet. Write your own, or let wineLENS draft the expected profile of this wine.</p>'}
+    <div class="wl-notes-actions"><button id="wl-draft-notes" class="wl-primary">✦ ${notes.source === 'generated' ? 'Redraft' : 'Draft'} tasting notes</button><button id="wl-edit" class="wl-outline">${hasOwn ? 'Edit wine & notes' : 'Write my own notes'}</button></div>
+    ${twin && hasOwn ? '<button id="wl-catalog-notes" class="wl-text-button">Read the catalog notes for this wine</button>' : ''}</section></div>
     <div class="wl-hud-label"><span>EVEN G2 · DISPLAY PREVIEW</span><span>576 × 288</span></div><canvas id="wl-g2-preview" class="wl-hud-canvas" role="img" aria-label="Preview of this wine on the Even G2 display"></canvas>
-    <p class="wl-muted small">Layout preview. Glasses use the built-in G2 typeface and green display.</p><button id="wl-send" class="wl-primary">Show on glasses ↗</button>
-    <button id="wl-remove" class="wl-text-button">Remove from Winebrary</button>`);
-  void drawGlassesPreview(wine,dialog.querySelector<HTMLCanvasElement>('#wl-g2-preview')!);
+    <p class="wl-muted small">Layout preview. Glasses use the built-in G2 typeface and green display. Your Winebrary is also under My Winebrary on the glasses.</p>
+    <div class="wl-detail-actions"><button id="wl-send" class="wl-primary">Show on glasses ↗</button><button id="wl-vintage" class="wl-outline">＋ Add another vintage</button><button id="wl-remove" class="wl-text-button">Remove from Winebrary</button></div>`);
+  void drawGlassesPreview(wine, dialog.querySelector<HTMLCanvasElement>('#wl-g2-preview')!);
   dialog.querySelector('#wl-edit')!.addEventListener('click', () => editWine(wine));
-  dialog.querySelector('#wl-vintage')!.addEventListener('click', () => editWine(wine,true));
+  dialog.querySelector('#wl-vintage')!.addEventListener('click', () => editWine(wine, true));
   dialog.querySelector('#wl-photo')!.addEventListener('click', () => photoStudio(wine));
+  dialog.querySelector('#wl-draft-notes')!.addEventListener('click', () => notesStudio(wine));
+  dialog.querySelector('#wl-catalog-notes')?.addEventListener('click', () => {
+    const block = dialog.querySelector('.wl-notes-block')!, sections = libraryNotes({ ...wine, notes: null });
+    block.insertAdjacentHTML('beforeend', `<div class="wl-notes-twin"><p class="wl-source wl-source-catalog">${esc(SOURCE_LABEL.catalog)}</p>${notesHTML(sections.sections, sections.text)}</div>`);
+    dialog.querySelector('#wl-catalog-notes')!.remove();
+  });
   dialog.querySelector('#wl-send')!.addEventListener('click', () => run(async () => {
     if (!canShowWine()) throw new Error('Open wineLENS in Even Hub and connect your G2 glasses first.');
-    await showWineOnGlasses(wine); feedback('Wine sent to the Even Hub bridge.');
+    await showWineOnGlasses(wine); feedback('Sent to your glasses.');
   }));
   dialog.querySelector('#wl-remove')!.addEventListener('click', () => {
-    openDialog(`<h2>Remove this wine?</h2><p>${esc(wine.wine_name)} · ${esc(vintageLabel(wine))}</p><p class="wl-muted">It will be removed from your account. Your other vintages stay in Winebrary.</p><button id="wl-confirm-remove" class="wl-primary">Remove wine</button><button id="wl-keep" class="wl-outline">Keep wine</button>`);
+    openDialog(`<h2>Remove this wine?</h2><p>${esc(wine.wine_name)} · ${esc(vintageLabel(wine))}</p><p class="wl-muted">It will be removed from your account with its photos and notes. Your other vintages stay in Winebrary.</p><button id="wl-confirm-remove" class="wl-primary">Remove wine</button><button id="wl-keep" class="wl-outline">Keep wine</button>`);
     dialog.querySelector('#wl-keep')!.addEventListener('click', () => detail(wine));
-    dialog.querySelector('#wl-confirm-remove')!.addEventListener('click', () => run(async () => { await api(`/api/collection?id=${wine.id}`,'DELETE'); dialog.close(); await refresh(); }));
+    dialog.querySelector('#wl-confirm-remove')!.addEventListener('click', () => run(async () => { await wb('remove', { id: wine.id }); dialog.close(); await refresh(); }));
   });
 }
+
+// ── Tasting notes (paid help) ─────────────────────────────────────────
+function notesStudio(wine: LibraryWine) {
+  const account = userId, ids = requestIds(), own = wine.notes?.trim() && wine.metadata?.notes_source !== 'generated';
+  openDialog(`<p class="wl-kicker">TASTING NOTES ✦</p><h2>The expected profile.<br>In the house style.</h2>
+    <p class="wl-muted">wineLENS drafts look, nose, palate, finish and a short story for <strong>${esc(wine.wine_name)}${wine.vintage ? ' ' + wine.vintage : ''}</strong> from what is known about its producer, place, grape and vintage. It is not a tasting. You read it before anything is saved.</p>
+    ${own ? '<p class="wl-notice">Saving the draft replaces the notes you wrote. Copy anything you want to keep first.</p>' : ''}
+    ${costHTML}<button id="wl-notes-go" class="wl-primary" disabled>Draft tasting notes ✦</button><div id="wl-notes-review" class="wl-notes-review"></div>`);
+  const revision = dialogRevision, go = dialog.querySelector<HTMLButtonElement>('#wl-notes-go')!;
+  const gate = costGate('tasting_notes', () => { go.disabled = busy || !gate.ready(); });
+  go.addEventListener('click', () => void run(async () => {
+    feedback('Writing… this usually takes a few seconds.');
+    await gate.beforeSpend();
+    let result: { draft: NotesDraft };
+    try { result = await accountRequest('wine-notes', { collection_id: wine.id, request_id: ids.current, spend_consent: gate.consent() }); ids.settle(); }
+    catch (e) { ids.settle(e); void gate.refresh(); throw e; }
+    if (account !== userId || revision !== dialogRevision) return;
+    const draft = result.draft;
+    dialog.querySelector('#wl-notes-review')!.innerHTML = `<p class="wl-source wl-source-generated">${esc(SOURCE_LABEL.generated)}${draft.confidence < 0.5 ? ' · less-known wine: read as a style guide' : ''}</p>${notesHTML(parseSections(draft.text), draft.text)}
+      <div class="wl-notes-actions"><button id="wl-notes-save" class="wl-primary">Save to my notes ↗</button><button id="wl-notes-discard" class="wl-text-button">Discard</button></div>`;
+    feedback('Read the draft. Save it, or discard it. Either way this draft is paid for.');
+    dialog.querySelector('#wl-notes-discard')!.addEventListener('click', () => detail(wine));
+    dialog.querySelector('#wl-notes-save')!.addEventListener('click', () => run(async () => {
+      const saved = await wb('set-notes', { id: wine.id, notes: draft.text, notes_source: 'generated' });
+      if (account !== userId) return;
+      setBusy(false); detail(saved.item); await refresh();
+    }));
+    void gate.refresh();
+  }));
+}
+
+// ── Bottle Studio (photo is free; the studio rendering is paid help) ──
 function photoStudio(wine: LibraryWine) {
-  let draft: ImageDraft | null = null;
-  let original: ImageDraft | null = null;
-  let studioConsent = false;
-  const account = userId;
-  openDialog(`<p class="wl-kicker">BOTTLE STUDIO</p><h2>The real thing.<br>In its best light.</h2><p class="wl-muted">Start with a clear photo of this exact bottle and vintage. Use it as-is, or make a realistic studio rendering.</p>
-    <label class="wl-upload">＋ Choose a bottle photo<input id="wl-file" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="wl-muted small">PNG, JPEG or WebP · under 2 MB. Only upload photos you can use. Generating a rendering sends this photo to OpenAI.</p>
-    <div id="wl-image-review" class="wl-image-review"></div><div class="wl-studio-actions"><button id="wl-render" class="wl-primary" hidden>Create studio rendering ↗</button><button id="wl-approve" class="wl-outline" hidden>Use this image</button><button id="wl-original" class="wl-text-button" hidden>Back to original photo</button></div><p class="wl-muted small">Pro includes monthly Studio renderings. Extra renderings use tokens with your consent. Check the label, producer and year before using a rendering.</p>`);
+  let draft: ImageDraft | null = null, original: ImageDraft | null = null;
+  const account = userId, ids = requestIds();
+  openDialog(`<p class="wl-kicker">BOTTLE STUDIO</p><h2>The real thing.<br>In its best light.</h2><p class="wl-muted">1 · Add a clear photo of this exact bottle and vintage. Using your own photo is free.<br>2 · Optionally, turn it into a clean studio image ✦. It keeps your label as photographed; check it before using it.</p>
+    <label class="wl-upload">＋ Choose a bottle photo<input id="wl-file" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="wl-muted small">PNG, JPEG or WebP · under 2 MB. Only upload photos you can use. A studio image sends this photo to OpenAI.</p>
+    <div id="wl-image-review" class="wl-image-review"></div>
+    <div class="wl-studio-step"><p class="wl-kicker">STUDIO IMAGE ✦</p>${costHTML}</div>
+    <div class="wl-studio-actions"><button id="wl-render" class="wl-primary" disabled>Create studio image ✦</button><button id="wl-approve" class="wl-outline" hidden>Use this image</button><button id="wl-original" class="wl-text-button" hidden>Back to my photo</button></div>`);
+  const revision = dialogRevision, renderButton = dialog.querySelector<HTMLButtonElement>('#wl-render')!;
+  const gate = costGate('studio_render', () => { renderButton.disabled = busy || !original || !gate.ready(); });
   const preview = () => {
-    dialog.querySelector('#wl-image-review')!.innerHTML = `<img src="${esc(draft!.url)}" alt="Bottle image for review"><p class="wl-kicker">${draft!.source === 'generated' ? 'STUDIO RENDERING · CHECK LABEL & VINTAGE' : 'YOUR ORIGINAL PHOTO'}</p>`;
-    dialog.querySelector<HTMLButtonElement>('#wl-render')!.hidden = false;
+    dialog.querySelector('#wl-image-review')!.innerHTML = `<img src="${esc(draft!.url)}" alt="Bottle image for review"><p class="wl-kicker">${draft!.source === 'generated' ? 'STUDIO IMAGE · CHECK LABEL & VINTAGE' : 'YOUR PHOTO'}</p>`;
     dialog.querySelector<HTMLButtonElement>('#wl-approve')!.hidden = false;
     dialog.querySelector<HTMLButtonElement>('#wl-original')!.hidden = draft!.source !== 'generated';
   };
   dialog.querySelector<HTMLInputElement>('#wl-file')!.addEventListener('change', e => run(async () => {
     const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
-    if (file.size > 2*1024*1024) throw new Error('Choose a photo under 2 MB.');
+    if (file.size > 2 * 1024 * 1024) throw new Error('Choose a photo under 2 MB.');
     feedback('Uploading your photo…');
-    const data = await new Promise<string>((resolve,reject) => { const reader = new FileReader(); reader.onload=()=>resolve(String(reader.result).split(',')[1]); reader.onerror=reject; reader.readAsDataURL(file); });
-    const result = await api('/api/bottle-image','POST',{ collection_id: wine.id, png:data });
-    if (account !== userId) return;
-    draft = original = result.draft; preview(); feedback('Photo ready. Use it now, or create a rendering.');
+    const photo = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); });
+    const result = await wb('upload-photo', { id: wine.id, photo });
+    if (account !== userId || revision !== dialogRevision) return;
+    draft = original = result.draft; preview(); feedback('Photo ready. Use it as it is, or create a studio image.');
   }));
-  dialog.querySelector('#wl-render')!.addEventListener('click', () => run(async () => {
-    if (!original) return; feedback('Lighting your bottle… This can take up to two minutes.');
-    const state = await billingStatus();
-    if (!state.pro) throw new Error('Studio requires Pro. Upgrade on wineLENS.com.');
-    if (state.allowances.studio_render.remaining === 0 && !state.auto_spend && !studioConsent) {
-      feedback(`${usageCost(state, 'studio_render')}. Tap Create studio rendering again to confirm.`); studioConsent = true; return;
-    }
-    const result = await api('/api/generate-bottle','POST',{ collection_id:wine.id, reference_path:original.path, request_id:crypto.randomUUID(), spend_consent:studioConsent });
-    studioConsent = false;
-    if (account !== userId) return;
-    draft=result.draft; preview(); feedback('Compare the label and vintage with your photo before using this rendering.');
+  renderButton.addEventListener('click', () => run(async () => {
+    if (!original) return;
+    feedback('Lighting your bottle… this can take up to two minutes.');
+    await gate.beforeSpend();
+    let result: { draft: ImageDraft };
+    try { result = await accountRequest('bottle-render', { collection_id: wine.id, reference_path: original.path, request_id: ids.current, spend_consent: gate.consent() }); ids.settle(); }
+    catch (e) { ids.settle(e); void gate.refresh(); throw e; }
+    if (account !== userId || revision !== dialogRevision) return;
+    draft = result.draft; preview(); void gate.refresh();
+    feedback('Compare the label and vintage with your photo before using this image.');
   }));
-  dialog.querySelector('#wl-original')!.addEventListener('click', () => { draft=original; preview(); feedback('Original photo selected.'); });
+  dialog.querySelector('#wl-original')!.addEventListener('click', () => { draft = original; preview(); feedback('Your photo is selected.'); });
   dialog.querySelector('#wl-approve')!.addEventListener('click', () => run(async () => {
     if (!draft) return;
-    const result = await api('/api/collection','PATCH',{ id:wine.id, image_path:draft.path, image_source:draft.source });
+    const result = await wb('attach-image', { id: wine.id, image_path: draft.path, image_source: draft.source });
     if (account !== userId) return;
     setBusy(false); detail(result.item); await refresh();
   }));
 }
+
+// ── Account ───────────────────────────────────────────────────────────
+function accountDialog() {
+  const pending = unsyncedEvents().length;
+  openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">${esc(accountEmail)}<br>Your Winebrary and study progress are private. Unlinking removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you unlink now.</p>` : ''}
+    <div class="wl-plan-chip" role="status"><strong id="wl-plan">Checking plan…</strong><span id="wl-plan-detail"></span></div>
+    <a class="wl-outline" href="${ACCOUNT_PAGE}" target="_blank" rel="noopener noreferrer">Plan, tokens & devices ↗</a><button id="wl-signout" class="wl-text-button">Unlink this device</button>`);
+  const revision = dialogRevision;
+  void billingStatus().then(state => {
+    if (revision !== dialogRevision) return;
+    dialog.querySelector('#wl-plan')!.textContent = `${state.pro ? 'wineLENS Pro' : 'Free'} · ${state.tokens} ${state.tokens === 1 ? 'token' : 'tokens'}`;
+    const card = state.rate_card?.features || {};
+    dialog.querySelector('#wl-plan-detail')!.textContent = Object.entries(state.allowances).map(([k, a]) => `${(card as Record<string, { label: string }>)[k]?.label || k}: ${a!.remaining}/${a!.limit} left`).join(' · ');
+  }).catch(() => { if (revision === dialogRevision) dialog.querySelector('#wl-plan')!.textContent = 'Plan and tokens unavailable right now.'; });
+  dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const warning = await unlinkDevice(); dialog.close(); if (warning) { notice = warning; render(); } }));
+}
+
 export function initWinebrary() {
   auth = accountClient();
   root = document.getElementById('winebrary-content')!;
   // The glasses read the same in-memory collection; an error only counts when nothing loaded.
   setLibrarySource(() => ({ userId, loading, error: items.length ? '' : notice, items }));
-  dialog = document.createElement('dialog'); dialog.className='wl-dialog'; dialog.setAttribute('aria-label','Winebrary'); document.body.append(dialog);
+  dialog = document.createElement('dialog'); dialog.className = 'wl-dialog'; dialog.setAttribute('aria-label', 'Winebrary'); document.body.append(dialog);
   dialog.addEventListener('cancel', e => { if (busy) e.preventDefault(); });
-  document.getElementById('wl-account')!.addEventListener('click', () => {
-    if (!userId) return signIn();
-    const pending=unsyncedEvents().length;
-    openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">${esc(accountEmail)}<br>Your Winebrary and study progress are private. Unlinking removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you unlink now.</p>` : ''}<p id="wl-balance-chip" class="wl-muted" role="status">Checking plan and tokens…</p><a class="wl-text-button" href="${SITE_URL}/link" target="_blank" rel="noopener noreferrer">Plan and usage ↗</a><button id="wl-signout" class="wl-primary">Unlink this device</button>`);
-    const accountRevision = dialogRevision;
-    void billingStatus().then(state => { if (accountRevision === dialogRevision) dialog.querySelector('#wl-balance-chip')!.textContent = `${state.pro ? 'Pro' : 'Free'} · ${state.tokens} tokens`; }).catch(() => { if (accountRevision === dialogRevision) dialog.querySelector('#wl-balance-chip')!.textContent = 'Plan and tokens unavailable.'; });
-    dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const warning = await unlinkDevice(); dialog.close(); if (warning) { notice = warning; render(); } }));
-  });
-  document.querySelectorAll('[data-wl-add]').forEach(el=>el.addEventListener('click',()=>requireAccount(()=>editWine())));
-  document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach(el=>el.addEventListener('click',()=>document.querySelector<HTMLButtonElement>(`.tab[data-tab="${el.dataset.openTab}"]`)?.click()));
+  document.getElementById('wl-account')!.addEventListener('click', () => { if (!userId) signIn(); else accountDialog(); });
+  document.querySelectorAll('[data-wl-add]').forEach(el => el.addEventListener('click', () => requireAccount(() => editWine())));
+  document.querySelectorAll('[data-open-account]').forEach(el => el.addEventListener('click', () => document.getElementById('wl-account')!.click()));
+  document.querySelectorAll('[data-wl-scan]').forEach(el => el.addEventListener('click', () => requireAccount(() => scanLabel())));
+  document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach(el => el.addEventListener('click', () => document.querySelector<HTMLButtonElement>(`.tab[data-tab="${el.dataset.openTab}"]`)?.click()));
   document.addEventListener('click', e => {
-    const button=(e.target as HTMLElement).closest<HTMLElement>('[data-save-library]'); if (!button) return;
-    const found=lookupWineById(button.dataset.saveLibrary);
+    const button = (e.target as HTMLElement).closest<HTMLElement>('[data-save-library]'); if (!button) return;
+    const found = lookupWineById(button.dataset.saveLibrary);
     if (!found) return; // unknown catalog ID: never save it as some other wine
-    // Personal notes start empty: catalog tasting notes are attributed reference text, not the user's observations.
-    requireAccount(()=>editWine({ wine_name:found.wine.name, wine_id:found.id, region:found.wine.region, notes:'', metadata:{color:found.type,country:found.country,grape:found.wine.grape,vintage_state:'unknown'} }));
+    // Personal notes start empty; the catalog notes still show for this wine via its catalog ID.
+    requireAccount(() => editWine({ wine_name: found.wine.name, wine_id: found.id, region: found.wine.region, notes: '', metadata: { color: found.type, country: found.country, grape: found.wine.grape, vintage_state: 'unknown' } }));
   });
   let authRevision = 0;
   const applySession = async (session: Session | null) => {
@@ -282,7 +385,8 @@ export function initWinebrary() {
     void useAccount(next).then(() => { if (next) setTimeout(() => void syncStudy(), 0); });
     dialogRevision++;
     userId = next; accountEmail = valid ? session!.user.email || '' : ''; items = []; search = ''; generation++; loading = false;
-    dialog.close(); setBusy(false); render(); setTimeout(() => void refresh(), 0);
+    dialog.close();
+    setBusy(false); render(); setTimeout(() => void refresh(), 0);
   };
   // Supabase callbacks must not await auth operations while its session lock is held.
   auth.auth.onAuthStateChange((_event, session) => { setTimeout(() => void applySession(session), 0); });

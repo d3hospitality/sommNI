@@ -27,7 +27,8 @@
     "test:billing": "node --test tests/billing.test.cjs",
     "test:scan": "node --test tests/wine-scan.test.cjs",
     "test:sql:embedded": "node tests/sql/embedded.mjs",
-    "test:sql:api": "node tests/sql/api.mjs"
+    "test:sql:api": "node tests/sql/api.mjs",
+    "test:api": "node --test tests/winebrary-api.test.cjs"
   },
   "dependencies": {
     "@evenrealities/even_hub_sdk": "^0.0.9",

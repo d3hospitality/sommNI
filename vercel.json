@@ -48,6 +48,18 @@
     },
     "api/stripe-webhook.js": {
       "maxDuration": 60
+    },
+    "api/winebrary.js": {
+      "maxDuration": 30
+    },
+    "api/study.js": {
+      "maxDuration": 30
+    },
+    "api/wine-notes.js": {
+      "maxDuration": 60
+    },
+    "api/bottle-render.js": {
+      "maxDuration": 150
     }
   }
 }

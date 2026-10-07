@@ -1,22 +1,20 @@
 // ═══════════════════════════════════════════════════════════════════
-// sommNI — Phone-side Interactive Dashboard
-// Full feature parity with sommni-dashboard-v2.jsx
-// Vanilla TS — runs inside Even Hub webview
+// wineLENS — phone companion tabs (Home, Wines, Pairings, Dinner, Study, Settings)
+// Winebrary lives in winebrary.ts; the catalog in catalog-phone.ts.
+// Vanilla TS — runs inside the Even Hub webview
 // ═══════════════════════════════════════════════════════════════════
 
 import {
-  getInventory, getInventoryStats, adjustStock, setStock,
   getPairings, createPairing, updatePairing, deletePairing,
-  getFavorites, toggleFavorite, getCourseState, saveCourseState,
+  getFavorites, getCourseState, saveCourseState,
   type Pairing, type CourseSlot,
 } from './sync';
 import { getWineId, lookupWineById } from './identity';
-import { wineReferences } from './study/content';
+import { renderCatalog, showCatalogType } from './catalog-phone';
 import { initStudyPanel, renderStudyPanel } from './study/phone';
 import {
   WINES, WINE_TYPES, COUNTRIES, TYPE_DISPLAY, TOTAL_WINES,
-  getWinesForCountry, getGrapesForCountry,
-  getWinesForGrape, scoreWine, getRankedWines, getFlavorOptionsForType,
+  scoreWine, getRankedWines, getFlavorOptionsForType,
   type Wine, type WineType,
 } from './constants';
 
@@ -32,14 +30,6 @@ const TYPE_COLORS: Record<string, string> = {
 
 let activeTab = 'home';
 
-// Cellar state
-let cellarView: 'types' | 'countries' | 'grapes' | 'wines' = 'types';
-let cellarType: WineType | null = null;
-let cellarCountry: string | null = null;
-let cellarGrape: string | null = null;
-let cellarFilter: 'all' | '85' | '86' = 'all';
-let cellarSearch = '';
-let inventoryCache: Record<string, number> = {};
 let favoritesCache: string[] = [];
 
 // Course builder state
@@ -127,7 +117,6 @@ export function initDashboard(): void {
 }
 
 export async function refreshAll(): Promise<void> {
-  inventoryCache = await getInventory();
   favoritesCache = await getFavorites();
   pairingsCache = await getPairings();
   courseSlots = await getCourseState();
@@ -160,34 +149,6 @@ async function handleGlobalClick(e: Event): Promise<void> {
   const val2 = target.dataset.value2 || '';
 
   switch (action) {
-    // ── Cellar ──
-    case 'cellar-type':
-      cellarType = val as WineType; cellarView = 'countries'; await renderCellar(); break;
-    case 'cellar-country':
-      cellarCountry = val; cellarView = 'grapes'; await renderCellar(); break;
-    case 'cellar-grape':
-      cellarGrape = val; cellarView = 'wines'; await renderCellar(); break;
-    case 'cellar-back':
-      if (cellarView === 'wines') { cellarView = 'grapes'; cellarGrape = null; }
-      else if (cellarView === 'grapes') { cellarView = 'countries'; cellarCountry = null; }
-      else if (cellarView === 'countries') { cellarView = 'types'; cellarType = null; }
-      await renderCellar(); break;
-    case 'cellar-filter':
-      cellarFilter = val as 'all' | '85' | '86'; await renderCellar(); break;
-    case 'stock-plus':
-    case 'stock-minus': {
-      if (!lookupWineById(val)) break; // never write stock against an unknown ID
-      await adjustStock(val, action === 'stock-plus' ? 1 : -1);
-      inventoryCache = await getInventory(); // show what was actually stored
-      await renderCellar(); break;
-    }
-    case 'toggle-fav': {
-      if (!lookupWineById(val)) break;
-      const nowFav = await toggleFavorite(val);
-      if (nowFav) { favoritesCache.push(val); } else { favoritesCache = favoritesCache.filter(id => id !== val); }
-      await renderCellar(); break;
-    }
-
     // ── Courses ──
     case 'course-start':
       activeCourseIdx = parseInt(val); courseStep = 0; renderCourses(); break;
@@ -305,16 +266,6 @@ async function handleGlobalClick(e: Event): Promise<void> {
 
 function handleGlobalInput(e: Event): void {
   const target = e.target as HTMLElement;
-  if (target.id === 'cellar-search') {
-    cellarSearch = (target as HTMLInputElement).value;
-    const cursorPos = (target as HTMLInputElement).selectionStart;
-    renderCellar();
-    const restored = document.getElementById('cellar-search') as HTMLInputElement | null;
-    if (restored) {
-      restored.focus();
-      if (cursorPos !== null) restored.setSelectionRange(cursorPos, cursorPos);
-    }
-  }
   if (target.id === 'pairing-search') {
     pairingSearchQ = (target as HTMLInputElement).value;
     const cursorPos = (target as HTMLInputElement).selectionStart;
@@ -358,147 +309,28 @@ function typeColor(type: string): string { return TYPE_COLORS[type] || '#c4a84d'
 // ═══════════════════════════════════════════════════════════════════
 
 function renderHome(): void {
-  const invEntries = Object.values(inventoryCache);
-  const totalBottles = invEntries.reduce((s, n) => s + n, 0);
-  const oos = invEntries.filter(n => n === 0).length;
-
+  // Restaurant stock counting (86 list) is parked for the venue edition; the consumer home is about wines and notes.
   setText('home-wines', String(TOTAL_WINES));
-  setText('home-tracked', String(invEntries.length));
   setText('home-pairings', String(pairingsCache.length));
   setText('home-favorites', String(favoritesCache.length));
-
-  // Type breakdown
   const typeCounts: Record<string, number> = {};
-  for (const t of WINE_TYPES) {
-    let c = 0; for (const country of COUNTRIES[t]) c += (WINES[t]?.[country] || []).length;
-    typeCounts[t] = c;
-  }
+  for (const t of WINE_TYPES) { let c = 0; for (const country of COUNTRIES[t]) c += (WINES[t]?.[country] || []).length; typeCounts[t] = c; }
   setHTML('home-types', WINE_TYPES.map(t =>
-    `<span class="type-badge" style="background:${typeColor(t)}22;color:${typeColor(t)};border-color:${typeColor(t)}44">${TYPE_DISPLAY[t]} · ${typeCounts[t]}</span>`
+    `<button class="type-badge" data-home-type="${t}" style="background:${typeColor(t)}22;color:${typeColor(t)};border-color:${typeColor(t)}44">${TYPE_DISPLAY[t]} · ${typeCounts[t]}</button>`
   ).join(''));
-
-  // Alerts
-  const alerts: string[] = [];
-  for (const [wid, stock] of Object.entries(inventoryCache)) {
-    const w = lookupWineById(wid);
-    if (!w) continue;
-    if (stock === 0) alerts.push(`<div class="alert-item alert-86"><span>${esc(w.wine.name.split('–')[0].trim())}</span><span class="badge-86">86</span></div>`);
-    else if (stock <= 2) alerts.push(`<div class="alert-item alert-85"><span>${esc(w.wine.name.split('–')[0].trim())}</span><span class="badge-85">${stock} left</span></div>`);
-  }
-  setHTML('home-alerts', alerts.length > 0 ? alerts.join('') : '<span class="muted">All stocked up</span>');
+  document.querySelectorAll<HTMLButtonElement>('[data-home-type]').forEach(b => b.addEventListener('click', () => {
+    showCatalogType(b.dataset.homeType as WineType);
+    document.querySelector<HTMLButtonElement>('.tab[data-tab="cellar"]')?.click();
+  }));
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// CELLAR TAB — hierarchical browse: Type > Country > Grape > Wines
+// WINES TAB — the catalog with search, style chips and full tasting notes
 // ═══════════════════════════════════════════════════════════════════
 
 async function renderCellar(): Promise<void> {
   const content = $('cellar-content');
-  if (!content) return;
-
-  let html = '';
-
-  // Breadcrumb
-  const crumbs: string[] = ['All Types'];
-  if (cellarType) crumbs.push(TYPE_DISPLAY[cellarType]);
-  if (cellarCountry) crumbs.push(cellarCountry);
-  if (cellarGrape) crumbs.push(cellarGrape);
-  const showBack = cellarView !== 'types';
-
-  html += `<div class="breadcrumb">`;
-  if (showBack) html += `<button class="btn-back" data-action="cellar-back">‹</button>`;
-  html += `<span class="crumb-text">${crumbs.join(' › ')}</span></div>`;
-
-  // Filter chips (only at wine level)
-  if (cellarView === 'wines') {
-    html += `<div class="filter-row">
-      ${(['all', '85', '86'] as const).map(f =>
-        `<button class="chip ${cellarFilter === f ? 'active' : ''}" data-action="cellar-filter" data-value="${f}">${f === 'all' ? 'All' : f === '85' ? '85 Low' : '86 OOS'}</button>`
-      ).join('')}
-      <input id="cellar-search" class="search-input" placeholder="Search..." value="${esc(cellarSearch)}" />
-    </div>`;
-  }
-
-  if (cellarView === 'types') {
-    html += '<div class="browse-grid">';
-    for (const t of WINE_TYPES) {
-      let count = 0;
-      for (const c of COUNTRIES[t]) count += (WINES[t]?.[c] || []).length;
-      html += `<button class="browse-card" data-action="cellar-type" data-value="${t}" style="border-left:3px solid ${typeColor(t)}">
-        <div class="browse-title">${TYPE_DISPLAY[t]}</div>
-        <div class="browse-sub">${count} wines</div>
-      </button>`;
-    }
-    html += '</div>';
-
-  } else if (cellarView === 'countries' && cellarType) {
-    html += '<div class="browse-list">';
-    for (const country of COUNTRIES[cellarType]) {
-      const wines = WINES[cellarType]?.[country] || [];
-      html += `<button class="browse-row" data-action="cellar-country" data-value="${esc(country)}">
-        <span>${esc(country)}</span><span class="browse-count">${wines.length}</span>
-      </button>`;
-    }
-    html += '</div>';
-
-  } else if (cellarView === 'grapes' && cellarType && cellarCountry) {
-    const grapes = getGrapesForCountry(cellarType, cellarCountry);
-    html += '<div class="browse-list">';
-    for (const grape of grapes) {
-      const wines = getWinesForGrape(cellarType, cellarCountry, grape);
-      html += `<button class="browse-row" data-action="cellar-grape" data-value="${esc(grape)}">
-        <span>${esc(grape)}</span><span class="browse-count">${wines.length}</span>
-      </button>`;
-    }
-    html += '</div>';
-
-  } else if (cellarView === 'wines' && cellarType && cellarCountry && cellarGrape) {
-    let wines = getWinesForGrape(cellarType, cellarCountry, cellarGrape);
-
-    // Apply search
-    if (cellarSearch.trim()) {
-      const q = cellarSearch.toLowerCase();
-      wines = wines.filter(w => w.name.toLowerCase().includes(q) || w.grape.toLowerCase().includes(q));
-    }
-
-    html += '<div class="wine-cards">';
-    for (const wine of wines) {
-      const wineId = getWineId(cellarType, cellarCountry, wine.name);
-      if (!wineId) continue; // no canonical identity: not shown rather than mis-linked
-      const stock = inventoryCache[wineId] ?? null;
-      const isFav = favoritesCache.includes(wineId);
-      const refs = wineReferences(wineId);
-      const refChip = refs.claims.length
-        ? `<p class="ref-chip ref-verified">Producer-sourced facts · ${[...new Set(refs.claims.map(c => c.source.publisher))].map(esc).join(', ')} · checked ${esc(refs.claims[0].reviewed_at)}</p>`
-        : refs.open.length ? `<p class="ref-chip ref-open">Reference under review: ${esc(refs.open[0].note)}</p>`
-        : '<p class="ref-chip">Catalog details not yet verified</p>';
-
-      // Apply filter
-      if (cellarFilter === '85' && (stock === null || stock === 0 || stock > 2)) continue;
-      if (cellarFilter === '86' && stock !== 0) continue;
-
-      const stockClass = stock === null ? '' : stock === 0 ? 'stock-out' : stock <= 2 ? 'stock-low' : 'stock-ok';
-
-      html += `<div class="wine-card">
-        <div class="wine-card-top">
-          <div class="wine-card-info">
-            <div class="wine-card-name">${esc(wine.name.split('–')[0].trim())}</div>
-            <div class="wine-card-meta">${esc(wine.region)} · ${esc(wine.style)}</div>
-            ${refChip}
-          </div>
-          <button class="wl-text-button" data-save-library="${wineId}">＋ Winebrary</button><button class="fav-btn ${isFav ? 'faved' : ''}" data-action="toggle-fav" data-value="${wineId}">${isFav ? '★' : '☆'}</button>
-        </div>
-        <div class="stock-row">
-          <button class="stock-btn" data-action="stock-minus" data-value="${wineId}">−</button>
-          <span class="stock-value ${stockClass}">${stock ?? '—'}</span>
-          <button class="stock-btn" data-action="stock-plus" data-value="${wineId}">+</button>
-        </div>
-      </div>`;
-    }
-    html += '</div>';
-  }
-
-  content.innerHTML = html;
+  if (content) await renderCatalog(content);
 }
 
 // ═══════════════════════════════════════════════════════════════════

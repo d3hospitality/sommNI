@@ -55,6 +55,11 @@ export async function checkDeviceSession(session: Session): Promise<boolean> {
     return false;
   }
 }
+/** The stored (auto-refreshed) access token. The server checks the linked session on every call. */
+export async function sessionToken(): Promise<string | null> {
+  const { data: { session } } = await accountClient().auth.getSession();
+  return session?.access_token ?? null;
+}
 export async function linkedAccessToken(): Promise<string | null> {
   const { data: { session } } = await accountClient().auth.getSession();
   return session && await checkDeviceSession(session) ? session.access_token : null;

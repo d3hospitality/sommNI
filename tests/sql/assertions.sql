@@ -62,8 +62,9 @@ do $$declare u uuid:='11111111-1111-4111-8111-111111111111'; v uuid:='22222222-2
  update winelens_token_wallets set monthly_limit_units=1 where user_id=u;
  perform test_assert(winelens_reserve_usage(u,'limit','label_scan',1,true)->>'reason'='token_limit','monthly limit');
  update winelens_token_wallets set monthly_limit_units=null where user_id=u;
- r:=winelens_reserve_usage(u,'mixed','wine_list_page',7,true);
- perform test_assert(r->>'tokens'='93' and r->>'remaining_allowance'='0','allowance then tokens multi-page');
+ -- Rate card v2: 10 included Studio renderings, then 8 tokens each.
+ r:=winelens_reserve_usage(u,'mixed','studio_render',12,true);
+ perform test_assert(r->>'tokens'='83' and r->>'remaining_allowance'='0','allowance then tokens multi-quantity');
  perform winelens_settle_usage(u,(r->>'reservation_id')::uuid,false);
  r:=winelens_reserve_usage(u,'render-fail','studio_render',1,false);
  update winelens_token_reservations set expires_at=now()-interval '1 second' where id=(r->>'reservation_id')::uuid;

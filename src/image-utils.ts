@@ -88,8 +88,8 @@ export async function pushLogoToGlasses(bridge: EvenAppBridge, baseUrl: string):
     }
     await pushImg(bridge, 4, "logo-bottom", encodeGrayscalePng(W, HALF_H, botGray), epoch);
 
-    console.log("[sommNI-TG] Logo pushed (split from single source)");
-  } catch (e) { console.error("[sommNI-TG] Logo FAILED:", e); }
+    console.log("[wineLENS] Logo pushed (split from single source)");
+  } catch (e) { console.error("[wineLENS] Logo FAILED:", e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -137,8 +137,8 @@ export async function pushGlobeToGlasses(bridge: EvenAppBridge, baseUrl: string)
     }
     await pushImg(bridge, 4, "globe-bottom", encodeGrayscalePng(W, HALF_H, botGray), epoch);
 
-    console.log("[sommNI-TG] Globe pushed (split from single source)");
-  } catch (e) { console.error("[sommNI-TG] Globe FAILED:", e); }
+    console.log("[wineLENS] Globe pushed (split from single source)");
+  } catch (e) { console.error("[wineLENS] Globe FAILED:", e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -191,8 +191,8 @@ export async function pushGrapeSpriteToGlasses(bridge: EvenAppBridge, baseUrl: s
     }
     await pushImg(bridge, 4, "grape-bottom", encodeGrayscalePng(W, HALF_H, botGray), epoch);
 
-    console.log(`[sommNI-TG] Grape sprite pushed: ${pick}`);
-  } catch (e) { console.error("[sommNI-TG] Grape sprite FAILED:", e); }
+    console.log(`[wineLENS] Grape sprite pushed: ${pick}`);
+  } catch (e) { console.error("[wineLENS] Grape sprite FAILED:", e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -215,9 +215,9 @@ export async function pushBottleSprite(
     const canvas = await bottleCanvas(bottleUrl, 80, 80);
     const png = encodeGrayscalePng(80,80,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data,80));
     await pushImg(bridge, containerID, containerName, png, epoch);
-    console.log(`[sommNI-TG] Bottle sprite pushed: ${wineId}`);
+    console.log(`[wineLENS] Bottle sprite pushed: ${wineId}`);
   } catch (e) {
-    console.warn(`[sommNI-TG] Bottle sprite FAILED: ${wineId}`, e);
+    console.warn(`[wineLENS] Bottle sprite FAILED: ${wineId}`, e);
   }
 }
 
@@ -264,8 +264,8 @@ export async function pushBottleSpriteSplit(
     for (let i = 0; i < W * HALF; i++) { const o = (i + W * HALF) * 4; botG[i] = 0.299 * full[o] + 0.587 * full[o + 1] + 0.114 * full[o + 2]; }
     await pushImg(bridge, botID, botName, encodeGrayscalePng(W, HALF, botG), epoch);
 
-    console.log(`[sommNI-TG] Bottle split pushed: ${wineId}`);
-  } catch (e) { console.warn(`[sommNI-TG] Bottle split FAILED: ${wineId}`, e); }
+    console.log(`[wineLENS] Bottle split pushed: ${wineId}`);
+  } catch (e) { console.warn(`[wineLENS] Bottle split FAILED: ${wineId}`, e); }
 }
 
 // ═══════════════════════════════════════════════════════════════════

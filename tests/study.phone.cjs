@@ -69,13 +69,12 @@ const output=process.env.WINELENS_TEST_OUTPUT||require('os').tmpdir()+'/winelens
   const dueCounts=await study().locator('.st-stats dd').allInnerTexts();
   await page.screenshot({path:path.join(output,'wineLENS-Study-NextDay-390.png'),fullPage:true});
 
-  // Discover shows the reference status on catalog cards.
-  await page.getByRole('button',{name:'Discover',exact:true}).click();
-  await page.locator('[data-action="cellar-type"][data-value="Red"]').click();
-  await page.locator('[data-action="cellar-country"][data-value="United States"]').click();
-  const grapeButtons=page.locator('[data-action="cellar-grape"]');
-  const n=await grapeButtons.count();let chip='';
-  for(let i=0;i<n;i++){await grapeButtons.nth(i).click();if(await page.locator('#cellar-content .wine-card',{hasText:'Cain Cuvée'}).count()){chip=await page.locator('#cellar-content .wine-card',{hasText:'Cain Cuvée'}).locator('.ref-chip').innerText();break;}await page.locator('[data-action="cellar-back"]').first().click();}
+  // Wines: search finds the wine, and its notes page shows the reference status.
+  await page.getByRole('button',{name:'Wines',exact:true}).click();
+  await page.locator('#cat-search').fill('Cain Cuvée');
+  await page.locator('[data-cat-open]',{hasText:'Cain Cuvée'}).first().click();
+  const chip=await page.locator('dialog[open] .ref-chip').innerText();
+  await page.keyboard.press('Escape');
   console.log(JSON.stringify({dueCounts,chip,errors}));
   assert.deepEqual(errors,[]);
   assert.deepEqual(dueCounts,['5','0','0','0']);

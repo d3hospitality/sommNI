@@ -1,5 +1,7 @@
 # wineLENS website + accounts handoff
 
+> **Superseded in part (7 Oct 2026):** Winebrary, study, tasting notes and Studio now run on this repo's API, not `sommni-api`. See `docs/winelens/AUDIT-2026-10-07.md` for the current architecture and go-live order.
+
 Build and preview completed on `codex/winelens-site-accounts`, from `cac90e2`. The brief is `docs/codex/SITE-ACCOUNTS-BRIEF.md`. Nothing was deployed, pushed, uploaded to Even Hub or migrated. No live credentials were read or tested. The existing reference/release working trees were not edited. `src/atlas/` is unchanged.
 
 ## Delivered

@@ -1,14 +1,15 @@
 // Hardware constraints the simulator does not enforce, plus catalog/exit regressions.
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
+const BASE = (process.env.WL_BASE_URL || 'http://localhost:5186').replace(/\/$/, '');
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: process.env.CI ? undefined : 'chrome' });
   try {
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.route('http://localhost:5186/sommNI/', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Catalog regression</title>' }));
-    await page.goto('http://localhost:5186/sommNI/');
+    await page.route(BASE + '/sommNI/', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Catalog regression</title>' }));
+    await page.goto(BASE + '/sommNI/');
     const result = await page.evaluate(async () => {
       const P = await import('/sommNI/src/pages.ts');
       const I = await import('/sommNI/src/identity.ts');

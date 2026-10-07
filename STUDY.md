@@ -36,7 +36,7 @@ A card is studied only if every cited claim is approved, belongs to the card's w
   - `src/study/phone.ts`: typed or unspoken attempt, reveal, source link, rating buttons that show the next due date, flagging.
   - `src/study/glasses.ts`: tap reveals, a four-row rating list shows next due dates, double tap pauses. The bottle is hidden when the label would give the answer away.
 
-Server side (`sommni-api`, not deployed):
+Server side (moved to this repo's `/api/study` on 7 Oct 2026; see docs/winelens/AUDIT-2026-10-07.md. Original sommni-api contract, for reference):
 
 - `api/study/reviews.js`
 - `db/migrations/20260930090000_winelens_study_reviews.sql`: RLS, unique `(user_id, event_id)`, no update/delete.

@@ -1,5 +1,7 @@
 # wineLENS Pro + tokens — local implementation handoff
 
+> **Superseded in part (7 Oct 2026):** Winebrary, study, tasting notes and Studio now run on this repo's API, not `sommni-api`. See `docs/winelens/AUDIT-2026-10-07.md` for the current architecture and go-live order.
+
 Implemented on `codex/winelens-tokens`, starting at the requested `5cf144f` base. Codex's sandbox blocked native Postgres, Chrome and `git commit`; Claude re-ran every blocked check outside the sandbox on 30 September 2026 (all PASS, table below), hid the empty usage/activity headings while billing is unavailable, and made the local commit.
 
 Nothing was deployed, pushed, uploaded, or applied to a hosted database. No Stripe/OpenAI calls with real credentials were made, and no secrets were read or printed. Protected reference worktrees were read only; `src/atlas/` is unchanged. The existing site server on **5187** was reused; the companion was started on **5190**. The prohibited ports were not used.

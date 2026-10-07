@@ -1,15 +1,16 @@
 // ═══════════════════════════════════════════════════════════════════
 // wineLENS — study review sync with the account API (PRD S-08)
 //
-// POST /api/study/reviews  { events: ReviewEvent[] } → { accepted: string[], duplicates: string[] }
-// GET  /api/study/reviews                            → { events: ReviewEvent[] }
+// POST /api/study {action:'push', events}  → { accepted: string[], duplicates: string[] }
+// POST /api/study {action:'pull'}          → { events: ReviewEvent[] }
+// (the wineLENS account API — the same backend as Winebrary and billing)
 //
 // The server takes ownership from the verified token and stores each
 // (user, event_id) once. Retries resend the same event IDs, so an offline
 // replay or a double submit can never count twice. Events are only sent for
 // the signed-in owner of the local log.
 // ═══════════════════════════════════════════════════════════════════
-import { API_URL } from '../account-config';
+import { accountRequest } from '../billing';
 import { currentOwner, unsyncedEvents, markSynced, mergeEvents, onStudyChange, type ReviewEvent } from './store';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'unavailable' | 'error' | 'signed-out';
@@ -54,13 +55,9 @@ async function run(): Promise<SyncState> {
     return state;
   }
 }
-async function call(method: 'GET' | 'POST', token: string, body?: unknown): Promise<{ accepted?: string[]; duplicates?: string[]; events?: unknown[] }> {
-  const response = await fetch(`${API_URL}/api/study/reviews`, {
-    method, headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  if (!response.ok) throw Object.assign(new Error(`Study sync failed (${response.status})`), { status: response.status });
-  return response.json();
+async function call(method: 'GET' | 'POST', _token: string, body?: { events: unknown[] }): Promise<{ accepted?: string[]; duplicates?: string[]; events?: unknown[] }> {
+  try { return await accountRequest('study', method === 'POST' ? { action: 'push', events: body!.events } : { action: 'pull' }); }
+  catch (error) { throw Object.assign(new Error('Study sync failed'), { status: (error as { status?: number }).status }); }
 }
 
 // Try again shortly after new reviews and whenever the connection returns.

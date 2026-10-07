@@ -814,3 +814,58 @@ img{max-width:100%}
 /* Focus Pour identity — SVG wordmark carries its own outlined typography. */
 .wl-wordmark{display:inline-flex;align-items:center;line-height:1}.wl-wordmark img{height:44px;width:auto;max-width:none}
 @media(max-width:600px){.wl-wordmark img{height:35px}}
+
+/* ── 2026-10-07 audit: notes everywhere, one cost panel, phone catalog ── */
+.wl-notes-block{min-width:0}
+.wl-notes-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 14px;margin-bottom:6px}
+.wl-notes-head .wl-kicker{color:var(--accent);margin:0}
+.wl-source{display:inline-block;font-size:11px;line-height:1.5;color:var(--muted);letter-spacing:.2px}
+.wl-source-generated{color:var(--accent)}
+.wl-source-scan{color:#8a5a00}
+.wl-notes-dl{margin:6px 0 10px;display:grid;gap:12px}
+.wl-notes-dl>div{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:10px}
+.wl-notes-dl dt{font-size:10px;font-weight:650;letter-spacing:1.4px;color:var(--accent)}
+.wl-notes-dl dd{margin:0;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
+.wl-notes-actions{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px}
+.wl-notes-review{margin-top:18px}
+.wl-notes-review .wl-notes-actions .wl-primary{width:auto}
+.wl-notes-twin{margin-top:16px;padding-top:6px;border-top:1px dashed var(--line)}
+.wl-detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:18px}
+.wl-detail-photo{flex-direction:column;gap:6px}
+.wl-detail-photo>button{max-width:260px}
+.wl-cost{margin:18px 0 12px;padding:14px 16px;border:1px solid var(--line);border-radius:6px;background:var(--paper,#FFFDF8)}
+.wl-cost-line{margin:0;font-size:14px;line-height:1.6;color:var(--ink)}
+.wl-dialog label.wl-consent{flex-direction:row;align-items:center;gap:10px;margin:10px 0 0;font-size:13px;color:var(--ink)}
+.wl-dialog label.wl-consent input{width:18px;height:18px;padding:0;flex:none;accent-color:var(--accent)}
+.wl-cost-link{padding-left:0}
+.wl-studio-step{margin-top:22px;padding-top:4px;border-top:1px solid var(--line)}
+.wl-studio-step .wl-kicker{color:var(--accent);margin:14px 0 0}
+.wl-choice{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 20px}
+.wl-plan-chip{display:flex;flex-direction:column;gap:4px;margin:16px 0;padding:14px 16px;border-radius:6px;background:#F1E5DD}
+.wl-plan-chip span{font-size:12px;color:var(--muted);line-height:1.6}
+.wl-strip-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.wl-home-grid button.type-badge{cursor:pointer;font:inherit;font-size:12px}
+.wl-dev-log>summary{cursor:pointer;list-style:none}
+.wl-dev-log>summary::-webkit-details-marker{display:none}
+.wl-dev-log>summary::after{content:' +';color:var(--muted)}
+.wl-dev-log[open]>summary::after{content:' –'}
+/* Wines (catalog) */
+.wl-cat-tools{display:flex;flex-direction:column;gap:14px;margin:6px 0 10px}
+.wl-cat-tools .wl-search-label input{width:100%;max-width:520px}
+.wl-chips{display:flex;flex-wrap:wrap;gap:8px}
+.wl-chips .chip{color:var(--ink);border-color:var(--line);background:var(--bg-card)}
+.wl-chips .chip.active{background:var(--accent);border-color:var(--accent);color:#FFFDF8}
+.wl-chips .chip.active .chip-count{color:#F1E5DD}
+.wl-cat-group{font-size:13px;letter-spacing:.4px;margin:26px 0 10px;color:var(--ink)}
+.wl-cat-group span{color:var(--muted);font-weight:400}
+.wl-cat-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.wl-cat-card{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;text-align:left;padding:10px 14px 10px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg-card);color:var(--ink);cursor:pointer;min-height:92px}
+.wl-cat-card:hover,.wl-cat-card:focus-visible{border-color:var(--accent)}
+.wl-cat-bottle{width:52px;height:76px;object-fit:contain}
+.wl-cat-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wl-cat-copy strong{font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.wl-cat-copy .wl-kicker{color:var(--accent);font-size:9px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wl-cat-copy .wl-muted{font-size:12px;line-height:1.4}
+.wl-cat-nose{font-size:12px;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wl-cat-fav{color:var(--accent);font-size:16px}
+@media(max-width:760px){.wl-cat-list{grid-template-columns:1fr}.wl-notes-dl>div{grid-template-columns:1fr;gap:2px}.wl-detail-actions .wl-primary,.wl-detail-actions .wl-outline{width:100%}}

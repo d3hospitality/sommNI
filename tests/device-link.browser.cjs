@@ -27,8 +27,10 @@ const opts={executablePath:process.env.CHROME_PATH||(process.platform==='darwin'
    if(body.action==='unlink')unlinked++;
    return r.fulfill({json:{status:'linked',removed:true}});
   });
-  await page.route(BASE+'/api/collection**',r=>r.fulfill({json:{items:[]}}));
-  await page.route(BASE+'/api/study/**',r=>r.fulfill({json:{events:[],accepted:[]}}));
+  // Winebrary and study live on the same wineLENS account API as linking.
+  await page.route('**/api/winebrary',r=>r.fulfill({json:{items:[],count:0}}));
+  await page.route('**/api/study',r=>r.fulfill({json:{events:[],accepted:[],duplicates:[]}}));
+  await page.route('**/api/billing',r=>r.fulfill({json:{pro:false,tokens:0,auto_spend:false,scan_available:true,allowances:{},rate_card:require('../shared/rate-card.json')}}));
   await page.goto(BASE+'/sommNI/');
   if(host){
    // Exercise initSync's real bridgeStore with a mock bridge; do not wait for physical hardware.

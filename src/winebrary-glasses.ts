@@ -4,6 +4,7 @@ import { rebuildGlassesPage, pushBottlePhoto, invalidateImages, pushLogoToGlasse
 import { SCENE_X, MAP_Y, TILE_W, TILE_H, CAPTION_MIN_X, captionBox, type ScenePlan } from './wine-scene';
 import { ruleCanvas, toGreenLevels } from './bottle-raster';
 import { lookupWineById } from './identity';
+import { glassesNotes } from './notes-format';
 import { claimDisplay, dropDisplay } from './display';
 import { bottleCanvas } from './bottle-raster';
 import { rebuildHomePage } from './pages';
@@ -208,9 +209,9 @@ function buildVintageListPage(g: WineGroup, page: number): RebuildPageContainer 
   return listScreen('library-vintages', paged.labels, `${g.title}  ·  ${g.wines.length} vintages`);
 }
 const MESSAGES: Record<MessageReason, string> = {
-  'signed-out': 'Your Winebrary is private.\n\nSign in with wineLENS on your phone, then open My Winebrary again.',
+  'signed-out': 'Your Winebrary is private.\n\nLink your wineLENS account on your phone, then open My Winebrary again.',
   loading: 'Opening your Winebrary...',
-  empty: 'Your Winebrary is empty.\n\nAdd a wine with wineLENS on your phone and it will appear here.',
+  empty: 'Your Winebrary is empty.\n\nAdd a wine, scan a label or save one from Wines on your phone. It will appear here.',
   error: 'Your Winebrary could not load.\n\nCheck your phone connection and try again.',
 };
 function buildMessagePage(reason: MessageReason): RebuildPageContainer {
@@ -232,7 +233,7 @@ export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' 
   const facts=clipLabel([vintageLong(wine), wine.producer, wine.region].filter(Boolean).join(' · '), per);
   const factsY=8+titleH+2, notesY=factsY+LINE_H+10;
   const notesBottom=notesY+Math.floor((248-notesY)/LINE_H)*LINE_H+4; // whole lines, no half-cut row
-  const notes=clipBytes([wine.metadata?.grape, wine.notes || 'No notes yet. Add your impressions in Winebrary on your phone.'].filter(Boolean).join('\n'));
+  const notes=clipBytes([wine.metadata?.grape, glassesNotes(wine)].filter(Boolean).join('\n'));
   const overflow=estimateLines(notes, width) > Math.floor((notesBottom-notesY)/LINE_H);
   const textObject=[
     new TextContainerProperty({xPosition:x,yPosition:8,width,height:titleH,containerID:3,containerName:'library-title',content:title,isEventCapture:0}),
@@ -269,7 +270,7 @@ function buildSceneWinePage(wine: LibraryWine, backTo: string, place: WinePlace,
   const makerY=y; y+=LINE_H+1;
   const ruleY=y+4; y+=RULE.h+8;
   const notesY=y, notesBottom=notesY+Math.max(1, Math.floor((254-notesY)/LINE_H))*LINE_H+4;
-  const notes=clipBytes(wine.notes || 'No notes yet. Add your impressions in Winebrary on your phone.');
+  const notes=clipBytes(glassesNotes(wine));
   const overflow=estimateLines(notes, width) > Math.floor((notesBottom-notesY)/LINE_H);
   const textObject=[
     new TextContainerProperty({xPosition:x,yPosition:kickerY,width:kickerW,height:LINE_H+1,containerID:7,containerName:'library-kicker',content:kicker,isEventCapture:0}),

@@ -37,7 +37,7 @@ function createScanHandler({ getDb, env = process.env, getOpenAI = () => new Ope
       throw new HttpError(409, 'This scan is processing or has ended. Refresh before trying a new scan.');
     }
     if (!hold.allowed) {
-      const messages = { pro_required: 'Your free scans are used. Upgrade on wineLENS.com.', consent_required: 'Confirm token use before scanning.', token_limit: 'Your token balance or spending limit is too low.', request_mismatch: 'This request ID belongs to a different photo.' };
+      const messages = { pro_required: 'You have used this month’s free label scans. Upgrade to Pro for more.', consent_required: 'Confirm token use before scanning.', token_limit: 'Your token balance or spending limit is too low.', request_mismatch: 'This request ID belongs to a different photo.' };
       throw new HttpError(hold.reason==='request_mismatch'?409:402, messages[hold.reason] || UNAVAILABLE);
     }
     let fieldsResult;

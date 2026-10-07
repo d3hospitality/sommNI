@@ -15,7 +15,7 @@ export function setBattery(level?: number) {
 }
 
 export function log(message: string, type?: "success" | "error") {
-  console.log(`[sommNI-TG] ${message}`);
+  console.log(`[wineLENS] ${message}`);
   const el = logEl();
   if (el) {
     const entry = document.createElement("div");
