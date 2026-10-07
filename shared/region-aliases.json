@@ -1,0 +1,29 @@
+{
+  "about": "Curated spellings → a catalog region (as written in src/data/atlas-region-links.json) or a winerymap cluster ('cluster:<name>'). Only add an alias when the two names mean the same place; the resolver already handles accents, punctuation, 'X Valley' = 'Valle de X' and 'Napa' = 'Napa Valley'. Format: [alias, ISO3 country or null, target].",
+  "aliases": [
+    ["Bourgogne", "FRA", "Burgundy, FR"],
+    ["Côte d'Or", "FRA", "Burgundy, FR"],
+    ["Toscana", "ITA", "Tuscany, IT"],
+    ["Piemonte", "ITA", "Piedmont, IT"],
+    ["Sicilia", "ITA", "Sicily, IT"],
+    ["Languedoc", "FRA", "Languedoc-Roussillon, FR"],
+    ["Roussillon", "FRA", "Languedoc-Roussillon, FR"],
+    ["Côtes du Rhône", "FRA", "Rhône Valley, FR"],
+    ["Vallée du Rhône", "FRA", "Rhône Valley, FR"],
+    ["St-Émilion", "FRA", "Saint-Émilion, FR"],
+    ["St. Émilion", "FRA", "Saint-Émilion, FR"],
+    ["Saint-Émilion Grand Cru", "FRA", "Saint-Émilion, FR"],
+    ["Vallée de la Loire", "FRA", "Loire Valley, FR"],
+    ["Sonoma", "USA", "Sonoma County, US"],
+    ["Santa Rita Hills", "USA", "Sta. Rita Hills, US"],
+    ["Los Carneros", "USA", "Carneros, US"],
+    ["Rioja Alavesa", "ESP", "Rioja, ES"],
+    ["Rioja Oriental", "ESP", "Rioja, ES"],
+    ["Rioja Baja", "ESP", "Rioja, ES"],
+    ["Ribera", "ESP", "Ribera del Duero, ES"],
+    ["Prosecco", "ITA", "Veneto, IT"],
+    ["Mosel-Saar-Ruwer", "DEU", "cluster:Mosel"],
+    ["Porto", "PRT", "cluster:Port"],
+    ["Oporto", "PRT", "cluster:Port"]
+  ]
+}

@@ -60,6 +60,12 @@
     },
     "api/bottle-render.js": {
       "maxDuration": 150
+    },
+    "api/wine-list.js": {
+      "maxDuration": 240
+    },
+    "api/catalog-review.js": {
+      "maxDuration": 30
     }
   }
 }

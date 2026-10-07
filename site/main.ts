@@ -13,9 +13,9 @@ if (pricingCards) {
   for (const plan of ['free', 'pro'] as const) {
     const article = document.createElement('article'); article.className = 'surface-card';
     const title = document.createElement('h3'); title.textContent = plan === 'free' ? 'Free · $0' : `Pro · $${pricing.plans.monthly.amount / 100}/month or $${pricing.plans.annual.amount / 100}/year`;
-    const common = document.createElement('p'); common.textContent = 'Catalog, tasting notes, Atlas, Study, manual add and your own bottle photos.';
+    const common = document.createElement('p'); common.textContent = 'Catalog, tasting notes, Atlas, Study, manual add, your own bottle photos and wine lists from spreadsheets.';
     const list = document.createElement('ul');
-    for (const feature of Object.values(pricing.features)) { const li = document.createElement('li'); li.textContent = `${feature[plan]} ${feature.label.toLowerCase()} / month`; list.append(li); }
+    for (const feature of Object.values(pricing.features)) { const li = document.createElement('li'), n = feature[plan], label = feature.label.toLowerCase(); li.textContent = `${n} ${n === 1 ? label.replace(/s$/, '') : label} / month`; list.append(li); }
     article.append(title, common, list); pricingCards.append(article);
   }
   document.getElementById('pricing-tokens')!.textContent = 'Pro token packs: ' + Object.values(pricing.packs).map(p => `$${p.amount / 100} = ${p.units} tokens`).join(' · ');

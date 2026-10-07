@@ -1,13 +1,14 @@
 {
   "name": "sommni",
   "version": "1.0.0",
-  "description": "sommNI \u2014 Seven Second Sommelier for Even Realities G2 \u2014 Sprite Bottles, Voice Search, Find My Wine",
+  "description": "wineLENS — tasting notes, your Winebrary and the Wine Atlas, on the phone and Even Realities G2",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:ui": "node tests/winebrary.browser.cjs",
+    "test:list": "node tests/wine-list.browser.cjs",
     "test:glasses": "node tests/winebrary.glasses.cjs",
     "test:nav": "node tests/glasses.navigation.cjs && node tests/catalog-lifecycle.cjs",
     "test:display": "node tests/no-mascot.cjs",
@@ -28,14 +29,15 @@
     "test:scan": "node --test tests/wine-scan.test.cjs",
     "test:sql:embedded": "node tests/sql/embedded.mjs",
     "test:sql:api": "node tests/sql/api.mjs",
-    "test:api": "node --test tests/winebrary-api.test.cjs"
+    "test:api": "node --test tests/winebrary-api.test.cjs tests/wine-identity.test.cjs tests/wine-list.test.cjs tests/catalog-review.test.cjs"
   },
   "dependencies": {
     "@evenrealities/even_hub_sdk": "^0.0.9",
     "@supabase/supabase-js": "2.117.2",
     "openai": "^6.22.0",
     "stripe": "22.6.2",
-    "three": "0.180.0"
+    "three": "0.180.0",
+    "unpdf": "1.8.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",

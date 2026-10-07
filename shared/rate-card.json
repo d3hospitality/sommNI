@@ -5,7 +5,9 @@
   "features": {
     "label_scan": {"label": "Label scans", "free": 5, "pro": 60, "tokens": 1},
     "tasting_notes": {"label": "Tasting notes", "free": 5, "pro": 60, "tokens": 1},
-    "studio_render": {"label": "Studio renderings", "free": 0, "pro": 10, "tokens": 8}
+    "studio_render": {"label": "Studio renderings", "free": 0, "pro": 10, "tokens": 8},
+    "wine_list_page": {"label": "Wine-list photo pages", "free": 1, "pro": 5, "tokens": 3},
+    "wine_list_text": {"label": "Wine-list text pages", "free": 20, "pro": 100, "tokens": 1}
   },
   "packs": {"t5": {"amount": 500, "units": 100}, "t10": {"amount": 1000, "units": 220}, "t15": {"amount": 1500, "units": 350}, "t20": {"amount": 2000, "units": 500}}
 }

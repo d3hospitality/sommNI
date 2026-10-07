@@ -7,8 +7,11 @@ const OpenAI = require('openai');
 const { endpoint, rpc, only, HttpError, UNAVAILABLE } = require('./service.cjs');
 const { userDb, ownWine, ownedImagePath, signedUrl, BUCKET, UUID } = require('./winebrary.cjs');
 const { NOTES_SYSTEM, NOTES_SCHEMA, NOTE_LIMITS, formatNotes, bottlePrompt, wineContext } = require('../prompts/winelens-ai.cjs');
+const { bottleKey } = require('./wine-identity.cjs');
 const sha = value => createHash('sha256').update(value).digest('hex');
 const REFUSALS = {
+  wine_list_page: { pro_required: 'This list needs more photo pages than your free allowance. Upgrade to Pro, or paste or upload the list as text.', label: 'wine list' },
+  wine_list_text: { pro_required: 'You have used this month’s free text pages. Upgrade to Pro for more.', label: 'wine list' },
   tasting_notes: { pro_required: 'You have used this month’s free tasting notes. Upgrade to Pro for more.', label: 'tasting notes' },
   studio_render: { pro_required: 'Studio renderings are part of wineLENS Pro.', label: 'rendering' },
 };
@@ -24,8 +27,8 @@ function checkRequest(body, env) {
   if (!UUID.test(String(body.request_id || '')) || (body.spend_consent !== undefined && typeof body.spend_consent !== 'boolean')) throw new HttpError(400, 'Invalid request.');
 }
 /** Reserve, run the provider, settle. Returns { result, replayed } or throws a refund-safe HttpError. */
-async function runJob({ db, user, feature, requestId, fingerprint, consent, work, onReplay }) {
-  const hold = await rpc(db, 'winelens_begin_job', { p_user: user.id, p_feature: feature, p_request_id: requestId, p_fingerprint: fingerprint, p_consent: consent === true });
+async function runJob({ db, user, feature, requestId, fingerprint, consent, work, onReplay, quantity = 1 }) {
+  const hold = await rpc(db, 'winelens_begin_job', { p_user: user.id, p_feature: feature, p_request_id: requestId, p_fingerprint: fingerprint, p_consent: consent === true, p_quantity: quantity });
   if (hold.replayed) {
     if (hold.result) return { result: await onReplay(hold.result), replayed: true };
     if (hold.status === 'released') throw Object.assign(new HttpError(409, `That ${REFUSALS[feature].label} did not finish and was not charged. Try again.`), { released: true });
@@ -44,18 +47,7 @@ async function runJob({ db, user, feature, requestId, fingerprint, consent, work
   return { result: result.response, replayed: false };
 }
 
-// ── Shared notes: one paid draft per bottle + vintage ─────────────────────
-const norm = v => String(v ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
-/** Same producer + wine + vintage → same key, however it was typed. Null without a producer (too ambiguous to share). */
-function bottleKey(wine) {
-  let name = wine.wine_name || '', producer = wine.producer || '';
-  if (!producer.trim()) { const at = name.lastIndexOf(' – '); if (at > 0) { producer = name.slice(at + 3); name = name.slice(0, at); } }
-  const p = norm(producer); let n = norm(name);
-  if (p && n.startsWith(p + ' ')) n = n.slice(p.length + 1); // "Terrazas de los Andes Grand Malbec" = "Grand Malbec" by Terrazas
-  if (!n || !p) return null;
-  const vintage = wine.vintage ? String(wine.vintage) : wine.metadata?.vintage_state === 'non_vintage' ? 'nv' : 'unknown';
-  return { key: sha(`winelens-notes-v1|${p}|${n}|${vintage}`), wine: { name: name.trim(), producer: producer.trim(), vintage } };
-}
+// ── Shared notes: one paid draft per bottle + vintage (key from wine-identity.cjs) ──
 const NOTE_FIELDS = ['appearance', 'nose', 'palate', 'finish', 'story', 'confidence'];
 const pickNotes = n => Object.fromEntries(NOTE_FIELDS.map(k => [k, n[k]]));
 

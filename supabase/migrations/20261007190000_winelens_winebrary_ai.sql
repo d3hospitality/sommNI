@@ -1,10 +1,11 @@
 -- wineLENS: one backend for Winebrary, study and paid AI help.
 -- 1. Winebrary photos and study reviews move onto the wineLENS project (they were only ever
 --    written for the separate sommni-api, which still pointed at d3-shared).
--- 2. Rate card v2: Tasting notes become a metered feature. Wine-list pages, which never shipped
---    in the app, are retired from the current card (v1 stays immutable for history/pack grants).
+-- 2. Rate card v2: tasting notes become a metered feature; wine-list reading is split into photo
+--    pages and text pages (v1 stays immutable for history/pack grants).
 -- 3. AI jobs: one row per paid request. Replays return the stored result and never charge twice.
 -- 4. Shared tasting notes: the first paid draft for a bottle + vintage is reused for free by everyone after.
+-- 5. Wine-list uploads → review → Winebrary, and catalog proposals that Romario approves.
 -- Additive. Safe if sommni-api's bottle/study migrations were already applied.
 begin;
 
@@ -61,7 +62,7 @@ create policy "study_review_insert_own" on public.study_review_events for insert
 with check (user_id = (select auth.uid()));
 
 -- ── 2a. Rate card v2 (kept identical to shared/rate-card.json; test:sql verifies parity).
-insert into public.winelens_rate_cards(version, card) values (2, '{"version":2,"currency":"usd","plans":{"monthly":{"amount":499,"interval":"month"},"annual":{"amount":3999,"interval":"year"}},"features":{"label_scan":{"label":"Label scans","free":5,"pro":60,"tokens":1},"tasting_notes":{"label":"Tasting notes","free":5,"pro":60,"tokens":1},"studio_render":{"label":"Studio renderings","free":0,"pro":10,"tokens":8}},"packs":{"t5":{"amount":500,"units":100},"t10":{"amount":1000,"units":220},"t15":{"amount":1500,"units":350},"t20":{"amount":2000,"units":500}}}')
+insert into public.winelens_rate_cards(version, card) values (2, '{"version":2,"currency":"usd","plans":{"monthly":{"amount":499,"interval":"month"},"annual":{"amount":3999,"interval":"year"}},"features":{"label_scan":{"label":"Label scans","free":5,"pro":60,"tokens":1},"tasting_notes":{"label":"Tasting notes","free":5,"pro":60,"tokens":1},"studio_render":{"label":"Studio renderings","free":0,"pro":10,"tokens":8},"wine_list_page":{"label":"Wine-list photo pages","free":1,"pro":5,"tokens":3},"wine_list_text":{"label":"Wine-list text pages","free":20,"pro":100,"tokens":1}},"packs":{"t5":{"amount":500,"units":100},"t10":{"amount":1000,"units":220},"t15":{"amount":1500,"units":350},"t20":{"amount":2000,"units":500}}}')
 on conflict (version) do nothing;
 
 -- ── 2b. Reservations accept exactly the features on the current card (was a hard-coded list).
@@ -110,7 +111,7 @@ end $$;
 create table if not exists public.winelens_ai_jobs (
   user_id uuid not null references auth.users(id) on delete cascade,
   request_id uuid not null,
-  feature text not null check (feature in ('tasting_notes','studio_render')),
+  feature text not null check (feature in ('tasting_notes','studio_render','wine_list_page','wine_list_text')),
   fingerprint text not null check (char_length(fingerprint) between 16 and 128),
   reservation_id uuid not null,
   result jsonb,
@@ -121,10 +122,10 @@ alter table public.winelens_ai_jobs enable row level security;
 revoke all on public.winelens_ai_jobs from public, anon, authenticated;
 grant all on public.winelens_ai_jobs to service_role;
 
-create or replace function public.winelens_begin_job(p_user uuid,p_feature text,p_request_id uuid,p_fingerprint text,p_consent boolean) returns jsonb language plpgsql security definer set search_path='' as $$
+create or replace function public.winelens_begin_job(p_user uuid,p_feature text,p_request_id uuid,p_fingerprint text,p_consent boolean,p_quantity integer default 1) returns jsonb language plpgsql security definer set search_path='' as $$
 declare previous public.winelens_ai_jobs; r jsonb;
 begin
- if p_feature not in ('tasting_notes','studio_render') or p_request_id is null or p_fingerprint is null then raise exception 'invalid job'; end if;
+ if p_feature not in ('tasting_notes','studio_render','wine_list_page','wine_list_text') or p_request_id is null or p_fingerprint is null or p_quantity is null or p_quantity not between 1 and 20 then raise exception 'invalid job'; end if;
  perform pg_advisory_xact_lock(hashtextextended('winelens:'||p_user::text,0));
  select * into previous from public.winelens_ai_jobs where user_id=p_user and request_id=p_request_id;
  if found then
@@ -132,7 +133,7 @@ begin
    return jsonb_build_object('replayed',true,'result',previous.result,
      'status',(select status from public.winelens_token_reservations where id=previous.reservation_id));
  end if;
- r:=public.winelens_reserve_usage(p_user,'job:'||p_feature||':'||p_request_id::text,p_feature,1,p_consent);
+ r:=public.winelens_reserve_usage(p_user,'job:'||p_feature||':'||p_request_id::text,p_feature,p_quantity,p_consent);
  if (r->>'allowed')::boolean then
    insert into public.winelens_ai_jobs(user_id,request_id,feature,fingerprint,reservation_id)
    values(p_user,p_request_id,p_feature,p_fingerprint,(r->>'reservation_id')::uuid);
@@ -154,9 +155,9 @@ begin
  return r;
 end $$;
 
-revoke all on function public.winelens_begin_job(uuid,text,uuid,text,boolean) from public, anon, authenticated;
+revoke all on function public.winelens_begin_job(uuid,text,uuid,text,boolean,integer) from public, anon, authenticated;
 revoke all on function public.winelens_finish_job(uuid,uuid,uuid,jsonb) from public, anon, authenticated;
-grant execute on function public.winelens_begin_job(uuid,text,uuid,text,boolean) to service_role;
+grant execute on function public.winelens_begin_job(uuid,text,uuid,text,boolean,integer) to service_role;
 grant execute on function public.winelens_finish_job(uuid,uuid,uuid,jsonb) to service_role;
 -- ── 4. Shared tasting notes: one paid draft per bottle + vintage, reused by everyone after.
 -- Key = sha256 of normalised producer | wine name | vintage (computed by the API).
@@ -223,4 +224,92 @@ revoke all on function public.winelens_share_release(text,uuid,uuid) from public
 grant execute on function public.winelens_share_claim(text,uuid,uuid,jsonb) to service_role;
 grant execute on function public.winelens_share_fill(text,uuid,uuid,jsonb) to service_role;
 grant execute on function public.winelens_share_release(text,uuid,uuid) to service_role;
+-- ── 5. Wine-list uploads → review → Winebrary, and catalog proposals.
+-- Photos/scans are billed per page (wine_list_page); text (PDF text layer, paste) per 6,000-character
+-- page (wine_list_text); spreadsheets are parsed without AI and are free. Users reach these rows only
+-- through the API (service role); RLS denies direct access.
+create table if not exists public.winelens_list_uploads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  request_id uuid not null,
+  source text not null check (source in ('photos','pdf','text','csv')),
+  pages integer not null default 0 check (pages >= 0),
+  entry_count integer not null default 0 check (entry_count >= 0),
+  created_at timestamptz not null default now(),
+  unique (user_id, request_id)
+);
+create table if not exists public.winelens_list_entries (
+  id uuid primary key default gen_random_uuid(),
+  upload_id uuid not null references public.winelens_list_uploads(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  position integer not null check (position >= 0),
+  raw jsonb not null,
+  resolved jsonb not null,
+  decision text not null default 'pending' check (decision in ('pending','saved','skipped')),
+  collection_id uuid,
+  created_at timestamptz not null default now(),
+  unique (upload_id, position)
+);
+-- New wines (producer + wine, no vintage) proposed to the shared catalog. Wine facts only; Romario
+-- approves before anything becomes a public catalog wine.
+create table if not exists public.winelens_catalog_proposals (
+  wine_key text primary key check (wine_key ~ '^[0-9a-f]{64}$'),
+  wine jsonb not null,
+  place jsonb not null default '{}'::jsonb,
+  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  seen integer not null default 1 check (seen >= 1),
+  first_user uuid references auth.users(id) on delete set null,
+  catalog_id text,
+  created_at timestamptz not null default now(),
+  decided_at timestamptz
+);
+create index if not exists winelens_catalog_proposals_pending on public.winelens_catalog_proposals (status, seen desc);
+do $$ declare t text; begin
+ foreach t in array array['winelens_list_uploads','winelens_list_entries','winelens_catalog_proposals'] loop
+  execute format('alter table public.%I enable row level security', t);
+  execute format('revoke all on public.%I from public, anon, authenticated', t);
+  execute format('grant all on public.%I to service_role', t);
+ end loop;
+end $$;
+
+-- One proposal per wine; every further save of the same wine raises its "seen" count.
+create or replace function public.winelens_propose_wine(p_key text,p_wine jsonb,p_place jsonb,p_user uuid) returns jsonb language plpgsql security definer set search_path='' as $$
+declare s text;
+begin
+ if p_key is null or p_key !~ '^[0-9a-f]{64}$' or p_wine is null then raise exception 'invalid proposal'; end if;
+ insert into public.winelens_catalog_proposals(wine_key,wine,place,first_user) values(p_key,p_wine,coalesce(p_place,'{}'::jsonb),p_user)
+ on conflict(wine_key) do update set seen=public.winelens_catalog_proposals.seen+1
+ returning status into s;
+ return jsonb_build_object('status',s);
+end $$;
+
+-- Approve (adds the wine to the public catalog table) or reject. Caller must be the owner; the API checks.
+-- Every decision is recorded in the truth funnel (ingest_batches / ingest_wines_raw), like any other ingest.
+create or replace function public.winelens_decide_proposal(p_key text,p_decision text,p_row jsonb) returns jsonb language plpgsql security definer set search_path='' as $$
+declare pr public.winelens_catalog_proposals; batch uuid; wine_id text;
+begin
+ if p_decision not in ('approved','rejected') then raise exception 'invalid decision'; end if;
+ select * into pr from public.winelens_catalog_proposals where wine_key=p_key for update;
+ if not found then raise exception 'unknown proposal'; end if;
+ if pr.status<>'pending' then return jsonb_build_object('status',pr.status,'catalog_id',pr.catalog_id,'replayed',true); end if;
+ if p_decision='approved' then
+   if p_row is null or coalesce(p_row->>'id','')='' or coalesce(p_row->>'name','')='' then raise exception 'catalog row required'; end if;
+   wine_id:=p_row->>'id';
+   insert into public.wines(id,name,producer,region,country,grape,color,metadata)
+   values(wine_id,p_row->>'name',nullif(p_row->>'producer',''),nullif(p_row->>'region',''),nullif(p_row->>'country',''),nullif(p_row->>'grape',''),nullif(p_row->>'color',''),
+     coalesce(p_row->'metadata','{}'::jsonb)||jsonb_build_object('source','wine-list proposal','wine_key',p_key))
+   on conflict(id) do nothing;
+ end if;
+ insert into public.ingest_batches(source,label,wine_count,metadata)
+ values('wine-list proposal',concat_ws(' · ',pr.wine->>'producer',pr.wine->>'wine_name'),1,jsonb_build_object('wine_key',p_key,'seen',pr.seen,'decision',p_decision))
+ returning id into batch;
+ insert into public.ingest_wines_raw(batch_id,wine_id,accepted,raw)
+ values(batch,wine_id,p_decision='approved',jsonb_build_object('suggested',pr.wine,'place',pr.place,'catalog_row',p_row));
+ update public.winelens_catalog_proposals set status=p_decision,decided_at=now(),catalog_id=wine_id where wine_key=p_key;
+ return jsonb_build_object('status',p_decision,'catalog_id',wine_id);
+end $$;
+revoke all on function public.winelens_propose_wine(text,jsonb,jsonb,uuid) from public, anon, authenticated;
+revoke all on function public.winelens_decide_proposal(text,text,jsonb) from public, anon, authenticated;
+grant execute on function public.winelens_propose_wine(text,jsonb,jsonb,uuid) to service_role;
+grant execute on function public.winelens_decide_proposal(text,text,jsonb) to service_role;
 commit;

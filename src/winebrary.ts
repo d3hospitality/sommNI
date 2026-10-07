@@ -13,6 +13,7 @@ import { splitWineName } from './pages';
 import { libraryNotes, parseSections, SOURCE_LABEL, type NoteSection } from './notes-format';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
+import { wineListFlow } from './wine-list';
 import { showWineOnGlasses, canShowWine, clearPrivateGlasses, drawGlassesPreview, setLibrarySource, libraryChanged, saveLibraryCache, clearLibraryCache } from './winebrary-glasses';
 
 export interface LibraryWine {
@@ -36,6 +37,7 @@ let root: HTMLElement;
 let busy = false;
 let dialogRevision = 0;
 let idleHook: (() => void) | null = null; // re-checks cost-gated buttons once a request finishes
+let wineList: ReturnType<typeof wineListFlow>;
 
 const STYLE_LABEL: Record<string, string> = { Rose: 'Rosé', Unknown: 'Wine' };
 const styleOf = (wine: LibraryWine) => wine.metadata?.color ? STYLE_LABEL[wine.metadata.color] ?? wine.metadata.color : 'Wine';
@@ -70,33 +72,39 @@ const notesHTML = (sections: NoteSection[] | null, text: string) => sections
   : `<p class="wl-notes">${esc(text)}</p>`;
 
 // ── One cost panel for every paid action ─────────────────────────────
-interface Gate { ready: () => boolean; consent: () => boolean; refresh: () => Promise<void>; beforeSpend: () => Promise<void>; free: (line: string | null) => void }
+export interface Gate { ready: () => boolean; consent: () => boolean; refresh: () => Promise<void>; recompute: () => void; beforeSpend: () => Promise<void>; free: (line: string | null) => void }
 const costHTML = `<div class="wl-cost" role="status" aria-live="polite"><p class="wl-cost-line">Checking your plan…</p>
   <label class="wl-consent" hidden><input type="checkbox" class="wl-consent-once"> <span></span></label>
   <label class="wl-consent wl-consent-always-row" hidden><input type="checkbox" class="wl-consent-always"> Always allow token use for wineLENS help</label>
   <a class="wl-text-button wl-cost-link" href="${ACCOUNT_PAGE}" target="_blank" rel="noopener noreferrer" hidden></a></div>`;
-function costGate(feature: Feature, onChange: () => void): Gate {
+/** quantity: how many uses one request is (pages of a wine list); the panel follows it via recompute(). */
+function costGate(feature: Feature, onChange: () => void, quantity: () => number = () => 1): Gate {
   const box = dialog.querySelector<HTMLElement>('.wl-cost')!, revision = dialogRevision, account = userId;
   const line = box.querySelector('.wl-cost-line')!, once = box.querySelector<HTMLInputElement>('.wl-consent-once')!, always = box.querySelector<HTMLInputElement>('.wl-consent-always')!;
   const link = box.querySelector<HTMLAnchorElement>('.wl-cost-link')!;
-  let state: BillingStatus | null = null, allowed = false, needsConsent = false, freeLine: string | null = null;
+  let state: BillingStatus | null = null, allowed = false, needsConsent = false, freeLine: string | null = null, shownTokens = -1;
   once.addEventListener('change', onChange); always.addEventListener('change', () => { if (always.checked) once.checked = true; onChange(); });
+  const apply = () => {
+    if (!state || revision !== dialogRevision) return;
+    if (freeLine) return gate.free(freeLine);
+    const cost = costOf(state, feature, Math.max(1, quantity()));
+    allowed = cost.allowed && state.scan_available; needsConsent = cost.needsConsent;
+    line.textContent = state.scan_available ? cost.line : 'Not available yet. You have not been charged.';
+    (once.parentElement as HTMLElement).hidden = (always.parentElement as HTMLElement).hidden = !(allowed && needsConsent);
+    if (cost.tokens !== shownTokens) { once.checked = false; always.checked = false; shownTokens = cost.tokens; } // consent is for one amount
+    box.querySelector('.wl-consent span')!.textContent = `Use ${cost.tokens} ${cost.tokens === 1 ? 'token' : 'tokens'} for this`;
+    link.hidden = !(cost.upgrade || cost.short); link.textContent = cost.upgrade ? 'See wineLENS Pro ↗' : 'Buy tokens ↗';
+    onChange();
+  };
   const gate: Gate = {
     ready: () => allowed && (!needsConsent || once.checked),
     consent: () => needsConsent && once.checked,
     async refresh() {
       try { state = await billingStatus(); } catch (e) { if (revision === dialogRevision) { line.textContent = e instanceof Error ? e.message : 'Plan unavailable.'; allowed = false; onChange(); } return; }
       if (revision !== dialogRevision || account !== userId) return;
-      if (freeLine) return gate.free(freeLine);
-      const cost = costOf(state, feature);
-      allowed = cost.allowed && state.scan_available; needsConsent = cost.needsConsent;
-      line.textContent = state.scan_available ? cost.line : 'Not available yet. You have not been charged.';
-      (once.parentElement as HTMLElement).hidden = (always.parentElement as HTMLElement).hidden = !(allowed && needsConsent);
-      once.checked = false; always.checked = false;
-      box.querySelector('.wl-consent span')!.textContent = `Use ${cost.tokens} ${cost.tokens === 1 ? 'token' : 'tokens'} for this`;
-      link.hidden = !(cost.upgrade || cost.short); link.textContent = cost.upgrade ? 'See wineLENS Pro ↗' : 'Buy tokens ↗';
-      onChange();
+      shownTokens = -1; apply();
     },
+    recompute: apply,
     async beforeSpend() { if (!freeLine && always.checked && state && !state.auto_spend) await accountRequest('billing', { action: 'auto-spend', enabled: true }); },
     /** Nothing will be charged (e.g. notes already exist for this bottle): no consent, no upsell. null restores the real cost. */
     free(lineText) {
@@ -143,11 +151,12 @@ async function refresh() {
 function render() {
   const visible = items.filter(w => `${w.wine_name} ${w.producer} ${w.vintage} ${w.region} ${w.metadata?.grape} ${w.metadata?.country}`.toLowerCase().includes(search.toLowerCase()));
   const count = document.getElementById('home-library'); if (count) count.textContent = userId ? String(items.length) : '—';
-  root.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">YOUR WINES. YOUR NOTES.</p><h2>Your Winebrary<span>.</span></h2></div><button class="wl-primary" id="wl-add">＋ Add a wine</button></div>
+  root.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">YOUR WINES. YOUR NOTES.</p><h2>Your Winebrary<span>.</span></h2></div><div class="wl-heading-actions"><button class="wl-outline" id="wl-list">Upload a wine list ✦</button><button class="wl-primary" id="wl-add">＋ Add a wine</button></div></div>
     <div class="wl-library-toolbar"><p class="wl-muted">${userId ? `${items.length} saved ${items.length === 1 ? 'wine' : 'wines'} · Private to your account` : 'Save bottles you love, add each vintage, keep your notes and photos.'}</p>${userId ? `<label class="wl-search-label"><span class="sr-only">Search your wines</span><input id="wl-search" type="search" value="${esc(search)}" placeholder="Search your wines…"></label><button id="wl-refresh" class="wl-text-button">Refresh</button>` : ''}</div>
     ${notice ? `<p role="status" class="wl-notice">${esc(notice)} <button id="wl-retry" class="wl-text-button">Retry</button></p>` : ''}
-    ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Link your wineLENS account to save wines, notes and bottle photos, and see them on your glasses.</p><button id="wl-start" class="wl-primary">Link my account ↗</button></div>` : visible.length ? `<div class="wl-library-grid">${visible.map(card).join('')}</div>` : `<div class="wl-empty"><h3>${search ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${search ? 'Try a different name, region or year.' : 'Add a wine, scan a label, or save one from the Wines catalog.'}</p><button class="wl-primary" id="wl-first">Add a wine ↗</button></div>`}`;
+    ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Link your wineLENS account to save wines, notes and bottle photos, and see them on your glasses.</p><button id="wl-start" class="wl-primary">Link my account ↗</button></div>` : visible.length ? `<div class="wl-library-grid">${visible.map(card).join('')}</div>` : `<div class="wl-empty"><h3>${search ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${search ? 'Try a different name, region or year.' : 'Add a wine, scan a label, upload a wine list, or save one from the Wines catalog.'}</p><button class="wl-primary" id="wl-first">Add a wine ↗</button></div>`}`;
   root.querySelector('#wl-add')!.addEventListener('click', () => requireAccount(() => editWine()));
+  root.querySelector('#wl-list')!.addEventListener('click', () => requireAccount(() => wineList.open()));
   root.querySelector('#wl-first')?.addEventListener('click', () => editWine());
   root.querySelector('#wl-start')?.addEventListener('click', signIn);
   root.querySelector('#wl-retry')?.addEventListener('click', refresh);
@@ -175,7 +184,7 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
   const originalNotes = newVintage ? '' : wine?.notes ?? '', originalSource = newVintage ? undefined : wine?.metadata?.notes_source;
   const field = (name: string, label: string, value: unknown = '', extra = '') => `<label>${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   openDialog(`<p class="wl-kicker">${editing ? 'YOUR COLLECTION' : 'MAKE ROOM FOR SOMETHING GOOD'}</p><h2>${editing ? 'Edit this wine.' : newVintage ? 'Another year. New story.' : 'Add a wine.'}</h2>
-    ${!editing && !newVintage && !wine?.wine_name ? '<div class="wl-choice"><button id="wl-scan-label" class="wl-outline" type="button">Scan the label ✦</button><span class="wl-muted small">or fill in what you know. Manual entry is always free.</span></div>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name', 'Wine name', wine?.wine_name, 'required maxlength="300"')}${field('producer', 'Producer', wine?.producer, 'maxlength="200"')}
+    ${!editing && !newVintage && !wine?.wine_name ? '<div class="wl-choice"><button id="wl-scan-label" class="wl-outline" type="button">Scan the label ✦</button><button id="wl-add-list" class="wl-text-button" type="button">Upload a wine list ✦</button><span class="wl-muted small">or fill in what you know. Manual entry is always free.</span></div>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name', 'Wine name', wine?.wine_name, 'required maxlength="300"')}${field('producer', 'Producer', wine?.producer, 'maxlength="200"')}
     <label>Vintage<select name="vintage_state" aria-label="Vintage"><option value="year" ${vintageState === 'year' ? 'selected' : ''}>Known year</option><option value="non_vintage" ${vintageState === 'non_vintage' ? 'selected' : ''}>Non-vintage</option><option value="unknown" ${vintageState === 'unknown' ? 'selected' : ''}>I don’t know yet</option></select></label>
     ${field('vintage', 'Year', newVintage ? '' : wine?.vintage, 'type="number" min="1800" max="' + (new Date().getFullYear() + 1) + '" step="1"')}
     ${field('region', 'Region', wine?.region, 'maxlength="200"')}${field('country', 'Country', wine?.metadata?.country, 'maxlength="100"')}${field('grape', 'Grape', wine?.metadata?.grape, 'maxlength="200"')}
@@ -184,6 +193,7 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
     <p class="wl-muted small">${newVintage ? 'This creates a separate entry. The previous year keeps its own notes and photo.' : originalSource === 'scan' ? 'The notes above are a draft from the label. Edit them freely.' : 'Save now. You can add a bottle photo, draft tasting notes or a studio image next.'}</p>
     <button class="wl-primary" type="submit">${editing ? 'Save changes' : 'Save to Winebrary'} ↗</button></form>`);
   dialog.querySelector('#wl-scan-label')?.addEventListener('click', () => scanLabel());
+  dialog.querySelector('#wl-add-list')?.addEventListener('click', () => wineList.open());
   const form = dialog.querySelector<HTMLFormElement>('form')!;
   const state = form.querySelector<HTMLSelectElement>('[name=vintage_state]')!;
   const year = form.querySelector<HTMLInputElement>('[name=vintage]')!;
@@ -354,15 +364,51 @@ function accountDialog() {
   const pending = unsyncedEvents().length;
   openDialog(`<p class="wl-kicker">YOUR WINELENS ACCOUNT</p><h2>A taste of your own.</h2><p class="wl-muted">${esc(accountEmail)}<br>Your Winebrary and study progress are private. Unlinking removes them from this device.</p>${pending ? `<p class="wl-notice" role="status">${pending} study ${pending === 1 ? 'review has' : 'reviews have'} not reached your account yet and will be removed from this device if you unlink now.</p>` : ''}
     <div class="wl-plan-chip" role="status"><strong id="wl-plan">Checking plan…</strong><span id="wl-plan-detail"></span></div>
-    <a class="wl-outline" href="${ACCOUNT_PAGE}" target="_blank" rel="noopener noreferrer">Plan, tokens & devices ↗</a><button id="wl-signout" class="wl-text-button">Unlink this device</button>`);
+    <a class="wl-outline" href="${ACCOUNT_PAGE}" target="_blank" rel="noopener noreferrer">Plan, tokens & devices ↗</a><button id="wl-review" class="wl-outline" hidden>Review catalog suggestions</button><button id="wl-signout" class="wl-text-button">Unlink this device</button>`);
+  dialog.querySelector('#wl-review')!.addEventListener('click', catalogReview);
   const revision = dialogRevision;
   void billingStatus().then(state => {
     if (revision !== dialogRevision) return;
-    dialog.querySelector('#wl-plan')!.textContent = `${state.pro ? 'wineLENS Pro' : 'Free'} · ${state.tokens} ${state.tokens === 1 ? 'token' : 'tokens'}`;
+    dialog.querySelector('#wl-plan')!.textContent = `${state.plan === 'owner' ? 'wineLENS owner' : state.pro ? 'wineLENS Pro' : 'Free'} · ${state.tokens} ${state.tokens === 1 ? 'token' : 'tokens'}`;
+    dialog.querySelector<HTMLElement>('#wl-review')!.hidden = state.plan !== 'owner';
     const card = state.rate_card?.features || {};
     dialog.querySelector('#wl-plan-detail')!.textContent = Object.entries(state.allowances).map(([k, a]) => `${(card as Record<string, { label: string }>)[k]?.label || k}: ${a!.remaining}/${a!.limit} left`).join(' · ');
   }).catch(() => { if (revision === dialogRevision) dialog.querySelector('#wl-plan')!.textContent = 'Plan and tokens unavailable right now.'; });
   dialog.querySelector('#wl-signout')!.addEventListener('click', () => run(async () => { const warning = await unlinkDevice(); dialog.close(); if (warning) { notice = warning; render(); } }));
+}
+
+// ── Catalog suggestions (owner only; the API checks too) ──────────────
+interface Suggestion { wine_key: string; seen: number; wine: { producer?: string; wine_name?: string; region?: string; country?: string; grape?: string; color?: string }; place: { status: string; region: string; country: string | null } }
+function catalogReview() {
+  openDialog(`<p class="wl-kicker">OWNER · CATALOG</p><h2>Suggested wines.</h2>
+    <p class="wl-muted">New wines people saved from wine lists, most-saved first. Approving adds the wine to the wineLENS catalog table with its source recorded in the ingest history; it reaches the app catalog with the next catalog release.</p>
+    <div id="wl-review-list"><p class="wl-muted" role="status">Loading suggestions…</p></div>`);
+  const revision = dialogRevision;
+  const colors = ['Red', 'White', 'Sparkling', 'Rose', 'Orange', 'Dessert', 'Unknown'];
+  const field = (name: string, label: string, value: unknown) => `<label>${label}<input data-field="${name}" value="${esc(value ?? '')}" maxlength="300"></label>`;
+  const row = (p: Suggestion) => `<li class="wl-list-row wl-review-row" data-key="${esc(p.wine_key)}"><div class="wl-list-copy">
+    <strong>${esc([p.wine.producer, p.wine.wine_name].filter(Boolean).join(' · '))}</strong><span class="wl-muted">${esc([p.wine.region, p.wine.country, p.wine.grape].filter(Boolean).join(' · ') || 'No place given')}</span>
+    <div class="wl-list-chips"><span class="wl-list-chip ${p.place.status === 'mapped' ? 'wl-list-chip-good' : ''}">${p.place.status === 'mapped' ? 'On the globe · ' + esc(p.place.region) : p.place.status === 'unknown' ? 'Place not on the globe yet' : esc(p.place.region || 'Country only')}</span><span class="wl-list-chip">Saved ${p.seen}×</span></div>
+    <div class="wl-list-form wl-form-grid">${field('wine_name', 'Wine name', p.wine.wine_name)}${field('producer', 'Producer', p.wine.producer)}${field('region', 'Region', p.wine.region)}${field('country', 'Country', p.wine.country)}${field('grape', 'Grape', p.wine.grape)}
+      <label>Wine style<select data-field="color">${colors.map(c => `<option value="${c}" ${c === (p.wine.color || 'Unknown') ? 'selected' : ''}>${c === 'Rose' ? 'Rosé' : c === 'Unknown' ? 'Not sure' : c}</option>`).join('')}</select></label></div>
+    <div class="wl-notes-actions"><button class="wl-primary" data-decide="approved">Add to catalog</button><button class="wl-text-button" data-decide="rejected">Reject</button></div></div></li>`;
+  void accountRequest('catalog-review', { action: 'list' }).then((r: { proposals: Suggestion[]; unknown_places: { region: string; country: string | null; wines: number; seen: number }[] }) => {
+    if (revision !== dialogRevision) return;
+    const box = dialog.querySelector('#wl-review-list')!;
+    box.innerHTML = `${r.unknown_places.length ? `<section class="wl-list-group"><h3>Places not on the globe yet <span>${r.unknown_places.length}</span></h3><p class="wl-muted small">Add each to shared/region-aliases.json (then rebuild the wine index) so lists place them automatically.</p><ul class="wl-list-summary">${r.unknown_places.map(p => `<li>${esc(p.region)}${p.country ? ' · ' + esc(p.country) : ''} <span class="wl-muted">· ${p.wines} ${p.wines === 1 ? 'wine' : 'wines'}, saved ${p.seen}×</span></li>`).join('')}</ul></section>` : ''}
+      <section class="wl-list-group"><h3>Waiting for review <span>${r.proposals.length}</span></h3>${r.proposals.length ? `<ul>${r.proposals.map(row).join('')}</ul>` : '<p class="wl-muted">Nothing waiting. New wines from wine lists appear here.</p>'}</section>`;
+    box.querySelectorAll<HTMLButtonElement>('[data-decide]').forEach(b => b.addEventListener('click', () => void run(async () => {
+      const li = b.closest<HTMLElement>('[data-key]')!, value = (n: string) => li.querySelector<HTMLInputElement | HTMLSelectElement>(`[data-field="${n}"]`)!.value.trim();
+      const wine = b.dataset.decide === 'approved' ? { wine_name: value('wine_name'), producer: value('producer'), region: value('region'), country: value('country'), grape: value('grape'), color: value('color') } : undefined;
+      const result = await accountRequest('catalog-review', { action: 'decide', wine_key: li.dataset.key, decision: b.dataset.decide, ...(wine ? { wine } : {}) });
+      if (revision !== dialogRevision) return;
+      const list = li.parentElement!; li.remove();
+      const left = list.querySelectorAll('[data-key]').length, count = list.closest('section')!.querySelector('h3 span');
+      if (count) count.textContent = String(left);
+      if (!left) list.outerHTML = '<p class="wl-muted">All reviewed. New wines from wine lists appear here.</p>';
+      feedback(result.status === 'approved' ? `Added to the catalog as ${result.catalog_id}.` : 'Rejected. It will not be suggested again.');
+    })));
+  }).catch(e => { if (revision === dialogRevision) dialog.querySelector('#wl-review-list')!.innerHTML = `<p class="wl-notice">${esc(e instanceof Error ? e.message : 'Suggestions are unavailable.')}</p>`; });
 }
 
 export function initWinebrary() {
@@ -372,10 +418,12 @@ export function initWinebrary() {
   setLibrarySource(() => ({ userId, loading, error: items.length ? '' : notice, items }));
   dialog = document.createElement('dialog'); dialog.className = 'wl-dialog'; dialog.setAttribute('aria-label', 'Winebrary'); document.body.append(dialog);
   dialog.addEventListener('cancel', e => { if (busy) e.preventDefault(); });
+  wineList = wineListFlow({ dialog, costHTML, openDialog, feedback, run, setBusy, isBusy: () => busy, revision: () => dialogRevision, userId: () => userId, refresh, esc, costGate });
   document.getElementById('wl-account')!.addEventListener('click', () => { if (!userId) signIn(); else accountDialog(); });
   document.querySelectorAll('[data-wl-add]').forEach(el => el.addEventListener('click', () => requireAccount(() => editWine())));
   document.querySelectorAll('[data-open-account]').forEach(el => el.addEventListener('click', () => document.getElementById('wl-account')!.click()));
   document.querySelectorAll('[data-wl-scan]').forEach(el => el.addEventListener('click', () => requireAccount(() => scanLabel())));
+  document.querySelectorAll('[data-wl-list]').forEach(el => el.addEventListener('click', () => requireAccount(() => wineList.open())));
   document.querySelectorAll<HTMLElement>('[data-open-tab]').forEach(el => el.addEventListener('click', () => document.querySelector<HTMLButtonElement>(`.tab[data-tab="${el.dataset.openTab}"]`)?.click()));
   document.addEventListener('click', e => {
     const button = (e.target as HTMLElement).closest<HTMLElement>('[data-save-library]'); if (!button) return;
