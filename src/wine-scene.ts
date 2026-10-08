@@ -15,7 +15,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { type Country, type GlobeRenderer, type Region } from './atlas/renderer';
-import { alphaBounds, toGreenLevels, fetchBottleBlob, type BottleSource } from './bottle-raster';
+import { toGreenLevels, loadBottle, detailedBottle, type BottleSource } from './bottle-raster';
 
 /** Map panel on screen: x ≥ SCENE_X; the caption strip is y < MAP_Y; the map is below it. */
 export const SCENE_X = 376, MAP_Y = 36, MAP_W = 576 - SCENE_X, MAP_H = 288 - MAP_Y;
@@ -94,17 +94,13 @@ function countryIds(renderer: GlobeRenderer, center: [number, number], scale: nu
 
 async function bottleLayer(source: BottleSource, width: number, height: number): Promise<{ gray: Uint8Array; alpha: Uint8Array } | null> {
   try {
-    const bitmap = await createImageBitmap(await fetchBottleBlob(source));
+    const { bitmap, bounds: b } = await loadBottle(source);
     try {
-      const probe = document.createElement('canvas'); probe.width = bitmap.width; probe.height = bitmap.height;
-      const pctx = probe.getContext('2d')!; pctx.drawImage(bitmap, 0, 0);
-      const b = alphaBounds(pctx.getImageData(0, 0, bitmap.width, bitmap.height).data, bitmap.width, bitmap.height);
       const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext('2d')!;
       const s = Math.min(width / b.width, height / b.height);
-      const w = b.width * s, h = b.height * s;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(bitmap, b.x, b.y, b.width, b.height, (width - w) / 2, height - h, w, h);
+      const bottle = detailedBottle(bitmap, b, b.width * s, b.height * s);
+      ctx.drawImage(bottle, Math.round((width - bottle.width) / 2), height - bottle.height);
       const rgba = ctx.getImageData(0, 0, width, height).data;
       const alpha = new Uint8Array(width * height);
       const onBlack = new Uint8ClampedArray(rgba.length);

@@ -143,7 +143,9 @@ const assert=require('node:assert/strict');
   const rows=()=>shown.at(-1).textObject.find(t=>t.containerName==='atlas-rows').content;
   const rowsNow=()=>texts.filter(t=>t.startsWith('atlas-rows:')).at(-1)?.slice(11)??rows();
   await click(P.ATLAS_INDEX);await wait(1200);
-  const atlas=[last(),rows().split('\n')[0]];
+  out.atlasStyles=[A.atlasStatus().mode,rows().split('\n')[0]];   // the Atlas opens on wine styles
+  handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(900);   // All wines → countries
+  const atlas=[last(),rowsNow().split('\n')[0]];
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);
   atlas.push(A.atlasStatus().country);
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:1}});await wait(600);   // back up to the first country
@@ -158,7 +160,8 @@ const assert=require('node:assert/strict');
   handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(1500);
   const catalogNotes=last();
   handler({sysEvent:{eventType:3}});await wait(1800);out.catalogFromAtlas=[catalogNotes,last(),A.atlasStatus().mode];
-  handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
+  handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
+  out.atlasStylesAgain=A.atlasStatus().mode;
   handler({sysEvent:{eventType:3}});await wait(1200);atlas.push(last(),A.atlasStatus().active);
   out.atlas=atlas;out.atlasImages=[...new Set(images)];
   // Catalog scope: only countries with wines; regions only through explicit links
@@ -193,6 +196,7 @@ const assert=require('node:assert/strict');
  assert.equal(result.home,'home-list');
  assert.equal(result.globe.atOpen,2);assert.deepEqual(result.globe.hover,['globe-top','globe-bottom']);
  assert.ok(result.globe.info.at(-1).startsWith('info:France'),result.globe.info.join('|'));
+ assert.deepEqual(result.atlasStyles,['types','> All wines · 217']);assert.equal(result.atlasStylesAgain,'types','Back from countries returns to the styles');
  assert.deepEqual(result.atlas.slice(0,2),['atlas-title+atlas-rows+atlas-hint','> United States (1)']);
  assert.equal(result.atlas[2],'Australia');
  assert.equal(result.atlas[3],'regions');assert.equal(result.atlas[4],'> Napa Valley (1)');

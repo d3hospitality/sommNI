@@ -99,7 +99,9 @@ const BASE = (process.env.WL_BASE_URL || 'http://localhost:5186').replace(/\/$/,
       await input({ sysEvent: { eventType: 4 } });
       check(A.atlasStatus().active && A.atlasStatus().mode === 'detail', 'resume restores Atlas selection');
       await back(); await back(); await back();
-      check(last().listObject?.[0].containerName === 'home-list', 'Back returns to Home');
+      check(A.atlasStatus().active && A.atlasStatus().mode === 'types', 'Back from countries returns to the wine styles');
+      await back();
+      check(last().listObject?.[0].containerName === 'home-list', 'Back from the styles returns to Home');
       await back();
       check(exitModes.length === 1 && exitModes[0] === 1 && unsubscribed === 0 && cleaned === 0, 'Home requests confirmed exit without premature cleanup');
       // Cancel has no terminal event. The next action still opens a page normally.

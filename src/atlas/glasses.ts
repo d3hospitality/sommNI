@@ -84,7 +84,7 @@ export class AtlasGlasses {
     else if(type===OsEventTypeList.SCROLL_BOTTOM_EVENT)this.navigator.scroll(1);
     else if(type===OsEventTypeList.CLICK_EVENT||type===undefined&&!!(event.textEvent||event.listEvent||event.sysEvent))this.navigator.select();
     else if(type===OsEventTypeList.DOUBLE_CLICK_EVENT){
-      if(this.navigator.mode==='countries'&&this.onExit){void this.close().then(this.onExit).catch(this.onError);return true;}
+      if(this.navigator.atTop&&this.onExit){void this.close().then(this.onExit).catch(this.onError);return true;}
       this.navigator.back();
     }
     else return true;

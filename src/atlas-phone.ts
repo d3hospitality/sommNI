@@ -9,9 +9,10 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 function statusLine(s: AtlasStatus): string {
   if (s.error) return s.error;
-  if (!s.active) return inEvenHubHost() ? 'Scroll countries on the glasses; tap to see mapped winery clusters.' : 'Glasses open inside the Even app with G2 connected.';
+  if (!s.active) return inEvenHubHost() ? 'On the glasses: pick a style, scroll its countries, tap for regions and wines.' : 'Glasses open inside the Even app with G2 connected.';
+  if (s.mode === 'types') return `On your glasses: choosing a style · ${s.style}`;
   const place = s.region ? `${s.country} › ${s.region}` : s.country;
-  return `On your glasses: ${place}${s.mode === 'detail' ? ' (winery locations)' : ''}`;
+  return `On your glasses: ${s.style} · ${place}${s.mode === 'detail' ? ' (wines here)' : ''}`;
 }
 
 export function initAtlasCard(): void {

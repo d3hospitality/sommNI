@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { OsEventTypeList, type EvenAppBridge, type EvenHubEvent } from '@evenrealities/even_hub_sdk';
-import { GlobeRenderer, type AtlasData, type Country, type Region } from './atlas/renderer';
+import { GlobeRenderer, type AtlasData, type Country, type Region, type View } from './atlas/renderer';
 import { AtlasNavigator } from './atlas/navigator';
 import { AtlasGlasses } from './atlas/glasses';
 import { claimDisplay, dropDisplay } from './display';
@@ -24,7 +24,7 @@ import { catalogBottleSources } from './bottle-assets';
 import type { BottleSource } from './bottle-raster';
 import { readLibrary, libraryBottle, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
 import { planWineScene, type ScenePlan } from './wine-scene';
-import { TYPE_DISPLAY } from './constants';
+import { TYPE_DISPLAY, WINE_TYPES, type WineType } from './constants';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
 
@@ -35,7 +35,7 @@ let glasses: AtlasGlasses | null = null;
 let navigator: CatalogAtlasNavigator | null = null;
 let active = false;
 
-export interface AtlasStatus { active: boolean; mode: string; country: string; region: string | null; error: string | null }
+export interface AtlasStatus { active: boolean; mode: string; style: string; country: string; region: string | null; error: string | null }
 let lastError: string | null = null;
 
 let listening = false;
@@ -98,9 +98,10 @@ export function loadAtlasRenderer(): Promise<GlobeRenderer> {
 export function atlasStatus(): AtlasStatus {
   return {
     active,
-    mode: navigator?.mode ?? 'countries',
+    mode: navigator?.mode ?? 'types',
     country: navigator?.country.name ?? '',
-    region: navigator && navigator.mode !== 'countries' ? navigator.region?.name ?? null : null,
+    region: navigator && (navigator.mode === 'regions' || navigator.mode === 'detail') ? navigator.region?.name ?? null : null,
+    style: navigator ? typeLabel(navigator.type) : 'All wines',
     error: lastError,
   };
 }
@@ -181,7 +182,14 @@ function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink
   return { country: resolved, regions, place };
 }
 
-export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[] = []): CatalogAtlas {
+/** A Winebrary wine's style: its catalog twin's, else its own colour. Unknown styles appear under All wines only. */
+function libraryStyle(wine: LibraryWine): WineType | null {
+  const twin = wine.wine_id ? lookupWineById(wine.wine_id) : null;
+  if (twin) return twin.type;
+  return ({ red: 'Red', white: 'White', sparkling: 'Sparkling', rose: 'Rose', 'rosé': 'Rose', orange: 'Orange', dessert: 'Dessert' } as Record<string, WineType>)[(wine.metadata?.color ?? '').toLowerCase()] ?? null;
+}
+
+export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[] = [], type: AtlasType = null): CatalogAtlas {
   const links = linkTable();
   const countryWines = new Map<string, number>(), mineByRegion = new Map<string, number>(), mineByCountry = new Map<string, number>();
   const regions = new Map<string, Region>(), unmapped = new Set<string>(), unlinked = new Set<string>();
@@ -201,6 +209,7 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
     return row;
   };
   for (const item of allCatalogWines()) {
+    if (type && item.type !== type) continue;
     const country = atlasCountryFor(renderer, item.country);
     if (!country) continue;
     bump(countryWines, country.code);
@@ -211,6 +220,7 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
     for (const r of linked) { regions.set(r.id, r); push(catalog, r.id, { kind: 'catalog', item }); }
   }
   for (const wine of libraryItems) {
+    if (type && libraryStyle(wine) !== type) continue;
     const placed = placeLibraryWine(renderer, links, wine);
     if (!placed.country) continue;           // no country: stays in My Winebrary only
     bump(mineByCountry, placed.country.code);
@@ -227,28 +237,71 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
 
 const entryLabel = (e: AtlasEntry) => e.kind === 'library' ? [e.wine.wine_name, vintageShort(e.wine)].filter(Boolean).join(' ') : e.item.wine.name;
 
+/** A wine style to browse the Atlas by; null = every wine. */
+export type AtlasType = WineType | null;
+const STYLE_LABEL: Record<WineType, string> = { Red: 'Red', White: 'White', Sparkling: 'Sparkling', Rose: 'Rosé', Orange: 'Orange', Dessert: 'Dessert' };
+const typeLabel = (type: AtlasType) => type ? STYLE_LABEL[type] : 'All wines';
+const scopeSize = (scope: CatalogAtlas) => [...scope.countryWines.values(), ...scope.mineByCountry.values()].reduce((a, b) => a + b, 0);
+
 class CatalogAtlasNavigator extends AtlasNavigator {
   wineIndex = 0;
   /** Set by a tap on a wine in the region view; atlas-app opens it. */
   pending: AtlasEntry | null = null;
-  constructor(private scope: CatalogAtlas, public signedIn: boolean) { super(scope.data); this.countries = scope.countries; }
+  typeIndex = 0;
+  /** All wines, then each style that has wines (catalog + yours), with counts. */
+  types: { type: AtlasType; count: number }[] = [];
+  private scope: CatalogAtlas;
+  constructor(private scopeFor: (type: AtlasType) => CatalogAtlas, public signedIn: boolean) {
+    const all = scopeFor(null);
+    super(all.data);
+    this.scope = all; this.countries = all.countries; this.mode = 'types';
+    this.types = this.typeOptions(all);
+  }
+  private typeOptions(all: CatalogAtlas) {
+    return [{ type: null as AtlasType, count: scopeSize(all) }, ...WINE_TYPES.map(type => ({ type: type as AtlasType, count: scopeSize(this.scopeFor(type)) })).filter(t => t.count > 0)];
+  }
+  get type(): AtlasType { return this.types[this.typeIndex]?.type ?? null; }
+  /** Point the Atlas at one style: its countries (most wines first), its regions, its wines. */
+  private useType(index: number): void {
+    this.typeIndex = Math.max(0, Math.min(this.types.length - 1, index));
+    this.scope = this.scopeFor(this.type); this.data = this.scope.data; this.countries = this.scope.countries;
+    this.countryIndex = 0; this.regionIndex = 0; this.wineIndex = 0;
+  }
+  get atTop(): boolean { return this.mode === 'types'; }
+  /** Picking a style lights every country that makes it, turned to the one with the most wines. */
+  get view(): View { return this.mode === 'types' ? { ...super.view, footprint: this.countries.map(c => c.id) } : super.view; }
+  get index(): number { return this.mode === 'types' ? this.typeIndex : super.index; }
 
-  /** New scope (Winebrary loaded, signed out …): keep the same country/region when still present. */
-  setScope(scope: CatalogAtlas, signedIn: boolean): void {
-    const code = this.country?.code, regionId = this.region?.id, mode = this.mode;
-    this.scope = scope; this.data = scope.data; this.countries = scope.countries; this.signedIn = signedIn;
+  /** New scope (Winebrary loaded, signed out …): same style, and the same country/region when still present. */
+  rescope(scopeFor: (type: AtlasType) => CatalogAtlas, signedIn: boolean): void {
+    const code = this.country?.code, regionId = this.region?.id, mode = this.mode, type = this.type;
+    this.scopeFor = scopeFor; this.signedIn = signedIn;
+    this.types = this.typeOptions(scopeFor(null));
+    this.typeIndex = Math.max(0, this.types.findIndex(t => t.type === type));
+    this.scope = scopeFor(this.type); this.data = this.scope.data; this.countries = this.scope.countries;
     this.countryIndex = Math.max(0, this.countries.findIndex(c => c.code === code));
     const r = regionId ? this.regions.findIndex(x => x.id === regionId) : -1;
-    if (mode !== 'countries' && r >= 0) this.regionIndex = r; else { this.mode = 'countries'; this.regionIndex = 0; }
+    if ((mode === 'regions' || mode === 'detail') && r >= 0) this.regionIndex = r;
+    else { if (mode !== 'types') this.mode = 'countries'; this.regionIndex = 0; }
     this.wineIndex = Math.min(this.wineIndex, Math.max(0, this.wines.length - 1));
   }
+  /** Straight to a country (phone "Open on glasses"): all wines, that country. */
+  chooseCountry(code: string): void {
+    if (!this.countries.some(c => c.code === code)) this.useType(0);
+    super.chooseCountry(code);
+  }
   get wines(): AtlasEntry[] { return this.region ? this.scope.entries.get(this.region.id) ?? [] : []; }
-  get title(): string { return this.mode === 'countries' ? `WINE ATLAS · ${this.countries.length} COUNTRIES` : super.title; }
+  get title(): string {
+    if (this.mode === 'types') return 'WINE ATLAS · PICK A STYLE';
+    return this.mode === 'countries' ? `${typeLabel(this.type).toUpperCase()} · ${this.countries.length} ${this.countries.length === 1 ? 'COUNTRY' : 'COUNTRIES'}` : super.title;
+  }
   get labels(): string[] {
+    if (this.mode === 'types') return this.types.map(t => `${typeLabel(t.type)} · ${t.count}`);
     if (this.mode !== 'countries') return this.regions.map(r => { const n = this.scope.mineByRegion.get(r.id) ?? 0; return n ? `${r.name} (${n})` : r.name; });
     return this.countries.map(c => { const n = this.scope.mineByCountry.get(c.code) ?? 0; return n ? `${c.name} (${n})` : c.name; });
   }
   get hint(): string {
+    if (this.mode === 'types') return `${this.typeIndex + 1} / ${this.types.length}   Tap: countries`;
     if (this.mode === 'detail') return this.wines.length ? `${this.wineIndex + 1} / ${this.wines.length}   Tap: open wine` : 'Double tap: regions';
     return super.hint;
   }
@@ -275,15 +328,21 @@ class CatalogAtlasNavigator extends AtlasNavigator {
     return list.sort((a, b) => mine(b) - mine(a) || mapped(b) - mapped(a) || all(b) - all(a) || b.count - a.count || a.name.localeCompare(b.name));
   }
   scroll(delta: number): void {
+    if (this.mode === 'types') { this.useType(this.typeIndex + delta); return; }
     if (this.mode === 'detail') { this.wineIndex = Math.max(0, Math.min(this.wines.length - 1, this.wineIndex + delta)); return; }
     super.scroll(delta);
   }
   select(): void {
+    if (this.mode === 'types') { if (this.countries.length) this.mode = 'countries'; return; }
     if (this.mode === 'detail') { this.pending = this.wines[this.wineIndex] ?? null; return; }
     if (this.mode === 'regions') this.wineIndex = 0;
     super.select();
   }
-  back(): void { if (this.mode === 'detail') this.wineIndex = 0; super.back(); }
+  back(): void {
+    if (this.mode === 'countries') { this.mode = 'types'; return; }
+    if (this.mode === 'detail') this.wineIndex = 0;
+    super.back();
+  }
 }
 
 function libraryScope(): { items: LibraryWine[]; signedIn: boolean } {
@@ -296,7 +355,7 @@ export async function atlasLibraryChanged(): Promise<void> {
   if (!navigator || !rendererPromise) return;
   const renderer = await rendererPromise;
   const { items, signedIn } = libraryScope();
-  navigator.setScope(catalogAtlas(renderer, items), signedIn);
+  navigator.rescope(type => catalogAtlas(renderer, items, type), signedIn);
   announce();
   if (active) glasses?.refresh();
 }
@@ -351,8 +410,9 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
   await imageIdle();
   await claimDisplay('atlas', release);
   const { items, signedIn } = libraryScope();
-  if (!navigator) navigator = new CatalogAtlasNavigator(catalogAtlas(renderer, items), signedIn);
-  else navigator.setScope(catalogAtlas(renderer, items), signedIn);
+  const scopeFor = (type: AtlasType) => catalogAtlas(renderer, items, type);
+  if (!navigator) navigator = new CatalogAtlasNavigator(scopeFor, signedIn);
+  else navigator.rescope(scopeFor, signedIn);
   if (countryCode) navigator.chooseCountry(countryCode);
   if (!glasses) glasses = new AtlasGlasses(bridge, navigator, renderer, changed, fail, exitToHome, selectedBottle);
   lastError = null;

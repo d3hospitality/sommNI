@@ -3,7 +3,8 @@
 export interface Country { id: number; code: string; name: string; center: [number, number]; regionCount: number; wineryCount: number }
 export interface Region { id: string; name: string; sourceKey: string; country: string; center: [number, number]; radius: number; points: [number, number][]; count: number; geometryKind: 'winery-cluster' }
 export interface AtlasData { countries: Country[]; regions: Region[]; provenance: { sourcePointCount: number; excluded: {points: number}[] } }
-export interface View { country: Country; region?: Region; center?: [number, number]; radius?: number }
+/** footprint: further country ids lit like the selected one (a wine style's countries). */
+export interface View { country: Country; region?: Region; center?: [number, number]; radius?: number; footprint?: number[] }
 export interface Frame { size: number; gray: Uint8Array; selected: Uint8Array }
 const DEG = Math.PI / 180;
 const BAYER = [0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
@@ -40,12 +41,13 @@ export class GlobeRenderer {
     const count=size*size, gray=new Uint8Array(count), selected=new Uint8Array(count);
     const idmap=new Int16Array(count).fill(-1), light=new Float32Array(count), grids=new Uint8Array(count);
     const sinP=Math.sin(center[1]*DEG),cosP=Math.cos(center[1]*DEG);
+    const lit=new Set([view.country.id,...(view.footprint??[])]);
     for(let y=0;y<size;y++)for(let x=0;x<size;x++) {
       const dx=(x+.5-size/2)/scale,dy=-(y+.5-size/2)/scale, r2=dx*dx+dy*dy;
       if(r2>=1)continue;
       const z=Math.sqrt(1-r2),lat=Math.asin(dy*cosP+z*sinP)/DEG;
       let lon=center[0]+Math.atan2(dx,z*cosP-dy*sinP)/DEG;lon=((lon+540)%360)-180;
-      const i=y*size+x,id=this.countryAt(lon,lat);idmap[i]=id;selected[i]=Number(id===view.country.id);
+      const i=y*size+x,id=this.countryAt(lon,lat);idmap[i]=id;selected[i]=Number(lit.has(id));
       light[i]=.52+.48*Math.max(0,z*.87-dx*.3+dy*.25);
       const step=angular<.5?.1:angular<2?.5:angular<5?1:angular<20?5:30, tolerance=angular/size*.27;
       if(Math.abs(lon/step-Math.round(lon/step))*step<tolerance || Math.abs(lat/step-Math.round(lat/step))*step<tolerance)grids[i]=1;
@@ -54,7 +56,7 @@ export class GlobeRenderer {
     for(let y=1;y<size-1;y++)for(let x=1;x<size-1;x++) {
       const i=y*size+x, id=idmap[i];if(id<0)continue;
       const near=[idmap[i-1],idmap[i+1],idmap[i-size],idmap[i+size]];
-      if(near.some(n=>n!==id))edge[i]=selected[i] || near.includes(view.country.id) ? 2 : 1;
+      if(near.some(n=>n!==id))edge[i]=selected[i] || near.some(n=>lit.has(n)) ? 2 : 1;
     }
     for(let y=0;y<size;y++)for(let x=0;x<size;x++) {
       const i=y*size+x;if(idmap[i]<0)continue;

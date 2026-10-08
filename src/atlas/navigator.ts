@@ -1,5 +1,6 @@
 import { type AtlasData, type Country, type Region, type View } from './renderer';
-export type AtlasMode='countries'|'regions'|'detail';
+/** types (wine style) › countries › regions › detail. The base navigator starts at countries. */
+export type AtlasMode='types'|'countries'|'regions'|'detail';
 export class AtlasNavigator {
   mode:AtlasMode='countries';countryIndex=0;regionIndex=0;
   countries:Country[];
@@ -15,7 +16,9 @@ export class AtlasNavigator {
   get region():Region|undefined{return this.regions[this.regionIndex];}
   get labels(){return this.mode==='countries'?this.countries.map(c=>c.name):this.regions.map(r=>r.name);}
   get index(){return this.mode==='countries'?this.countryIndex:this.regionIndex;}
-  get view():View{return {country:this.country,...(this.mode!=='countries'&&this.region?{region:this.region,radius:this.mode==='regions'?Math.max(12,this.region.radius*2):Math.max(.15,this.region.radius)}:{})};}
+  /** Double tap here leaves the Atlas. */
+  get atTop(){return this.mode==='countries';}
+  get view():View{return {country:this.country,...((this.mode==='regions'||this.mode==='detail')&&this.region?{region:this.region,radius:this.mode==='regions'?Math.max(12,this.region.radius*2):Math.max(.15,this.region.radius)}:{})};}
   scroll(delta:number){if(this.mode==='detail')return;const i=Math.max(0,Math.min(this.labels.length-1,this.index+delta));if(this.mode==='countries'){this.countryIndex=i;this.regionIndex=0;}else this.regionIndex=i;}
   select(){if(this.mode==='countries'&&this.regions.length)this.mode='regions';else if(this.mode==='regions')this.mode='detail';}
   back(){if(this.mode==='detail')this.mode='regions';else if(this.mode==='regions')this.mode='countries';}
