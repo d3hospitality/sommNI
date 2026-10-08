@@ -372,6 +372,22 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       if (idx === countries.length) { navigating = false; await goBack(bridge, baseUrl); return; }
       if (idx >= 0 && idx < countries.length) {
         currentCountry = countries[idx];
+        const only = getWinesForCountry(currentType, currentCountry);
+        if (only.length === 1) {
+          // One wine in this country: open it, no one-row grape step in between.
+          const wine = only[0], wineId = getWineId(currentType, currentCountry, wine.name), type = currentType, country = currentCountry;
+          currentWineId = wineId; currentGrape = null;
+          await rebuild(bridge, buildTastingNotesPage(wine, wineId));
+          currentPage = "notes"; lastNavigationTime = Date.now();
+          notesReturn = async () => {
+            await rebuild(bridge, buildCountryListPage(type));
+            currentPage = "countries"; currentCountry = null; lastHoveredIndex = -1; lastNavigationTime = Date.now();
+            await showCountryFootprint(bridge, baseUrl);
+          };
+          await pushTastingNotesImages(bridge, baseUrl, wineId);
+          log(`> ${wine.name} (the only wine from ${country})`, "success");
+          return;
+        }
         await rebuild(bridge, buildGrapeListPage(currentType, currentCountry));
         await showGrapeCountry(bridge, baseUrl);
         currentPage = "grapes"; lastHoveredIndex = -1;

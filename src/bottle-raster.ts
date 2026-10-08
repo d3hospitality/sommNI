@@ -1,3 +1,23 @@
+import { reportBottleSource, isBackendBottle } from './bottle-assets';
+
+/** One URL, or several tried in order (the backend's glasses bottle, then the bundled photograph). */
+export type BottleSource = string | readonly string[];
+export const bottleSourceKey = (source: BottleSource) => typeof source === 'string' ? source : source.join(' ');
+/** The first source that answers wins. A slow backend gets 6 s before the next source is tried. */
+export async function fetchBottleBlob(source: BottleSource): Promise<Blob> {
+  const list = typeof source === 'string' ? [source] : source;
+  let failure: unknown = new Error('Bottle photograph unavailable');
+  for (const [i, url] of list.entries()) {
+    try {
+      const response = await fetch(url, i < list.length - 1 && isBackendBottle(url) ? { signal: AbortSignal.timeout(6000) } : undefined);
+      reportBottleSource(url, response.status);
+      if (response.ok) { console.debug(`[wineLENS] bottle ← ${isBackendBottle(url) ? 'backend' : 'bundled'} ${url.split('?')[0].split('/').pop()}`); return await response.blob(); }
+      failure = new Error(`Bottle photograph unavailable (${response.status})`);
+    } catch (error) { reportBottleSource(url, null); failure = error; }
+  }
+  throw failure;
+}
+
 // Keep the subject large without stretching the bottle or punching holes in dark glass.
 export function alphaBounds(data: Uint8ClampedArray, width: number, height: number) {
   let left=width, top=height, right=-1, bottom=-1;
@@ -6,10 +26,8 @@ export function alphaBounds(data: Uint8ClampedArray, width: number, height: numb
   }
   return right < left ? {x:0,y:0,width,height} : {x:left,y:top,width:right-left+1,height:bottom-top+1};
 }
-export async function bottleCanvas(source: string, width: number, height: number): Promise<HTMLCanvasElement> {
-  const response=await fetch(source);
-  if(!response.ok) throw new Error('Bottle photograph unavailable');
-  const bitmap=await createImageBitmap(await response.blob());
+export async function bottleCanvas(source: BottleSource, width: number, height: number): Promise<HTMLCanvasElement> {
+  const bitmap=await createImageBitmap(await fetchBottleBlob(source));
   try {
     const original=document.createElement('canvas'); original.width=bitmap.width; original.height=bitmap.height;
     const ctx=original.getContext('2d')!;ctx.drawImage(bitmap,0,0);
@@ -28,10 +46,8 @@ export async function bottleCanvas(source: string, width: number, height: number
 // The bottle stands on a small "stage": a faint spotlight behind it, a pool of light on
 // the floor and a short reflection fading below the base. All of it lives in the lowest
 // brightness levels, so after tone mapping it reads as dithered atmosphere, not a shape.
-export async function stageCanvas(source: string, width: number, height: number): Promise<HTMLCanvasElement> {
-  const response=await fetch(source);
-  if(!response.ok) throw new Error('Bottle photograph unavailable');
-  const bitmap=await createImageBitmap(await response.blob());
+export async function stageCanvas(source: BottleSource, width: number, height: number): Promise<HTMLCanvasElement> {
+  const bitmap=await createImageBitmap(await fetchBottleBlob(source));
   try {
     const probe=document.createElement('canvas'); probe.width=bitmap.width; probe.height=bitmap.height;
     const pctx=probe.getContext('2d')!; pctx.drawImage(bitmap,0,0);

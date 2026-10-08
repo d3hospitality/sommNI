@@ -7,8 +7,7 @@ import { allStates, saveStatus, onStudyChange, flagCard, retrySave, currentOwner
 import { activeSession, startSession, endSession, onSessionChange, buildQueue, nextDueAt } from './session';
 import { studySyncState, syncStudy } from './sync';
 import { dueLabel, type Rating } from './scheduler';
-import { assetIdFor } from '../identity';
-import { bottleImageUrl } from '../bottle-assets';
+import { catalogPhotoUrl } from '../bottle-assets';
 import { getQuizHistory } from '../sync';
 
 const RATINGS: Rating[] = ['again', 'hard', 'good', 'easy'];
@@ -116,9 +115,9 @@ function sessionHtml(): string {
   }
   const p = s.current;
   const card = p.card;
-  const asset = card.hide_image ? null : assetIdFor(card.wine_id);
-  const image = asset ? `<img class="st-bottle" src="${esc(bottleImageUrl('./', asset))}" alt="${esc(card.subject)} bottle (catalog photograph, label year may differ)">`
-    : `<div class="st-bottle st-hidden-label" role="img" aria-label="Bottle hidden">LABEL<br>HIDDEN<span>so it can’t give the answer away</span></div>`;
+  const photo = card.hide_image ? null : catalogPhotoUrl('./', card.wine_id);
+  const image = photo ? `<img class="st-bottle" src="${esc(photo)}" alt="${esc(card.subject)} bottle (catalog photograph, label year may differ)">`
+    : card.hide_image ? `<div class="st-bottle st-hidden-label" role="img" aria-label="Bottle hidden">LABEL<br>HIDDEN<span>so it can’t give the answer away</span></div>` : '';
   let body = '';
   if (p.mode === 'recognition') {
     body = `<div class="st-options" role="group" aria-label="Choose an answer">${card.options!.map(o => {

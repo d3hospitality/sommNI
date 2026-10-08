@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const { chromium } = require('playwright');
 const { createServer } = require('node:http');
 const { randomUUID } = require('node:crypto');
@@ -32,7 +33,7 @@ const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.ttf'
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const local=`http://127.0.0.1:${server.address().port}`;
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined),headless:true});
  try{
-  const site=await browser.newPage(),phone=await browser.newPage(),errors=[];site.on('pageerror',e=>errors.push(e.message));phone.on('pageerror',e=>errors.push(e.message));
+  const site=await browser.newPage(),phone=await browser.newPage(),errors=[];await serveG2Bottles(phone);site.on('pageerror',e=>errors.push(e.message));phone.on('pageerror',e=>errors.push(e.message));
   let pro=false,remaining=5,tokens=220,saves=0,scans=0,auto=false;
   const status=()=>({plan:pro?'pro':'free',pro,tokens,auto_spend:auto,scan_available:true,billing_available:false,rate_card:card,packs:card.packs,ledger:[],end:new Date(Date.now()+86400000).toISOString(),allowances:Object.fromEntries(Object.entries(card.features).map(([k,v])=>[k,{limit:v[pro?'pro':'free'],remaining:k==='label_scan'?remaining:v[pro?'pro':'free']}]))});
   await site.addInitScript(s=>localStorage.setItem('winelens_site_session_v1',JSON.stringify(s)),webSession);

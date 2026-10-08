@@ -6,11 +6,10 @@
 
 import { EvenAppBridge, ImageRawDataUpdate, ImageRawDataUpdateResult, type RebuildPageContainer } from '@evenrealities/even_hub_sdk';
 import { validateGlassesPage } from './glasses-page';
-import { bottleCanvas, stageCanvas, ruleCanvas, toGreenLevels } from './bottle-raster';
+import { bottleCanvas, stageCanvas, ruleCanvas, toGreenLevels, fetchBottleBlob, type BottleSource } from './bottle-raster';
 import { encodeGrayscalePng } from './pngEncoder';
 import { brandGlassesCanvas } from './brand-mark';
-import { assetIdFor } from './identity';
-import { bottleImageUrl } from './bottle-assets';
+import { catalogBottleSources } from './bottle-assets';
 import { NOTES_IMG, NOTES_RULE } from './pages';
 
 // One queue for the bridge; old page uploads are discarded before sending.
@@ -47,7 +46,7 @@ export function currentImageEpoch(): number { return imageEpoch; }
 export async function pushGrayImage(bridge: EvenAppBridge, id: number, name: string, width: number, height: number, gray: Uint8Array, epoch=imageEpoch): Promise<void> {
   await pushImg(bridge,id,name,encodeGrayscalePng(width,height,gray),epoch);
 }
-export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, width: number, halfHeight: number): Promise<void> {
+export async function pushBottlePhoto(bridge: EvenAppBridge, source: BottleSource, width: number, halfHeight: number): Promise<void> {
   const epoch=imageEpoch;
   const canvas=await stageCanvas(source,width,halfHeight*2);
   const ctx=canvas.getContext('2d')!;
@@ -196,9 +195,8 @@ export async function pushGrapeSpriteToGlasses(bridge: EvenAppBridge, baseUrl: s
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// BOTTLE SPRITE — single 100x100 grayscale (soPHICON pattern)
-// Bottles live in /bottles/{wineId}/{wineId}-{shape}.png
-// For the glasses we just need the 100x100 container
+// BOTTLE SPRITE — single 80x80 grayscale (soPHICON pattern)
+// Source: the backend's glasses bottle (g2/bottles/<catalog id>.png), bundled photograph as fallback
 // ═══════════════════════════════════════════════════════════════════
 
 export async function pushBottleSprite(
@@ -206,13 +204,11 @@ export async function pushBottleSprite(
   containerID: number, containerName: string,
 ): Promise<void> {
   const epoch=imageEpoch;
-  // Try the bottle sprite — each wine has {wineId}/{wineId}-{shape}.png
-  // We pick the first PNG found for the wine ID
-  const asset = assetIdFor(wineId);
-  if (!asset) return; // unknown wine: no image rather than another wine's bottle
-  const bottleUrl = bottleImageUrl(baseUrl, asset);
+  // The backend's glasses bottle first, the bundled photograph as the fallback.
+  const sources = catalogBottleSources(baseUrl, wineId);
+  if (!sources.length) return; // unknown wine: no image rather than another wine's bottle
   try {
-    const canvas = await bottleCanvas(bottleUrl, 80, 80);
+    const canvas = await bottleCanvas(sources, 80, 80);
     const png = encodeGrayscalePng(80,80,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data,80));
     await pushImg(bridge, containerID, containerName, png, epoch);
     console.log(`[wineLENS] Bottle sprite pushed: ${wineId}`);
@@ -234,14 +230,10 @@ export async function pushBottleSpriteSplit(
   const W = 80;       // match container width
   const HALF = 100;   // each half height (max SDK image height = 144)
   const TOTAL = HALF * 2;
-  const asset = assetIdFor(wineId);
-  if (!asset) return;
-  const url = bottleImageUrl(baseUrl, asset);
+  const sources = catalogBottleSources(baseUrl, wineId);
+  if (!sources.length) return;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`${resp.status}`);
-    const blob = await resp.blob();
-    const bmp = await createImageBitmap(blob);
+    const bmp = await createImageBitmap(await fetchBottleBlob(sources));
 
     const cvs = document.createElement('canvas');
     cvs.width = W; cvs.height = TOTAL;
@@ -280,9 +272,9 @@ export async function pushBottleSpriteDual(
   bridge: EvenAppBridge, baseUrl: string, wineId: string | null,
   halfW: number, halfH: number,
 ): Promise<void> {
-  const asset = assetIdFor(wineId);
-  if (!asset) return;
-  try { await pushBottlePhoto(bridge, bottleImageUrl(baseUrl, asset), halfW, halfH); }
+  const sources = catalogBottleSources(baseUrl, wineId);
+  if (!sources.length) return;
+  try { await pushBottlePhoto(bridge, sources, halfW, halfH); }
   catch (error) { console.warn('Bottle image unavailable; tasting notes remain visible.', error); }
 }
 

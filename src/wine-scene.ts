@@ -15,7 +15,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import { type Country, type GlobeRenderer, type Region } from './atlas/renderer';
-import { alphaBounds, toGreenLevels } from './bottle-raster';
+import { alphaBounds, toGreenLevels, fetchBottleBlob, type BottleSource } from './bottle-raster';
 
 /** Map panel on screen: x ≥ SCENE_X; the caption strip is y < MAP_Y; the map is below it. */
 export const SCENE_X = 376, MAP_Y = 36, MAP_W = 576 - SCENE_X, MAP_H = 288 - MAP_Y;
@@ -39,7 +39,7 @@ function lensMask(x: number, y: number): number {
   return 1 - t * t * (3 - 2 * t);
 }
 
-export interface SceneInput { country: Country; region: Region | null; imageUrl: string | null }
+export interface SceneInput { country: Country; region: Region | null; imageUrl: BottleSource | null }
 /** Where the highlight landed (panel coordinates) and how to draw the tiles. */
 export interface ScenePlan { anchorX: number; anchorY: number; render(): Promise<Uint8Array[]> }
 
@@ -92,11 +92,9 @@ function countryIds(renderer: GlobeRenderer, center: [number, number], scale: nu
   return ids;
 }
 
-async function bottleLayer(url: string, width: number, height: number): Promise<{ gray: Uint8Array; alpha: Uint8Array } | null> {
+async function bottleLayer(source: BottleSource, width: number, height: number): Promise<{ gray: Uint8Array; alpha: Uint8Array } | null> {
   try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const bitmap = await createImageBitmap(await response.blob());
+    const bitmap = await createImageBitmap(await fetchBottleBlob(source));
     try {
       const probe = document.createElement('canvas'); probe.width = bitmap.width; probe.height = bitmap.height;
       const pctx = probe.getContext('2d')!; pctx.drawImage(bitmap, 0, 0);

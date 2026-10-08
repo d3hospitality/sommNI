@@ -9,6 +9,8 @@ import { accountRequest, billingStatus, costOf, requestIds, ACCOUNT_PAGE, type B
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
 import { lookupWineById } from './identity';
+import { placeLabel } from './constants';
+import { catalogPhotoUrl } from './bottle-assets';
 import { splitWineName } from './pages';
 import { libraryNotes, parseSections, SOURCE_LABEL, type NoteSection } from './notes-format';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
@@ -171,10 +173,17 @@ function render() {
   root.querySelectorAll<HTMLButtonElement>('[data-wine]').forEach(b => b.addEventListener('click', () => detail(items.find(w => w.id === b.dataset.wine)!)));
   document.getElementById('wl-account')!.textContent = userId ? 'My account ↗' : 'Link account ↗';
 }
+/** Your own bottle photo, else the catalog photograph of the wine it was saved from. */
+function photoOf(w: LibraryWine): { url: string; own: boolean } | null {
+  if (w.image_url) return { url: w.image_url, own: true };
+  const url = catalogPhotoUrl(import.meta.env.BASE_URL || './', w.wine_id);
+  return url ? { url, own: false } : null;
+}
 function card(w: LibraryWine): string {
+  const photo = photoOf(w);
   const notes = libraryNotes(w);
   const tag = notes.source === 'generated' ? 'wineLENS notes' : notes.source === 'catalog' ? 'Catalog notes' : notes.source === 'scan' ? 'Scan draft' : notes.source ? 'Your notes' : 'No notes yet';
-  return `<article class="wl-bottle-card"><button class="wl-bottle-open" data-wine="${esc(w.id)}"><div class="wl-bottle-stage">${w.image_url ? `<img src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle" loading="lazy">` : '<span class="wl-photo-placeholder">PHOTO<br>TO COME<span>＋</span></span>'}<span class="wl-vintage">${esc(vintageLabel(w))}</span></div><div class="wl-bottle-copy"><p class="wl-kicker">${esc(styleOf(w))} · ${esc(w.region || w.metadata?.country || 'YOUR COLLECTION')}</p><h3>${esc(w.wine_name)}</h3><p>${esc(w.producer || w.metadata?.grape || 'Explore this bottle')} <span>↗</span></p><small>${esc(tag)}${w.metadata?.image_source === 'generated' ? ' · Studio image' : ''}</small></div></button></article>`;
+  return `<article class="wl-bottle-card"><button class="wl-bottle-open" data-wine="${esc(w.id)}"><div class="wl-bottle-stage">${photo ? `<img src="${esc(photo.url)}" alt="${esc(w.wine_name)} bottle${photo.own ? '' : ' (catalog photograph)'}" loading="lazy">` : '<span class="wl-photo-placeholder">PHOTO<br>TO COME<span>＋</span></span>'}<span class="wl-vintage">${esc(vintageLabel(w))}</span></div><div class="wl-bottle-copy"><p class="wl-kicker">${esc(styleOf(w))} · ${esc(w.region || w.metadata?.country || 'YOUR COLLECTION')}</p><h3>${esc(w.wine_name)}</h3><p>${esc(w.producer || w.metadata?.grape || 'Explore this bottle')} <span>↗</span></p><small>${esc(tag)}${w.metadata?.image_source === 'generated' ? ' · Studio image' : photo && !photo.own ? ' · Catalog photo' : ''}</small></div></button></article>`;
 }
 
 // ── Add / edit ────────────────────────────────────────────────────────
@@ -247,10 +256,10 @@ function scanLabel() {
 
 // ── Wine page ─────────────────────────────────────────────────────────
 function detail(wine: LibraryWine) {
-  const notes = libraryNotes(wine), twin = lookupWineById(wine.wine_id);
+  const notes = libraryNotes(wine), twin = lookupWineById(wine.wine_id), photo = photoOf(wine);
   const hasOwn = !!wine.notes?.trim();
-  openDialog(`<p class="wl-kicker">${esc(vintageLabel(wine))} · ${esc(styleOf(wine))}${wine.metadata?.grape ? ' · ' + esc(wine.metadata.grape) : ''}</p><h2>${esc(wine.wine_name)}</h2><p class="wl-muted">${esc([wine.producer, wine.region, wine.region && wine.metadata?.country && wine.region.includes(wine.metadata.country) ? '' : wine.metadata?.country].filter(Boolean).join(' · '))}</p>
-    <div class="wl-detail-grid"><div class="wl-detail-photo">${wine.image_url ? `<img src="${esc(wine.image_url)}" alt="${esc(wine.wine_name)} bottle">` : '<span class="wl-photo-placeholder">YOUR BOTTLE<br>IN FOCUS<span>＋</span></span>'}<button id="wl-photo" class="wl-outline">${wine.image_url ? 'Change bottle image' : 'Add bottle photo'} ↗</button></div>
+  openDialog(`<p class="wl-kicker">${esc(vintageLabel(wine))} · ${esc(styleOf(wine))}${wine.metadata?.grape ? ' · ' + esc(wine.metadata.grape) : ''}</p><h2>${esc(wine.wine_name)}</h2><p class="wl-muted">${esc([wine.producer, placeLabel(wine.region, wine.metadata?.country), placeLabel(wine.region, wine.metadata?.country).includes(wine.metadata?.country || '\u0000') ? '' : wine.metadata?.country].filter(Boolean).join(' · '))}</p>
+    <div class="wl-detail-grid"><div class="wl-detail-photo">${photo ? `<img src="${esc(photo.url)}" alt="${esc(wine.wine_name)} bottle${photo.own ? '' : ' (catalog photograph)'}">${photo.own ? '' : '<span class="wl-muted small">Catalog photograph · label year may differ</span>'}` : '<span class="wl-photo-placeholder">YOUR BOTTLE<br>IN FOCUS<span>＋</span></span>'}<button id="wl-photo" class="wl-outline">${wine.image_url ? 'Change bottle image' : 'Add bottle photo'} ↗</button></div>
     <section class="wl-notes-block" aria-labelledby="wl-notes-title"><div class="wl-notes-head"><p class="wl-kicker" id="wl-notes-title">TASTING NOTES</p>${notes.source ? `<span class="wl-source wl-source-${notes.source}">${esc(SOURCE_LABEL[notes.source])}</span>` : ''}</div>
     ${notes.source ? notesHTML(notes.sections, notes.text) : '<p class="wl-muted">No notes yet. Write your own, or get wineLENS notes for this bottle and vintage.</p>'}
     <div class="wl-notes-actions">${notes.source === 'generated' ? '' : '<button id="wl-draft-notes" class="wl-primary">✦ Get tasting notes</button>'}<button id="wl-edit" class="wl-outline">${hasOwn ? 'Edit wine & notes' : 'Write my own notes'}</button></div>

@@ -1,9 +1,10 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || (process.platform==='darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined),headless:true});
- const page=await browser.newPage();await page.goto((BASE + '/sommNI/'));
+ const page=await browser.newPage();await serveG2Bottles(page);await page.goto((BASE + '/sommNI/'));
  const result=await page.evaluate(async()=>{
   const g=await import('/sommNI/src/winebrary-glasses.ts');
   const raster=await import('/sommNI/src/bottle-raster.ts');const images=await import('/sommNI/src/image-utils.ts');
@@ -25,9 +26,14 @@ const assert=require('node:assert/strict');
   const dims=updates.map(u=>{const b=new Uint8Array(u.imageData);const v=new DataView(b.buffer);return [v.getUint32(16),v.getUint32(20)];});
   updates=[];const stale=images.pushBottlePhoto(bridge,wine.image_url,100,120);images.invalidateImages();await stale;const staleCount=updates.length;
   updates=[];await Promise.all([images.pushBottlePhoto(bridge,wine.image_url,100,120),images.pushBottlePhoto(bridge,wine.image_url,100,120)]);
+  // A wine saved from the catalog with no photo of its own shows its catalog bottle (backend first); a wine with neither shows text only.
+  const twin={...wine,image_url:undefined,wine_id:'wl_grand-malbec-terrazas-de-los-andes'},plain={...wine,image_url:undefined,wine_id:null};
+  const twinSource=g.libraryBottle(twin),twinPage=g.buildLibraryWinePage(twin),plainPage=g.buildLibraryWinePage(plain);
+  const catalogTwin={source:Array.isArray(twinSource)&&twinSource[0].includes('/g2/bottles/wl_grand-malbec-terrazas-de-los-andes.png'),images:twinPage.imageObject.length,textX:twinPage.textObject[0].xPosition,plainImages:plainPage.imageObject.length,plainX:plainPage.textObject[0].xPosition};
   await g.clearPrivateGlasses();const cleared=!g.handleLibraryGlassesEvent({sysEvent:{eventType:0}});
-  return {bounds,capture,alpha,levels:[...gray].every(v=>v%17===0),bottleHeight:maxY-minY+1,rejection,inactiveAfterReject,dims,staleCount,maxActive,cleared};
+  return {bounds,capture,alpha,levels:[...gray].every(v=>v%17===0),bottleHeight:maxY-minY+1,rejection,inactiveAfterReject,dims,staleCount,maxActive,cleared,catalogTwin};
  });
  assert.equal(result.bounds,true);assert.equal(result.capture,1);assert.deepEqual(result.alpha,{x:2,y:1,width:1,height:1});assert.ok(result.bottleHeight>250);assert.equal(result.levels,true);assert.equal(result.rejection,true);assert.equal(result.inactiveAfterReject,true);assert.deepEqual(result.dims,[[100,120],[100,120]]);assert.equal(result.staleCount,0);assert.equal(result.maxActive,1);assert.equal(result.cleared,true);
+ assert.deepEqual(result.catalogTwin,{source:true,images:2,textX:132,plainImages:0,plainX:24},'catalog twins show their catalog bottle; plain wines stay text-only');
  console.log(JSON.stringify(result));await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

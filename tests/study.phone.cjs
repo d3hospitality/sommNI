@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // Phone study flow in the real app: sourced card → attempt → reveal with source →
 // one persisted review → correct next due date (next day, with a fixed clock).
@@ -9,7 +10,7 @@ const output=process.env.WINELENS_TEST_OUTPUT||require('os').tmpdir()+'/winelens
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined),headless:true});
  try {
-  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const context=await browser.newContext({viewport:{width:390,height:844}});await serveG2Bottles(context);
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   // No account: the guest log stays on this device. No network API is reached.
   await page.route('**/api/**',r=>r.fulfill({status:404,json:{error:'not in this test'}}));

@@ -59,26 +59,29 @@ Double-tap on any page (except Notes) to activate voice search:
 ### Requirements
 
 - Node.js 18+
-- Even Hub CLI (`npm install -g @aspect-build/evenhub-cli`)
-- OpenAI API key (for voice search)
+- Even Hub CLI and simulator (`evenhub`, `evenhub-simulator`)
 
 ### Setup
 
 ```bash
 git clone https://github.com/d3hospitality/sommNI.git
 cd sommNI
-
 npm install
 
-# Create .env file with your OpenAI key
-echo "VITE_OPENAI_API_KEY=your-key-here" > .env
-
-# Run locally
+# Run the app (the base path is /sommNI/)
 npm run dev
 
-# In another terminal, start the simulator
-evenhub-simulator http://localhost:5173
+# Optional: the wineLENS site/API locally, and point the app at it
+#   (glasses bottles come from <backend>/g2/bottles/, bundled photographs are the fallback)
+npm run dev:site
+VITE_API_BASE_URL=http://127.0.0.1:5187 npm run dev
+
+# In another terminal, the simulator (automation API: screenshots, console, ring input)
+evenhub-simulator http://localhost:5173/sommNI/ --automation-port <port>
 ```
+
+Never put secrets in `VITE_*` variables: they are compiled into the app. OpenAI, Stripe and the
+Supabase service role live only in the server environment (see `docs/winelens/AUDIT-2026-10-07.md`).
 
 ### Build & Deploy
 

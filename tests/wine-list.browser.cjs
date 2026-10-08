@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 // Wine lists on the phone, end to end: the browser talks to the real wine-list handler
 // (real resolver, in-memory database, fake model), so every chip on screen is the resolver's answer.
 const BASE = process.env.WL_BASE_URL || 'http://127.0.0.1:5192';
@@ -47,7 +48,7 @@ let failureDump = async () => {};
     allowances: { label_scan: { remaining: 60, limit: 60 }, tasting_notes: { remaining: 60, limit: 60 }, studio_render: { remaining: 10, limit: 10 }, wine_list_page: { remaining: 5, limit: 5 }, wine_list_text: { remaining: 100, limit: 100 } } };
 
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined), headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 1000 } });await serveG2Bottles(context);
   const errors = [];
   await context.route('https://mcmtasetompygfktzhpr.supabase.co/auth/**', route => route.fulfill({ json: session.user }));
   await context.route('**/api/**', async route => {

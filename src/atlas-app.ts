@@ -19,9 +19,10 @@ import { AtlasGlasses } from './atlas/glasses';
 import { claimDisplay, dropDisplay } from './display';
 import { rebuildGlassesPage, invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
 import { rebuildHomePage, buildTastingNotesPage } from './pages';
-import { allCatalogWines, lookupWineById, assetIdFor, type CatalogWine } from './identity';
-import { bottleImageUrl } from './bottle-assets';
-import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
+import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
+import { catalogBottleSources } from './bottle-assets';
+import type { BottleSource } from './bottle-raster';
+import { readLibrary, libraryBottle, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
 import { planWineScene, type ScenePlan } from './wine-scene';
 import { TYPE_DISPLAY } from './constants';
 import type { LibraryWine } from './winebrary';
@@ -81,7 +82,7 @@ async function libraryWineScene(wine: LibraryWine): Promise<ScenePlan | null> {
   const renderer = await loadAtlasRenderer();
   const placed = placeLibraryWine(renderer, linkTable(), wine);
   if (!placed.country) return null;
-  return planWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: wine.image_url ?? null });
+  return planWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: libraryBottle(wine) });
 }
 
 /** Map data is ~1 MB: load it once, on first use (Atlas entry or first country list). */
@@ -305,13 +306,13 @@ export async function atlasLibraryChanged(): Promise<void> {
 // same Atlas view. Each page claims the display, so the Atlas transport is idle first.
 let notesOpen = false;
 let openingWine = false;
-function selectedBottle(): string | null | undefined {
+function selectedBottle(): BottleSource | null | undefined {
   if (!navigator || navigator.mode !== 'detail') return undefined;
   const entry = navigator.wines[navigator.wineIndex];
   if (!entry) return null;
-  if (entry.kind === 'library' && entry.wine.image_url) return entry.wine.image_url;
-  const asset = assetIdFor(entry.kind === 'catalog' ? entry.item.id : entry.wine.wine_id);
-  return asset ? bottleImageUrl(baseUrl, asset) : null;
+  if (entry.kind === 'library') return libraryBottle(entry.wine);
+  const sources = catalogBottleSources(baseUrl, entry.item.id);
+  return sources.length ? sources : null;
 }
 async function openCatalogNotes(item: CatalogWine): Promise<void> {
   if (!bridge) return;

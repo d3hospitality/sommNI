@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const BASE=process.env.WL_BASE_URL||'http://localhost:5186';
@@ -11,7 +12,7 @@ const opts={executablePath:process.env.CHROME_PATH||(process.platform==='darwin'
  const browser=await chromium.launch(opts);
  try {
  for(const host of [false,true]){
-  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));let reply=200,redeemed=[],unlinked=0;
+  const page=await browser.newPage();await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));let reply=200,redeemed=[],unlinked=0;
   if(host)await page.addInitScript(()=>{
    window.__hostStorage={};window.__bridgeCalls=[];
    window.flutter_inappwebview={callHandler:async(name,arg)=>{

@@ -12,7 +12,7 @@ import {
 } from '@evenrealities/even_hub_sdk';
 import {
   WINE_TYPES, TYPE_DISPLAY, COUNTRIES,
-  getGrapesForCountry, getWinesForGrape, getWinesForCountry,
+  getGrapesForCountry, getWinesForGrape, getWinesForCountry, placeLabel,
   getFlavorOptionsForType, getWineDisplayName,
   Wine, WineType,
 } from './constants';
@@ -363,7 +363,7 @@ export function buildTastingNotesPage(wine: Wine, wineId: string | null): Rebuil
   const type = lookupWineById(wineId)?.type;
   const style = (wine.style || '').replace(/\s*[–-]\s*/g, ', ');
   const kickerText = clipChars([wine.grape, type, style].filter(Boolean).join(' · ').toUpperCase(), PER_LINE);
-  const subText = clipChars([producer, wine.region].filter(Boolean).join(' · '), PER_LINE);
+  const subText = clipChars([producer, placeLabel(wine.region, lookupWineById(wineId)?.country)].filter(Boolean).join(' · '), PER_LINE);
 
   let y = 2;
   const kicker = new TextContainerProperty({
@@ -629,7 +629,8 @@ export function buildPairingsListPage(pairings: Pairing[], page = 0): RebuildPag
   const header = new TextContainerProperty({
     xPosition: PANEL_TAG_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_TAG_X, height: FINDER_STEP_H,
     containerID: 5, containerName: "header",
-    content: `Wine Pairings\n${pairings.length} saved`,
+    // Empty: say where pairings come from instead of a bare "0 saved".
+    content: pairings.length ? `Wine Pairings\n${pairings.length} saved` : 'No pairings yet.\nCreate one in Pairings\non your phone.',
     isEventCapture: 0,
   });
 

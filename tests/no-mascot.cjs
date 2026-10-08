@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
@@ -5,7 +6,7 @@ const fs=require('node:fs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined),headless:true});
  try {
-  const page=await browser.newPage();
+  const page=await browser.newPage();await serveG2Bottles(page);
   await page.route((BASE + '/sommNI/'),r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>Display test</title>'}));
   await page.goto((BASE + '/sommNI/'));
   const result=await page.evaluate(async()=>{

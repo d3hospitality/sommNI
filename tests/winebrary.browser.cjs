@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');const fs=require('fs');const path=require('path');
@@ -11,7 +12,7 @@ const draftNotes={appearance:'Deep ruby with a purple rim.',nose:'Blackberry, vi
 const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE  '+draftNotes.palate,'FINISH  '+draftNotes.finish].join('\n\n');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || (process.platform==='darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined),headless:true});
- const page=await browser.newPage({viewport:{width:1440,height:1050}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await browser.newPage({viewport:{width:1440,height:1050}});await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  let items=[],adds=[],updates=[],attach=[],notes=[],noteCalls=0,renderFail=true;const sharedKeys=new Set();
  const status={pro:true,plan:'pro',tokens:100,auto_spend:false,scan_available:true,rate_card:card,allowances:{label_scan:{remaining:60,limit:60},tasting_notes:{remaining:60,limit:60},studio_render:{remaining:10,limit:10}}};
  await page.route('https://mcmtasetompygfktzhpr.supabase.co/auth/**',route=>route.fulfill({json:session.user}));
@@ -91,7 +92,7 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  assert.equal(noteCalls,1,'the job ran once for 2017');
  await page.getByRole('button',{name:'Close dialog',exact:true}).click();await page.screenshot({path:path.resolve(output,'wineLENS-Winebrary-Preview.png'),fullPage:true});
  await page.getByRole('button',{name:'My account ↗'}).click();await page.getByText('wineLENS Pro · 100 tokens').waitFor();await page.getByRole('button',{name:'Unlink this device',exact:true}).click();await page.getByRole('button',{name:'Link account ↗',exact:true}).waitFor();assert.equal(await page.locator('[data-wine]').count(),0);
- const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});await mobile.goto((BASE + '/sommNI/'));await mobile.evaluate(()=>document.fonts.ready);await mobile.waitForTimeout(500);await mobile.screenshot({path:path.resolve(output,'wineLENS-Revamp-Mobile.png'),fullPage:true});
+ const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});await serveG2Bottles(mobile);await mobile.goto((BASE + '/sommNI/'));await mobile.evaluate(()=>document.fonts.ready);await mobile.waitForTimeout(500);await mobile.screenshot({path:path.resolve(output,'wineLENS-Revamp-Mobile.png'),fullPage:true});
  assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['code-linked account session','private Winebrary add','explicit vintage','tasting notes: cost line, reviewed draft, explicit save','token consent gate','same bottle + vintage reused free (job ran once)','photo upload','studio failure preserves wine','approve studio image','G2 disconnected state','add another vintage preserves original','unlink clears collection'],errors}));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

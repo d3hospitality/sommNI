@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // G2 "Study today" against a mock Even bridge: page limits, tap/double-tap flow,
 // one review per presentation, and phone ↔ G2 parity on the shared session.
@@ -7,7 +8,7 @@ const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined),headless:true});
  try {
-  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const page=await browser.newPage();await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error')console.log('[page]',m.text());});
   await page.route((BASE + '/sommNI/'),r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 study test</title>'}));
   await page.goto((BASE + '/sommNI/'));

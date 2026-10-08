@@ -6,7 +6,9 @@ import { ruleCanvas, toGreenLevels } from './bottle-raster';
 import { lookupWineById } from './identity';
 import { glassesNotes } from './notes-format';
 import { claimDisplay, dropDisplay } from './display';
-import { bottleCanvas } from './bottle-raster';
+import { bottleCanvas, type BottleSource } from './bottle-raster';
+import { catalogBottleSources } from './bottle-assets';
+import { placeLabel } from './constants';
 import { rebuildHomePage } from './pages';
 import { pageList, clipLabel, clipBytes, labelBytes, wholeRowHeight, LIST_LABEL_MAX, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
@@ -46,6 +48,12 @@ const NAV_SETTLE_MS = 350; // swallow the ghost click that can follow a page reb
 let readSource: () => LibrarySource = () => ({ userId: null, loading: false, error: '', items: [] });
 
 export function connectWinebraryGlasses(value: EvenAppBridge, url: string) { bridge=value; baseUrl=url; void flushPendingCache(); }
+/** The bottle the glasses show for a Winebrary wine: your own photo, else the catalog bottle it was saved from. */
+export function libraryBottle(wine: LibraryWine): BottleSource | null {
+  if (wine.image_url) return wine.image_url;
+  const sources = catalogBottleSources(baseUrl, wine.wine_id);
+  return sources.length ? sources : null;
+}
 export function setWinebraryDeviceConnected(value: boolean) { connected=value; }
 export function canShowWine() { return !!bridge && connected && !sending; }
 export function isLibraryActive() { return active; }
@@ -135,7 +143,7 @@ export function libraryListPage(list: WineGroup[], page: number): ListPage {
   return pageList(list.map(groupLabel), page);
 }
 function vintageListPage(g: WineGroup, page: number): ListPage {
-  return pageList(g.wines.map(w => [vintageLong(w), w.region].filter(Boolean).join(' · ')), page);
+  return pageList(g.wines.map(w => [vintageLong(w), placeLabel(w.region, w.metadata?.country)].filter(Boolean).join(' · ')), page);
 }
 
 // ═══ PAGE BUILDERS ═══
@@ -227,10 +235,10 @@ function buildMessagePage(reason: MessageReason): RebuildPageContainer {
  */
 export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' | 'Atlas' = 'Home', scene: WinePlace | null = null, plan: ScenePlan | null = null): RebuildPageContainer {
   if (scene && plan) return buildSceneWinePage(wine, backTo, scene, plan);
-  const x=wine.image_url ? 132 : 24, width=560-x, per=charsPerLine(width);
+  const bottle=libraryBottle(wine), x=bottle ? 132 : 24, width=560-x, per=charsPerLine(width);
   const title=clipLabel(wine.wine_name, per*2);
   const titleH=Math.min(2, estimateLines(title, width))*LINE_H+4;
-  const facts=clipLabel([vintageLong(wine), wine.producer, wine.region].filter(Boolean).join(' · '), per);
+  const facts=clipLabel([vintageLong(wine), wine.producer, placeLabel(wine.region, wine.metadata?.country)].filter(Boolean).join(' · '), per);
   const factsY=8+titleH+2, notesY=factsY+LINE_H+10;
   const notesBottom=notesY+Math.floor((248-notesY)/LINE_H)*LINE_H+4; // whole lines, no half-cut row
   const notes=clipBytes([wine.metadata?.grape, glassesNotes(wine)].filter(Boolean).join('\n'));
@@ -241,7 +249,7 @@ export function buildLibraryWinePage(wine: LibraryWine, backTo: 'Home' | 'Back' 
     new TextContainerProperty({xPosition:x,yPosition:notesY,width,height:notesBottom-notesY,containerID:5,containerName:'library-notes',content:notes,isEventCapture:1}),
     new TextContainerProperty({xPosition:x,yPosition:254,width,height:30,containerID:6,containerName:'library-footer',content:overflow ? `Scroll for more  ·  Double tap: ${backTo}` : `Double tap: ${backTo}`,isEventCapture:0}),
   ];
-  const imageObject=wine.image_url ? [
+  const imageObject=bottle ? [
     new ImageContainerProperty({xPosition:16,yPosition:24,width:100,height:120,containerID:1,containerName:'bottle-top'}),
     new ImageContainerProperty({xPosition:16,yPosition:144,width:100,height:120,containerID:2,containerName:'bottle-bot'}),
   ] : [];
@@ -348,8 +356,8 @@ async function render(next: Screen): Promise<void> {
       const tiles = await plan.render();
       for (let i = 0; i < SCENE_TILE_NAMES.length; i++) await pushGrayImage(bridge, SCENE_TILE_NAMES[i][0], SCENE_TILE_NAMES[i][1], TILE_W, TILE_H, tiles[i], epoch);
     } catch (error) { console.warn('[wineLENS] Wine map unavailable; text stays readable.', error); }
-  } else if (next.wine.image_url) {
-    try { await pushBottlePhoto(bridge, next.wine.image_url, 100, 120); }
+  } else if (libraryBottle(next.wine)) {
+    try { await pushBottlePhoto(bridge, libraryBottle(next.wine)!, 100, 120); }
     catch (error) { console.warn('[wineLENS] Bottle image unavailable; text stays readable.', error); }
   }
 }
@@ -528,10 +536,11 @@ export async function drawGlassesPreview(wine: LibraryWine, canvas: HTMLCanvasEl
     }
     ctx.restore();
   }
-  if(wine.image_url) {
+  const bottle=libraryBottle(wine);
+  if(bottle) {
     const image=(page.imageObject || [])[0];
     try {
-      const photo=await bottleCanvas(wine.image_url,100,240);
+      const photo=await bottleCanvas(bottle,100,240);
       const pixels=photo.getContext('2d')!.getImageData(0,0,100,240);
       for(let i=0;i<pixels.data.length;i+=4){const v=Math.round((.299*pixels.data[i]+.587*pixels.data[i+1]+.114*pixels.data[i+2])/17)*17;pixels.data[i]=v*.57;pixels.data[i+1]=v*.85;pixels.data[i+2]=v*.55;}
       ctx.putImageData(pixels,image?.xPosition ?? 16,image?.yPosition ?? 24);

@@ -4,9 +4,15 @@ import { GlobeRenderer } from './renderer';
 import { AtlasNavigator } from './navigator';
 import { AtlasTransport } from './transport';
 import { validateGlassesPage } from '../glasses-page';
-import { stageCanvas, toGreenLevels } from '../bottle-raster';
+import { stageCanvas, toGreenLevels, bottleSourceKey, type BottleSource } from '../bottle-raster';
 export const ATLAS_SIZE=244;
-const clip=(s:string,n=32)=>[...s].slice(0,n).join('');
+/** n characters at most; long lines end at a word with "..." (ASCII: the G2 font may lack "…"). */
+const clip=(s:string,n=32)=>{
+  const chars=[...s]; if(chars.length<=n) return s;
+  let cut=chars.slice(0,n-3).join(''); const space=cut.lastIndexOf(' ');
+  if(space>n*0.6) cut=cut.slice(0,space);
+  return cut.replace(/[\s–—,·-]+$/,'')+'...';
+};
 export function atlasTexts(nav:AtlasNavigator) {
   return {title:clip(nav.title,32), rows:nav.rows.split('\n').map(s=>clip(s,31)).join('\n'), hint:clip(nav.hint,38)};
 }
@@ -26,7 +32,7 @@ export class AtlasGlasses {
   private transport:AtlasTransport;
   private photos=new Map<string,Uint8Array>();
   // undefined = map view; null = wine with no photograph (clear the previous wine).
-  constructor(private bridge:EvenAppBridge,public navigator:AtlasNavigator,private renderer:GlobeRenderer,private onChange:()=>void,private onError:(error:Error)=>void, private onExit?:()=>Promise<void>, private bottleSource?:()=>string|null|undefined) {
+  constructor(private bridge:EvenAppBridge,public navigator:AtlasNavigator,private renderer:GlobeRenderer,private onChange:()=>void,private onError:(error:Error)=>void, private onExit?:()=>Promise<void>, private bottleSource?:()=>BottleSource|null|undefined) {
     this.transport=new AtlasTransport(onError);
   }
   async open(startup=false) {
@@ -54,13 +60,14 @@ export class AtlasGlasses {
       if(source===undefined){gray=this.renderer.render(view,ATLAS_SIZE).gray;return;}
       gray=new Uint8Array(ATLAS_SIZE*ATLAS_SIZE);
       if(!source)return;
-      const cached=this.photos.get(source);
+      const key=bottleSourceKey(source);
+      const cached=this.photos.get(key);
       if(cached){gray=cached;return;}
       try {
         const canvas=await stageCanvas(source,ATLAS_SIZE,ATLAS_SIZE);
         gray=toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,ATLAS_SIZE,ATLAS_SIZE).data,ATLAS_SIZE);
         if(this.photos.size>=6)this.photos.delete(this.photos.keys().next().value!);
-        this.photos.set(source,gray);
+        this.photos.set(key,gray);
       } catch(error){console.warn('[Atlas] Bottle photo unavailable; wine remains selectable.',error);}
     });
     for(let half=0;half<2;half++)steps.push(async()=>{

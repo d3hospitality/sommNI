@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // G2 navigation + content-limit tests against a mock Even bridge (no glasses, no network).
 // Limits come from simulator 0.9.5 probes: list rows ≤ 63 UTF-8 bytes, text ≤ 999 bytes, ≤ 20 rows.
@@ -6,7 +7,7 @@ const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || (process.platform==='darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined),headless:true});
- const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await browser.newPage();await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{ if(m.type()==='error'||process.env.VERBOSE) console.log('[page]',m.type(),m.text()); });
  // Exercise the mock bridge in isolation: Main.ts would otherwise overwrite
  // connection state asynchronously while these direct module tests are running.

@@ -1,0 +1,1296 @@
+{
+ "count": 214,
+ "format": "PNG greyscale + alpha",
+ "height": 420,
+ "held_for_review": [
+  "w105"
+ ],
+ "pipeline": "g2-v1",
+ "source_pipeline": "photographic-v2",
+ "wines": {
+  "wl_10-anos-despues-valenciso": {
+   "asset": "w84",
+   "bytes": 27405,
+   "file": "wl_10-anos-despues-valenciso.png",
+   "sha256": "2c9510ebb4999c85"
+  },
+  "wl_albarino-eidos": {
+   "asset": "w148",
+   "bytes": 15630,
+   "file": "wl_albarino-eidos.png",
+   "sha256": "d80bb6a5f6fc20a7"
+  },
+  "wl_albarino-mar-de-frades": {
+   "asset": "w149",
+   "bytes": 21881,
+   "file": "wl_albarino-mar-de-frades.png",
+   "sha256": "51f5e4a6c7db3a1a"
+  },
+  "wl_aloxe-corton-louis-latour": {
+   "asset": "w3",
+   "bytes": 27390,
+   "file": "wl_aloxe-corton-louis-latour.png",
+   "sha256": "675c0cf926124bc7"
+  },
+  "wl_aloxe-corton-tollot-beaut": {
+   "asset": "w4",
+   "bytes": 21684,
+   "file": "wl_aloxe-corton-tollot-beaut.png",
+   "sha256": "7f7591ac541b8196"
+  },
+  "wl_altitudes-blanc-ixsir": {
+   "asset": "w144",
+   "bytes": 20417,
+   "file": "wl_altitudes-blanc-ixsir.png",
+   "sha256": "db0d3568a7c1ca03"
+  },
+  "wl_assyrtiko-santorini-sigalas": {
+   "asset": "w132",
+   "bytes": 21370,
+   "file": "wl_assyrtiko-santorini-sigalas.png",
+   "sha256": "59860e077cb0c2d8"
+  },
+  "wl_barbaresco-gaja": {
+   "asset": "w28",
+   "bytes": 24044,
+   "file": "wl_barbaresco-gaja.png",
+   "sha256": "b62ce27621382d62"
+  },
+  "wl_barbaresco-san-giuliano-paolo-manzone": {
+   "asset": "w26",
+   "bytes": 22314,
+   "file": "wl_barbaresco-san-giuliano-paolo-manzone.png",
+   "sha256": "8d6547f9e41ab6e1"
+  },
+  "wl_barbaresco-vanotu-pelissero": {
+   "asset": "w27",
+   "bytes": 28467,
+   "file": "wl_barbaresco-vanotu-pelissero.png",
+   "sha256": "c42247fa6c65af98"
+  },
+  "wl_barbera-d-alba-fiorenza-paolo-manzone": {
+   "asset": "w66",
+   "bytes": 23455,
+   "file": "wl_barbera-d-alba-fiorenza-paolo-manzone.png",
+   "sha256": "6de8ac3cb36e171a"
+  },
+  "wl_barbera-d-alba-piani-pelissero": {
+   "asset": "w67",
+   "bytes": 25594,
+   "file": "wl_barbera-d-alba-piani-pelissero.png",
+   "sha256": "db057d94013e10c8"
+  },
+  "wl_barolo-borgogno": {
+   "asset": "w35",
+   "bytes": 23933,
+   "file": "wl_barolo-borgogno.png",
+   "sha256": "aafa5d1bdf9b2017"
+  },
+  "wl_barolo-comune-di-verduno-fratelli-alessandria": {
+   "asset": "w29",
+   "bytes": 23507,
+   "file": "wl_barolo-comune-di-verduno-fratelli-alessandria.png",
+   "sha256": "5bd052de1d3e344c"
+  },
+  "wl_barolo-garretti-la-spinetta": {
+   "asset": "w30",
+   "bytes": 17104,
+   "file": "wl_barolo-garretti-la-spinetta.png",
+   "sha256": "5276d9d6ced321d0"
+  },
+  "wl_barolo-gianetto-guido-porro": {
+   "asset": "w31",
+   "bytes": 17211,
+   "file": "wl_barolo-gianetto-guido-porro.png",
+   "sha256": "48aa8d318504bc97"
+  },
+  "wl_barolo-riserva-paolo-manzone": {
+   "asset": "w34",
+   "bytes": 23553,
+   "file": "wl_barolo-riserva-paolo-manzone.png",
+   "sha256": "50a457d950df7e27"
+  },
+  "wl_barolo-serradenari-giulia-negri": {
+   "asset": "w32",
+   "bytes": 21766,
+   "file": "wl_barolo-serradenari-giulia-negri.png",
+   "sha256": "627d9c603511ec63"
+  },
+  "wl_barolo-serralunga-d-alba-paolo-manzone": {
+   "asset": "w33",
+   "bytes": 23917,
+   "file": "wl_barolo-serralunga-d-alba-paolo-manzone.png",
+   "sha256": "7daaf878f06db986"
+  },
+  "wl_billecart-salmon-brut-rose": {
+   "asset": "w181",
+   "bytes": 27437,
+   "file": "wl_billecart-salmon-brut-rose.png",
+   "sha256": "7206a73abd91b320"
+  },
+  "wl_brice-heritage-brut-rose": {
+   "asset": "w182",
+   "bytes": 22524,
+   "file": "wl_brice-heritage-brut-rose.png",
+   "sha256": "0b9879bfac8bf7be"
+  },
+  "wl_brunello-cerretalto-casanova-di-neri": {
+   "asset": "w36",
+   "bytes": 20743,
+   "file": "wl_brunello-cerretalto-casanova-di-neri.png",
+   "sha256": "6f483454f181bc5c"
+  },
+  "wl_brunello-di-montalcino-1-5l-col-di-lamo": {
+   "asset": "w38",
+   "bytes": 18715,
+   "file": "wl_brunello-di-montalcino-1-5l-col-di-lamo.png",
+   "sha256": "85c09ba2418d522d"
+  },
+  "wl_brunello-di-montalcino-altesino": {
+   "asset": "w40",
+   "bytes": 21956,
+   "file": "wl_brunello-di-montalcino-altesino.png",
+   "sha256": "999bc0c4a9a4012e"
+  },
+  "wl_brunello-di-montalcino-biondi-santi": {
+   "asset": "w41",
+   "bytes": 25360,
+   "file": "wl_brunello-di-montalcino-biondi-santi.png",
+   "sha256": "39b6ba52be71dfab"
+  },
+  "wl_brunello-di-montalcino-canalicchio-di-sopra": {
+   "asset": "w42",
+   "bytes": 25565,
+   "file": "wl_brunello-di-montalcino-canalicchio-di-sopra.png",
+   "sha256": "d15387ca571e9b7e"
+  },
+  "wl_brunello-di-montalcino-casanova-di-neri": {
+   "asset": "w43",
+   "bytes": 16534,
+   "file": "wl_brunello-di-montalcino-casanova-di-neri.png",
+   "sha256": "0e3fe5eb0d1d05d6"
+  },
+  "wl_brunello-di-montalcino-castello-romitorio": {
+   "asset": "w44",
+   "bytes": 26179,
+   "file": "wl_brunello-di-montalcino-castello-romitorio.png",
+   "sha256": "392f858a9689e36b"
+  },
+  "wl_brunello-di-montalcino-col-di-lamo": {
+   "asset": "w45",
+   "bytes": 21923,
+   "file": "wl_brunello-di-montalcino-col-di-lamo.png",
+   "sha256": "3f5174ce5fec031c"
+  },
+  "wl_brunello-di-montalcino-ridolfi": {
+   "asset": "w46",
+   "bytes": 21428,
+   "file": "wl_brunello-di-montalcino-ridolfi.png",
+   "sha256": "0430284ebdc50022"
+  },
+  "wl_brunello-di-montalcino-riserva-col-di-lamo": {
+   "asset": "w39",
+   "bytes": 18090,
+   "file": "wl_brunello-di-montalcino-riserva-col-di-lamo.png",
+   "sha256": "cb452539d3353fec"
+  },
+  "wl_brunello-tenuta-nuova-casanova-di-neri": {
+   "asset": "w37",
+   "bytes": 23799,
+   "file": "wl_brunello-tenuta-nuova-casanova-di-neri.png",
+   "sha256": "bb098f22514c8627"
+  },
+  "wl_cabernet-sauvignon-brother-s-vineyard-snowden": {
+   "asset": "w98",
+   "bytes": 19270,
+   "file": "wl_cabernet-sauvignon-brother-s-vineyard-snowden.png",
+   "sha256": "7fdced3432c3a4d1"
+  },
+  "wl_cabernet-sauvignon-caymus": {
+   "asset": "w101",
+   "bytes": 26346,
+   "file": "wl_cabernet-sauvignon-caymus.png",
+   "sha256": "fb376f2a47edae13"
+  },
+  "wl_cabernet-sauvignon-chimney-rock": {
+   "asset": "w102",
+   "bytes": 26072,
+   "file": "wl_cabernet-sauvignon-chimney-rock.png",
+   "sha256": "3b3f709630975680"
+  },
+  "wl_cabernet-sauvignon-faust": {
+   "asset": "w103",
+   "bytes": 21694,
+   "file": "wl_cabernet-sauvignon-faust.png",
+   "sha256": "6e09259b0c17403e"
+  },
+  "wl_cabernet-sauvignon-highest-beauty-to-kalon": {
+   "asset": "w99",
+   "bytes": 21989,
+   "file": "wl_cabernet-sauvignon-highest-beauty-to-kalon.png",
+   "sha256": "e8952b1ff6be1540"
+  },
+  "wl_cabernet-sauvignon-joseph-phelps": {
+   "asset": "w104",
+   "bytes": 25741,
+   "file": "wl_cabernet-sauvignon-joseph-phelps.png",
+   "sha256": "bf9f2b2e183d6f2c"
+  },
+  "wl_cabernet-sauvignon-palermo-orin-swift": {
+   "asset": "w100",
+   "bytes": 26861,
+   "file": "wl_cabernet-sauvignon-palermo-orin-swift.png",
+   "sha256": "056b7e677b5e51ab"
+  },
+  "wl_cabernet-sauvignon-silver-oak": {
+   "asset": "w116",
+   "bytes": 23777,
+   "file": "wl_cabernet-sauvignon-silver-oak.png",
+   "sha256": "cdad76be83b72dcc"
+  },
+  "wl_cabernet-sauvignon-sinegal-estate": {
+   "asset": "w106",
+   "bytes": 18808,
+   "file": "wl_cabernet-sauvignon-sinegal-estate.png",
+   "sha256": "f803e6c32845a7a6"
+  },
+  "wl_cabernet-sauvignon-vasse-felix": {
+   "asset": "w1",
+   "bytes": 18802,
+   "file": "wl_cabernet-sauvignon-vasse-felix.png",
+   "sha256": "d63c8171c2968e83"
+  },
+  "wl_cain-cuvee-nv14": {
+   "asset": "w95",
+   "bytes": 19870,
+   "file": "wl_cain-cuvee-nv14.png",
+   "sha256": "2fa5cfbcf1bac4b9"
+  },
+  "wl_case-via-fontodi": {
+   "asset": "w55",
+   "bytes": 24188,
+   "file": "wl_case-via-fontodi.png",
+   "sha256": "0131df11cbbbf2eb"
+  },
+  "wl_castillo-ygay-gran-reserva-especial-marques-de-murrieta": {
+   "asset": "w78",
+   "bytes": 25636,
+   "file": "wl_castillo-ygay-gran-reserva-especial-marques-de-murrieta.png",
+   "sha256": "c58d51b496e3bc0b"
+  },
+  "wl_chablis-1er-cru-fourchaume-malandes": {
+   "asset": "w123",
+   "bytes": 21885,
+   "file": "wl_chablis-1er-cru-fourchaume-malandes.png",
+   "sha256": "d2c625c36b57dfbe"
+  },
+  "wl_chablis-1er-cru-les-fourchaumes-l-enclos": {
+   "asset": "w124",
+   "bytes": 26108,
+   "file": "wl_chablis-1er-cru-les-fourchaumes-l-enclos.png",
+   "sha256": "f2c1009c9b477181"
+  },
+  "wl_chablis-william-fevre": {
+   "asset": "w125",
+   "bytes": 21975,
+   "file": "wl_chablis-william-fevre.png",
+   "sha256": "2ccdc8ce7d4ae5de"
+  },
+  "wl_chardonnay-cakebread-cellars": {
+   "asset": "w153",
+   "bytes": 20633,
+   "file": "wl_chardonnay-cakebread-cellars.png",
+   "sha256": "4ba052644694256a"
+  },
+  "wl_chardonnay-chateau-montelena": {
+   "asset": "w154",
+   "bytes": 24299,
+   "file": "wl_chardonnay-chateau-montelena.png",
+   "sha256": "e05e90e4f99fd3c7"
+  },
+  "wl_chardonnay-darioush": {
+   "asset": "w155",
+   "bytes": 21773,
+   "file": "wl_chardonnay-darioush.png",
+   "sha256": "2dcfd8100eb82041"
+  },
+  "wl_chardonnay-grgich-hills": {
+   "asset": "w156",
+   "bytes": 25627,
+   "file": "wl_chardonnay-grgich-hills.png",
+   "sha256": "b72fe8f0d649c5c1"
+  },
+  "wl_chardonnay-mannequin-orin-swift": {
+   "asset": "w152",
+   "bytes": 25067,
+   "file": "wl_chardonnay-mannequin-orin-swift.png",
+   "sha256": "13255fae1ff4c1ff"
+  },
+  "wl_chardonnay-mfn-booker": {
+   "asset": "w151",
+   "bytes": 19203,
+   "file": "wl_chardonnay-mfn-booker.png",
+   "sha256": "74b9ca83b7ab6142"
+  },
+  "wl_chardonnay-schug": {
+   "asset": "w157",
+   "bytes": 21633,
+   "file": "wl_chardonnay-schug.png",
+   "sha256": "2b52d5b0c046f2ea"
+  },
+  "wl_charles-heidsieck-reserve-brut-rose": {
+   "asset": "w183",
+   "bytes": 23836,
+   "file": "wl_charles-heidsieck-reserve-brut-rose.png",
+   "sha256": "fae798d35f0b1dc1"
+  },
+  "wl_chateau-armens-grand-cru": {
+   "asset": "w12",
+   "bytes": 20573,
+   "file": "wl_chateau-armens-grand-cru.png",
+   "sha256": "7526e653b302708e"
+  },
+  "wl_chateau-l-ecuyer": {
+   "asset": "w14",
+   "bytes": 19648,
+   "file": "wl_chateau-l-ecuyer.png",
+   "sha256": "75b3c86a82ee8d94"
+  },
+  "wl_chateau-la-gaffeliere-premier-grand-cru": {
+   "asset": "w13",
+   "bytes": 20038,
+   "file": "wl_chateau-la-gaffeliere-premier-grand-cru.png",
+   "sha256": "caabf8f46bbb7295"
+  },
+  "wl_chateau-margaux-grand-vin": {
+   "asset": "w5",
+   "bytes": 19499,
+   "file": "wl_chateau-margaux-grand-vin.png",
+   "sha256": "10108994f1a7eb0f"
+  },
+  "wl_chateau-mongravey-cru-bourgeois": {
+   "asset": "w22",
+   "bytes": 21369,
+   "file": "wl_chateau-mongravey-cru-bourgeois.png",
+   "sha256": "b3e311277d1efd55"
+  },
+  "wl_chateau-romassan-rose": {
+   "asset": "w198",
+   "bytes": 18230,
+   "file": "wl_chateau-romassan-rose.png",
+   "sha256": "32e54263f5e840bb"
+  },
+  "wl_chateauneuf-du-pape-rouge-domaine-de-marcoux": {
+   "asset": "w17",
+   "bytes": 28083,
+   "file": "wl_chateauneuf-du-pape-rouge-domaine-de-marcoux.png",
+   "sha256": "b20cd1f0a89a8d99"
+  },
+  "wl_chateauneuf-du-pape-vieilles-vignes-marcoux": {
+   "asset": "w16",
+   "bytes": 29812,
+   "file": "wl_chateauneuf-du-pape-vieilles-vignes-marcoux.png",
+   "sha256": "7bbfc67ca610e542"
+  },
+  "wl_chianti-classico-gran-selezione-san-lorenzo-castello-di": {
+   "asset": "w47",
+   "bytes": 25908,
+   "file": "wl_chianti-classico-gran-selezione-san-lorenzo-castello-di.png",
+   "sha256": "ad8bd3c38b4eaf9b"
+  },
+  "wl_chianti-classico-montebuoni-castello-di-ama": {
+   "asset": "w25",
+   "bytes": 24574,
+   "file": "wl_chianti-classico-montebuoni-castello-di-ama.png",
+   "sha256": "42a636ea554b8e56"
+  },
+  "wl_chianti-classico-riserva-volpaia": {
+   "asset": "w68",
+   "bytes": 18920,
+   "file": "wl_chianti-classico-riserva-volpaia.png",
+   "sha256": "7c3e82e782d7d97c"
+  },
+  "wl_chinon-rose-charles-joguet": {
+   "asset": "w199",
+   "bytes": 26815,
+   "file": "wl_chinon-rose-charles-joguet.png",
+   "sha256": "3dec57ec77ed8c47"
+  },
+  "wl_clos-beylesse-rose-domaine-de-l-abbaye-1-5l": {
+   "asset": "w201",
+   "bytes": 19829,
+   "file": "wl_clos-beylesse-rose-domaine-de-l-abbaye-1-5l.png",
+   "sha256": "0d9eb4b43ce635df"
+  },
+  "wl_clos-du-temple-rose-gerard-bertrand": {
+   "asset": "w204",
+   "bytes": 18165,
+   "file": "wl_clos-du-temple-rose-gerard-bertrand.png",
+   "sha256": "eda8be2812973e7b"
+  },
+  "wl_commandaria-tsiakkas": {
+   "asset": "w209",
+   "bytes": 20415,
+   "file": "wl_commandaria-tsiakkas.png",
+   "sha256": "c19d2b9801bd54b0"
+  },
+  "wl_contador-benjamin-romeo": {
+   "asset": "w81",
+   "bytes": 18604,
+   "file": "wl_contador-benjamin-romeo.png",
+   "sha256": "4d1e40300d793786"
+  },
+  "wl_corton-charlemagne-grand-cru-louis-latour": {
+   "asset": "w118",
+   "bytes": 28989,
+   "file": "wl_corton-charlemagne-grand-cru-louis-latour.png",
+   "sha256": "43b3b83fe77373cd"
+  },
+  "wl_cote-rotie-la-mouline-guigal": {
+   "asset": "w18",
+   "bytes": 29593,
+   "file": "wl_cote-rotie-la-mouline-guigal.png",
+   "sha256": "56c16362458f2602"
+  },
+  "wl_cote-rotie-la-turque-guigal": {
+   "asset": "w19",
+   "bytes": 26482,
+   "file": "wl_cote-rotie-la-turque-guigal.png",
+   "sha256": "98d91ac28caeeced"
+  },
+  "wl_cote-rotie-mon-village-stephane-ogier": {
+   "asset": "w20",
+   "bytes": 18819,
+   "file": "wl_cote-rotie-mon-village-stephane-ogier.png",
+   "sha256": "de17e423fb23af28"
+  },
+  "wl_dame-de-gaffeliere-chateau-la-gaffeliere": {
+   "asset": "w23",
+   "bytes": 24720,
+   "file": "wl_dame-de-gaffeliere-chateau-la-gaffeliere.png",
+   "sha256": "0b3df91e0b8da689"
+  },
+  "wl_darius-ii-darioush": {
+   "asset": "w107",
+   "bytes": 23928,
+   "file": "wl_darius-ii-darioush.png",
+   "sha256": "f886e584b480bc70"
+  },
+  "wl_delamotte-blanc-de-blancs": {
+   "asset": "w163",
+   "bytes": 22949,
+   "file": "wl_delamotte-blanc-de-blancs.png",
+   "sha256": "28716798e0ac6c5a"
+  },
+  "wl_dom-perignon": {
+   "asset": "w164",
+   "bytes": 25783,
+   "file": "wl_dom-perignon.png",
+   "sha256": "03baeea8edf705fb"
+  },
+  "wl_dom-ruinart-blanc-de-blancs": {
+   "asset": "w165",
+   "bytes": 28337,
+   "file": "wl_dom-ruinart-blanc-de-blancs.png",
+   "sha256": "a41d8dc44a5f62d7"
+  },
+  "wl_dosnon-recolte-brute-extra-brut": {
+   "asset": "w191",
+   "bytes": 24556,
+   "file": "wl_dosnon-recolte-brute-extra-brut.png",
+   "sha256": "5384a2687b005c12"
+  },
+  "wl_double-diamond-cabernet-schrader": {
+   "asset": "w108",
+   "bytes": 20447,
+   "file": "wl_double-diamond-cabernet-schrader.png",
+   "sha256": "fee85afeae123aeb"
+  },
+  "wl_encruzado-joao-cabral-almeida": {
+   "asset": "w146",
+   "bytes": 22398,
+   "file": "wl_encruzado-joao-cabral-almeida.png",
+   "sha256": "82f5ce1dabe1f80d"
+  },
+  "wl_fantastique-rose-chateau-sainte-marguerite": {
+   "asset": "w202",
+   "bytes": 26662,
+   "file": "wl_fantastique-rose-chateau-sainte-marguerite.png",
+   "sha256": "53c6ee5210490c03"
+  },
+  "wl_ferrari-trento-trentodoc-brut": {
+   "asset": "w192",
+   "bytes": 23231,
+   "file": "wl_ferrari-trento-trentodoc-brut.png",
+   "sha256": "27a6d09b94447367"
+  },
+  "wl_ferrari-trento-trentodoc-brut-rose": {
+   "asset": "w194",
+   "bytes": 24701,
+   "file": "wl_ferrari-trento-trentodoc-brut-rose.png",
+   "sha256": "804fb06f0e7be32e"
+  },
+  "wl_flaccianello-della-pieve-fontodi": {
+   "asset": "w48",
+   "bytes": 22194,
+   "file": "wl_flaccianello-della-pieve-fontodi.png",
+   "sha256": "d32bb730028dd1f4"
+  },
+  "wl_g-h-mumm-grand-cordon-brut-rose": {
+   "asset": "w184",
+   "bytes": 27101,
+   "file": "wl_g-h-mumm-grand-cordon-brut-rose.png",
+   "sha256": "d6ba2a789912f89a"
+  },
+  "wl_gabriel-adobe-guadalupe": {
+   "asset": "w72",
+   "bytes": 23104,
+   "file": "wl_gabriel-adobe-guadalupe.png",
+   "sha256": "7d81d0e46be9f569"
+  },
+  "wl_garrus-rose-chateau-d-esclans": {
+   "asset": "w205",
+   "bytes": 19902,
+   "file": "wl_garrus-rose-chateau-d-esclans.png",
+   "sha256": "cbdc9d2021308ede"
+  },
+  "wl_gaston-chiquet-rose-1er-cru": {
+   "asset": "w185",
+   "bytes": 23894,
+   "file": "wl_gaston-chiquet-rose-1er-cru.png",
+   "sha256": "50cffe79bf348c4a"
+  },
+  "wl_gavi-del-comune-di-gavi-villa-sparina": {
+   "asset": "w133",
+   "bytes": 25322,
+   "file": "wl_gavi-del-comune-di-gavi-villa-sparina.png",
+   "sha256": "ec3238fe7327b539"
+  },
+  "wl_gevrey-chambertin-jean-claude-boisset": {
+   "asset": "w6",
+   "bytes": 19231,
+   "file": "wl_gevrey-chambertin-jean-claude-boisset.png",
+   "sha256": "6fef86e4dc6cda68"
+  },
+  "wl_gevrey-chambertin-taupenot-merme": {
+   "asset": "w7",
+   "bytes": 22963,
+   "file": "wl_gevrey-chambertin-taupenot-merme.png",
+   "sha256": "538cfc138b91e552"
+  },
+  "wl_grand-malbec-terrazas-de-los-andes": {
+   "asset": "w0",
+   "bytes": 18519,
+   "file": "wl_grand-malbec-terrazas-de-los-andes.png",
+   "sha256": "4dbdacd26c2137d7"
+  },
+  "wl_grand-reserve-rose-ixsir": {
+   "asset": "w206",
+   "bytes": 23015,
+   "file": "wl_grand-reserve-rose-ixsir.png",
+   "sha256": "a7cc5198f81fb087"
+  },
+  "wl_grillo-riserva-kheire-gorghi-tondi": {
+   "asset": "w140",
+   "bytes": 25010,
+   "file": "wl_grillo-riserva-kheire-gorghi-tondi.png",
+   "sha256": "bf0e438d8d5c35ef"
+  },
+  "wl_gruner-veltliner-ebner-ebenauer": {
+   "asset": "w117",
+   "bytes": 19851,
+   "file": "wl_gruner-veltliner-ebner-ebenauer.png",
+   "sha256": "a76938a38690bde7"
+  },
+  "wl_haiku-castello-di-ama": {
+   "asset": "w51",
+   "bytes": 23792,
+   "file": "wl_haiku-castello-di-ama.png",
+   "sha256": "46b3a935ceed8c4d"
+  },
+  "wl_henriot-brut-rose": {
+   "asset": "w186",
+   "bytes": 22816,
+   "file": "wl_henriot-brut-rose.png",
+   "sha256": "deb1c5001590983d"
+  },
+  "wl_henry-s-seven-henschke": {
+   "asset": "w2",
+   "bytes": 18870,
+   "file": "wl_henry-s-seven-henschke.png",
+   "sha256": "84d0ae22b006de3f"
+  },
+  "wl_hermitage-jean-louis-chave": {
+   "asset": "w21",
+   "bytes": 26790,
+   "file": "wl_hermitage-jean-louis-chave.png",
+   "sha256": "07523e994ac6df66"
+  },
+  "wl_il-blu-brancaia": {
+   "asset": "w52",
+   "bytes": 18408,
+   "file": "wl_il-blu-brancaia.png",
+   "sha256": "88a7d26ab3795992"
+  },
+  "wl_il-fauno-di-arcanum-tenuta-di-arceno": {
+   "asset": "w56",
+   "bytes": 17626,
+   "file": "wl_il-fauno-di-arcanum-tenuta-di-arceno.png",
+   "sha256": "03855f5160eb4d51"
+  },
+  "wl_ilatraia-brancaia": {
+   "asset": "w53",
+   "bytes": 26532,
+   "file": "wl_ilatraia-brancaia.png",
+   "sha256": "8a88523800e17140"
+  },
+  "wl_imperial-gran-reserva-cvne": {
+   "asset": "w79",
+   "bytes": 21335,
+   "file": "wl_imperial-gran-reserva-cvne.png",
+   "sha256": "f639c1d59852e31c"
+  },
+  "wl_irrosso-casanova-di-neri": {
+   "asset": "w57",
+   "bytes": 23748,
+   "file": "wl_irrosso-casanova-di-neri.png",
+   "sha256": "ed149598762caba8"
+  },
+  "wl_isosceles-justin": {
+   "asset": "w109",
+   "bytes": 17506,
+   "file": "wl_isosceles-justin.png",
+   "sha256": "ac36c6e76205d5f3"
+  },
+  "wl_ixsir-grand-reserve-red-blend": {
+   "asset": "w69",
+   "bytes": 18372,
+   "file": "wl_ixsir-grand-reserve-red-blend.png",
+   "sha256": "6b259ca5b8b2aecb"
+  },
+  "wl_j-lassalle-preference-1er-cru": {
+   "asset": "w166",
+   "bytes": 25933,
+   "file": "wl_j-lassalle-preference-1er-cru.png",
+   "sha256": "9939620febd70033"
+  },
+  "wl_kalmoesfontein-white-blend-a-a-badenhorst": {
+   "asset": "w147",
+   "bytes": 24422,
+   "file": "wl_kalmoesfontein-white-blend-a-a-badenhorst.png",
+   "sha256": "603563f3b7316ec7"
+  },
+  "wl_krug-grande-cuvee-170eme-edition": {
+   "asset": "w167",
+   "bytes": 22557,
+   "file": "wl_krug-grande-cuvee-170eme-edition.png",
+   "sha256": "ff2cc8841b957563"
+  },
+  "wl_laurent-perrier-cuvee-rose": {
+   "asset": "w187",
+   "bytes": 32284,
+   "file": "wl_laurent-perrier-cuvee-rose.png",
+   "sha256": "4b80d038a7fc35fe"
+  },
+  "wl_laurent-perrier-la-cuvee-brut": {
+   "asset": "w168",
+   "bytes": 26738,
+   "file": "wl_laurent-perrier-la-cuvee-brut.png",
+   "sha256": "94144cb4f1165bad"
+  },
+  "wl_le-pauillac-de-latour-chateau-latour": {
+   "asset": "w15",
+   "bytes": 22370,
+   "file": "wl_le-pauillac-de-latour-chateau-latour.png",
+   "sha256": "8fe0c9b7e3f93619"
+  },
+  "wl_le-volte-dell-ornellaia": {
+   "asset": "w58",
+   "bytes": 20611,
+   "file": "wl_le-volte-dell-ornellaia.png",
+   "sha256": "91d06998948dd00a"
+  },
+  "wl_les-carmes-de-rieussec-chateau-rieussec": {
+   "asset": "w122",
+   "bytes": 24041,
+   "file": "wl_les-carmes-de-rieussec-chateau-rieussec.png",
+   "sha256": "8b7b6ec18af0ac07"
+  },
+  "wl_liquen-alfrocheiro-joao-cabral-almeida": {
+   "asset": "w73",
+   "bytes": 18695,
+   "file": "wl_liquen-alfrocheiro-joao-cabral-almeida.png",
+   "sha256": "960e3ed04b1a6a0a"
+  },
+  "wl_louis-roederer-cristal": {
+   "asset": "w169",
+   "bytes": 28312,
+   "file": "wl_louis-roederer-cristal.png",
+   "sha256": "2875898316eff1fa"
+  },
+  "wl_louis-roederer-cristal-rose": {
+   "asset": "w188",
+   "bytes": 28039,
+   "file": "wl_louis-roederer-cristal-rose.png",
+   "sha256": "64815fc7eb1b32be"
+  },
+  "wl_love-letter-mersel": {
+   "asset": "w71",
+   "bytes": 28368,
+   "file": "wl_love-letter-mersel.png",
+   "sha256": "c5aac79bc19a6256"
+  },
+  "wl_madrona-ranch-abreu": {
+   "asset": "w110",
+   "bytes": 20608,
+   "file": "wl_madrona-ranch-abreu.png",
+   "sha256": "e5475a07a4fc04af"
+  },
+  "wl_magnetic-donne-fittipaldi": {
+   "asset": "w59",
+   "bytes": 22012,
+   "file": "wl_magnetic-donne-fittipaldi.png",
+   "sha256": "68a17b36adcaa10d"
+  },
+  "wl_malleolus-de-sanchomartin-emilio-moro": {
+   "asset": "w82",
+   "bytes": 19267,
+   "file": "wl_malleolus-de-sanchomartin-emilio-moro.png",
+   "sha256": "0aec79953d3e3989"
+  },
+  "wl_margaux-du-chateau-margaux": {
+   "asset": "w24",
+   "bytes": 18008,
+   "file": "wl_margaux-du-chateau-margaux.png",
+   "sha256": "cd739489c93d3067"
+  },
+  "wl_maria-izabel-tinto-quinta-maria-izabel": {
+   "asset": "w74",
+   "bytes": 22189,
+   "file": "wl_maria-izabel-tinto-quinta-maria-izabel.png",
+   "sha256": "c07936e3f2f357b3"
+  },
+  "wl_massaya-gold-reserve": {
+   "asset": "w70",
+   "bytes": 27578,
+   "file": "wl_massaya-gold-reserve.png",
+   "sha256": "b71c4c1d88090a4e"
+  },
+  "wl_merlot-freemark-abbey": {
+   "asset": "w113",
+   "bytes": 26823,
+   "file": "wl_merlot-freemark-abbey.png",
+   "sha256": "b78a65ba7ca7721d"
+  },
+  "wl_merlot-grgich-hills": {
+   "asset": "w114",
+   "bytes": 24055,
+   "file": "wl_merlot-grgich-hills.png",
+   "sha256": "76f48d62bc56458a"
+  },
+  "wl_mersel-leb-nat-pet-nat-rose": {
+   "asset": "w197",
+   "bytes": 24237,
+   "file": "wl_mersel-leb-nat-pet-nat-rose.png",
+   "sha256": "7c7e7827e71ebf84"
+  },
+  "wl_metodo-classico-brut-rose-terrazze-dell-etna": {
+   "asset": "w195",
+   "bytes": 23666,
+   "file": "wl_metodo-classico-brut-rose-terrazze-dell-etna.png",
+   "sha256": "9f992f0a984d8077"
+  },
+  "wl_meursault-le-limozin-xavier-monnot": {
+   "asset": "w119",
+   "bytes": 19814,
+   "file": "wl_meursault-le-limozin-xavier-monnot.png",
+   "sha256": "ea89c21086dcc4ec"
+  },
+  "wl_michel-mailliard-cuvee-gregory-1er-cru-brut": {
+   "asset": "w170",
+   "bytes": 24810,
+   "file": "wl_michel-mailliard-cuvee-gregory-1er-cru-brut.png",
+   "sha256": "0bcb534aeb170c58"
+  },
+  "wl_modus-ruffino": {
+   "asset": "w54",
+   "bytes": 21766,
+   "file": "wl_modus-ruffino.png",
+   "sha256": "9e71bbeec9037332"
+  },
+  "wl_moet-and-chandon-imperial-brut": {
+   "asset": "w172",
+   "bytes": 26483,
+   "file": "wl_moet-and-chandon-imperial-brut.png",
+   "sha256": "fbe0c200ae5c6d2c"
+  },
+  "wl_moscato-d-asti-bricco-quaglia-la-spinetta": {
+   "asset": "w196",
+   "bytes": 20068,
+   "file": "wl_moscato-d-asti-bricco-quaglia-la-spinetta.png",
+   "sha256": "0f5aec1b29721dc5"
+  },
+  "wl_mousse-fils-les-fortes-terres": {
+   "asset": "w171",
+   "bytes": 23978,
+   "file": "wl_mousse-fils-les-fortes-terres.png",
+   "sha256": "6fa081fed9be216f"
+  },
+  "wl_nebbiolo-no-name-borgogno": {
+   "asset": "w60",
+   "bytes": 22055,
+   "file": "wl_nebbiolo-no-name-borgogno.png",
+   "sha256": "5f210c9aaa293643"
+  },
+  "wl_nuits-saint-georges-maison-latour": {
+   "asset": "w8",
+   "bytes": 24082,
+   "file": "wl_nuits-saint-georges-maison-latour.png",
+   "sha256": "aea1d5735cf0209b"
+  },
+  "wl_o-rosal-terras-gauda": {
+   "asset": "w150",
+   "bytes": 28703,
+   "file": "wl_o-rosal-terras-gauda.png",
+   "sha256": "64dece1d0b97b365"
+  },
+  "wl_opus-one": {
+   "asset": "w96",
+   "bytes": 16778,
+   "file": "wl_opus-one.png",
+   "sha256": "f57d0f0d051d60f0"
+  },
+  "wl_orange-tacsum-la-mariota-orange-wine": {
+   "asset": "w208",
+   "bytes": 26038,
+   "file": "wl_orange-tacsum-la-mariota-orange-wine.png",
+   "sha256": "bc8a7d2bad4d8c9f"
+  },
+  "wl_papillon-orin-swift": {
+   "asset": "w111",
+   "bytes": 22763,
+   "file": "wl_papillon-orin-swift.png",
+   "sha256": "4fba00677aed7a30"
+  },
+  "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo": {
+   "asset": "w61",
+   "bytes": 20251,
+   "file": "wl_pater-patriae-pinot-noir-tenuta-cafaggiolo.png",
+   "sha256": "b702013f84af8f21"
+  },
+  "wl_pecorino-cortalto-cerulli-spinozzi": {
+   "asset": "w134",
+   "bytes": 21098,
+   "file": "wl_pecorino-cortalto-cerulli-spinozzi.png",
+   "sha256": "280f6ea70f58edad"
+  },
+  "wl_perrier-jouet-belle-epoque": {
+   "asset": "w173",
+   "bytes": 32008,
+   "file": "wl_perrier-jouet-belle-epoque.png",
+   "sha256": "c47e3f9865f9f4f3"
+  },
+  "wl_perrier-jouet-blanc-de-blancs": {
+   "asset": "w174",
+   "bytes": 26035,
+   "file": "wl_perrier-jouet-blanc-de-blancs.png",
+   "sha256": "0b4d38a8b2d05705"
+  },
+  "wl_perrier-jouet-blason-rose": {
+   "asset": "w189",
+   "bytes": 28702,
+   "file": "wl_perrier-jouet-blason-rose.png",
+   "sha256": "20ff914713836a49"
+  },
+  "wl_perrier-jouet-grand-brut": {
+   "asset": "w175",
+   "bytes": 27729,
+   "file": "wl_perrier-jouet-grand-brut.png",
+   "sha256": "d046a8a0c72cedfb"
+  },
+  "wl_pierre-peters-cuvee-de-reserve-bdb": {
+   "asset": "w176",
+   "bytes": 23854,
+   "file": "wl_pierre-peters-cuvee-de-reserve-bdb.png",
+   "sha256": "b199d42abe0124df"
+  },
+  "wl_pinot-grigio-elena-walch": {
+   "asset": "w136",
+   "bytes": 17748,
+   "file": "wl_pinot-grigio-elena-walch.png",
+   "sha256": "9131859e69188435"
+  },
+  "wl_pinot-grigio-porer-alois-lageder": {
+   "asset": "w135",
+   "bytes": 19486,
+   "file": "wl_pinot-grigio-porer-alois-lageder.png",
+   "sha256": "efdedb1f16ecf86d"
+  },
+  "wl_pinot-gris-daisy-antiquum-farm": {
+   "asset": "w162",
+   "bytes": 24773,
+   "file": "wl_pinot-gris-daisy-antiquum-farm.png",
+   "sha256": "7a1cbaf919df7fae"
+  },
+  "wl_pinot-noir-bergstrom-le-pre-du-col": {
+   "asset": "w87",
+   "bytes": 21427,
+   "file": "wl_pinot-noir-bergstrom-le-pre-du-col.png",
+   "sha256": "15b3a0accff81a7b"
+  },
+  "wl_pinot-noir-botanica-antica-terra": {
+   "asset": "w85",
+   "bytes": 27457,
+   "file": "wl_pinot-noir-botanica-antica-terra.png",
+   "sha256": "f9d0cb9dd44dc6ad"
+  },
+  "wl_pinot-noir-chehalem": {
+   "asset": "w115",
+   "bytes": 22285,
+   "file": "wl_pinot-noir-chehalem.png",
+   "sha256": "27f621e509eb7339"
+  },
+  "wl_pinot-noir-domaine-drouhin": {
+   "asset": "w88",
+   "bytes": 22777,
+   "file": "wl_pinot-noir-domaine-drouhin.png",
+   "sha256": "ea4d12d9afdbac2b"
+  },
+  "wl_pinot-noir-hanzell-estate": {
+   "asset": "w89",
+   "bytes": 27340,
+   "file": "wl_pinot-noir-hanzell-estate.png",
+   "sha256": "6ccf3ed240d3ef8e"
+  },
+  "wl_pinot-noir-joseph-phelps-freestone": {
+   "asset": "w90",
+   "bytes": 18576,
+   "file": "wl_pinot-noir-joseph-phelps-freestone.png",
+   "sha256": "7a57463df0910868"
+  },
+  "wl_pinot-noir-keller-estate": {
+   "asset": "w91",
+   "bytes": 19950,
+   "file": "wl_pinot-noir-keller-estate.png",
+   "sha256": "5f5b8d359d0b55e2"
+  },
+  "wl_pinot-noir-paul-hobbs": {
+   "asset": "w92",
+   "bytes": 20540,
+   "file": "wl_pinot-noir-paul-hobbs.png",
+   "sha256": "419f99237fcf9315"
+  },
+  "wl_pinot-noir-plow-lingua-franca": {
+   "asset": "w86",
+   "bytes": 26680,
+   "file": "wl_pinot-noir-plow-lingua-franca.png",
+   "sha256": "f7aa62a0d9805309"
+  },
+  "wl_pinot-noir-st-innocent-momtazi": {
+   "asset": "w93",
+   "bytes": 24713,
+   "file": "wl_pinot-noir-st-innocent-momtazi.png",
+   "sha256": "85281700f4806f37"
+  },
+  "wl_pinot-noir-storm": {
+   "asset": "w75",
+   "bytes": 26475,
+   "file": "wl_pinot-noir-storm.png",
+   "sha256": "6ff5fd5494c73b92"
+  },
+  "wl_piper-heidsieck-rare": {
+   "asset": "w177",
+   "bytes": 30222,
+   "file": "wl_piper-heidsieck-rare.png",
+   "sha256": "16a403f26a3064ab"
+  },
+  "wl_poggio-valente-fattoria-la-pupille": {
+   "asset": "w49",
+   "bytes": 17349,
+   "file": "wl_poggio-valente-fattoria-la-pupille.png",
+   "sha256": "aea08d3c69a0c603"
+  },
+  "wl_pol-roger-sir-winston-churchill": {
+   "asset": "w178",
+   "bytes": 26884,
+   "file": "wl_pol-roger-sir-winston-churchill.png",
+   "sha256": "68fbd175eeba85fe"
+  },
+  "wl_pommery-cuvee-louise-rose": {
+   "asset": "w190",
+   "bytes": 25898,
+   "file": "wl_pommery-cuvee-louise-rose.png",
+   "sha256": "9cde127c5c84454f"
+  },
+  "wl_pouilly-fuisse-louis-latour": {
+   "asset": "w120",
+   "bytes": 29929,
+   "file": "wl_pouilly-fuisse-louis-latour.png",
+   "sha256": "9d25436013ce5fad"
+  },
+  "wl_prestige-rose-minuty": {
+   "asset": "w203",
+   "bytes": 21394,
+   "file": "wl_prestige-rose-minuty.png",
+   "sha256": "16d545e883eaa186"
+  },
+  "wl_prosecco-rustico-nino-franco": {
+   "asset": "w193",
+   "bytes": 24776,
+   "file": "wl_prosecco-rustico-nino-franco.png",
+   "sha256": "f7d18a835787e348"
+  },
+  "wl_recioto-della-valpolicella-dal-forno-romano": {
+   "asset": "w210",
+   "bytes": 18848,
+   "file": "wl_recioto-della-valpolicella-dal-forno-romano.png",
+   "sha256": "7e08dfb409869741"
+  },
+  "wl_recioto-di-soave-i-capitelli-anselmi": {
+   "asset": "w211",
+   "bytes": 24083,
+   "file": "wl_recioto-di-soave-i-capitelli-anselmi.png",
+   "sha256": "d7995e25fdffc8d5"
+  },
+  "wl_reserve-ammiq-blanc": {
+   "asset": "w143",
+   "bytes": 23331,
+   "file": "wl_reserve-ammiq-blanc.png",
+   "sha256": "26b09549bfbc9740"
+  },
+  "wl_riesling-donnhoff": {
+   "asset": "w131",
+   "bytes": 18135,
+   "file": "wl_riesling-donnhoff.png",
+   "sha256": "cfc11b5e43815e2b"
+  },
+  "wl_riesling-forster-kirchenstuck-gg-von-winning": {
+   "asset": "w130",
+   "bytes": 23558,
+   "file": "wl_riesling-forster-kirchenstuck-gg-von-winning.png",
+   "sha256": "7f868dc27a9432bc"
+  },
+  "wl_rioja-reserva-montana": {
+   "asset": "w76",
+   "bytes": 15129,
+   "file": "wl_rioja-reserva-montana.png",
+   "sha256": "c0f077564d1a59d9"
+  },
+  "wl_rioja-reserva-valenciso": {
+   "asset": "w77",
+   "bytes": 22882,
+   "file": "wl_rioja-reserva-valenciso.png",
+   "sha256": "5c56248500cdbe0f"
+  },
+  "wl_roero-arneis-reysu-paolo-manzone": {
+   "asset": "w137",
+   "bytes": 21972,
+   "file": "wl_roero-arneis-reysu-paolo-manzone.png",
+   "sha256": "dfc1bb54282b8044"
+  },
+  "wl_rosso-di-montalcino-canalicchio-di-sopra": {
+   "asset": "w63",
+   "bytes": 21628,
+   "file": "wl_rosso-di-montalcino-canalicchio-di-sopra.png",
+   "sha256": "4a922b093c68aaab"
+  },
+  "wl_rosso-di-montalcino-giovanni-neri-casanova-di-neri": {
+   "asset": "w62",
+   "bytes": 25104,
+   "file": "wl_rosso-di-montalcino-giovanni-neri-casanova-di-neri.png",
+   "sha256": "276c669666338258"
+  },
+  "wl_ruinart-blanc-de-blancs": {
+   "asset": "w179",
+   "bytes": 32404,
+   "file": "wl_ruinart-blanc-de-blancs.png",
+   "sha256": "fcefe50d594f9b47"
+  },
+  "wl_sancerre-chavignol-yves-martin": {
+   "asset": "w126",
+   "bytes": 21173,
+   "file": "wl_sancerre-chavignol-yves-martin.png",
+   "sha256": "45b2ce92d7309275"
+  },
+  "wl_sancerre-cote-des-monts-damnes-hubert-brochard": {
+   "asset": "w127",
+   "bytes": 22329,
+   "file": "wl_sancerre-cote-des-monts-damnes-hubert-brochard.png",
+   "sha256": "55e6f94832133506"
+  },
+  "wl_sancerre-la-chatellenie-joseph-mellot": {
+   "asset": "w128",
+   "bytes": 22972,
+   "file": "wl_sancerre-la-chatellenie-joseph-mellot.png",
+   "sha256": "21443193870080e1"
+  },
+  "wl_sancerre-le-mont-foucher-lebrun": {
+   "asset": "w129",
+   "bytes": 20847,
+   "file": "wl_sancerre-le-mont-foucher-lebrun.png",
+   "sha256": "b0fe1764bffd96b3"
+  },
+  "wl_santenay-1er-cru-grand-clos-rousseau-remoissenet": {
+   "asset": "w9",
+   "bytes": 19984,
+   "file": "wl_santenay-1er-cru-grand-clos-rousseau-remoissenet.png",
+   "sha256": "6f728ecf3172d5b1"
+  },
+  "wl_sauvignon-blanc-arnot-roberts": {
+   "asset": "w159",
+   "bytes": 20530,
+   "file": "wl_sauvignon-blanc-arnot-roberts.png",
+   "sha256": "1f71de4209acb92b"
+  },
+  "wl_sauvignon-blanc-double-diamond-schrader": {
+   "asset": "w158",
+   "bytes": 22654,
+   "file": "wl_sauvignon-blanc-double-diamond-schrader.png",
+   "sha256": "d88c03c30262614f"
+  },
+  "wl_sauvignon-blanc-sinegal-estate": {
+   "asset": "w160",
+   "bytes": 18590,
+   "file": "wl_sauvignon-blanc-sinegal-estate.png",
+   "sha256": "443f9999c82f2c09"
+  },
+  "wl_sauvignon-blanc-te-muna-craggy-range": {
+   "asset": "w145",
+   "bytes": 22395,
+   "file": "wl_sauvignon-blanc-te-muna-craggy-range.png",
+   "sha256": "452afa9f1bfc9d3d"
+  },
+  "wl_sea-smoke-sea-spray": {
+   "asset": "w94",
+   "bytes": 23454,
+   "file": "wl_sea-smoke-sea-spray.png",
+   "sha256": "baa3140a944d865a"
+  },
+  "wl_sp68-bianco-arianna-occhipinti": {
+   "asset": "w141",
+   "bytes": 22348,
+   "file": "wl_sp68-bianco-arianna-occhipinti.png",
+   "sha256": "61aaacd0d6e5cca9"
+  },
+  "wl_syrah-donnachadh-estate": {
+   "asset": "w112",
+   "bytes": 26165,
+   "file": "wl_syrah-donnachadh-estate.png",
+   "sha256": "747453c0188be2df"
+  },
+  "wl_tawny-port-otima-warre-s": {
+   "asset": "w213",
+   "bytes": 14400,
+   "file": "wl_tawny-port-otima-warre-s.png",
+   "sha256": "56ff1d2d81469962"
+  },
+  "wl_tawny-port-quinta-do-noval": {
+   "asset": "w214",
+   "bytes": 19977,
+   "file": "wl_tawny-port-quinta-do-noval.png",
+   "sha256": "bea922d3f7e5dcb5"
+  },
+  "wl_the-mascot-harlan-family": {
+   "asset": "w97",
+   "bytes": 20378,
+   "file": "wl_the-mascot-harlan-family.png",
+   "sha256": "4d59b1d5eb43bcfb"
+  },
+  "wl_tignanello-antinori": {
+   "asset": "w50",
+   "bytes": 24777,
+   "file": "wl_tignanello-antinori.png",
+   "sha256": "24cc5ff01f5b6fe6"
+  },
+  "wl_toscana-rosso-il-borro": {
+   "asset": "w64",
+   "bytes": 24373,
+   "file": "wl_toscana-rosso-il-borro.png",
+   "sha256": "92a759b109b1d6fe"
+  },
+  "wl_tre-brancaia": {
+   "asset": "w65",
+   "bytes": 20266,
+   "file": "wl_tre-brancaia.png",
+   "sha256": "35a5d5d1948058a5"
+  },
+  "wl_trebbiano-d-abruzzo-emidio-pepe": {
+   "asset": "w142",
+   "bytes": 27170,
+   "file": "wl_trebbiano-d-abruzzo-emidio-pepe.png",
+   "sha256": "557269c90d7bf4de"
+  },
+  "wl_trebbiano-d-abruzzo-tiberio": {
+   "asset": "w138",
+   "bytes": 23361,
+   "file": "wl_trebbiano-d-abruzzo-tiberio.png",
+   "sha256": "85b7807521105e2b"
+  },
+  "wl_valbuena-5-anos-vega-sicilia": {
+   "asset": "w80",
+   "bytes": 27460,
+   "file": "wl_valbuena-5-anos-vega-sicilia.png",
+   "sha256": "9fe36804ccae101d"
+  },
+  "wl_veraton-bodegas-alto-moncayo": {
+   "asset": "w83",
+   "bytes": 32007,
+   "file": "wl_veraton-bodegas-alto-moncayo.png",
+   "sha256": "b35a7c6f6dc9e157"
+  },
+  "wl_vermentino-prelius-volpaia": {
+   "asset": "w139",
+   "bytes": 21693,
+   "file": "wl_vermentino-prelius-volpaia.png",
+   "sha256": "5fbf643010ad090b"
+  },
+  "wl_veuve-clicquot-yellow-label-brut": {
+   "asset": "w180",
+   "bytes": 21418,
+   "file": "wl_veuve-clicquot-yellow-label-brut.png",
+   "sha256": "a2ba5ac50f7ca0aa"
+  },
+  "wl_vin-santo-il-decano-montepaldi": {
+   "asset": "w212",
+   "bytes": 21606,
+   "file": "wl_vin-santo-il-decano-montepaldi.png",
+   "sha256": "4a12edbf67821a3b"
+  },
+  "wl_viognier-penner-ash": {
+   "asset": "w161",
+   "bytes": 23689,
+   "file": "wl_viognier-penner-ash.png",
+   "sha256": "858d1e1755bd835b"
+  },
+  "wl_vosne-romanee-1er-cru-les-chaumes-gros-frere-et-s-ur": {
+   "asset": "w10",
+   "bytes": 25046,
+   "file": "wl_vosne-romanee-1er-cru-les-chaumes-gros-frere-et-s-ur.png",
+   "sha256": "2f5632f9e68e459d"
+  },
+  "wl_vosne-romanee-jean-claude-boisset": {
+   "asset": "w11",
+   "bytes": 20010,
+   "file": "wl_vosne-romanee-jean-claude-boisset.png",
+   "sha256": "d225d57eefd8b983"
+  },
+  "wl_whispering-angel-chateau-d-esclans": {
+   "asset": "w200",
+   "bytes": 28779,
+   "file": "wl_whispering-angel-chateau-d-esclans.png",
+   "sha256": "7f9c26012e90fe6c"
+  },
+  "wl_wine-creek-ranch-rose-quivira": {
+   "asset": "w207",
+   "bytes": 20121,
+   "file": "wl_wine-creek-ranch-rose-quivira.png",
+   "sha256": "83f542ec3d3f4a30"
+  },
+  "wl_y-ygrec-chateau-d-yquem": {
+   "asset": "w121",
+   "bytes": 21960,
+   "file": "wl_y-ygrec-chateau-d-yquem.png",
+   "sha256": "685726ff42471b53"
+  }
+ }
+}

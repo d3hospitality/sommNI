@@ -12,8 +12,7 @@ import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, Tex
 import { activeSession, startSession, onSessionChange, type StudySession } from './session';
 import { cardSources, type StudyCard } from './content';
 import { dueLabel, type Rating } from './scheduler';
-import { assetIdFor } from '../identity';
-import { bottleImageUrl } from '../bottle-assets';
+import { catalogBottleSources } from '../bottle-assets';
 import { clipBytes, clipLabel, LIST_ROW_PITCH } from '../glasses-list';
 import { rebuildGlassesPage, pushBottlePhoto, invalidateImages, pushLogoToGlasses } from '../image-utils';
 import { claimDisplay, dropDisplay } from '../display';
@@ -104,7 +103,8 @@ async function render(force = true): Promise<void> {
   const key = `${next}:${s?.index ?? -1}:${s?.current?.eventId ?? ''}`;
   if (!force && key === shownKey) return;
   const p = s?.current ?? null;
-  const asset = p && !p.card.hide_image ? assetIdFor(p.card.wine_id) : null;
+  const bottle = p && !p.card.hide_image ? catalogBottleSources(baseUrl, p.card.wine_id) : [];
+  const asset = bottle.length > 0;
   let page: RebuildPageContainer;
   if (next === 'prompt') page = buildStudyPromptPage(p!.card, s!.index + 1, s!.total, p!.retry, !!asset);
   else if (next === 'reveal') page = buildStudyRevealPage(p!.card, s!.ratingPreview()!);
@@ -116,7 +116,7 @@ async function render(force = true): Promise<void> {
   if (!await rebuildGlassesPage(bridge, page)) throw new Error('The glasses did not accept this page.');
   active = true; screen = next; shownKey = key; lastNavigation = Date.now();
   if (next === 'prompt' && asset) {
-    try { await pushBottlePhoto(bridge, bottleImageUrl(baseUrl, asset), 100, 120); }
+    try { await pushBottlePhoto(bridge, bottle, 100, 120); }
     catch (error) { console.warn('[study] bottle image unavailable; the prompt stays readable', error); }
   }
 }

@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -5,7 +6,7 @@ const { chromium } = require('playwright');
   const base=process.env.ATLAS_URL||(BASE + '/sommNI/');
   const browser=await chromium.launch({headless:true,channel:process.env.CI?undefined:'chrome'});
   try {
-    const page=await browser.newPage({viewport:{width:1400,height:1200}});
+    const page=await browser.newPage({viewport:{width:1400,height:1200}});await serveG2Bottles(page);
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));
     await page.goto(new URL('atlas.html',base).href);await page.waitForFunction(()=>!!window.atlasPreview);
     assert.equal(await page.locator('#error').isVisible(),false,'plain browser must not try to take over a glasses page');

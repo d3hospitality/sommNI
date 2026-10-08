@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
 // Study engine acceptance tests (PRD S-01…S-09, I-01, R-01…R-05 and the §12 matrix).
 // Runs the real modules in Chrome against a blank page (no app startup), with in-memory storage.
@@ -7,7 +8,7 @@ const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||(process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined),headless:true});
  try {
-  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const page=await browser.newPage();await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&!/failed|refused the write|Could not/i.test(m.text()))console.log('[page]',m.text());});
   await page.route((BASE + '/sommNI/'),r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>Study engine test</title>'}));
   await page.goto((BASE + '/sommNI/'));

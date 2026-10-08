@@ -129,11 +129,12 @@ export function getWinesForCountry(type: WineType, country: string): Wine[] {
 /** Sentinel for the "Other" bucket that collects single-wine grapes */
 export const OTHER_GRAPE = "Other";
 
-/** Get unique grape varietals for a type + country (in order of appearance).
- *  Grapes that have only 1 wine are collected into an "Other" bucket at the end. */
-export function getGrapesForCountry(type: WineType, country: string): string[] {
+/** G2 lists show about six rows. Single-wine grapes fold into "Other" only when a list would
+ *  otherwise overflow AND there are real groups next to it: "Other" alone, or "Other" holding one
+ *  wine, hides the grape (Argentina's one wine is a Malbec, not an "Other"). */
+const GRAPE_ROWS = 6;
+function grapeGroups(type: WineType, country: string): { list: string[]; folded: string[] } {
   const wines = WINES[type]?.[country] || [];
-  // Count wines per normalized grape
   const counts = new Map<string, number>();
   const order: string[] = [];
   for (const w of wines) {
@@ -141,38 +142,19 @@ export function getGrapesForCountry(type: WineType, country: string): string[] {
     if (!counts.has(grape)) { counts.set(grape, 0); order.push(grape); }
     counts.set(grape, counts.get(grape)! + 1);
   }
-  // Grapes with 2+ wines keep their own entry; singles go into "Other"
-  const result: string[] = [];
-  let otherCount = 0;
-  for (const g of order) {
-    if (counts.get(g)! > 1) {
-      result.push(g);
-    } else {
-      otherCount++;
-    }
-  }
-  if (otherCount > 0) result.push(OTHER_GRAPE);
-  return result;
+  const multi = order.filter(g => counts.get(g)! > 1), singles = order.filter(g => counts.get(g) === 1);
+  const fold = multi.length > 0 && singles.length >= 2 && order.length > GRAPE_ROWS;
+  return fold ? { list: [...multi, OTHER_GRAPE], folded: singles } : { list: [...multi, ...singles], folded: [] };
 }
 
-/** Get the list of normalized grape names that were folded into "Other" */
+/** Grapes for a type + country: groups with 2+ wines first (in order of appearance), then the rest. */
+export function getGrapesForCountry(type: WineType, country: string): string[] {
+  return grapeGroups(type, country).list;
+}
+
+/** The single-wine grapes folded into "Other" (empty when nothing was folded). */
 export function getOtherGrapes(type: WineType, country: string): string[] {
-  const wines = WINES[type]?.[country] || [];
-  const counts = new Map<string, number>();
-  for (const w of wines) {
-    const grape = normalizeGrape(w.grape);
-    counts.set(grape, (counts.get(grape) || 0) + 1);
-  }
-  const singles: string[] = [];
-  const seen = new Set<string>();
-  for (const w of wines) {
-    const grape = normalizeGrape(w.grape);
-    if (counts.get(grape) === 1 && !seen.has(grape)) {
-      seen.add(grape);
-      singles.push(grape);
-    }
-  }
-  return singles;
+  return grapeGroups(type, country).folded;
 }
 
 /** Get wines for a specific grape within a type + country.
@@ -183,6 +165,14 @@ export function getWinesForGrape(type: WineType, country: string, grape: string)
     return (WINES[type]?.[country] || []).filter(w => others.has(normalizeGrape(w.grape)));
   }
   return (WINES[type]?.[country] || []).filter(w => normalizeGrape(w.grape) === grape);
+}
+
+/** "Côte-de-Beaune, FR" → "Côte-de-Beaune, France". The catalog stores country codes; people read
+ *  names. Without a known country name the place is returned as stored. */
+export function placeLabel(region: string | null | undefined, country?: string | null): string {
+  const place = String(region ?? '').trim();
+  const coded = place.match(/^(.*\S),\s*([A-Z]{2})$/);
+  return coded && country ? `${coded[1]}, ${country}` : place;
 }
 
 /** Normalize grape name for grouping — keeps blends together, strips qualifiers */

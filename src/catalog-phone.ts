@@ -4,11 +4,11 @@
 // full tasting notes (the same notes the glasses show). Replaces the old
 // four-level drill-down with restaurant stock counters.
 // ═══════════════════════════════════════════════════════════════════
-import { WINE_TYPES, TYPE_DISPLAY, getGrapesForCountry, getWinesForGrape, type WineType } from './constants';
-import { allCatalogWines, assetIdFor, type CatalogWine } from './identity';
+import { WINE_TYPES, TYPE_DISPLAY, getGrapesForCountry, getWinesForGrape, placeLabel, type WineType } from './constants';
+import { allCatalogWines, type CatalogWine } from './identity';
 import { wineReferences } from './study/content';
 import { catalogSections, SOURCE_LABEL } from './notes-format';
-import { bottleImageUrl } from './bottle-assets';
+import { catalogPhotoUrl } from './bottle-assets';
 import { getFavorites, toggleFavorite } from './sync';
 import { splitWineName } from './pages';
 
@@ -20,7 +20,7 @@ let root: HTMLElement | null = null;
 let dialog: HTMLDialogElement | null = null;
 const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const base = () => import.meta.env.BASE_URL || './';
-const bottle = (w: CatalogWine) => { const asset = assetIdFor(w.id); return asset ? bottleImageUrl(base(), asset) : ''; };
+const bottle = (w: CatalogWine) => catalogPhotoUrl(base(), w.id) ?? '';
 const style = (w: CatalogWine) => (w.wine.style || '').replace(/\s*[–-]\s*/g, ', ');
 const haystack = new Map<string, string>();
 function searchText(w: CatalogWine): string {
@@ -42,7 +42,7 @@ function card(w: CatalogWine): string {
   const { title, producer } = splitWineName(w.wine.name);
   const img = bottle(w), nose = w.wine.nose ? w.wine.nose.split(',').slice(0, 3).map(s => s.trim()).join(', ') : '';
   return `<button class="wl-cat-card" data-cat-open="${esc(w.id)}">${img ? `<img class="wl-cat-bottle" src="${esc(img)}" alt="" loading="lazy">` : '<span class="wl-cat-bottle"></span>'}
-    <span class="wl-cat-copy"><span class="wl-kicker">${esc([w.wine.grape, style(w)].filter(Boolean).join(' · '))}</span><strong>${esc(title)}</strong><span class="wl-muted">${esc([producer, w.wine.region].filter(Boolean).join(' · '))}</span>${nose ? `<span class="wl-cat-nose">${esc(nose)}…</span>` : ''}</span>${favorites.includes(w.id) ? '<span class="wl-cat-fav" aria-label="Favorite">★</span>' : ''}</button>`;
+    <span class="wl-cat-copy"><span class="wl-kicker">${esc([w.wine.grape, style(w)].filter(Boolean).join(' · '))}</span><strong>${esc(title)}</strong><span class="wl-muted">${esc([producer, placeLabel(w.wine.region, w.country)].filter(Boolean).join(' · '))}</span>${nose ? `<span class="wl-cat-nose">${esc(nose)}…</span>` : ''}</span>${favorites.includes(w.id) ? '<span class="wl-cat-fav" aria-label="Favorite">★</span>' : ''}</button>`;
 }
 
 export async function renderCatalog(el: HTMLElement): Promise<void> {
@@ -82,7 +82,7 @@ function openWine(id: string) {
     : refs.open.length ? `Reference under review: ${esc(refs.open[0].note)}` : 'Catalog details not yet verified against the producer.';
   const fav = () => favorites.includes(w.id) ? '★ Favorite' : '☆ Favorite';
   dialog.innerHTML = `<button class="wl-close" aria-label="Close dialog">×</button>
-    <p class="wl-kicker">${esc([TYPE_DISPLAY[w.type], w.wine.grape, style(w)].filter(Boolean).join(' · ').toUpperCase())}</p><h2>${esc(title)}</h2><p class="wl-muted">${esc([producer, w.wine.region, w.wine.region?.includes(w.country) ? '' : w.country].filter(Boolean).join(' · '))}</p>
+    <p class="wl-kicker">${esc([TYPE_DISPLAY[w.type], w.wine.grape, style(w)].filter(Boolean).join(' · ').toUpperCase())}</p><h2>${esc(title)}</h2><p class="wl-muted">${esc([producer, placeLabel(w.wine.region, w.country), placeLabel(w.wine.region, w.country).includes(w.country) ? '' : w.country].filter(Boolean).join(' · '))}</p>
     <div class="wl-detail-grid"><div class="wl-detail-photo">${img ? `<img src="${esc(img)}" alt="${esc(title)} bottle">` : '<span class="wl-photo-placeholder">NO PHOTO</span>'}</div>
     <section class="wl-notes-block" aria-label="Tasting notes"><div class="wl-notes-head"><p class="wl-kicker">TASTING NOTES</p><span class="wl-source wl-source-catalog">${esc(SOURCE_LABEL.catalog)}</span></div>
     <dl class="wl-notes-dl">${sections.map(s => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.text)}</dd></div>`).join('')}</dl><p class="ref-chip">${ref}</p></section></div>

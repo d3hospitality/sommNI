@@ -1,3 +1,4 @@
+const { serveG2Bottles } = require('./g2-backend.cjs');
 // Hardware constraints the simulator does not enforce, plus catalog/exit regressions.
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -5,7 +6,7 @@ const BASE = (process.env.WL_BASE_URL || 'http://localhost:5186').replace(/\/$/,
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: process.env.CI ? undefined : 'chrome' });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage();await serveG2Bottles(page);
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.route(BASE + '/sommNI/', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Catalog regression</title>' }));
@@ -75,7 +76,7 @@ const BASE = (process.env.WL_BASE_URL || 'http://localhost:5186').replace(/\/$/,
       for (let i = 0; i < 3; i++) handler(down);
       await wait(1300);
       const chosen = entries[3].item;
-      const source = B.bottleImageUrl(base, I.assetIdFor(chosen.id));
+      const source = B.catalogBottleSources(base, chosen.id); // the backend's glasses bottle, as the app sends it
       const canvas = await R.stageCanvas(source, 244, 244);
       const expected = R.toGreenLevels(canvas.getContext('2d').getImageData(0, 0, 244, 244).data, 244);
       const top = images.filter(i => i.containerName === 'atlas-top').at(-1);
