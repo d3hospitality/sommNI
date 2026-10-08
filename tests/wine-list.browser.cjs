@@ -131,12 +131,17 @@ let failureDump = async () => {};
   await dialog.getByRole('button', { name: 'Remove page 3' }).click();
   await dialog.getByText('1 included, then uses 1 token (100 left)').waitFor();
   assert.equal(await dialog.getByLabel('Use 1 token for this').isChecked(), false, 'a new amount needs a new tick');
+  // Free (no pack bought yet): prepaid tokens still work, with consent; a short balance offers packs.
   status.pro = false; status.plan = 'free'; status.allowances.wine_list_page = { remaining: 1, limit: 1 };
   await dialog.getByRole('button', { name: '← Choose another way' }).click(); await dialog.getByRole('button', { name: /Photos of the pages/ }).click();
   await page.locator('#wl-list-photos').setInputFiles([1, 2].map(i => ({ name: `p${i}.png`, mimeType: 'image/png', buffer: png })));
-  await dialog.getByText('The free preview includes 1 wine-list photo page a month and 1 is left; this needs 2. The wineLENS app includes more.').waitFor();
-  await dialog.getByRole('link', { name: 'Get wineLENS ↗' }).waitFor(); assert.equal(await page.locator('#wl-list-read').isDisabled(), true);
-  status.pro = true; status.plan = 'pro'; status.allowances.wine_list_page = { remaining: 5, limit: 5 };
+  await dialog.getByText('1 included, then uses 1 token (100 left)').waitFor(); await dialog.getByLabel('Use 1 token for this').waitFor();
+  status.tokens = 0;
+  await dialog.getByRole('button', { name: '← Choose another way' }).click(); await dialog.getByRole('button', { name: /Photos of the pages/ }).click();
+  await page.locator('#wl-list-photos').setInputFiles([1, 2].map(i => ({ name: `p${i}.png`, mimeType: 'image/png', buffer: png })));
+  await dialog.getByText('1 included; the rest needs 1 token, and you have 0. Tokens from $5 (20 wine cards). Any pack also unlocks more free help every month.').waitFor();
+  await dialog.getByRole('link', { name: 'Add tokens ↗' }).waitFor(); assert.equal(await page.locator('#wl-list-read').isDisabled(), true);
+  status.pro = true; status.plan = 'pro'; status.tokens = 100; status.allowances.wine_list_page = { remaining: 5, limit: 5 };
 
   // 5 · PDFs: a free check first; scans go to photos; text PDFs are billed as text pages.
   await dialog.getByRole('button', { name: '← Choose another way' }).click(); await dialog.getByRole('button', { name: /A PDF/ }).click();
@@ -190,6 +195,6 @@ let failureDump = async () => {};
   await page.screenshot({ path: path.resolve(output, 'wineLENS-Catalog-Review.png') });
 
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: ['photos compressed and billed per page', 'review groups + resolver chips', 'inline edit re-resolved on save', 'Winebrary + catalog proposals', 'per-page tokens need a fresh tick per amount', 'Free cannot top up', 'PDF check free, scans → photos, text pages billed', 'review later + resume', 'pasted text page count', 'CSV free, Excel asks for CSV', 'fits a phone', 'owner review: approve with correction, reject'] }));
+  console.log(JSON.stringify({ passed: ['photos compressed and billed per page', 'review groups + resolver chips', 'inline edit re-resolved on save', 'Winebrary + catalog proposals', 'per-page tokens need a fresh tick per amount', 'free spends prepaid tokens, short balance offers packs', 'PDF check free, scans → photos, text pages billed', 'review later + resume', 'pasted text page count', 'CSV free, Excel asks for CSV', 'fits a phone', 'owner review: approve with correction, reject'] }));
   await browser.close();
 })().catch(async e => { console.error(e); await failureDump(); process.exit(1); });

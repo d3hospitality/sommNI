@@ -33,19 +33,29 @@ end$$;
 -- Service-only calls really run as service_role, not the test superuser.
 set role service_role;
 do $$declare u uuid:='11111111-1111-4111-8111-111111111111'; v uuid:='22222222-2222-4222-8222-222222222222'; r jsonb; rid uuid; i int; begin
- perform public.test_assert(winelens_grant_tokens(u,'cs_pack','t5',100)->>'granted'='100','grant');
- perform public.test_assert(winelens_grant_tokens(u,'cs_pack','t5',100)->>'replayed'='true','grant replay');
- begin perform winelens_grant_tokens(v,'cs_pack','t5',100); raise exception 'FAIL grant mismatch accepted'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
- begin perform winelens_grant_tokens(u,'cs_wrong','t5',500); raise exception 'FAIL wrong units accepted'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
  r:=winelens_reserve_usage(u,'free1','label_scan',1,false); rid:=(r->>'reservation_id')::uuid;
  perform test_assert(r->>'source'='allowance' and r->>'remaining_allowance'='4','allowance first');
  perform test_assert(winelens_reserve_usage(u,'free1','label_scan',1,false)->>'replayed'='true','reserve replay');
  perform test_assert(winelens_settle_usage(u,rid,false)->>'status'='released','failure release');
  perform test_assert(winelens_billing_status(u)->'allowances'->'label_scan'->>'remaining'='5','failure returned allowance');
  r:=winelens_reserve_usage(u,'free-five','label_scan',5,false); perform winelens_settle_usage(u,(r->>'reservation_id')::uuid,true);
- perform test_assert(winelens_reserve_usage(u,'free-over','label_scan',1,true)->>'reason'='pro_required','free cannot spend');
- perform test_assert(winelens_reserve_usage(u,'free-render','studio_render',1,true)->>'reason'='pro_required','free cannot render');
- insert into winelens_entitlements(user_id,plan,status,period_start,period_end) values(u,'pro','active',now()-interval '1 day',now()+interval '1 month');
+ -- The app is free and tokens are prepaid: without tokens nothing past the allowance runs.
+ perform test_assert(winelens_reserve_usage(u,'free-over','label_scan',1,true)->>'reason'='token_limit','free without tokens cannot spend');
+ perform test_assert(winelens_reserve_usage(u,'free-render','studio_render',1,true)->>'reason'='token_limit','free without tokens cannot render');
+ -- Welcome tokens: once per account; spendable before any purchase (with consent).
+ perform test_assert(winelens_grant_welcome(v)->>'granted'='3','welcome tokens');
+ perform test_assert(winelens_grant_welcome(v)->>'replayed'='true','welcome once');
+ perform test_assert(winelens_reserve_usage(v,'welcome-ask','studio_render',1,false)->>'reason'='consent_required','welcome tokens need consent');
+ r:=winelens_reserve_usage(v,'welcome-render','studio_render',1,true);
+ perform test_assert(r->>'source'='tokens' and r->>'tokens'='2' and not (winelens_period(v)->>'pro')::boolean,'free spends welcome tokens');
+ perform winelens_settle_usage(v,(r->>'reservation_id')::uuid,true);
+ perform winelens_auto_spend(v,true); perform winelens_auto_spend(v,false);
+ perform public.test_assert(winelens_grant_tokens(u,'cs_pack','t5',100)->>'granted'='100','grant');
+ perform public.test_assert(winelens_grant_tokens(u,'cs_pack','t5',100)->>'replayed'='true','grant replay');
+ begin perform winelens_grant_tokens(v,'cs_pack','t5',100); raise exception 'FAIL grant mismatch accepted'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
+ begin perform winelens_grant_tokens(u,'cs_wrong','t5',500); raise exception 'FAIL wrong units accepted'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
+ -- The first pack unlocks wineLENS for life: larger allowances, no end date.
+ perform test_assert((winelens_period(u)->>'pro')::boolean and (select plan='pro' and status='active' and period_end='infinity' from winelens_entitlements where user_id=u),'first pack unlocks for life');
  r:=winelens_reserve_usage(u,'pro-sixty','label_scan',60,false); perform winelens_settle_usage(u,(r->>'reservation_id')::uuid,true);
  perform test_assert(winelens_reserve_usage(u,'need-consent','label_scan',1,false)->>'reason'='consent_required','consent');
  r:=winelens_reserve_usage(u,'paid','label_scan',1,true); rid:=(r->>'reservation_id')::uuid;

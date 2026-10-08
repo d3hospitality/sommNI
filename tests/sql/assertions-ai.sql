@@ -4,8 +4,8 @@ insert into auth.users(id,email) values ('66666666-6666-4666-8666-666666666666',
 do $$begin
  perform test_assert((select max(version)=3 from winelens_rate_cards),'rate card v3 current');
  perform test_assert((select card->'features' ?& array['label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text'] from winelens_rate_cards where version=2),'v2 features');
- perform test_assert((select card->'features' ?& array['wine_card','label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text','sommelier'] and (card->'features'->'sommelier'->>'free')::int=3 and (card->'features'->'wine_card'->>'tokens')::int=1 and (card->'app'->>'amount')::int=999 from winelens_rate_cards where version=3),'v3: wine cards, the app');
- perform test_assert(not has_function_privilege('authenticated','public.winelens_grant_app(uuid,text,integer,integer)','execute'),'app grant service only');
+ perform test_assert((select card->'features' ?& array['wine_card','label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text','sommelier'] and (card->'features'->'sommelier'->>'free')::int=3 and (card->'features'->'wine_card'->>'tokens')::int=1 and (card->'welcome'->>'tokens')::int=3 and not card ? 'app' from winelens_rate_cards where version=3),'v3: wine cards, welcome tokens, no app fee');
+ perform test_assert(not has_function_privilege('authenticated','public.winelens_grant_welcome(uuid)','execute') and to_regprocedure('public.winelens_grant_app(uuid,text,integer,integer)') is null,'welcome grant service only; no app purchase');
  perform test_assert(not has_function_privilege('authenticated','public.winelens_bottle_claim(text,uuid,uuid,jsonb)','execute') and not has_table_privilege('authenticated','public.winelens_shared_bottles','select'),'shared bottles service only');
  perform test_assert(not has_table_privilege('authenticated','public.winelens_list_entries','select') and not has_table_privilege('anon','public.winelens_catalog_proposals','select'),'list tables API-only');
  perform test_assert((select (a.card->'packs')=(b.card->'packs') from winelens_rate_cards a, winelens_rate_cards b where a.version=1 and b.version=2),'pack grants unchanged');
@@ -24,7 +24,7 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  -- Features not on the current card are refused.
  begin perform winelens_reserve_usage(u,'old','made_up_feature',1,true); raise exception 'FAIL unknown feature'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
  -- Wine-list photo pages: Free has one page a month, so a 3-page list needs Pro.
- perform test_assert(winelens_begin_job(u,'wine_list_page',md5('list-free')::uuid,repeat('9',64),true,3)->>'reason'='pro_required','free: 3 photo pages need Pro');
+ perform test_assert(winelens_begin_job(u,'wine_list_page',md5('list-free')::uuid,repeat('9',64),true,3)->>'reason'='token_limit','free without tokens: 3 photo pages need tokens');
  r:=winelens_begin_job(u,'wine_list_page',md5('list-one')::uuid,repeat('8',64),false,1);
  perform test_assert(r->>'source'='allowance','free: one photo page');
  perform winelens_finish_job(u,md5('list-one')::uuid,(r->>'reservation_id')::uuid,'{"entries":[]}');
@@ -39,8 +39,8 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
    perform test_assert(r->>'allowed'='true' and r->>'source'='allowance','free note '||i);
    perform test_assert(winelens_finish_job(u,md5('n'||i)::uuid,(r->>'reservation_id')::uuid,'{"nose":"Cherry."}')->>'status'='committed','note commit '||i);
  end loop;
- perform test_assert(winelens_begin_job(u,'tasting_notes',md5('n6')::uuid,repeat('f',64),true)->>'reason'='pro_required','sixth free note needs Pro');
- perform test_assert(winelens_begin_job(u,'studio_render',md5('s1')::uuid,repeat('f',64),true)->>'reason'='pro_required','free has no Studio');
+ perform test_assert(winelens_begin_job(u,'tasting_notes',md5('n6')::uuid,repeat('f',64),true)->>'reason'='token_limit','sixth free note needs tokens');
+ perform test_assert(winelens_begin_job(u,'studio_render',md5('s1')::uuid,repeat('f',64),true)->>'reason'='token_limit','free without tokens has no Studio');
  perform test_assert(winelens_billing_status(u)->'allowances'->'tasting_notes'->>'remaining'='0','status shows notes used');
  -- Replay returns the stored result and never charges again; a changed input is refused.
  r:=winelens_begin_job(u,'tasting_notes',md5('n1')::uuid,repeat('f',64),false);
@@ -51,14 +51,19 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  r:=winelens_begin_job(u,'sommelier',md5('som1')::uuid,repeat('s',64),false);
  perform test_assert(r->>'allowed'='true' and r->>'source'='allowance','sommelier from the allowance');
  perform test_assert(winelens_finish_job(u,md5('som1')::uuid,(r->>'reservation_id')::uuid,'{"wines":[]}')->>'status'='committed','sommelier commit');
- -- Free: no wine cards (tokens need the app).
- perform test_assert(winelens_begin_job(u,'wine_card',md5('card-free')::uuid,repeat('c',64),true)->>'reason'='pro_required','free: cards need the app');
- -- Buying the app: owned for life, 10 starter tokens, one grant per Stripe session; wrong amount refused.
- begin perform winelens_grant_app(u,'cs_app_wrong',499,10); raise exception 'FAIL wrong app amount'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
- perform test_assert(winelens_grant_app(u,'cs_app',999,10)->>'granted'='10','app grant');
- perform test_assert(winelens_grant_app(u,'cs_app',999,10)->>'replayed'='true','app grant replay');
- perform test_assert((winelens_period(u)->>'pro')::boolean and (select period_end='infinity' and status='active' from winelens_entitlements where user_id=u),'owned for life');
- perform test_assert((select units=10 from winelens_token_wallets where user_id=u),'starter tokens');
+ -- Free: wine cards are tokens only; the 3 welcome tokens make the first cards without a purchase.
+ perform test_assert(winelens_begin_job(u,'wine_card',md5('card-free')::uuid,repeat('c',64),true)->>'reason'='token_limit','free without tokens: no cards');
+ perform test_assert(winelens_grant_welcome(u)->>'granted'='3','welcome tokens');
+ r:=winelens_begin_job(u,'wine_card',md5('card-welcome')::uuid,repeat('c',64),true);
+ perform test_assert(r->>'source'='tokens' and r->>'tokens'='2','welcome card charged 1');
+ perform test_assert(winelens_finish_job(u,md5('card-welcome')::uuid,(r->>'reservation_id')::uuid,'{"path":"w.png"}')->>'status'='committed','welcome card commit');
+ perform test_assert(not (winelens_period(u)->>'pro')::boolean,'still free');
+ -- The first pack unlocks for life (one grant per Stripe session) and adds its tokens.
+ perform test_assert(winelens_grant_tokens(u,'cs_first','t5',20)->>'unlocked'='true','first pack');
+ perform test_assert(winelens_grant_tokens(u,'cs_first','t5',20)->>'replayed'='true','first pack replay');
+ perform test_assert((winelens_period(u)->>'pro')::boolean and (select period_end='infinity' and status='active' from winelens_entitlements where user_id=u),'unlocked for life');
+ perform test_assert((select units=22 from winelens_token_wallets where user_id=u),'welcome + pack tokens');
+ perform test_assert(winelens_billing_status(u)->'allowances'->'tasting_notes'->>'remaining'='60','unlocked allowances');
  -- v3 packs grant their v3 units (the v1 mapping still reconciles old sessions).
  perform test_assert(winelens_grant_tokens(u,'cs_v3_pack','t20',100)->>'granted'='100','v3 pack');
  perform test_assert(winelens_grant_tokens(u,'cs_v3_big','t50',275)->>'granted'='275','v3 big pack');

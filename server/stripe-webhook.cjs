@@ -28,15 +28,10 @@ function createWebhookHandler({ getDb = getAdmin, env = process.env, getStripe =
       if (['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(event.type)) {
         if (obj.mode === 'payment' && obj.payment_status === 'paid') {
           if (obj.currency !== card.currency || obj.client_reference_id !== user) throw new HttpError(400, 'Payment does not match the account.');
-          if (obj.metadata.purchase === 'app') {
-            // The app: owned for life, with its starter tokens (the database checks amount + tokens against the card).
-            if (obj.amount_total !== card.app.amount) throw new HttpError(400, 'App payment does not match the price.');
-            await rpc(db, 'winelens_grant_app', { p_user: user, p_stripe_session: obj.id, p_amount: card.app.amount, p_tokens: card.app.tokens });
-          } else {
-            const pack = Object.hasOwn(card.packs, obj.metadata.pack || '') ? card.packs[obj.metadata.pack] : null;
-            if (!pack || obj.amount_total !== pack.amount) throw new HttpError(400, 'Token payment does not match the pack.');
-            await rpc(db, 'winelens_grant_tokens', { p_user: user, p_stripe_session: obj.id, p_pack: obj.metadata.pack, p_units: pack.units });
-          }
+          // Token packs only: the pack unlocks wineLENS for life (the database grants both together).
+          const pack = Object.hasOwn(card.packs, obj.metadata.pack || '') ? card.packs[obj.metadata.pack] : null;
+          if (!pack || obj.amount_total !== pack.amount) throw new HttpError(400, 'Token payment does not match the pack.');
+          await rpc(db, 'winelens_grant_tokens', { p_user: user, p_stripe_session: obj.id, p_pack: obj.metadata.pack, p_units: pack.units });
         }
         const closed = await db.from('winelens_checkout_attempts').update({ expires_at: new Date().toISOString() }).eq('user_id', user).eq('session_id', obj.id);
         if (closed.error) throw new Error('Could not close checkout');

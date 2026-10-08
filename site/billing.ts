@@ -17,21 +17,20 @@ export function accountBilling(getSession: () => Promise<Session | null>) {
     try {
       const state = await request('status'); if (rev !== revision) return;
       el('billing-message').textContent = state.billing_available ? '' : 'Not available yet, you have not been charged.';
-      el('plan-name').textContent = state.plan === 'owner' ? 'wineLENS owner' : state.pro ? 'wineLENS · yours for life' : 'Free preview';
+      el('plan-name').textContent = state.plan === 'owner' ? 'wineLENS owner' : state.pro ? 'wineLENS · unlocked' : 'wineLENS · free';
       el('billing-test').hidden = !state.test_mode;
-      el('plan-period').textContent = state.pro ? 'Owned. No subscription, nothing renews.' : 'Catalog, Atlas, Study and Find My Wine are free. Get wineLENS to make wine cards.';
-      el('plan-upgrades').hidden = !!state.pro;
+      el('plan-period').textContent = state.pro ? 'Unlocked for life by your first token pack. No subscription, nothing renews.' : 'The catalog, Atlas, Study and Find My Wine are free. Wine cards use tokens.';
+      el('app-offer').hidden = !!state.pro;
       el('manage-billing').hidden = !state.can_manage;
-      el('token-panel').hidden = !state.pro;
+      el('token-panel').hidden = false;
       el('token-balance').textContent = `${state.tokens} tokens`;
       savedAutoSpend = !!state.auto_spend;
       (el('auto-spend') as HTMLInputElement).checked = savedAutoSpend;
       el('allowance-period').textContent = `Resets ${new Date(state.end).toLocaleDateString()}`;
       el('allowance-list').replaceChildren();
       const card = state.rate_card || rateCard;
-      const app = state.app || rateCard.app;
-      el('buy-app').textContent = `Get wineLENS · $${(app.amount / 100).toFixed(2)} once`;
-      el('app-offer').textContent = `Yours for life, no subscription. Includes ${app.tokens} tokens: your first ${app.tokens} wine cards.`;
+      const welcome = (state.welcome || rateCard.welcome).tokens;
+      el('app-offer').textContent = `wineLENS is free, and your first ${welcome} wine cards are on us. Any token pack also unlocks more free help every month, for life.`;
       for (const [key, feature] of Object.entries(card.features) as [string, { label: string }][]) {
         const row = document.createElement('li'); row.textContent = `${feature.label}: ${state.allowances[key].remaining} of ${state.allowances[key].limit} left`; el('allowance-list').append(row);
       }
@@ -43,7 +42,6 @@ export function accountBilling(getSession: () => Promise<Session | null>) {
       el('billing-activity').replaceChildren();
       for (const entry of state.ledger) { const li = document.createElement('li'); li.textContent = `${new Date(entry.created_at).toLocaleDateString()} · ${entry.event} · ${entry.feature.replaceAll('_', ' ')} · ${entry.units} tokens${entry.allowance ? ` · ${entry.allowance} included` : ''}`; el('billing-activity').append(li); }
       if (!state.ledger.length) { const li = document.createElement('li'); li.textContent = 'No activity yet.'; el('billing-activity').append(li); }
-      (el('buy-app') as HTMLButtonElement).disabled = !state.billing_available;
       (el('manage-billing') as HTMLButtonElement).disabled = !state.management_available;
       el('usage-block').hidden = false; el('activity-block').hidden = false;
     } catch (e) { if (rev === revision) { el('usage-block').hidden = true; el('activity-block').hidden = true; } if (rev === revision) el('billing-message').textContent = e instanceof Error ? e.message : 'Account usage unavailable.'; }
@@ -64,7 +62,6 @@ export function accountBilling(getSession: () => Promise<Session | null>) {
     } catch (e) { (el('auto-spend') as HTMLInputElement).checked = savedAutoSpend; el('billing-message').textContent = e instanceof Error ? e.message : 'Billing unavailable.'; }
     finally { busy = false; }
   }
-  el('buy-app').addEventListener('click', () => void action('checkout-app'));
   el('manage-billing').addEventListener('click', () => void action('portal'));
   el('refresh-billing').addEventListener('click', () => void refresh());
   el('auto-spend').addEventListener('change', () => { const input = el('auto-spend') as HTMLInputElement; void action('auto-spend', { enabled: input.checked }); });

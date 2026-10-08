@@ -11,15 +11,15 @@ const { NOTES_SYSTEM, NOTES_SCHEMA, NOTE_LIMITS, formatNotes, bottlePrompt, card
 const { bottleKey } = require('./wine-identity.cjs');
 const sha = value => createHash('sha256').update(value).digest('hex');
 const REFUSALS = {
-  wine_list_page: { pro_required: 'This list needs more photo pages than the free preview includes. Get the wineLENS app, or paste or upload the list as text.', label: 'wine list' },
-  wine_list_text: { pro_required: 'You have used this month’s free text pages. The wineLENS app includes more.', label: 'wine list' },
-  tasting_notes: { pro_required: 'You have used this month’s free tasting notes. The wineLENS app includes more.', label: 'tasting notes' },
-  studio_render: { pro_required: 'New bottle images use tokens. Get the wineLENS app to add tokens.', label: 'rendering' },
-  wine_card: { pro_required: 'Wine cards use tokens. Get the wineLENS app to add tokens.', label: 'wine card' },
-  sommelier: { pro_required: 'You have used this month’s free sommelier picks. The wineLENS app includes more.', label: 'sommelier picks' },
+  wine_list_page: { pro_required: 'This list needs more photo pages than you have free this month. Add tokens, or paste or upload the list as text.', label: 'wine list' },
+  wine_list_text: { pro_required: 'You have used this month’s free text pages. Add tokens to keep going.', label: 'wine list' },
+  tasting_notes: { pro_required: 'You have used this month’s free tasting notes. Add tokens to keep going.', label: 'tasting notes' },
+  studio_render: { pro_required: 'New bottle images use tokens. Add tokens from $5.', label: 'rendering' },
+  wine_card: { pro_required: 'Wine cards use tokens. Add tokens from $5.', label: 'wine card' },
+  sommelier: { pro_required: 'You have used this month’s free sommelier picks. Add tokens to keep going.', label: 'sommelier picks' },
 };
 function refuse(feature, hold) {
-  const messages = { ...REFUSALS[feature], consent_required: 'Confirm token use first.', token_limit: 'Your token balance or monthly spending limit is too low.',
+  const messages = { ...REFUSALS[feature], consent_required: 'Confirm token use first.', token_limit: 'Not enough tokens (or over your monthly spending limit). Add tokens from $5.',
     request_mismatch: 'This request ID was used for something else. Try again.', deleting: 'Account deletion is in progress.' };
   const status = hold.reason === 'request_mismatch' || hold.reason === 'deleting' ? 409 : 402;
   return new HttpError(status, messages[hold.reason] || UNAVAILABLE);

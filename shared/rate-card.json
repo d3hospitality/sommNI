@@ -1,7 +1,7 @@
 {
   "version": 3,
   "currency": "usd",
-  "app": {"amount": 999, "tokens": 10},
+  "welcome": {"tokens": 3},
   "features": {
     "wine_card": {"label": "Wine cards", "free": 0, "pro": 0, "tokens": 1},
     "studio_render": {"label": "New bottle images", "free": 0, "pro": 0, "tokens": 1},

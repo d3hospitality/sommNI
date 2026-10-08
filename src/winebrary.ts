@@ -5,7 +5,7 @@
 // allowance first, then tokens (owners of the app) with explicit consent. Drafts are always
 // reviewed before they are saved.
 // ═══════════════════════════════════════════════════════════════════
-import { accountRequest, billingStatus, costOf, appOffer, requestIds, ACCOUNT_PAGE, type BillingStatus, type Feature } from './billing';
+import { accountRequest, billingStatus, costOf, packOffer, requestIds, ACCOUNT_PAGE, type BillingStatus, type Feature } from './billing';
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
 import { lookupWineById, allCatalogWines, type CatalogWine } from './identity';
@@ -99,7 +99,7 @@ function costGate(feature: Feature, onChange: () => void, quantity: () => number
     (once.parentElement as HTMLElement).hidden = (always.parentElement as HTMLElement).hidden = !(allowed && needsConsent);
     if (cost.tokens !== shownTokens) { once.checked = false; always.checked = false; shownTokens = cost.tokens; } // consent is for one amount
     box.querySelector('.wl-consent span')!.textContent = `Use ${cost.tokens} ${cost.tokens === 1 ? 'token' : 'tokens'} for this`;
-    link.hidden = !(cost.upgrade || cost.short); link.textContent = cost.upgrade ? 'Get wineLENS ↗' : 'Add tokens ↗';
+    link.hidden = !(cost.upgrade || cost.short); link.textContent = 'Add tokens ↗';
     onChange();
   };
   const gate: Gate = {
@@ -544,7 +544,7 @@ function accountDialog() {
   const revision = dialogRevision;
   void billingStatus().then(state => {
     if (revision !== dialogRevision) return;
-    dialog.querySelector('#wl-plan')!.textContent = `${state.plan === 'owner' ? 'wineLENS owner' : state.pro ? 'wineLENS · yours for life' : `Free preview · get wineLENS for ${appOffer(state)}`} · ${state.tokens} ${state.tokens === 1 ? 'token' : 'tokens'}`;
+    dialog.querySelector('#wl-plan')!.textContent = `${state.plan === 'owner' ? 'wineLENS owner' : state.pro ? 'wineLENS · unlocked' : `wineLENS · free · ${packOffer(state).replace('Tokens', 'tokens')} unlock more`} · ${state.tokens} ${state.tokens === 1 ? 'token' : 'tokens'}`;
     dialog.querySelector<HTMLElement>('#wl-review')!.hidden = state.plan !== 'owner';
     const card = state.rate_card?.features || {};
     dialog.querySelector('#wl-plan-detail')!.textContent = Object.entries(state.allowances).map(([k, a]) => `${(card as Record<string, { label: string }>)[k]?.label || k}: ${a!.remaining}/${a!.limit} left`).join(' · ');
