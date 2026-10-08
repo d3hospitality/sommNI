@@ -11,7 +11,7 @@ async function invoke(handler, body, extra={}) {
 }
 function fixture() {
  const calls=[], rows={winelens_entitlements:{user_id:user.id,customer_id:'cus_test',status:'free'}};
- let state={plan:'free',pro:false,tokens:100,allowances:{label_scan:{limit:5,remaining:5}}};
+ let state={plan:'free',pro:false,tokens:100,allowances:{label_scan:{limit:5,remaining:5}},rate_card:{version:require('../shared/rate-card.json').version}};
  let attempt={id:randomUUID(),choice:'t5',expires_at:new Date(Date.now()+3600000).toISOString()};
  const grants=new Set();
  const db={auth:{getUser:async()=>({data:{user}})},from(table){

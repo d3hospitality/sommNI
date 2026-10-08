@@ -62,3 +62,10 @@ test('webhook reads the raw request stream without touching lazy JSON body parse
  Object.defineProperty(req,'body',{get(){throw Error('must not invoke body parser')}});
  assert.deepEqual(await readRaw(req),body);
 });
+test('no pack is sold while the database runs an older rate card (before the v3 migration)',async()=>{
+ const f=fixture();f.setState({rate_card:{version:2}});
+ const r=await invoke(billing(f),{action:'checkout-tokens',pack:'t5'});assert.equal(r.status,503);assert.match(r.body.error,/not been charged/);
+ assert.equal(f.calls.filter(c=>c[0]==='stripe-checkout').length,0);
+ assert.equal((await invoke(billing(f),{action:'status'})).body.billing_available,false);
+ f.setState({rate_card:{version:card.version}});assert.equal((await invoke(billing(f),{action:'status'})).body.billing_available,true);
+});

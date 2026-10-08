@@ -29,7 +29,9 @@ function createBillingHandler({ getDb, env = process.env, getStripe = () => stri
     // Idempotent and cheap after the first time; never blocks the status (e.g. before the v3 migration).
     if (body.action === 'status') await rpc(db, 'winelens_grant_welcome', { p_user: user.id }).catch(() => {});
     const state = await rpc(db, 'winelens_billing_status', { p_user: user.id });
-    if (body.action === 'status') return { ...state, welcome: card.welcome, billing_available: configured(env), management_available: /^sk_(test|live)_/.test(env.STRIPE_SECRET_KEY || ''), scan_available: !!env.OPENAI_API_KEY, test_mode: /^sk_test_/.test(env.STRIPE_SECRET_KEY || '') };
+    // Sell packs only when the database runs the same rate card as this code (e.g. not before the v3 migration).
+    const inStep = state.rate_card?.version === card.version;
+    if (body.action === 'status') return { ...state, welcome: card.welcome, billing_available: configured(env) && inStep, management_available: /^sk_(test|live)_/.test(env.STRIPE_SECRET_KEY || ''), scan_available: !!env.OPENAI_API_KEY, test_mode: /^sk_test_/.test(env.STRIPE_SECRET_KEY || '') };
     if (body.action === 'auto-spend') {
       if (typeof body.enabled !== 'boolean') throw new HttpError(400, 'Choose on or off.');
       await rpc(db, 'winelens_auto_spend', { p_user: user.id, p_enabled: body.enabled }); return { auto_spend: body.enabled };
@@ -41,6 +43,7 @@ function createBillingHandler({ getDb, env = process.env, getStripe = () => stri
       const portal = await stripe.billingPortal.sessions.create({ customer: current.customer_id, return_url: canonicalOrigin + '/link' }); return { url: portal.url };
     }
     if (!own(card.packs, body.pack)) throw new HttpError(400, 'Choose a valid token pack.');
+    if (!inStep) throw new HttpError(503, 'Token packs open after the next update. You have not been charged.');
     if (!user.email_confirmed_at) throw new HttpError(403, 'Verify your email before checkout.');
     const choice = body.pack;
     const attempt = await rpc(db, 'winelens_reserve_checkout', { p_user: user.id, p_choice: choice });
