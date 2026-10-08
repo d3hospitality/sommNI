@@ -201,15 +201,15 @@ export async function pushGrapeSpriteToGlasses(bridge: EvenAppBridge, baseUrl: s
 
 export async function pushBottleSprite(
   bridge: EvenAppBridge, baseUrl: string, wineId: string | null,
-  containerID: number, containerName: string,
+  containerID: number, containerName: string, width = 80, height = 80,
 ): Promise<void> {
   const epoch=imageEpoch;
   // The backend's glasses bottle first, the bundled photograph as the fallback.
   const sources = catalogBottleSources(baseUrl, wineId);
   if (!sources.length) return; // unknown wine: no image rather than another wine's bottle
   try {
-    const canvas = await bottleCanvas(sources, 80, 80);
-    const png = encodeGrayscalePng(80,80,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data,80));
+    const canvas = await bottleCanvas(sources, width, height);
+    const png = encodeGrayscalePng(width,height,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,width,height).data,width));
     await pushImg(bridge, containerID, containerName, png, epoch);
     console.log(`[wineLENS] Bottle sprite pushed: ${wineId}`);
   } catch (e) {

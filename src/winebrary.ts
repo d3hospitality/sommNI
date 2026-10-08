@@ -16,6 +16,8 @@ import { libraryNotes, parseSections, SOURCE_LABEL, type NoteSection } from './n
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
 import { wineListFlow } from './wine-list';
+import { finderFlow } from './finder-phone';
+import { openFinderOnGlasses } from './events';
 import { setCatalogSaver, type SaveResult } from './quick-save';
 import { showWineOnGlasses, canShowWine, clearPrivateGlasses, drawGlassesPreview, setLibrarySource, libraryChanged, saveLibraryCache, clearLibraryCache } from './winebrary-glasses';
 
@@ -41,6 +43,7 @@ let busy = false;
 let dialogRevision = 0;
 let idleHook: (() => void) | null = null; // re-checks cost-gated buttons once a request finishes
 let wineList: ReturnType<typeof wineListFlow>;
+let finder: ReturnType<typeof finderFlow>;
 
 const STYLE_LABEL: Record<string, string> = { Rose: 'Rosé', Unknown: 'Wine' };
 const styleOf = (wine: LibraryWine) => wine.metadata?.color ? STYLE_LABEL[wine.metadata.color] ?? wine.metadata.color : 'Wine';
@@ -591,6 +594,10 @@ export function initWinebrary() {
   dialog = document.createElement('dialog'); dialog.className = 'wl-dialog'; dialog.setAttribute('aria-label', 'Winebrary'); document.body.append(dialog);
   dialog.addEventListener('cancel', e => { if (busy) e.preventDefault(); });
   wineList = wineListFlow({ dialog, costHTML, openDialog, feedback, run, setBusy, isBusy: () => busy, revision: () => dialogRevision, userId: () => userId, refresh, esc, costGate, makeCards });
+  finder = finderFlow({ dialog, costHTML, openDialog, feedback, run, setBusy, revision: () => dialogRevision, userId: () => userId, esc, costGate,
+    items: () => items, thumb: item => thumb(item), saveCatalog: saveCatalogWine, openSaved: wine => detail(wine), signIn, showOnGlasses: openFinderOnGlasses,
+    async addWine(fields) { const account = userId; const result = await wb('add', fields); if (account === userId) await refresh(); return result.item as LibraryWine; } });
+  document.querySelectorAll('[data-wl-finder]').forEach(el => el.addEventListener('click', () => finder.open()));
   document.getElementById('wl-account')!.addEventListener('click', () => { if (!userId) signIn(); else accountDialog(); });
   document.querySelectorAll('[data-wl-add]').forEach(el => el.addEventListener('click', () => requireAccount(() => addWine())));
   document.querySelectorAll('[data-open-account]').forEach(el => el.addEventListener('click', () => document.getElementById('wl-account')!.click()));

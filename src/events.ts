@@ -14,14 +14,12 @@ import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, Tex
 import {
   WINE_TYPES, COUNTRIES, countriesFor, WineType, TYPE_DISPLAY, getWinesForCountry,
   getGrapesForCountry, getWinesForGrape,
-  getFlavorOptionsForType, getRankedWines, Wine,
 } from './constants';
 import { getWineId, lookupWineById } from './identity';
 import {
   rebuildHomePage, buildCountryListPage, buildGrapeListPage,
   buildWineListPage, buildTastingNotesPage,
-  buildFinderTypePage, buildFinderVibePage, buildFinderFlavorPage,
-  buildFinderBodyPage, buildFinderWorldPage, buildFinderResultsPage,
+  buildFinderStepPage, buildFinderResultsPage, finderInfoText, finderWhyText, FINDER_BOTTLE,
   buildPairingsListPage, buildPairingDetailPage,
   wineListPage, pairingsListPage,
   HOME_LIST_ITEMS, LIBRARY_INDEX, FINDER_INDEX, STUDY_INDEX, PAIRINGS_INDEX,
@@ -34,7 +32,10 @@ import {
 import { getPairings, flushCompanionWrites, type Pairing } from './sync';
 import { flushStudyWrites } from './study/store';
 import { releaseDisplay, suspendDisplay } from './display';
-import { handleLibraryGlassesEvent, openLibraryOnGlasses } from './winebrary-glasses';
+import { handleLibraryGlassesEvent, openLibraryOnGlasses, readLibrary, showWineWithReturn } from './winebrary-glasses';
+import type { LibraryWine } from './winebrary';
+import { findWines, finderSteps, answerStep, SKIP, STEP_COUNT, type FinderAnswers, type FinderResult } from './finder';
+import { catalogHidden } from './catalog-view';
 import { handleStudyGlassesEvent, openStudyOnGlasses } from './study/glasses';
 import { handleAtlasGlassesEvent, openAtlasOnGlasses, pushCatalogGlobe, pauseAtlasGlasses, resumeAtlasGlasses } from './atlas-app';
 import { rebuildGlassesPage, invalidateImages, sendSerial, imageIdle, suspendImages } from './image-utils';
@@ -44,7 +45,7 @@ import { saveFromGlasses } from './quick-save';
 // ═══ STATE ═══
 type Page =
   | "home" | "countries" | "grapes" | "wines" | "notes"
-  | "finder-type" | "finder-vibe" | "finder-flavor" | "finder-body" | "finder-world" | "finder-results"
+  | "finder-step" | "finder-results"
   | "pairings-list" | "pairing-detail";
 
 let currentPage: Page = "home";
@@ -54,8 +55,9 @@ let currentGrape: string | null = null;
 let currentWineId: string | null = null;
 
 // Find My Wine state
-let finderAnswers: Record<string, string> = {};
-let finderResults: { wine: Wine; type: WineType; country: string; score: number }[] = [];
+let finderAnswers: FinderAnswers = {};
+let finderStep = 0;
+let finderResults: FinderResult[] = [];
 
 // Pairings state
 let pairingsCache: Pairing[] = [];
@@ -136,8 +138,49 @@ async function updateFinderResultPreview(
   lastHoveredIndex = index;
   invalidateImages();
   const r = finderResults[index];
-  const wineId = getWineId(r.type, r.country, r.wine.name);
-  if (wineId) await pushBottleSprite(bridge, baseUrl, wineId, 3, "bottle");
+  const text = (containerID: number, containerName: string, content: string) =>
+    bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID, containerName, content, contentOffset: 0, contentLength: 0 }));
+  await text(4, 'info', finderInfoText(r));
+  await text(5, 'why', finderWhyText(r));
+  const bottleId = r.item?.id ?? r.saved?.wine_id ?? null;
+  if (bottleId) await pushBottleSprite(bridge, baseUrl, bottleId, 3, "bottle", FINDER_BOTTLE.w, FINDER_BOTTLE.h);
+}
+
+// ═══ FIND MY WINE ═══
+/** The Winebrary as the finder sees it (empty when signed out or still loading). */
+function finderLibrary(): LibraryWine[] {
+  try { return readLibrary().items; } catch { return []; }
+}
+async function showFinderStep(bridge: EvenAppBridge, index: number): Promise<void> {
+  await rebuild(bridge, buildFinderStepPage(index, finderAnswers));
+  finderStep = index; currentPage = "finder-step"; lastNavigationTime = Date.now();
+}
+async function showFinderResults(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
+  finderResults = findWines(finderAnswers, finderLibrary(), 12);
+  const empty = catalogHidden() && !finderResults.length
+    ? 'The default wines are hidden, and nothing in My Winebrary fits yet. Double tap and skip a step.' : undefined;
+  await rebuild(bridge, buildFinderResultsPage(finderResults, empty));
+  currentPage = "finder-results"; lastHoveredIndex = -1; lastNavigationTime = Date.now();
+  if (finderResults.length) {
+    const r = finderResults[0], bottleId = r.item?.id ?? r.saved?.wine_id ?? null;
+    if (bottleId) await pushBottleSprite(bridge, baseUrl, bottleId, 3, "bottle", FINDER_BOTTLE.w, FINDER_BOTTLE.h);
+    lastHoveredIndex = 0;
+  }
+  log(`> Finder results: ${finderResults.length} picks`, "success");
+}
+/** Sent from the phone: these answers' picks on the glasses (double tap goes back to the last question). */
+export async function openFinderOnGlasses(answers: FinderAnswers): Promise<void> {
+  const bridge = bridgeRef;
+  if (!bridge) throw new Error('Connect your Even G2 glasses first.');
+  if (navigating) throw new Error('The glasses are busy. Try again in a moment.');
+  await releaseDisplay();
+  navigating = true;
+  try {
+    invalidateImages();
+    finderAnswers = { ...answers }; finderStep = STEP_COUNT - 1;
+    currentType = null; currentCountry = null; currentGrape = null; currentWineId = null; notesReturn = null;
+    await showFinderResults(bridge, baseUrlRef);
+  } finally { navigating = false; }
 }
 
 /**
@@ -233,41 +276,19 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
 
     // ── Finder back navigation ──
     else if (currentPage === "finder-results") {
-      await rebuild(bridge, buildFinderWorldPage());
-      currentPage = "finder-world"; lastNavigationTime = Date.now();
-
-      log("< Back to world", "success");
+      // Back to the last question, with its answer cleared.
+      const last = finderSteps(finderAnswers)[STEP_COUNT - 1].id;
+      delete finderAnswers[last];
+      await showFinderStep(bridge, STEP_COUNT - 1);
+      log("< Back to the questions", "success");
     }
-    else if (currentPage === "finder-world") {
-      await rebuild(bridge, buildFinderBodyPage());
-      currentPage = "finder-body"; lastNavigationTime = Date.now();
-
-      delete finderAnswers.world;
-      log("< Back to body", "success");
+    else if (currentPage === "finder-step" && finderStep > 0) {
+      const prev = finderStep - 1;
+      delete finderAnswers[finderSteps(finderAnswers)[prev].id];
+      await showFinderStep(bridge, prev);
+      log(`< Finder step ${prev + 1}`, "success");
     }
-    else if (currentPage === "finder-body") {
-      const type = finderAnswers.type as WineType | "skip" | undefined;
-      await rebuild(bridge, buildFinderFlavorPage(type && type !== "skip" ? type : null));
-      currentPage = "finder-flavor"; lastNavigationTime = Date.now();
-
-      delete finderAnswers.body;
-      log("< Back to flavor", "success");
-    }
-    else if (currentPage === "finder-flavor") {
-      await rebuild(bridge, buildFinderVibePage());
-      currentPage = "finder-vibe"; lastNavigationTime = Date.now();
-
-      delete finderAnswers.flavor;
-      log("< Back to vibe", "success");
-    }
-    else if (currentPage === "finder-vibe") {
-      await rebuild(bridge, buildFinderTypePage());
-      currentPage = "finder-type"; lastNavigationTime = Date.now();
-
-      delete finderAnswers.vibe;
-      log("< Back to type", "success");
-    }
-    else if (currentPage === "finder-type") {
+    else if (currentPage === "finder-step") {
       await goHome(bridge, baseUrl);
     }
 
@@ -326,10 +347,8 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         return;
       }
       if (idx === FINDER_INDEX) {
-        finderAnswers = {};
-        await rebuild(bridge, buildFinderTypePage());
-        currentPage = "finder-type";
-        lastNavigationTime = Date.now();
+        finderAnswers = {}; finderResults = [];
+        await showFinderStep(bridge, 0);
 
         log("> Find My Wine", "success");
       }
@@ -462,91 +481,45 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
 
     // ═══ FINDER STEPS ═══
 
-    if (currentPage === "finder-type") {
-      const typeOptions = ["Red", "White", "Sparkling", "Rose", "Orange", "Dessert"];
-      if (idx === 7) { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (idx === 6) { finderAnswers.type = "skip"; }
-      else if (idx >= 0 && idx < 6) { finderAnswers.type = typeOptions[idx]; }
-      await rebuild(bridge, buildFinderVibePage());
-      currentPage = "finder-vibe"; lastNavigationTime = Date.now();
-
-      log(`> Finder type: ${finderAnswers.type}`, "success");
-      return;
-    }
-
-    if (currentPage === "finder-vibe") {
-      const vibeIds = ["fresh", "smooth", "bold", "funky", "elegant", "cozy"];
-      if (idx === 7) { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (idx === 6) { finderAnswers.vibe = "skip"; }
-      else if (idx >= 0 && idx < 6) { finderAnswers.vibe = vibeIds[idx]; }
-      const type = finderAnswers.type as WineType | "skip" | undefined;
-      await rebuild(bridge, buildFinderFlavorPage(type && type !== "skip" ? type : null));
-      currentPage = "finder-flavor"; lastNavigationTime = Date.now();
-
-      log(`> Finder vibe: ${finderAnswers.vibe}`, "success");
-      return;
-    }
-
-    if (currentPage === "finder-flavor") {
-      const type = finderAnswers.type as WineType | "skip" | undefined;
-      const flavorOpts = getFlavorOptionsForType(type && type !== "skip" ? type : null);
-      const totalItems = flavorOpts.length + 2;
-      if (idx === totalItems - 1) { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (idx === totalItems - 2) { finderAnswers.flavor = "skip"; }
-      else if (idx >= 0 && idx < flavorOpts.length) { finderAnswers.flavor = flavorOpts[idx].id; }
-      await rebuild(bridge, buildFinderBodyPage());
-      currentPage = "finder-body"; lastNavigationTime = Date.now();
-
-      log(`> Finder flavor: ${finderAnswers.flavor}`, "success");
-      return;
-    }
-
-    if (currentPage === "finder-body") {
-      const bodyIds = ["light", "medium", "full"];
-      if (idx === 4) { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (idx === 3) { finderAnswers.body = "skip"; }
-      else if (idx >= 0 && idx < 3) { finderAnswers.body = bodyIds[idx]; }
-      await rebuild(bridge, buildFinderWorldPage());
-      currentPage = "finder-world"; lastNavigationTime = Date.now();
-
-      log(`> Finder body: ${finderAnswers.body}`, "success");
-      return;
-    }
-
-    if (currentPage === "finder-world") {
-      const worldIds = ["old", "new", "skip"];
-      if (idx === 3) { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (idx >= 0 && idx < 3) { finderAnswers.world = worldIds[idx]; }
-      finderResults = getRankedWines(finderAnswers).slice(0, 12);
-      await rebuild(bridge, buildFinderResultsPage(finderResults));
-      currentPage = "finder-results"; lastHoveredIndex = -1; lastNavigationTime = Date.now();
-      if (finderResults.length > 0) {
-        const r = finderResults[0];
-        const wid = getWineId(r.type, r.country, r.wine.name);
-        await pushBottleSprite(bridge, baseUrl, wid, 3, "bottle");
-        lastHoveredIndex = 0;
-      }
-      log(`> Finder results: ${finderResults.length} matches`, "success");
+    if (currentPage === "finder-step") {
+      const step = finderSteps(finderAnswers)[finderStep], n = step.options.length;
+      if (idx === n + 1) { navigating = false; await goBack(bridge, baseUrl); return; }
+      if (idx < 0 || idx > n) return;
+      finderAnswers = answerStep(finderAnswers, step.id, idx === n ? SKIP : step.options[idx].id);
+      log(`> Finder ${step.id}: ${finderAnswers[step.id]}`, "success");
+      if (finderStep + 1 < STEP_COUNT) await showFinderStep(bridge, finderStep + 1);
+      else await showFinderResults(bridge, baseUrl);
       return;
     }
 
     if (currentPage === "finder-results") {
       if (idx === finderResults.length) { navigating = false; await goBack(bridge, baseUrl); return; }
-      if (idx >= 0 && idx < finderResults.length) {
-        const r = finderResults[idx];
-        const wineId = getWineId(r.type, r.country, r.wine.name);
-        currentType = r.type; currentCountry = r.country; currentGrape = null;
-        currentWineId = wineId;
-        await rebuild(bridge, buildTastingNotesPage(r.wine, wineId));
-        currentPage = "notes"; lastNavigationTime = Date.now();
-        notesReturn = async () => {
-          await rebuild(bridge, buildFinderResultsPage(finderResults));
-          currentPage = "finder-results"; lastHoveredIndex = -1; lastNavigationTime = Date.now();
-          await updateFinderResultPreview(bridge, baseUrl, 0);
-        };
-        await pushTastingNotesImages(bridge, baseUrl, wineId);
-        log(`> ${r.wine.name} (finder)`, "success");
+      const r = finderResults[idx];
+      if (!r) return;
+      const backToResults = async () => {
+        await rebuild(bridge, buildFinderResultsPage(finderResults));
+        currentPage = "finder-results"; lastHoveredIndex = -1; lastNavigationTime = Date.now();
+        await updateFinderResultPreview(bridge, baseUrl, 0);
+      };
+      if (!r.item && r.saved) {
+        // A wine of their own (no catalog notes): open it in My Winebrary; double tap comes back here.
+        navigating = false;
+        await showWineWithReturn(r.saved as LibraryWine, async () => {
+          navigating = true;
+          try { await backToResults(); } finally { navigating = false; }
+        });
+        log(`> ${r.title} (finder, Winebrary)`, "success");
+        return;
       }
+      if (!r.item) return;
+      const wineId = r.item.id;
+      currentType = r.item.type; currentCountry = r.item.country; currentGrape = null;
+      currentWineId = wineId;
+      await rebuild(bridge, buildTastingNotesPage(r.item.wine, wineId));
+      currentPage = "notes"; lastNavigationTime = Date.now();
+      notesReturn = backToResults;
+      await pushTastingNotesImages(bridge, baseUrl, wineId);
+      log(`> ${r.item.wine.name} (finder)`, "success");
       return;
     }
 

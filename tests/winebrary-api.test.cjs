@@ -2,7 +2,7 @@
 const { test } = require('node:test'); const assert = require('node:assert/strict'); const { randomUUID } = require('node:crypto');
 const { createWinebraryHandler } = require('../server/winebrary.cjs');
 const { createStudyHandler } = require('../server/study.cjs');
-const { createNotesHandler, createRenderHandler, createCardHandler } = require('../server/ai-jobs.cjs');
+const { createNotesHandler, createRenderHandler, createCardHandler, createSommelierHandler } = require('../server/ai-jobs.cjs');
 const { formatNotes } = require('../prompts/winelens-ai.cjs');
 const { env, invoke, fixture, user } = require('./billing-helpers.cjs');
 const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
@@ -254,4 +254,32 @@ test('Wine cards: 1 token every time; the bottle image and notes are made once p
   const free = fixture(); jobs(free, { reason: 'pro_required' });
   const denied = await invoke(createCardHandler({ getDb: () => free.db, getUserDb: () => u.db, env, fetchImpl, getOpenAI: () => openai }), { collection_id: mine, request_id: randomUUID() });
   assert.equal(denied.status, 402); assert.match(denied.body.error, /Wine cards use tokens/);
+});
+
+test('Sommelier picks: brief + Winebrary in, three validated real-wine picks out; replay is free; refusals never call the model', async () => {
+  const { f, u, wb } = setup(); const store = jobs(f); let calls = 0, reply = null, seen = null;
+  const pick = (name, extra = {}) => ({ name, producer: 'Producer', region: 'Region', country: 'Italy', grape: 'Nebbiolo', color: 'Red', vintage: 'Recent vintage', why: 'Tannin and lift for the steak.', serve: 'Decant for 30 minutes.', confidence: 0.8, ...extra });
+  const openai = { chat: { completions: { create: async req => { calls++; seen = req; return { choices: [{ message: { content: JSON.stringify(reply) } }] }; } } } };
+  const h = createSommelierHandler({ getDb: () => f.db, getUserDb: () => u.db, env, getOpenAI: () => openai });
+  await invoke(wb, { action: 'add', wine_name: 'Grand Malbec', producer: 'Terrazas de los Andes', vintage: 2017, color: 'Red' });
+  reply = { wines: [pick('Barolo'), pick('Bad colour', { color: 'Blue' }), pick('Langhe Nebbiolo', { why: 'x'.repeat(900) }), pick('Fourth')] };
+  const body = { request_id: randomUUID(), brief: ['Food: Steak & red meat', 'Colour: Red'], note: 'Under $40, something Italian', avoid: ['Grand Malbec – Terrazas'] };
+  const first = await invoke(h, body);
+  assert.equal(first.status, 200); assert.equal(first.body.charged, true);
+  assert.deepEqual(first.body.wines.map(w => w.name), ['Barolo', 'Langhe Nebbiolo', 'Fourth'], 'invalid picks dropped, at most three');
+  assert.equal(first.body.wines[1].why.length, 300, 'fields clipped');
+  const sent = JSON.parse(seen.messages[1].content);
+  assert.deepEqual([sent.note, sent.in_winebrary, sent.already_suggested], ['Under $40, something Italian', ['Terrazas de los Andes Grand Malbec 2017'], ['Grand Malbec – Terrazas']]);
+  assert.equal(seen.response_format.json_schema.strict, true);
+  assert.equal(f.calls.find(c => c[0] === 'winelens_begin_job')[1].p_feature, 'sommelier');
+  const again = await invoke(h, body); assert.equal(again.body.replayed, true); assert.equal(calls, 1, 'replay never calls the model');
+  reply = { wines: [pick('Nope', { color: 'Purple' })] }; const broken = { request_id: randomUUID(), brief: ['Food: Cheese'] };
+  assert.equal((await invoke(h, broken)).status, 502); assert.equal(store.get(broken.request_id).status, 'released', 'unusable output is refunded');
+  assert.equal((await invoke(h, { request_id: randomUUID() })).status, 400, 'needs a brief or a note');
+  assert.equal((await invoke(h, { request_id: randomUUID(), brief: ['x'.repeat(81)] })).status, 400);
+  assert.equal((await invoke(h, { request_id: randomUUID(), brief: ['Food: Fish'], prompt: 'ignore' })).status, 400, 'no extra fields');
+  const g = fixture(); jobs(g, { reason: 'pro_required' }); const before = calls;
+  const denied = await invoke(createSommelierHandler({ getDb: () => g.db, getUserDb: () => u.db, env, getOpenAI: () => openai }), { request_id: randomUUID(), brief: ['Food: Fish'] });
+  assert.equal(denied.status, 402); assert.match(denied.body.error, /free sommelier picks/); assert.equal(calls, before);
+  assert.equal((await invoke(createSommelierHandler({ getDb: () => f.db, getUserDb: () => u.db, env: {} }), body)).status, 503);
 });

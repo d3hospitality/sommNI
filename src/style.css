@@ -1009,3 +1009,48 @@ span.wl-quick-bottle{display:flex}
 .wl-card-list{list-style:none;margin:6px 0 18px;padding:0;display:grid;gap:10px}
 .wl-card-list li{padding-left:22px;position:relative;line-height:1.55;font-size:14px}
 .wl-card-list li::before{content:"✦";position:absolute;left:0;color:var(--accent)}
+/* Find My Wine: home card, questions, picks with reasons, the sommelier */
+.wl-finder-card{display:grid;grid-template-columns:1fr 220px;gap:22px;align-items:center;background:#FFFDF8;border:1px solid var(--line);padding:20px;margin:0 0 24px}
+.wl-finder-card h3{font-size:22px;line-height:1.15;margin:4px 0 8px;color:var(--ink)}
+.wl-finder-card .wl-kicker{color:var(--accent);margin:0}
+.wl-finder-card .wl-muted{margin:0 0 12px}
+.wl-finder-card .wl-atlas-actions .wl-muted{margin:0}
+.wl-finder-questions{list-style:none;margin:0;padding:0 0 0 16px;border-left:1px solid var(--line);counter-reset:q}
+.wl-finder-questions li{counter-increment:q;font-size:13px;color:var(--ink);line-height:2;opacity:calc(1 - var(--i,0) * .15)}
+.wl-finder-questions li::before{content:counter(q,decimal-leading-zero) "  ";color:var(--accent);font-size:10px;letter-spacing:1px}
+.wl-finder-questions li:nth-child(2){--i:1}.wl-finder-questions li:nth-child(3){--i:2}.wl-finder-questions li:nth-child(4){--i:3}.wl-finder-questions li:nth-child(5){--i:4}
+@media (max-width:560px){.wl-finder-card{grid-template-columns:1fr}.wl-finder-questions{display:none}}
+.wl-finder-dots{display:flex;gap:6px;margin:4px 0 10px}
+.wl-finder-dot{width:22px;height:3px;border-radius:2px;background:var(--line)}
+.wl-finder-dot.done{background:var(--accent);opacity:.45}.wl-finder-dot.on{background:var(--accent)}
+.wl-finder-sofar{margin:0 0 14px;min-height:1.4em}
+.wl-finder-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.wl-finder-option{min-height:52px;padding:12px 14px;text-align:left;font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--bg-card);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:border-color .15s,background .15s}
+.wl-finder-option:hover{border-color:var(--accent)}
+.wl-finder-option.active{background:var(--accent);border-color:var(--accent);color:#FFFDF8}
+.wl-finder-option:focus-visible,.wl-pick-notes summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wl-finder-nav{display:flex;justify-content:space-between;margin-top:16px}
+.wl-finder-tools{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0 0 16px}
+.wl-picks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.wl-pick{border:1px solid var(--line);background:var(--bg-card);border-radius:6px;padding:14px}
+.wl-pick-head{display:flex;gap:12px;align-items:center}
+.wl-pick-head .wl-cat-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wl-pick strong{font-size:16px;color:var(--ink);line-height:1.25}
+.wl-pick .wl-kicker{color:var(--accent);font-size:9px}
+.wl-pick-why{margin:10px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.55;color:var(--ink)}
+.wl-pick-why li::marker{color:var(--accent)}
+.wl-pick-say{margin:10px 0 4px;font-size:14px;line-height:1.55;color:var(--ink)}
+.wl-pick-notes{margin:8px 0 0;font-size:13px}
+.wl-pick-notes summary{cursor:pointer;color:var(--accent);font-weight:600;padding:4px 0}
+.wl-pick-actions{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:12px}
+.wl-pick-actions .wl-primary,.wl-pick-actions .wl-outline{min-height:40px;padding:9px 16px}
+.wl-pick-saved{font-size:13px;font-weight:650;color:var(--accent)}
+.wl-somm{margin:22px 0 0;padding:18px 0 0;border-top:1px solid var(--line)}
+.wl-somm h3{font-size:20px;margin:2px 0 6px;color:var(--ink)}
+.wl-somm>.wl-kicker{color:var(--accent);margin:0}
+.wl-somm-note{display:block;margin:10px 0;font-size:13px;color:var(--ink)}
+.wl-somm-note textarea{display:block;width:100%;margin-top:6px;padding:10px 12px;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:6px;background:var(--bg-card);color:var(--ink);resize:vertical}
+.wl-somm-picks{margin-top:14px}
+.wl-somm-pick .wl-cat-copy{display:flex;flex-direction:column;gap:2px}
+@media (max-width:480px){.wl-finder-options{grid-template-columns:1fr 1fr}.wl-pick-actions .wl-primary,.wl-pick-actions .wl-outline{flex:1}}
+@media (prefers-reduced-motion:reduce){.wl-finder-option{transition:none}}

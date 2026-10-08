@@ -7,14 +7,14 @@ import { LINK_API_URL, SITE_URL } from './account-config';
 import defaults from '../shared/rate-card.json';
 
 export type Feature = keyof typeof defaults.features;
-export type AccountPath = 'billing' | 'winebrary' | 'study' | 'wine-scan' | 'wine-notes' | 'bottle-render' | 'wine-card' | 'wine-list' | 'catalog-review';
+export type AccountPath = 'billing' | 'winebrary' | 'study' | 'wine-scan' | 'wine-notes' | 'bottle-render' | 'wine-card' | 'wine-list' | 'catalog-review' | 'sommelier';
 export interface BillingStatus {
   pro: boolean; plan: string; tokens: number; auto_spend: boolean; scan_available: boolean;
   allowances: Partial<Record<Feature, { remaining: number; limit: number }>>;
   rate_card: typeof defaults; end?: string; app?: { amount: number; tokens: number };
 }
 export const ACCOUNT_PAGE = `${SITE_URL}/link`;
-const TIMEOUTS: Partial<Record<AccountPath, number>> = { 'wine-scan': 90000, 'wine-notes': 60000, 'bottle-render': 150000, 'wine-card': 180000, 'wine-list': 240000, winebrary: 30000, 'catalog-review': 30000 };
+const TIMEOUTS: Partial<Record<AccountPath, number>> = { 'wine-scan': 90000, 'wine-notes': 60000, 'bottle-render': 150000, 'wine-card': 180000, 'wine-list': 240000, sommelier: 60000, winebrary: 30000, 'catalog-review': 30000 };
 
 /** status is undefined when the response never arrived (offline/timeout): the only case a paid request may be retried with the same ID. */
 export class AccountError extends Error { constructor(message: string, readonly status?: number) { super(message); } }

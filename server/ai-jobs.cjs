@@ -6,7 +6,8 @@ const { createHash, randomUUID } = require('node:crypto');
 const OpenAI = require('openai');
 const { endpoint, rpc, only, HttpError, UNAVAILABLE } = require('./service.cjs');
 const { userDb, ownWine, ownedImagePath, signedUrl, signImages, saveRow, BUCKET, UUID } = require('./winebrary.cjs');
-const { NOTES_SYSTEM, NOTES_SCHEMA, NOTE_LIMITS, formatNotes, bottlePrompt, cardPrompt, wineContext } = require('../prompts/winelens-ai.cjs');
+const { NOTES_SYSTEM, NOTES_SCHEMA, NOTE_LIMITS, formatNotes, bottlePrompt, cardPrompt, wineContext,
+  SOMMELIER_SYSTEM, SOMMELIER_SCHEMA, SOMMELIER_FIELDS, SOMMELIER_COLORS, sommelierContext } = require('../prompts/winelens-ai.cjs');
 const { bottleKey } = require('./wine-identity.cjs');
 const sha = value => createHash('sha256').update(value).digest('hex');
 const REFUSALS = {
@@ -15,6 +16,7 @@ const REFUSALS = {
   tasting_notes: { pro_required: 'You have used this month’s free tasting notes. The wineLENS app includes more.', label: 'tasting notes' },
   studio_render: { pro_required: 'New bottle images use tokens. Get the wineLENS app to add tokens.', label: 'rendering' },
   wine_card: { pro_required: 'Wine cards use tokens. Get the wineLENS app to add tokens.', label: 'wine card' },
+  sommelier: { pro_required: 'You have used this month’s free sommelier picks. The wineLENS app includes more.', label: 'sommelier picks' },
 };
 function refuse(feature, hold) {
   const messages = { ...REFUSALS[feature], consent_required: 'Confirm token use first.', token_limit: 'Your token balance or monthly spending limit is too low.',
@@ -227,4 +229,46 @@ function createCardHandler({ getDb, getUserDb = userDb, env = process.env, fetch
     return { item: (await signImages(udb, [item]))[0], image_reused: stored.image_reused, notes_reused: stored.notes_reused, notes_added: !!notesText, replayed: outcome.replayed, charged: !outcome.replayed };
   }, { getDb, maxBytes: 2048 });
 }
-module.exports = { createNotesHandler, createRenderHandler, createCardHandler, runJob, validateNotes, bottleKey, IMAGE_MODEL };
+// ── Find My Wine › beyond the catalog: three real wines for the brief (allowance, then 1 token) ──
+const textList = (value, max, len) => {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > max || value.some(v => typeof v !== 'string' || v.length > len)) throw new HttpError(400, 'Invalid request.');
+  return value.map(v => v.trim()).filter(Boolean);
+};
+function validateSuggestions(value) {
+  const wines = Array.isArray(value?.wines) ? value.wines.slice(0, 6) : [];
+  const clean = wines.map(w => {
+    if (!w || typeof w !== 'object' || !SOMMELIER_COLORS.includes(w.color) || !Number.isFinite(w.confidence)) return null;
+    const out = { color: w.color, confidence: Math.max(0, Math.min(1, w.confidence)) };
+    for (const [k, max] of Object.entries(SOMMELIER_FIELDS)) { if (typeof w[k] !== 'string') return null; out[k] = w[k].trim().slice(0, max); }
+    return out.name && out.why ? out : null;
+  }).filter(Boolean).slice(0, 3);
+  if (!clean.length) throw new Error('Invalid sommelier output');
+  return clean;
+}
+function createSommelierHandler({ getDb, getUserDb = userDb, env = process.env, getOpenAI = () => new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 45000, maxRetries: 0 }) } = {}) {
+  return endpoint(async ({ req, body, db, user }) => {
+    only(body, ['request_id', 'spend_consent', 'brief', 'note', 'avoid']);
+    if (!env.OPENAI_API_KEY) throw new HttpError(503, UNAVAILABLE);
+    if (!UUID.test(String(body.request_id || '')) || (body.spend_consent !== undefined && typeof body.spend_consent !== 'boolean')) throw new HttpError(400, 'Invalid request.');
+    if (body.note !== undefined && (typeof body.note !== 'string' || body.note.length > 280)) throw new HttpError(400, 'Keep the note under 280 characters.');
+    const brief = textList(body.brief, 6, 80), avoid = textList(body.avoid, 12, 120), note = (body.note || '').trim();
+    if (!brief.length && !note) throw new HttpError(400, 'Answer a question or tell the sommelier what you would like.');
+    // What they already keep, so the sommelier suggests something new (read with their own session).
+    const { data } = await getUserDb(req).from('user_collection').select('wine_name,producer,vintage').eq('user_id', user.id).order('created_at', { ascending: false }).limit(30);
+    const library = (data || []).map(w => [w.producer, w.wine_name, w.vintage].filter(Boolean).join(' ').slice(0, 120));
+    const model = env.WINELENS_SOMMELIER_MODEL || 'gpt-4.1-mini';
+    const outcome = await runJob({ db, user, feature: 'sommelier', requestId: body.request_id, fingerprint: sha(`sommelier:${JSON.stringify({ brief, note, avoid })}`), consent: body.spend_consent,
+      onReplay: stored => ({ wines: stored.wines }),
+      work: async () => {
+        const answer = await getOpenAI().chat.completions.create({ model, max_completion_tokens: 1200,
+          messages: [{ role: 'system', content: SOMMELIER_SYSTEM }, { role: 'user', content: sommelierContext({ brief, note, avoid, library }) }],
+          response_format: { type: 'json_schema', json_schema: { name: 'sommelier_picks', strict: true, schema: SOMMELIER_SCHEMA } } });
+        const wines = validateSuggestions(JSON.parse(answer.choices?.[0]?.message?.content || 'null'));
+        return { stored: { wines, model }, response: { wines } };
+      } });
+    return { wines: outcome.result.wines, replayed: outcome.replayed, charged: !outcome.replayed };
+  }, { getDb, maxBytes: 4096 });
+}
+
+module.exports = { createSommelierHandler, validateSuggestions, createNotesHandler, createRenderHandler, createCardHandler, runJob, validateNotes, bottleKey, IMAGE_MODEL };

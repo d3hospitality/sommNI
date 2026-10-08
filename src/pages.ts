@@ -19,6 +19,8 @@ import {
 import type { Pairing, CourseSlot } from './sync';
 import { lookupWineById } from './identity';
 import { catalogHidden } from './catalog-view';
+import { finderSteps, answersLine, resultLine, STEP_COUNT, type FinderAnswers, type FinderResult } from './finder';
+import { clipPx } from './glass-px';
 import { pageList, wholeRowHeight, clipLabel, clipBytes, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
 /** Tasting-notes footer. A tap on the notes saves the wine to My Winebrary (see quick-save.ts). */
@@ -423,11 +425,9 @@ export function buildTastingNotesPage(wine: Wine, wineId: string | null): Rebuil
 }
 
 // ══════════════════════════════════════════════════════════════════
-// FIND MY WINE — 5-step questionnaire pages
-// Each step: a selectable list and a full-height prompt panel.
-//   2 = options list (left, narrow)
-//   5 = step text in the right panel
-//
+// FIND MY WINE — five sommelier questions (finder.ts), then picks with reasons.
+// Each step: a selectable list and a prompt panel.
+//   2 = options list (left)  ·  5 = step text in the right panel
 // ══════════════════════════════════════════════════════════════════
 
 const FINDER_STEP_H = 288 - PANEL_TAG_Y - 2; // flush to floor minus 2px safe zone
@@ -457,95 +457,75 @@ function finderContainers(listName: string, options: string[], stepContent: stri
   });
 }
 
-export function buildFinderTypePage(): RebuildPageContainer {
-  return finderContainers("finder-type",
-    ["Red", "White", "Sparkling", "Rosé", "Orange", "Dessert", "Surprise Me", BACK_LABEL],
-    "Step 1/5\nWhat are you\nin the mood for?");
-}
-
-export function buildFinderVibePage(): RebuildPageContainer {
-  return finderContainers("finder-vibe",
-    ["Fresh & Crisp", "Smooth & Easy", "Bold & Powerful",
-     "Funky & Adventurous", "Elegant & Complex", "Cozy & Warm",
-     "Skip", BACK_LABEL],
-    "Step 2/5\nWhat kind of vibe?");
-}
-
-export function buildFinderFlavorPage(type: WineType | null): RebuildPageContainer {
-  const flavorOpts = getFlavorOptionsForType(type);
-  const options = [...flavorOpts.map(f => f.label), "Skip", BACK_LABEL];
-  return finderContainers("finder-flavor", options,
-    "Step 3/5\nWhat sounds good\nright now?");
-}
-
-export function buildFinderBodyPage(): RebuildPageContainer {
-  return finderContainers("finder-body",
-    ["Light & Refreshing", "Medium & Balanced", "Full & Rich", "Skip", BACK_LABEL],
-    "Step 4/5\nHow should it feel?");
-}
-
-export function buildFinderWorldPage(): RebuildPageContainer {
-  return finderContainers("finder-world",
-    ["Old World", "New World", "No Preference", BACK_LABEL],
-    "Step 5/5\nOld World or\nNew World?");
+/** One finder question: its options, Skip, Back. The panel shows the answers so far. */
+export function buildFinderStepPage(index: number, answers: FinderAnswers): RebuildPageContainer {
+  const steps = finderSteps(answers), step = steps[index];
+  const before: FinderAnswers = {};
+  for (const s of steps.slice(0, index)) if (answers[s.id]) before[s.id] = answers[s.id];
+  const sofar = index ? answersLine(before) : '';
+  const panel = `FIND MY WINE  ·  ${index + 1}/${STEP_COUNT}\n\n${step.question}` + (sofar && sofar !== 'Anything goes' ? `\n\n${clipBytes(sofar, 200)}` : '');
+  return finderContainers(`finder-${step.id}`, [...step.options.map(o => o.label), "Skip", BACK_LABEL], panel);
 }
 
 // ══════════════════════════════════════════════════════════════════
-// FINDER RESULTS — 3 containers
-//   2 = top wine names list + Back
-//   3 = bottle sprite (100x100) — reactive
-//   4 = match info
+// FINDER RESULTS — 4 containers
+//   2 = picks list + Back (left)
+//   3 = bottle (100×136) — follows the highlighted pick
+//   4 = what it is: producer, grape, country, "In your Winebrary"
+//   5 = why: the sommelier's reasons, then what a tap does
 // ══════════════════════════════════════════════════════════════════
 
-export function buildFinderResultsPage(
-  results: { wine: Wine; type: WineType; country: string; score: number }[],
-): RebuildPageContainer {
+/** The panel beside the bottle. */
+export function finderInfoText(r: FinderResult | undefined): string {
+  if (!r) return '';
+  return [r.producer, resultLine(r), r.region && r.region !== r.country ? r.region : '', r.mine ? 'In your Winebrary' : '']
+    .filter(Boolean).map(line => clipBytes(line, 60)).join('\n');
+}
+/** The reasons under the bottle. */
+export function finderWhyText(r: FinderResult | undefined, emptyLine = 'No wine matches all of that. Double tap and skip a step.'): string {
+  if (!r) return emptyLine;
+  const why = r.reasons.length ? r.reasons.map(x => `· ${x}`).join('\n') : '· A good all-rounder for what you asked';
+  return clipBytes(why, 820) + `\n${r.item ? 'Tap: notes, then tap to save' : 'Tap: open in My Winebrary'}`;
+}
+
+export function buildFinderResultsPage(results: FinderResult[], emptyLine?: string): RebuildPageContainer {
   const top = results.slice(0, 12);
-
-  const wineNames = top.map(r => {
-    // Strip grape prefix — finder results span multiple grapes
-    const mainGrape = r.wine.grape.split("/")[0].replace(/\s*\([^)]*\)/, "").trim();
-    let display = r.wine.name;
-    if (display.startsWith(mainGrape)) {
-      const rest = display.slice(mainGrape.length).replace(/^[\s–—\-]+/, "").trim();
-      if (rest.length > 0) display = rest;
-    }
-    return display.length > 40 ? display.slice(0, 38) + ".." : display;
-  });
-  const listItems = [...wineNames, BACK_LABEL];
-
+  // Two picks with the same name (two "Cabernet Sauvignon"s) are told apart by producer.
+  const named = new Map<string, number>(); for (const r of top) named.set(r.title, (named.get(r.title) || 0) + 1);
+  const listItems = [...top.map(r => (named.get(r.title) || 0) > 1 && r.producer ? `${r.title} · ${r.producer}` : r.title), BACK_LABEL];
   const resultList = new ListContainerProperty({
-    xPosition: 10, yPosition: 20, width: 470, height: LIST_VIEW_H,
+    xPosition: 2, yPosition: 2, width: 296, height: LIST_VIEW_H,
     containerID: 2, containerName: "results",
     itemContainer: new ListItemContainerProperty({
       itemCount: listItems.length, itemWidth: 0, isItemSelectBorderEn: 1,
-      itemName: listItems.map(label => clipLabel(label)),
+      itemName: listItems.map(label => clipLabel(clipPx(label, 270))),  // measured: the firmware cuts rows mid-letter
     }),
     isEventCapture: 1,
   });
-
-  const bottleSprite = new ImageContainerProperty({
-    xPosition: 486, yPosition: 10, width: 80, height: 80,
+  const bottle = new ImageContainerProperty({
+    xPosition: FINDER_BOTTLE.x, yPosition: FINDER_BOTTLE.y, width: FINDER_BOTTLE.w, height: FINDER_BOTTLE.h,
     containerID: 3, containerName: "bottle",
   });
-
-  const firstResult = top[0];
-  const infoText = new TextContainerProperty({
-    xPosition: 486, yPosition: 92, width: 86, height: 50,
+  const info = new TextContainerProperty({
+    xPosition: 410, yPosition: 8, width: 164, height: 132,
     containerID: 4, containerName: "info",
-    content: firstResult
-      ? `${firstResult.country}`
-      : "No matches",
+    content: finderInfoText(top[0]),
     isEventCapture: 0,
   });
-
+  const why = new TextContainerProperty({
+    xPosition: 304, yPosition: 146, width: 270, height: 138,
+    containerID: 5, containerName: "why",
+    content: finderWhyText(top[0], emptyLine),
+    isEventCapture: 0,
+  });
   return new RebuildPageContainer({
-    containerTotalNum: 3,
+    containerTotalNum: 4,
     listObject: [resultList],
-    textObject: [infoText],
-    imageObject: [bottleSprite],
+    textObject: [info, why],
+    imageObject: [bottle],
   });
 }
+export const FINDER_BOTTLE = { x: 304, y: 6, w: 100, h: 136 };
 
 // ══════════════════════════════════════════════════════════════════
 // COURSE BUILDER — overview of saved courses (up to 5)

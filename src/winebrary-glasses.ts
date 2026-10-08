@@ -463,6 +463,9 @@ export async function showWineFromAtlas(wine: LibraryWine, back: () => Promise<v
   await settle(() => render({ kind: 'detail', wine, from: 'atlas', parent: null }));
 }
 
+/** Another screen (Find My Wine) opens one account wine; double tap runs `back`. */
+export const showWineWithReturn = showWineFromAtlas;
+
 /** Sent from the phone: show one account wine; double tap returns home. */
 export async function showWineOnGlasses(wine: LibraryWine) {
   if (!canShowWine()) throw new Error('Connect your Even G2 glasses first.');
