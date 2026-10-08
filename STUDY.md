@@ -1,8 +1,26 @@
-# wineLENS study engine (first slice)
+# wineLENS Study
 
-One loop, on the phone and on Even G2:
+Two loops, on the phone and on Even G2, from one Study map (Home › Study):
 
-**sourced wine/release → approved recall card → attempt → reveal with source → one rating → one persisted review → next due date.**
+1. **Seasons** (practice, PolyGot model): map → season → stages → boss.
+2. **Daily review** (sourced facts, spaced repetition): sourced wine/release → approved recall card → attempt → reveal with source → one rating → one persisted review → next due date.
+
+## Seasons
+
+| Season | Stages (generated from the catalog) |
+|---|---|
+| Grapes & styles | Meet the styles · Burgundy & bubbles · Italian icons · Bordeaux & friends · Sun & spice · Crisp whites · Off the beaten path |
+| Regions & countries | The big four · France / Italy / United States up close · Spain & Portugal · New frontiers |
+| Tasting notes | Classic reds / whites / Old World reds (textbook markers) · Read the glass · Nose to wine · Palate to grape (catalog notes) |
+| Producers & stories | Tuscan houses · Piedmont families · California dreamers · French estates · Around the world |
+
+- **Cards** (`src/study/seasons.ts`): *meet* introduces, *flash* flips and is self-graded (Knew it / Not yet), *pick* has three options, *spot* is true/false. IDs are stable (`p.<season>.<stage>.<subject>.<kind>`) and option order is seeded, so every device builds the same cards. `cardProblems()` rejects a card whose prompt gives the answer, whose answer is not exactly one option, or whose options repeat (checked for every card in `npm run test:study`). Ambiguous style questions (a "Brut Rosé" label, a sweet sparkling wine) are never generated.
+- **Glyphs** (`src/study/glyph.ts`): every card side is one centred 288×128 picture: a pictogram (the grape sprites, a wine glass filled by style, the Atlas globe zoomed onto the lit country, a map pin, a nose, an eye, a book, or the real catalog bottle) with one big word. On G2 it sits at the lens centre (x 144, y 30) with centred text below (spaces, measured with `src/glass-px.ts` from PolyGot). The phone shows the same 16-level picture, pixel-crisp, on a dark "lens" card.
+- **Runs** (`src/study/practice.ts`): XP 10 per right answer (+2 per combo step from x3, up to +10), 2 per miss. A combo runs within one stage or boss and breaks after 15 minutes. Stars: 60% ★, 80% ★★, 100% ★★★ (latest answer per card). A stage unlocks with ★ on the previous one; the boss (8 cards from the whole season, flash cards asked as picks, three hearts) unlocks with ★ on every stage.
+- **Storage**: each answer is one recognition event (`scheduler_version: practice-v1`) in the same account-isolated log as reviews, synced through `/api/study` like any review. Boss answers are filed under `p.<season>.boss.…` and a run ends with a `p.<season>.boss` marker (cleared or not). XP, combos, stars, unlocks and the day streak are replays of the log, so they agree across devices. Practice never schedules a review card.
+- **Glasses**: Study map (Daily review + four seasons) › season (☆☆☆ per stage, □ locked, ◆ boss) › cards › stage summary (next stage / play again / season map). Tap acts; double tap goes back a level; answers already given stay saved.
+
+## Daily review
 
 ## Content
 
@@ -59,4 +77,4 @@ npm run test:study   # engine, G2 adapter (mock bridge), phone flow in the real 
 npm run check:ids
 ```
 
-**Simulator 0.9.5 (checked):** the Home › Study today › prompt › tap › reveal › Good › next prompt › double tap › summary flow works. Even Hub storage survives a web view reload but not a simulator restart, so persistence across app restarts still has to be checked in the Even app on a real phone.
+**Simulator 0.9.5 (checked 8 Oct 2026):** Home › Study › Daily review › prompt › tap › reveal › Good › summary works, and full stages of Grapes & styles (1–2), Regions & countries (1) and Producers & stories (1) play through: meet, flash front/back, pick, spot, answered and stage-clear screens, with globe, grape, glass, book and bottle glyphs. Even Hub storage survives a web view reload but not a simulator restart, so persistence across app restarts still has to be checked in the Even app on a real phone.

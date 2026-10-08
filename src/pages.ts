@@ -32,14 +32,14 @@ export const HOME_LIST_ITEMS = [
   "My Winebrary",
   "Find My Wine",
   "Wine Pairings",
-  "Study today",
+  "Study",
   "Wine Atlas",
   ...WINE_TYPES.map(t => TYPE_DISPLAY[t]),
 ];
 export const LIBRARY_INDEX = 0;
 export const FINDER_INDEX = 1;
 export const PAIRINGS_INDEX = 2;
-export const STUDY_INDEX = 3;   // shared recall engine (study/glasses.ts)
+export const STUDY_INDEX = 3;   // seasons + daily review (study/glasses.ts)
 export const ATLAS_INDEX = 4;   // globe + winery-cluster explorer (atlas-app.ts)
 export const TYPE_START_INDEX = 5;  // wine types start here
 

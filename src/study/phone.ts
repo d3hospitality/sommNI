@@ -8,7 +8,11 @@ import { activeSession, startSession, endSession, onSessionChange, buildQueue, n
 import { studySyncState, syncStudy } from './sync';
 import { dueLabel, type Rating } from './scheduler';
 import { catalogPhotoUrl } from '../bottle-assets';
-import { getQuizHistory } from '../sync';
+import { getQuizHistory, inEvenHubHost } from '../sync';
+import { seasons, season as seasonById, type Glyph, type SeasonId, type Stage } from './seasons';
+import { PracticeRun, progress, seasonStats, stageStats, stageUnlocked, bossUnlocked, studyTotals, nextStage, bossId, answerLine } from './practice';
+import { glyphCanvas } from './glyph';
+import { openSeasonOnGlasses } from './glasses';
 
 const RATINGS: Rating[] = ['again', 'hard', 'good', 'easy'];
 const RATING_LABEL: Record<Rating, string> = { again: 'Again', hard: 'Hard', good: 'Good', easy: 'Easy' };
@@ -24,6 +28,9 @@ let preferRecognition = false;
 let quick = false;
 const QUICK_CARDS = 3;
 let legacyHtml = '';
+let openSeason: SeasonId | null = null;
+let run: PracticeRun | null = null;
+let flipping = false;
 
 export function initStudyPanel(container: HTMLElement) {
   root = container;
@@ -48,6 +55,34 @@ async function onClick(e: Event) {
   if (act === 'close') { endSession(); }
   if (act === 'flag' && s?.current) { await flagCard(s.current.card.id); s.current.saveError = 'Flagged. This card is paused until the reference is reviewed.'; renderStudyPanel(); }
   if (act === 'retry-save') { await retrySave().catch(() => {}); await syncStudy(); renderStudyPanel(); }
+  // Seasons
+  if (act === 'season') { openSeason = el.dataset.value as SeasonId; run = null; renderStudyPanel(); top(); }
+  if (act === 'seasons') { openSeason = null; run = null; renderStudyPanel(); top(); }
+  if (act === 'play') startRun(el.dataset.value!);
+  if (act === 'on-glasses' && openSeason) { el.setAttribute('disabled', ''); await openSeasonOnGlasses(openSeason).catch(() => {}); el.textContent = 'Open on your glasses ✓'; }
+  if (act === 'flip' && run?.current && !flipping) {
+    // Turn the card over, then swap in the back.
+    flipping = true; root?.querySelector('.st-flash')?.classList.add('st-flipping');
+    setTimeout(() => { flipping = false; run?.flip(); }, 260);
+  }
+  if (act === 'grade' && run) await run.grade(el.dataset.value === 'yes');
+  if (act === 'pick' && run) await run.choose(el.dataset.value!);
+  if (act === 'run-next' && run) { await run.next(); focusRun(); }
+  if (act === 'run-stop' && run) run.stop();
+  if (act === 'run-again' && run) startRun(run.stage.boss ? 'boss' : run.stage.id);
+  if (act === 'run-up' && run) { const up = nextStage(run.season, run.stage); if (up) startRun(up.boss ? 'boss' : up.id); }
+  if (act === 'run-close') { run = null; renderStudyPanel(); top(); }
+}
+function top() { requestAnimationFrame(() => root?.scrollIntoView({ block: 'start', behavior: 'smooth' })); }
+function focusRun() { requestAnimationFrame(() => root?.querySelector<HTMLElement>('.st-run [data-focus]')?.focus()); }
+function startRun(stageId: string) {
+  if (!openSeason) return;
+  const s = seasonById(openSeason);
+  const stage = stageId === 'boss' ? s.boss : s.stages.find(st => st.id === stageId);
+  if (!stage) return;
+  run = new PracticeRun(s, stage, 'phone');
+  run.on(() => renderStudyPanel());
+  renderStudyPanel(); top(); focusRun();
 }
 function focusCard() { requestAnimationFrame(() => root?.querySelector<HTMLElement>('#st-typed, .st-card h3')?.focus()); }
 
@@ -55,7 +90,10 @@ export async function renderStudyPanel() {
   if (!root) return;
   if (!legacyHtml) legacyHtml = await legacyHistoryHtml();
   const s = activeSession();
-  root.innerHTML = `<div class="st-wrap">${header()}${s ? sessionHtml() : overviewHtml()}${progressHtml()}${aboutHtml()}${legacyHtml}</div>`;
+  if (run) root.innerHTML = `<div class="st-wrap">${runHtml(run)}</div>`;
+  else if (openSeason) root.innerHTML = `<div class="st-wrap">${seasonHtml(openSeason)}</div>`;
+  else root.innerHTML = `<div class="st-wrap">${header()}${s ? sessionHtml() : seasonsHtml() + overviewHtml()}<details class="st-more"><summary>Daily review cards and sources</summary>${progressHtml()}${aboutHtml()}</details>${legacyHtml}</div>`;
+  paintGlyphs();
 }
 function renderStatusOnly() { const el = root?.querySelector('#st-status'); if (el) el.outerHTML = statusHtml(); }
 
@@ -64,9 +102,10 @@ function header(): string {
   const now = new Date().toISOString();
   const due = states.filter(s => s.state.step >= 0 && s.state.due_at && s.state.due_at <= now).length;
   const count = (k: string) => states.filter(s => s.status === k).length;
-  return `<header class="st-head"><p class="wl-kicker">STUDY TODAY</p><h2>Recall first.<br>Then check the source.</h2>
-    <dl class="st-stats"><div><dt>Due</dt><dd>${due}</dd></div><div><dt>New</dt><dd>${count('new')}</dd></div><div><dt>Review this</dt><dd>${count('needs-review')}</dd></div><div><dt>Stable</dt><dd>${count('stable')}</dd></div></dl>
-    ${statusHtml()}</header>`;
+  const totals = studyTotals();
+  return `<header class="st-head"><p class="wl-kicker">STUDY</p><h2>Learn wine<br>one card at a time.</h2>
+    <dl class="st-stats st-game"><div><dt>XP</dt><dd>${totals.xp}</dd></div><div><dt>Day streak</dt><dd>${totals.streak}</dd></div><div><dt>Stars</dt><dd>${totals.stars}<small>/${totals.maxStars}</small></dd></div><div><dt>Review ready</dt><dd>${buildQueue().length}</dd></div></dl>
+    ${statusHtml()}<p class="sr-only">Daily review: ${count('new')} new, ${count('needs-review')} to review, ${count('stable')} stable.</p></header>`;
 }
 function statusHtml(): string {
   const save = saveStatus();
@@ -84,7 +123,7 @@ function overviewHtml(): string {
   const next = nextDueAt();
   const now = new Date().toISOString();
   const withChoices = queue.filter(c => c.options).length;
-  return `<section class="st-start" aria-labelledby="st-start-title">
+  return `<section class="st-start" aria-labelledby="st-start-title"><p class="wl-kicker">DAILY REVIEW · SOURCED FACTS · SPACED REPETITION</p>
     <h3 id="st-start-title">${queue.length ? `${queue.length} ${queue.length === 1 ? 'card' : 'cards'} ready` : 'Nothing due right now'}</h3>
     <p class="wl-muted">${queue.length ? 'Answer from memory before you reveal. You can stop at any time; rated cards stay saved.' : next ? `Next review ${esc(dueLabel(next, now, tz()))}. Spacing reviews out is the point.` : 'Cards appear when researched wines have approved facts.'}</p>
     ${queue.length ? `<fieldset class="st-mode"><legend>Length</legend>
@@ -169,4 +208,96 @@ async function legacyHistoryHtml(): Promise<string> {
   return `<details class="st-legacy"><summary>Earlier quiz results (${history.length})</summary>
     <p class="wl-muted small">Multiple-choice results from the previous quiz, based on unverified catalog data. Kept for reference; not counted as recall.</p>
     <ul>${history.slice(0, 20).map(h => `<li>${esc(h.wineName)} · ${h.pct}% · ${esc(fmtDate(h.date))}</li>`).join('')}</ul></details>`;
+}
+
+// ═══ Seasons (PolyGot model) ═══
+const glyphUrls = new Map<string, Promise<string>>();
+const glyphKey = (g: Glyph) => JSON.stringify(g);
+function glyphUrl(g: Glyph): Promise<string> {
+  const key = glyphKey(g);
+  if (!glyphUrls.has(key)) {
+    const job = glyphCanvas(g, new URL(import.meta.env.BASE_URL || './', location.href).href).then(c => c.toDataURL('image/png'));
+    job.catch(() => glyphUrls.delete(key));
+    glyphUrls.set(key, job);
+  }
+  return glyphUrls.get(key)!;
+}
+const ready = new Map<string, string>();
+const glyphs = new Map<string, Glyph>();
+/** A glyph image: the cached picture at once, or a placeholder filled when it is drawn. */
+function glyphImg(g: Glyph, cls: string, alt = ''): string {
+  const key = glyphKey(g); glyphs.set(key, g);
+  return `<img class="st-glyph ${cls}" data-glyph="${esc(key)}" ${ready.has(key) ? `src="${ready.get(key)}"` : ''} alt="${esc(alt || g.word)}" width="288" height="128">`;
+}
+function paintGlyphs() {
+  root?.querySelectorAll<HTMLImageElement>('img[data-glyph]:not([src])').forEach(img => {
+    const key = img.dataset.glyph!, g = glyphs.get(key); if (!g) return;
+    void glyphUrl(g).then(url => { ready.set(key, url); img.src = url; }).catch(() => img.classList.add('st-glyph-missing'));
+  });
+}
+const stars = (n: number) => `<span class="st-stars" aria-label="${n} of 3 stars">${'★'.repeat(n)}<span>${'★'.repeat(3 - n)}</span></span>`;
+
+function seasonsHtml(): string {
+  const p = progress();
+  return `<section class="st-seasons" aria-labelledby="st-seasons-title"><div class="st-seasons-head"><h3 id="st-seasons-title">Seasons</h3><p class="wl-muted">Stages of quick cards: meet, flip, pick. Earn stars to unlock the next stage, then face the boss.</p></div>
+    <div class="st-season-grid">${seasons().map(s => {
+      const st = seasonStats(s, p), pct = Math.round(st.stars / st.maxStars * 100);
+      return `<button class="st-season" data-st="season" data-value="${s.id}">${glyphImg(s.icon, 'st-season-glyph')}
+        <span class="st-season-copy"><strong>${esc(s.title)}</strong><span>${esc(s.blurb)}</span>
+        <span class="st-season-meta"><span>★ ${st.stars}/${st.maxStars}</span><span>${st.cleared}/${st.stages} stages${st.boss ? ' · boss ◆' : ''}</span></span>
+        <span class="st-bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
+        <span class="st-season-go">${st.next ? `${st.stars ? 'Continue' : 'Start'}: ${esc(st.next.title)} ↗` : st.boss ? 'Replay any stage ↗' : 'Face the boss ↗'}</span></span></button>`;
+    }).join('')}</div><p class="wl-muted small">Seasons use the wineLENS catalog. They're practice: the daily review below tracks sourced facts over time.</p></section>`;
+}
+
+function seasonHtml(id: SeasonId): string {
+  const s = seasonById(id), p = progress(), st = seasonStats(s, p);
+  const node = (stage: Stage, i: number) => {
+    const open = stageUnlocked(s, i, p), stats = stageStats(stage, p), meets = stage.cards.filter(c => c.kind === 'meet').length;
+    return `<li class="st-node${open ? '' : ' st-locked'}${stats.stars ? ' st-done' : ''}"><span class="st-node-dot" aria-hidden="true">${i + 1}</span>
+      <div class="st-node-copy"><strong>${esc(stage.title)}</strong><span>${stage.cards.length} cards${meets ? ` · ${meets} new` : ''}${stats.played ? ` · ${stats.right}/${stats.total} right` : ''}</span></div>
+      ${open ? `${stars(stats.stars)}<button class="${stats.stars ? 'wl-outline' : 'wl-primary'} st-play" data-st="play" data-value="${stage.id}">${stats.played ? 'Play again' : 'Play'}</button>` : `<span class="st-lock">Get ★ on stage ${i} first</span>`}</li>`;
+  };
+  const bossOpen = bossUnlocked(s, p), bossWon = p.bossCleared.has(bossId(s.id));
+  return `<section class="st-season-page"><button class="wl-text-button st-back" data-st="seasons">← All seasons</button>
+    <div class="st-season-hero">${glyphImg(s.icon, 'st-hero-glyph')}<div><p class="wl-kicker">SEASON · ★ ${st.stars}/${st.maxStars}</p><h2>${esc(s.title)}</h2><p class="wl-muted">${esc(s.blurb)}</p>
+    ${inEvenHubHost() ? '<button class="wl-outline" data-st="on-glasses">Play on glasses ↗</button>' : ''}</div></div>
+    <ol class="st-path">${s.stages.map(node).join('')}
+      <li class="st-node st-boss${bossOpen ? '' : ' st-locked'}${bossWon ? ' st-done' : ''}"><span class="st-node-dot" aria-hidden="true">◆</span>
+      <div class="st-node-copy"><strong>Boss</strong><span>8 cards from the whole season · 3 hearts${bossWon ? ' · defeated' : ''}</span></div>
+      ${bossOpen ? `<button class="${bossWon ? 'wl-outline' : 'wl-primary'} st-play" data-st="play" data-value="boss">${bossWon ? 'Fight again' : 'Face the boss'}</button>` : '<span class="st-lock">Earn ★ on every stage</span>'}</li></ol></section>`;
+}
+
+function runHtml(r: PracticeRun): string {
+  if (r.finished || !r.current) {
+    const sum = r.summary(), up = r.boss ? null : nextStage(r.season, r.stage);
+    const title = r.boss ? (sum.cleared ? 'Boss defeated.' : sum.stopped ? 'Boss paused.' : 'Out of hearts.') : sum.stopped ? 'Paused.' : sum.cleared ? 'Stage clear.' : 'Keep going.';
+    return `<section class="st-run st-run-done" aria-live="polite"><p class="wl-kicker">${esc(r.season.title.toUpperCase())} · ${r.boss ? 'BOSS' : `STAGE ${r.stage.index + 1}`}</p>
+      <h2 tabindex="-1" data-focus>${title}</h2>${r.boss ? (sum.cleared ? '<p class="st-big-stars">◆ ◆ ◆</p>' : '') : `<p class="st-big-stars">${stars(sum.stars)}</p>`}
+      <dl class="st-stats st-game"><div><dt>Right</dt><dd>${sum.right}<small>/${sum.total}</small></dd></div><div><dt>XP earned</dt><dd>+${sum.xp}</dd></div><div><dt>Best combo</dt><dd>x${sum.bestCombo}</dd></div><div><dt>Total XP</dt><dd>${progress().xp}</dd></div></dl>
+      <p class="wl-muted">${!r.boss && !sum.cleared && !sum.stopped ? 'Get 60% right to unlock the next stage. Answers you got right stay counted.' : up ? `Up next: ${up.boss ? 'the boss' : esc(up.title)}.` : r.boss && sum.cleared ? 'Season complete. Replay stages any time to keep the stars.' : ''}</p>
+      <div class="st-after">${up ? `<button class="wl-primary" data-st="run-up">${up.boss ? 'Face the boss ↗' : `Next: ${esc(up.title)} ↗`}</button>` : ''}<button class="${up ? 'wl-outline' : 'wl-primary'}" data-st="run-again">Play again</button><button class="wl-text-button" data-st="run-close">Season map</button></div></section>`;
+  }
+  const t = r.current, c = t.card;
+  const hearts = r.hearts !== null ? `<span class="st-hearts" aria-label="${r.hearts} hearts left">${'♥'.repeat(r.hearts)}<span>${'♥'.repeat(3 - r.hearts)}</span></span>` : '';
+  const hud = `<div class="st-hud"><span>${esc(r.season.short)} · ${r.boss ? 'BOSS' : `STAGE ${r.stage.index + 1}`}</span><span>${r.index + 1}/${r.total}</span><span>${progress().xp} XP</span>${r.combo >= 2 ? `<span class="st-combo">x${r.combo}</span>` : ''}${hearts}<button class="wl-text-button" data-st="run-stop">Stop</button></div>
+    <div class="st-bar" aria-hidden="true"><span style="width:${Math.round(r.index / r.total * 100)}%"></span></div>`;
+  const side = t.mode === 'meet' || t.phase === 'front' ? c.front : c.back;
+  const kicker = t.mode === 'meet' ? 'NEW' : t.mode === 'flash' ? 'FLASH CARD' : t.mode === 'spot' ? 'TRUE OR FALSE' : 'PICK ONE';
+  let body = '';
+  if (t.mode === 'meet') body = `<p class="st-prompt">${esc(c.prompt)}</p><p class="st-detail">${esc(c.detail)}</p><button class="wl-primary" data-st="run-next" data-focus>Next ↗</button>`;
+  else if (t.phase === 'answered') {
+    const right = t.correct === true;
+    body = `<p class="st-prompt">${esc(c.prompt)}</p>${t.options.length ? `<div class="st-options">${t.options.map(o => `<button class="st-option${o === c.answer ? ' st-right' : o === t.chosen ? ' st-wrong' : ''}" disabled>${esc(o)}</button>`).join('')}</div>` : ''}
+      <div class="st-reveal" aria-live="polite"><p class="st-verdict">${right ? '★ Right' : 'Not quite'} · +${t.gained} XP${!right && r.hearts !== null ? ' · −1 ♥' : ''}</p>${answerLine(t) ? `<p class="st-answer">${esc(answerLine(t).replace(/^Answer: /, ''))}</p>` : ''}<p>${esc(c.detail)}</p>${t.saveError ? `<p class="st-error">${esc(t.saveError)}</p>` : ''}</div>
+      <div class="st-after"><button class="wl-primary" data-st="run-next" data-focus>${r.hearts === 0 ? 'See how you did ↗' : r.index + 1 < r.total ? 'Next card ↗' : 'Finish ↗'}</button></div>`;
+  } else if (t.mode === 'flash') {
+    body = t.phase === 'front' ? `<p class="st-prompt">${esc(c.prompt)}</p><button class="wl-primary" data-st="flip" data-focus>Flip the card ↻</button>`
+      : `<p class="st-answer">${esc(c.answer)}</p><p class="st-detail">${esc(c.detail)}</p><p class="st-rate-q">Did you know it?</p><div class="st-grade"><button class="st-rating st-good" data-st="grade" data-value="yes" data-focus><strong>Knew it</strong><span>+${10} XP and the combo grows</span></button><button class="st-rating st-again" data-st="grade" data-value="no"><strong>Not yet</strong><span>It comes back next time</span></button></div>`;
+  } else {
+    body = `<p class="st-prompt">${esc(c.prompt)}</p><div class="st-options${t.mode === 'spot' ? ' st-tf' : ''}" role="group" aria-label="Choose an answer">${t.options.map((o, i) => `<button class="st-option" data-st="pick" data-value="${esc(o)}" ${i === 0 ? 'data-focus' : ''}>${esc(o)}</button>`).join('')}</div>`;
+  }
+  return `<section class="st-run" aria-labelledby="st-run-k">${hud}
+    <div class="st-flash${t.phase === 'back' ? ' st-back' : ''}${t.phase === 'answered' ? (t.correct ? ' st-good' : ' st-miss') : ''}">${glyphImg(side, 'st-card-glyph', side.word || c.prompt)}</div>
+    <p class="wl-kicker" id="st-run-k">${kicker}${c.wineId && t.phase !== 'front' ? ' · CATALOG' : ''}</p>${body}</section>`;
 }

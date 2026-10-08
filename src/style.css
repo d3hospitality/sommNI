@@ -932,3 +932,73 @@ span.wl-quick-bottle{display:flex}
 .wl-quick-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:24px 0 8px}
 .wl-by-hand{margin:-6px 0 18px}
 @media(max-width:600px){.wl-add-hero{flex-direction:column;align-items:stretch;padding:18px}.wl-add-hero .wl-primary{width:100%}.wl-quick-actions .wl-primary{width:100%}.wl-quick-bottle{width:52px;height:96px}}
+/* Study seasons (PolyGot model): glyph flash cards, stage path, HUD */
+.st-glyph{display:block;width:100%;height:auto;aspect-ratio:288/128;image-rendering:pixelated;background:#231C18;border-radius:8px}
+.st-glyph:not([src]){animation:st-pulse 1.4s ease-in-out infinite}
+@keyframes st-pulse{50%{opacity:.75}}
+.st-game dd small{font-size:13px;color:var(--muted);font-weight:500}
+.st-start>.wl-kicker{color:var(--accent);margin:0 0 6px}
+.st-seasons{display:grid;gap:14px}
+.st-seasons-head h3{font-size:22px;margin:0 0 4px}
+.st-seasons-head p{margin:0}
+.st-season-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.st-season{display:grid;gap:0;text-align:left;padding:0;border:1px solid var(--line);border-radius:10px;background:#FFFDF8;color:var(--ink);overflow:hidden}
+.st-season:hover,.st-season:focus-visible{border-color:var(--accent)}
+.st-season .st-glyph{border-radius:0}
+.st-season-copy{display:grid;gap:6px;padding:14px 16px 16px}
+.st-season-copy strong{font-size:18px;line-height:1.2}
+.st-season-copy>span:not(.st-bar){font-size:13px;color:var(--muted);line-height:1.5}
+.st-season-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px!important;font-weight:600;color:var(--ink)!important}
+.st-season-go{color:var(--accent)!important;font-weight:650}
+.st-bar{display:block;height:4px;background:#EADFD3;border-radius:4px;overflow:hidden}
+.st-bar>span{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .3s}
+.st-more{border:1px solid var(--line);background:#FFFDF8;padding:0 20px}
+.st-more>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:600}
+.st-more[open]{padding-bottom:20px}
+.st-more .st-progress,.st-more .st-about{border:0;padding:12px 0 0;background:none}
+.st-back{padding-left:0}
+.st-season-hero{display:grid;grid-template-columns:minmax(0,288px) 1fr;gap:20px;align-items:center;margin:4px 0 18px}
+.st-season-hero h2{font-size:clamp(28px,6vw,38px);line-height:1.05;margin:4px 0 8px}
+.st-season-hero .wl-kicker{color:var(--accent);margin:0}
+.st-season-hero .wl-outline{margin-top:10px}
+.st-path{list-style:none;margin:0;padding:0;display:grid;gap:10px;position:relative}
+.st-path::before{content:"";position:absolute;left:21px;top:20px;bottom:20px;width:2px;background:var(--line)}
+.st-node{position:relative;display:grid;grid-template-columns:44px 1fr auto auto;gap:12px;align-items:center;padding:12px 14px 12px 0;background:#FFFDF8;border:1px solid var(--line);border-radius:10px}
+.st-node-dot{position:relative;z-index:1;justify-self:center;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#FFFDF8;font-weight:700;font-size:14px;margin-left:5px}
+.st-node.st-locked{opacity:.6}
+.st-node.st-locked .st-node-dot{background:#D9CBBE}
+.st-node.st-done .st-node-dot{background:#4a7a3d}
+.st-node-copy{display:grid;gap:2px;min-width:0}
+.st-node-copy strong{font-size:16px}
+.st-node-copy span{font-size:12px;color:var(--muted)}
+.st-play{min-height:40px;padding:8px 16px}
+.st-lock{font-size:12px;color:var(--muted);grid-column:3/5;text-align:right}
+.st-boss .st-node-dot{background:var(--ink)}
+.st-stars{color:#B8862B;letter-spacing:2px;font-size:15px;white-space:nowrap}
+.st-stars span{color:#E3D6C9}
+.st-run{background:#FFFDF8;border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:12px}
+.st-hud{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;font-weight:650;letter-spacing:.6px;color:var(--muted)}
+.st-hud .wl-text-button{margin-left:auto;padding:6px 0}
+.st-combo{color:#FFFDF8;background:var(--accent);padding:2px 8px;border-radius:99px;animation:st-pop .25s ease-out}
+@keyframes st-pop{from{transform:scale(1.3)}}
+.st-hearts{color:var(--accent);letter-spacing:2px}
+.st-hearts span{color:#E3D6C9}
+.st-flash{perspective:900px;max-width:576px;width:100%;justify-self:center}
+.st-flash .st-glyph{transition:transform .26s ease-in,box-shadow .2s;box-shadow:0 10px 30px #30282233}
+.st-flash.st-flipping .st-glyph{transform:rotateY(90deg)}
+.st-flash.st-back .st-glyph{animation:st-unflip .26s ease-out}
+@keyframes st-unflip{from{transform:rotateY(-90deg)}}
+.st-flash.st-good .st-glyph{box-shadow:0 0 0 3px #4a7a3d,0 10px 30px #30282233}
+.st-flash.st-miss .st-glyph{box-shadow:0 0 0 3px var(--accent),0 10px 30px #30282233}
+.st-run>.wl-kicker{color:var(--accent);margin:4px 0 0}
+.st-run .st-prompt{margin:0}
+.st-detail{margin:0;line-height:1.6;color:var(--ink)}
+.st-run>.wl-primary{justify-self:start}
+.st-grade{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.st-options.st-tf{grid-template-columns:1fr 1fr}
+.st-run-done h2{font-size:clamp(30px,7vw,42px);margin:4px 0}
+.st-run-done .wl-kicker{color:var(--accent)}
+.st-big-stars{font-size:34px;margin:0}
+.st-big-stars .st-stars{font-size:34px}
+@media(max-width:600px){.st-season-hero{grid-template-columns:1fr}.st-node{grid-template-columns:44px 1fr auto;padding-right:10px}.st-node .st-stars{display:none}.st-lock{grid-column:2/4;text-align:left}.st-run{padding:14px}}
+@media(prefers-reduced-motion:reduce){.st-flash .st-glyph{transition:none;animation:none}.st-combo{animation:none}}

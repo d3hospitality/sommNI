@@ -45,9 +45,16 @@ async function run(): Promise<SyncState> {
       if (auth !== who) return state; // account changed mid-flight: do not touch the new log
       await markSynced([...(res.accepted ?? []), ...(res.duplicates ?? [])]);
     }
-    const remote = await call('GET', token);
-    if (auth !== who || currentOwner() !== who.userId) return state;
-    await mergeEvents((remote.events ?? []) as ReviewEvent[]);
+    // The server answers at most 1000 events per pull, oldest first: page by time (duplicates merge once).
+    let since: string | undefined;
+    for (let page = 0; page < 20; page++) {
+      const remote = await call('GET', token, undefined, since);
+      if (auth !== who || currentOwner() !== who.userId) return state;
+      const events = (remote.events ?? []) as ReviewEvent[];
+      await mergeEvents(events);
+      if (events.length < 1000 || events[events.length - 1].occurred_at === since) break;
+      since = events[events.length - 1].occurred_at;
+    }
     return (state = unsyncedEvents().length ? 'error' : 'synced');
   } catch (error) {
     const status = (error as { status?: number }).status;
@@ -55,8 +62,8 @@ async function run(): Promise<SyncState> {
     return state;
   }
 }
-async function call(method: 'GET' | 'POST', _token: string, body?: { events: unknown[] }): Promise<{ accepted?: string[]; duplicates?: string[]; events?: unknown[] }> {
-  try { return await accountRequest('study', method === 'POST' ? { action: 'push', events: body!.events } : { action: 'pull' }); }
+async function call(method: 'GET' | 'POST', _token: string, body?: { events: unknown[] }, since?: string): Promise<{ accepted?: string[]; duplicates?: string[]; events?: unknown[] }> {
+  try { return await accountRequest('study', method === 'POST' ? { action: 'push', events: body!.events } : { action: 'pull', ...(since ? { since } : {}) }); }
   catch (error) { throw Object.assign(new Error('Study sync failed'), { status: (error as { status?: number }).status }); }
 }
 

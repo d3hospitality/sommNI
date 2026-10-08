@@ -70,6 +70,39 @@ const output=process.env.WINELENS_TEST_OUTPUT||require('os').tmpdir()+'/winelens
   const dueCounts=await study().locator('.st-stats dd').allInnerTexts();
   await page.screenshot({path:path.join(output,'wineLENS-Study-NextDay-390.png'),fullPage:true});
 
+  // Seasons: stage 1 of Grapes & styles, played on the phone, all right → three stars, stage 2 unlocked.
+  await study().getByRole('button',{name:/Grapes & styles/}).click();
+  await study().getByRole('heading',{name:'Grapes & styles'}).waitFor();
+  assert.equal(await study().getByText('Get ★ on stage 1 first').count(),1,'stage 2 starts locked');
+  await study().getByRole('button',{name:'Play',exact:true}).click();
+  await study().locator('img.st-card-glyph[src^="data:image/png"]').waitFor();
+  let flips=0,meets=0,picks=0;
+  for(let i=0;i<40;i++){
+   if(await study().getByRole('heading',{name:/Stage clear\.|Keep going\./}).count())break;
+   const next=study().getByRole('button',{name:/^(Next ↗|Next card ↗|Finish ↗)$/});
+   if(await next.count()){if((await next.innerText()).startsWith('Next ↗'))meets++;await next.click();continue;}
+   const flip=study().getByRole('button',{name:'Flip the card ↻'});
+   if(await flip.count()){await flip.click();await study().getByRole('button',{name:/Knew it/}).click();flips++;continue;}
+   const answer=await page.evaluate(async()=>{const s=await import('/sommNI/src/study/seasons.ts');const q=document.querySelector('#study-content .st-prompt')?.textContent;
+    for(const st of s.season('grapes').stages)for(const c of st.cards)if(c.prompt===q)return c.answer;return null;});
+   assert(answer,'the prompt belongs to a stage card');
+   await study().locator('button.st-option:not([disabled])',{hasText:answer}).first().click();picks++;
+   await study().getByText(/★ Right · \+\d+ XP/).waitFor();
+  }
+  await study().getByRole('heading',{name:'Stage clear.'}).waitFor();
+  assert.equal(await study().locator('.st-big-stars .st-stars').getAttribute('aria-label'),'3 of 3 stars');
+  await page.screenshot({path:path.join(output,'wineLENS-Study-StageClear-390.png'),fullPage:false});
+  const practice=await page.evaluate(()=>JSON.parse(localStorage.getItem('winelens_study_v1:guest')).events.filter(e=>e.card_id.startsWith('p.')));
+  assert.equal(practice.length,picks+flips,'one practice event per answer');assert(practice.every(e=>e.mode==='recognition'&&e.correct===true&&e.scheduler_version==='practice-v1'));
+  await study().getByRole('button',{name:/^Next: Burgundy & bubbles/}).click();
+  await study().getByText('STAGE 2',{exact:false}).first().waitFor();
+  await study().getByRole('button',{name:'Stop'}).click();
+  await study().getByRole('button',{name:'Season map'}).click();
+  assert.equal(await study().getByText('Get ★ on stage 1 first').count(),0,'stage 2 unlocked');
+  await page.screenshot({path:path.join(output,'wineLENS-Study-Season-390.png'),fullPage:true});
+  await study().getByRole('button',{name:'← All seasons'}).click();
+  await study().getByRole('heading',{name:'Seasons'}).waitFor();
+
   // Wines: search finds the wine, and its notes page shows the reference status.
   await page.getByRole('button',{name:'Wines',exact:true}).click();
   await page.locator('#cat-search').fill('Cain Cuvée');
@@ -78,7 +111,7 @@ const output=process.env.WINELENS_TEST_OUTPUT||require('os').tmpdir()+'/winelens
   await page.keyboard.press('Escape');
   console.log(JSON.stringify({dueCounts,chip,errors}));
   assert.deepEqual(errors,[]);
-  assert.deepEqual(dueCounts,['5','0','0','0']);
+  assert.deepEqual(dueCounts,['0','1','0/72','5'],'XP, day streak (yesterday counts), stars, reviews ready');
   assert.match(chip,/Producer-sourced facts · Cain Vineyard & Winery/);
   console.log('phone study: all checks passed');
  } finally {await browser.close();}

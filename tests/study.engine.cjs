@@ -124,10 +124,36 @@ const assert=require('node:assert/strict');
    out.migration=[rep.converted,rep.unresolved,JSON.parse(localStorage.getItem('sommni_favorites')),JSON.parse(localStorage.getItem('sommni_inventory')),JSON.parse(localStorage.getItem('sommni_pairings'))[0].wineIds,JSON.parse(localStorage.getItem('sommni_course_state'))[0].wineId,!!localStorage.getItem('sommni_legacy_backup_v1')];
    const again=await Y.migrateLegacyWineIds();out.migrationOnce=again.at===rep.at;
    out.backup=JSON.parse(JSON.parse(localStorage.getItem('sommni_legacy_backup_v1')).values.sommni_favorites);
+
+   // ── 7. Seasons: fair, renderable cards; XP replays exactly what the run showed ──
+   const SS=await import('/sommNI/src/study/seasons.ts'),PR=await import('/sommNI/src/study/practice.ts');
+   const all=SS.seasons().flatMap(x=>x.stages.flatMap(st=>st.cards));
+   out.seasonShape=SS.seasons().map(x=>[x.id,x.stages.length,x.stages.every(st=>st.cards.length>=6&&st.cards.length<=16),x.boss.cards.length>=SS.BOSS_SIZE]);
+   out.cardProblems=all.flatMap(c=>SS.cardProblems(c).map(p=>c.id+': '+p));
+   out.uniqueIds=new Set(all.map(c=>c.id)).size===all.length;
+   out.kinds=[...new Set(all.map(c=>c.kind))].sort();
+   out.wineCardsKnown=all.filter(c=>c.wineId).every(c=>!!I.lookupWineById(c.wineId));
+   await St.useAccount('practice-user');
+   const season=SS.season('grapes'),stage=season.stages[1],run=new PR.PracticeRun(season,stage,'phone');
+   const xp0=PR.progress().xp;let answered=0;
+   while(!run.finished){const t=run.current;
+    if(t.mode==='meet'){await run.next();continue;}
+    if(t.mode==='flash'){run.flip();await run.grade(answered%4!==3);}
+    else await run.choose(answered%4===3?t.options.find(o=>o!==t.card.answer):t.card.answer);
+    answered++;await run.next();}
+   out.xpReplay=[run.xp,PR.progress().xp-xp0,run.summary().stars,PR.stageStats(stage).stars];
+   const dup=run.cards.find(c=>c.kind!=='meet');const n=St.eventCount();
+   await St.recordPractice({event_id:St.practiceEvents()[0].event_id,card_id:dup.id,correct:true,device:'phone'});out.practiceIdempotent=St.eventCount()===n;
+   out.practiceRejectsOther=await St.recordPractice({event_id:crypto.randomUUID(),card_id:'card_x',correct:true,device:'phone'}).then(()=>false,()=>true);
+   out.practiceNotReviewCards=St.allStates().every(x=>!x.cardId.startsWith('p.'));
    return out;
   });
   console.log(JSON.stringify(r,null,1));
   assert.deepEqual(errors,[]);
+  assert.deepEqual(r.seasonShape.map(x=>x[0]),['grapes','regions','notes','stories']);assert(r.seasonShape.every(x=>x[1]>=5&&x[2]&&x[3]),'every season has 5+ stages of 6–16 cards and a boss pool');
+  assert.deepEqual(r.cardProblems,[]);assert.equal(r.uniqueIds,true);assert.deepEqual(r.kinds,['flash','meet','pick','spot']);assert.equal(r.wineCardsKnown,true);
+  assert.equal(r.xpReplay[0],r.xpReplay[1],'XP shown in the run equals the replayed XP');assert.equal(r.xpReplay[2],r.xpReplay[3],'run stars equal replayed stage stars');
+  assert.equal(r.practiceIdempotent,true);assert.equal(r.practiceRejectsOther,true);assert.equal(r.practiceNotReviewCards,true);
   // scheduler
   assert.deepEqual(r.newGood,[0,'2026-10-02T00:00:00.000Z']);
   assert.deepEqual(r.aheadNoInflation,[0,'2026-10-02T00:00:00.000Z',0]);

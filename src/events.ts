@@ -3,7 +3,7 @@
 // Nav: Home → Countries → Grapes → Wines → Tasting Notes
 // + Find My Wine (5-step questionnaire → results → tasting notes)
 // + Course Builder (multi-course wine planner)
-// + Study today (shared recall engine, study/glasses.ts)
+// + Study (seasons and the daily review, study/glasses.ts)
 // + Pairings (read saved pairing collections)
 // + 86 List (out-of-stock wines from inventory)
 // Double-tap = BACK on ALL pages
@@ -337,7 +337,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
         // Study owns the display (and its events) until it returns home.
         navigating = false;
         await openStudyOnGlasses();
-        log("> Study today", "success");
+        log("> Study", "success");
         return;
       }
       else if (idx === ATLAS_INDEX) {

@@ -50,9 +50,9 @@ const assert=require('node:assert/strict');
   out.catalogPages=pages;out.catalogProblems=problems.slice(0,10);
 
   // ── 3. Mock bridge shared by the flows below ──
-  const shown=[];let rejectNext=false;let handler=null;const store={};const images=[];const texts=[];
+  const shown=[];let rejectNext=false;let handler=null;let lastRebuild=0;const store={};const images=[];const texts=[];
   const bridge={
-   rebuildPageContainer:async pg=>{ if(rejectNext){rejectNext=false;return false;} shown.push(pg);return true; },
+   rebuildPageContainer:async pg=>{ if(rejectNext){rejectNext=false;return false;} shown.push(pg);lastRebuild=Date.now();return true; },
    updateImageRawData:async u=>{images.push(u.containerName);return 'success';},
    textContainerUpgrade:async u=>{texts.push(u.containerName+':'+u.content);return true;},
    onEvenHubEvent:cb=>{handler=cb;return()=>{};},
@@ -69,7 +69,8 @@ const assert=require('node:assert/strict');
   // After the fixed gap, also wait for the page (and any sprites/map tiles it streams) to finish,
   // so slower machines do not drop the next tap the way the glasses (correctly) would.
   const Img=await import('/sommNI/src/image-utils.ts');
-  const settled=async()=>{const until=Date.now()+8000;while(Date.now()<until&&(E.isNavigating()||G.libraryBusy()))await wait(50);await Img.imageIdle();};
+  // Every module also ignores taps for a moment after a rebuild (ghost clicks): wait that out too.
+  const settled=async()=>{const until=Date.now()+8000;while(Date.now()<until&&(E.isNavigating()||G.libraryBusy()))await wait(50);await Img.imageIdle();const since=Date.now()-lastRebuild;if(since<550)await wait(550-since);};
   const click=async i=>{handler({listEvent:{containerID:2,containerName:'x',...(i?{currentSelectItemIndex:i}:{})}});await wait(gap);await settled();};
   const dbl=async()=>{handler({sysEvent:{eventType:3}});await wait(gap);await settled();};
 

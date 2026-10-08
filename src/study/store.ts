@@ -163,6 +163,34 @@ export async function recordReview(input: ReviewInput): Promise<{ event: ReviewE
   return { event, duplicate: false, saved };
 }
 
+// ── Practice (seasons) ──
+// Practice answers share the log, the sync and the account isolation, but never schedule:
+// they are recognition events on "p.…" card IDs, which content.ts never loads as review cards.
+export const PRACTICE_SCHEDULER = 'practice-v1';
+const PRACTICE_ID = /^p\.[a-z0-9.-]{1,112}$/;
+export interface PracticeInput { event_id: string; card_id: string; correct: boolean; device: 'phone' | 'g2'; duration_ms?: number; occurred_at?: string }
+export async function recordPractice(input: PracticeInput): Promise<{ event: ReviewEvent; duplicate: boolean; saved: boolean }> {
+  await loaded;
+  const existing = log.events.find(e => e.event_id === input.event_id);
+  if (existing) return { event: existing, duplicate: true, saved: status.state !== 'error' };
+  if (!PRACTICE_ID.test(input.card_id)) throw new Error('Unknown practice card.');
+  const occurred = input.occurred_at ?? new Date().toISOString();
+  const event: ReviewEvent = {
+    event_id: input.event_id, user_id: log.owner, card_id: input.card_id, card_version: 1, mode: 'recognition', rating: null, correct: input.correct,
+    occurred_at: occurred, tz_offset_min: -new Date(occurred).getTimezoneOffset(), duration_ms: Math.max(0, Math.round(input.duration_ms ?? 0)),
+    device: input.device, scheduler_version: PRACTICE_SCHEDULER,
+  };
+  log.events.push(event);
+  notify();
+  let saved = true;
+  try { await persist(); } catch { saved = false; }
+  return { event, duplicate: false, saved };
+}
+/** Practice answers, oldest first. Same-millisecond answers keep the order they were recorded in (stable sort). */
+export function practiceEvents(): ReviewEvent[] { return log.events.filter(e => e.card_id.startsWith('p.')).sort((a, b) => a.occurred_at < b.occurred_at ? -1 : a.occurred_at > b.occurred_at ? 1 : 0); }
+/** Every event (review and practice), oldest first: used for the day streak. */
+export function allEvents(): ReviewEvent[] { return [...log.events].sort(byOrder); }
+
 /** Merge events from another copy of the same account's log (e.g. the server). */
 export async function mergeEvents(events: ReviewEvent[]): Promise<number> {
   await loaded;
