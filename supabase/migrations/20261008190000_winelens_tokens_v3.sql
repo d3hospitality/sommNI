@@ -5,7 +5,7 @@
 begin;
 
 -- 1. Rate card v3 (kept identical to shared/rate-card.json; test:sql verifies parity).
-insert into public.winelens_rate_cards(version, card) values (3, '{"version":3,"currency":"usd","app":{"amount":999,"tokens":10},"features":{"wine_card":{"label":"Wine cards","free":0,"pro":0,"tokens":1},"studio_render":{"label":"New bottle images","free":0,"pro":0,"tokens":1},"tasting_notes":{"label":"Tasting notes","free":5,"pro":60,"tokens":1},"label_scan":{"label":"Label scans","free":5,"pro":60,"tokens":1},"wine_list_page":{"label":"Wine-list photo pages","free":1,"pro":20,"tokens":1},"wine_list_text":{"label":"Wine-list text pages","free":20,"pro":100,"tokens":1}},"packs":{"t5":{"amount":500,"units":20},"t10":{"amount":1000,"units":45},"t15":{"amount":1500,"units":70},"t20":{"amount":2000,"units":100},"t50":{"amount":5000,"units":275}}}')
+insert into public.winelens_rate_cards(version, card) values (3, '{"version":3,"currency":"usd","app":{"amount":999,"tokens":10},"features":{"wine_card":{"label":"Wine cards","free":0,"pro":0,"tokens":1},"studio_render":{"label":"New bottle images","free":0,"pro":0,"tokens":1},"tasting_notes":{"label":"Tasting notes","free":5,"pro":60,"tokens":1},"label_scan":{"label":"Label scans","free":5,"pro":60,"tokens":1},"wine_list_page":{"label":"Wine-list photo pages","free":1,"pro":20,"tokens":1},"wine_list_text":{"label":"Wine-list text pages","free":20,"pro":100,"tokens":1},"sommelier":{"label":"Sommelier picks","free":3,"pro":30,"tokens":1}},"packs":{"t5":{"amount":500,"units":20},"t10":{"amount":1000,"units":45},"t15":{"amount":1500,"units":70},"t20":{"amount":2000,"units":100},"t50":{"amount":5000,"units":275}}}')
 on conflict (version) do nothing;
 
 -- 2. Token packs: a grant must match a pack (name + units) on a published rate card (newest first),
@@ -67,11 +67,11 @@ end $$;
 
 -- 5. Wine cards are a paid AI job like notes and renderings.
 alter table public.winelens_ai_jobs drop constraint if exists winelens_ai_jobs_feature_check;
-alter table public.winelens_ai_jobs add constraint winelens_ai_jobs_feature_check check (feature in ('tasting_notes','studio_render','wine_list_page','wine_list_text','wine_card'));
+alter table public.winelens_ai_jobs add constraint winelens_ai_jobs_feature_check check (feature in ('tasting_notes','studio_render','wine_list_page','wine_list_text','wine_card','sommelier'));
 create or replace function public.winelens_begin_job(p_user uuid,p_feature text,p_request_id uuid,p_fingerprint text,p_consent boolean,p_quantity integer default 1) returns jsonb language plpgsql security definer set search_path='' as $$
 declare previous public.winelens_ai_jobs; r jsonb;
 begin
- if p_feature not in ('tasting_notes','studio_render','wine_list_page','wine_list_text','wine_card') or p_request_id is null or p_fingerprint is null or p_quantity is null or p_quantity not between 1 and 20 then raise exception 'invalid job'; end if;
+ if p_feature not in ('tasting_notes','studio_render','wine_list_page','wine_list_text','wine_card','sommelier') or p_request_id is null or p_fingerprint is null or p_quantity is null or p_quantity not between 1 and 20 then raise exception 'invalid job'; end if;
  perform pg_advisory_xact_lock(hashtextextended('winelens:'||p_user::text,0));
  select * into previous from public.winelens_ai_jobs where user_id=p_user and request_id=p_request_id;
  if found then

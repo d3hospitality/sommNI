@@ -4,7 +4,7 @@ insert into auth.users(id,email) values ('66666666-6666-4666-8666-666666666666',
 do $$begin
  perform test_assert((select max(version)=3 from winelens_rate_cards),'rate card v3 current');
  perform test_assert((select card->'features' ?& array['label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text'] from winelens_rate_cards where version=2),'v2 features');
- perform test_assert((select card->'features' ?& array['wine_card','label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text'] and (card->'features'->'wine_card'->>'tokens')::int=1 and (card->'app'->>'amount')::int=999 from winelens_rate_cards where version=3),'v3: wine cards, the app');
+ perform test_assert((select card->'features' ?& array['wine_card','label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text','sommelier'] and (card->'features'->'sommelier'->>'free')::int=3 and (card->'features'->'wine_card'->>'tokens')::int=1 and (card->'app'->>'amount')::int=999 from winelens_rate_cards where version=3),'v3: wine cards, the app');
  perform test_assert(not has_function_privilege('authenticated','public.winelens_grant_app(uuid,text,integer,integer)','execute'),'app grant service only');
  perform test_assert(not has_function_privilege('authenticated','public.winelens_bottle_claim(text,uuid,uuid,jsonb)','execute') and not has_table_privilege('authenticated','public.winelens_shared_bottles','select'),'shared bottles service only');
  perform test_assert(not has_table_privilege('authenticated','public.winelens_list_entries','select') and not has_table_privilege('anon','public.winelens_catalog_proposals','select'),'list tables API-only');
@@ -47,6 +47,10 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  perform test_assert(r->>'replayed'='true' and r->'result'->>'nose'='Cherry.' and r->>'status'='committed','job replay');
  perform test_assert(winelens_begin_job(u,'tasting_notes',md5('n1')::uuid,repeat('e',64),false)->>'reason'='request_mismatch','fingerprint binding');
  perform test_assert(winelens_begin_job(u,'studio_render',md5('n1')::uuid,repeat('f',64),false)->>'reason'='request_mismatch','feature binding');
+ -- Sommelier picks: a free monthly allowance, no consent needed while it lasts.
+ r:=winelens_begin_job(u,'sommelier',md5('som1')::uuid,repeat('s',64),false);
+ perform test_assert(r->>'allowed'='true' and r->>'source'='allowance','sommelier from the allowance');
+ perform test_assert(winelens_finish_job(u,md5('som1')::uuid,(r->>'reservation_id')::uuid,'{"wines":[]}')->>'status'='committed','sommelier commit');
  -- Free: no wine cards (tokens need the app).
  perform test_assert(winelens_begin_job(u,'wine_card',md5('card-free')::uuid,repeat('c',64),true)->>'reason'='pro_required','free: cards need the app');
  -- Buying the app: owned for life, 10 starter tokens, one grant per Stripe session; wrong amount refused.
