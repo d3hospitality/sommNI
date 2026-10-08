@@ -1,6 +1,6 @@
 // Renders the 3D showcase's poster, fallback videos and "on the lens" stills from the live page
 // (the same stage, model, captures and config the site runs), so none of them can drift from it.
-//   npm run dev:site   (port 5187), then:  node tools/render-showcase.cjs [poster|video|lens|all]
+//   npm run dev:site   (port 5187), then:  node tools/render-showcase.cjs [poster|video|lens|stills|all] [still names, comma separated]
 // Outputs land in site/public/g2b/out/winelens/ and site/public/media/lens/.
 const { chromium } = require('playwright');
 const { execFileSync } = require('node:child_process');
@@ -92,11 +92,15 @@ const STILLS = [
   { name: 'still-atlas', src: 'glasses-atlas.png', pose: { yaw: -18, pitch: 8, zoom: 0.96, lift: 0, truck: 0 } },
   { name: 'still-atlas-region', src: 'glasses-atlas-region.png', pose: { yaw: 16, pitch: 8, zoom: 0.96, lift: 0, truck: 0 } },
   { name: 'still-study', src: 'glasses-study.png', pose: { yaw: 20, pitch: 8, zoom: 0.96, lift: 0, truck: 0 } },
+  { name: 'still-finder', src: 'glasses-finder.png', pose: { yaw: -18, pitch: 8, zoom: 0.96, lift: 0, truck: 0 } },
 ];
+// Optional: only these stills (e.g. `stills still-finder,still-study`), so the others are not re-rendered.
+const ONLY = (process.argv[3] || '').split(',').filter(Boolean);
 async function stills(browser) {
   const context = await browser.newContext({ viewport: { width: 800, height: 600 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   await page.goto(BASE, { waitUntil: 'networkidle' });
+  const wanted = ONLY.length ? STILLS.filter(s => ONLY.includes(s.name)) : STILLS;
   const results = await page.evaluate(async list => {
     const { Stage, loadImageCapture } = await import('/g2b/stage.ts');
     const config = await (await fetch('/g2b/winelens.json')).json();
@@ -117,7 +121,7 @@ async function stills(browser) {
       out.push({ name: still.name, data: canvas.toDataURL('image/png') });
     }
     return out;
-  }, STILLS);
+  }, wanted);
   for (const { name, data } of results) {
     const png = path.join(LENS, `${name}.png`);
     fs.writeFileSync(png, Buffer.from(data.split(',')[1], 'base64'));
@@ -129,7 +133,8 @@ async function stills(browser) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ['--use-angle=metal', '--enable-webgl', '--ignore-gpu-blocklist'] });
+  const gl = process.platform === 'darwin' ? '--use-angle=metal' : '--use-gl=swiftshader';
+  const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: [gl, '--enable-webgl', '--ignore-gpu-blocklist'] });
   try {
     if (what === 'poster' || what === 'all') await posters(browser);
     if (what === 'lens') await lens(browser);

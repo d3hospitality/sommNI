@@ -20,3 +20,13 @@ The g2-notes / g2-library / g2-atlas / g2-study flat captures were replaced by r
 - `site/public/media/lens/*.webp`, `site/public/g2b/out/winelens/*`: the vendored G2B stage (3D Even G2 model,
   `site/public/g2b/ERG2B.web.glb`) with those captures on the lenses, rendered by `tools/render-showcase.cjs`
   from the live page. Renders, not photographs; display colour is simulated.
+
+## Find My Wine, Study and wine cards (October 8, 2026)
+- `site/public/g2b/media/winelens/glasses-finder.png`: real wineLENS capture from the Even Hub simulator 0.9.5
+  (automation port 9911), 576 × 288 on black: Find My Wine picks for Dinner · Steak & red meat · Red · Bold & powerful.
+- `site/public/g2b/media/winelens/glasses-study.png`: replaced with a Study seasons flash card (Regions 1, Tuscany),
+  same simulator.
+- `site/public/media/lens/still-finder.webp`, `still-study.webp`: rendered by `tools/render-showcase.cjs stills
+  still-finder,still-study` (SwiftShader on Linux; the other stills are unchanged Metal renders).
+- The wine card in the Wine cards section is an HTML/SVG illustration (an original bottle and label, with the catalog's
+  Grand Malbec notes), labelled ILLUSTRATION. It is not a capture.

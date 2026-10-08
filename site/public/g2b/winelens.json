@@ -47,6 +47,15 @@
       "alt": "A Winebrary wine on the glasses: RED · MALBEC, Grand Malbec, Terrazas de los Andes 2017, tasting notes, and on the right a dithered map of Argentina with Mendoza glowing under the bottle, captioned MENDOZA · Argentina. Sample collection."
     },
     {
+      "id": "finder",
+      "src": "media/winelens/glasses-finder.png",
+      "moveMs": 1100,
+      "holdMs": 3200,
+      "preset": "right",
+      "caption": "Find My Wine: five questions, then picks with the reason a sommelier would give. Tap one to keep it.",
+      "alt": "Find My Wine on the glasses: picks for a steak dinner, Barbaresco by Gaja highlighted beside its bottle, Nebbiolo · Italy, Piedmont, with the reasons: tannin and depth for red meat, Nebbiolo is a classic; bold and powerful, structured; on the nose, cherry. Tap: notes, then tap to save."
+    },
+    {
       "id": "atlas",
       "src": "media/winelens/glasses-atlas.png",
       "moveMs": 1100,
@@ -61,8 +70,8 @@
       "moveMs": 1100,
       "holdMs": 3200,
       "preset": "right",
-      "caption": "Study: a question from a sourced fact. Think, then tap to reveal.",
-      "alt": "A study card on the glasses: STUDY · 1 of 5 · release, Cain Cuvée NV14, Which harvests are in this bottle, and in what share? beside the bottle, with Think, then tap to reveal."
+      "caption": "Study: seasons of flash cards, a glyph at the centre. Recall, flip, keep your streak.",
+      "alt": "A Study flash card on the glasses: REGIONS 1 · 5 of 12 · 280 XP, a map pin glyph centred above Tuscany, and the question Tuscany: which country? Tap: flip."
     }
   ],
   "poster": {
@@ -82,6 +91,7 @@
   "featureCaptions": {
     "notes": "Tasting notes",
     "winebrary": "Winebrary",
+    "finder": "Find My Wine",
     "atlas": "Atlas",
     "study": "Study"
   },
