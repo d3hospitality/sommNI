@@ -11,13 +11,14 @@ import {
   ImageContainerProperty, ListItemContainerProperty,
 } from '@evenrealities/even_hub_sdk';
 import {
-  WINE_TYPES, TYPE_DISPLAY, COUNTRIES,
+  WINE_TYPES, TYPE_DISPLAY, COUNTRIES, countriesFor,
   getGrapesForCountry, getWinesForGrape, getWinesForCountry, placeLabel,
   getFlavorOptionsForType, getWineDisplayName,
   Wine, WineType,
 } from './constants';
 import type { Pairing, CourseSlot } from './sync';
 import { lookupWineById } from './identity';
+import { catalogHidden } from './catalog-view';
 import { pageList, wholeRowHeight, clipLabel, clipBytes, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
 /** Tasting-notes footer. A tap on the notes saves the wine to My Winebrary (see quick-save.ts). */
@@ -42,6 +43,8 @@ export const PAIRINGS_INDEX = 2;
 export const STUDY_INDEX = 3;   // seasons + daily review (study/glasses.ts)
 export const ATLAS_INDEX = 4;   // globe + winery-cluster explorer (atlas-app.ts)
 export const TYPE_START_INDEX = 5;  // wine types start here
+/** Home rows: the catalog's wine types only while the default wines are shown. */
+export function homeItems(): string[] { return catalogHidden() ? HOME_LIST_ITEMS.slice(0, TYPE_START_INDEX) : [...HOME_LIST_ITEMS]; }
 
 // List heights snap to whole 40 px rows so the last visible row is never clipped.
 const LIST_VIEW_H = wholeRowHeight(254);   // 240 = 6 rows, leaves room for an info line
@@ -81,10 +84,10 @@ function homeContainers() {
     xPosition: 2, yPosition: 2, width: 185, height: HOME_LIST_H,
     containerID: 2, containerName: "home-list",
     itemContainer: new ListItemContainerProperty({
-      itemCount: HOME_LIST_ITEMS.length,
+      itemCount: homeItems().length,
       itemWidth: 0,
       isItemSelectBorderEn: 1,
-      itemName: [...HOME_LIST_ITEMS].map(label => clipLabel(label)),
+      itemName: homeItems().map(label => clipLabel(label)),
     }),
     isEventCapture: 1,
   });
@@ -152,7 +155,7 @@ export function rebuildHomePage(): RebuildPageContainer {
 
 /** Two lines under the globe: the hovered country and how much of the catalog it holds. */
 export function countryInfoText(type: WineType, index: number): string {
-  const countries = COUNTRIES[type];
+  const countries = countriesFor(type);
   const country = countries[index];
   if (!country) {
     const wines = countries.reduce((n, c) => n + getWinesForCountry(type, c).length, 0);
@@ -163,7 +166,7 @@ export function countryInfoText(type: WineType, index: number): string {
 }
 
 export function buildCountryListPage(type: WineType): RebuildPageContainer {
-  const countries = COUNTRIES[type];
+  const countries = countriesFor(type);
   const listItems = [...countries, BACK_LABEL];
 
   const LIST_W = PANEL_X - 4; // 294 — leave room for globe on right

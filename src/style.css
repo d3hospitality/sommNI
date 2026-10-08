@@ -1002,3 +1002,10 @@ span.wl-quick-bottle{display:flex}
 .st-big-stars .st-stars{font-size:34px}
 @media(max-width:600px){.st-season-hero{grid-template-columns:1fr}.st-node{grid-template-columns:44px 1fr auto;padding-right:10px}.st-node .st-stars{display:none}.st-lock{grid-column:2/4;text-align:left}.st-run{padding:14px}}
 @media(prefers-reduced-motion:reduce){.st-flash .st-glyph{transition:none;animation:none}.st-combo{animation:none}}
+/* Wine cards */
+.wl-card-cta{display:flex;align-items:center;justify-content:space-between;gap:14px 20px;flex-wrap:wrap;margin:18px 0;padding:18px 20px;border-radius:8px;background:linear-gradient(135deg,#F1E5DD,#FFFDF8);border:1px solid var(--line)}
+.wl-card-cta .wl-kicker{color:var(--accent);margin:0 0 4px}
+.wl-card-cta p:not(.wl-kicker){margin:0;font-size:14px;line-height:1.6;max-width:420px}
+.wl-card-list{list-style:none;margin:6px 0 18px;padding:0;display:grid;gap:10px}
+.wl-card-list li{padding-left:22px;position:relative;line-height:1.55;font-size:14px}
+.wl-card-list li::before{content:"✦";position:absolute;left:0;color:var(--accent)}

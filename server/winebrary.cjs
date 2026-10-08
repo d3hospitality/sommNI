@@ -160,4 +160,4 @@ function createWinebraryHandler({ getDb, getUserDb = userDb } = {}) {
     }
   }, { getDb, maxBytes: Math.ceil(MAX_PHOTO * 4 / 3) + 4096 });
 }
-module.exports = { createWinebraryHandler, userDb, ownWine, ownedImagePath, decodeImage, signedUrl, wineFields, vintageFields, BUCKET, UUID };
+module.exports = { createWinebraryHandler, userDb, ownWine, ownedImagePath, decodeImage, signedUrl, signImages, saveRow, wineFields, vintageFields, BUCKET, UUID };

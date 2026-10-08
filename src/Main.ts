@@ -10,6 +10,7 @@ import { buildHomePage, rebuildHomePage } from './pages';
 import { pushLogoToGlasses } from './image-utils';
 import { registerEventHandlers } from './events';
 import { initSync, migrateLegacyWineIds, inEvenHubHost } from './sync';
+import { loadCatalogView } from './catalog-view';
 import { useAccount, useStorage, eventCount } from './study/store';
 import { connectStudyGlasses } from './study/glasses';
 import { connectAtlasGlasses } from './atlas-app';
@@ -24,6 +25,7 @@ async function main(): Promise<void> {
   // Guest study log first; the Winebrary session (if any) switches it to the account.
   await useAccount(null);
   await runMigration();
+  await loadCatalogView();
   initDashboard();
   initAtlasCard();
   initWinebrary();
@@ -95,6 +97,7 @@ async function main(): Promise<void> {
     await useStorage(initSync(bridge));
     log(`Study log reloaded from Even Hub storage: ${eventCount()} reviews`);
     await runMigration();
+    await loadCatalogView();
     await refreshAll();
   }
   if (import.meta.env.DEV && new URLSearchParams(location.search).get('g2-fixture') === 'library') {

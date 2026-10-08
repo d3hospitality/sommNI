@@ -27,6 +27,7 @@ import { planWineScene, type ScenePlan } from './wine-scene';
 import { TYPE_DISPLAY, WINE_TYPES, type WineType } from './constants';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
+import { catalogWineShown } from './catalog-view';
 import { saveFromGlasses, notesOpened } from './quick-save';
 
 let bridge: EvenAppBridge | null = null;
@@ -211,6 +212,7 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
   };
   for (const item of allCatalogWines()) {
     if (type && item.type !== type) continue;
+    if (!catalogWineShown(item.id)) continue;   // hidden catalog, or a default wine the person removed
     const country = atlasCountryFor(renderer, item.country);
     if (!country) continue;
     bump(countryWines, country.code);

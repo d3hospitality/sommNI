@@ -12,7 +12,7 @@ async function invoke(handler, body, extra={}) {
 function fixture() {
  const calls=[], rows={winelens_entitlements:{user_id:user.id,customer_id:'cus_test',status:'free'}};
  let state={plan:'free',pro:false,tokens:100,allowances:{label_scan:{limit:5,remaining:5}}};
- let attempt={id:randomUUID(),choice:'monthly',expires_at:new Date(Date.now()+3600000).toISOString()};
+ let attempt={id:randomUUID(),choice:'app',expires_at:new Date(Date.now()+3600000).toISOString()};
  const grants=new Set();
  const db={auth:{getUser:async()=>({data:{user}})},from(table){
    let operation='select',value,filters=[];
@@ -25,7 +25,7 @@ function fixture() {
    if(name==='wl_check_session')return {data:{status:'active'}};
    if(name==='winelens_billing_status')return {data:state};
    if(name==='winelens_reserve_checkout')return {data:attempt};
-   if(name==='winelens_grant_tokens'){const replayed=grants.has(args.p_stripe_session);grants.add(args.p_stripe_session);return {data:{replayed}};}
+   if(name==='winelens_grant_tokens'||name==='winelens_grant_app'){const replayed=grants.has(args.p_stripe_session);grants.add(args.p_stripe_session);return {data:{replayed}};}
    return {data:{}};
  }};
  const prices=plan=>({id:env[plan==='monthly'?'STRIPE_PRICE_PRO_MONTHLY':'STRIPE_PRICE_PRO_ANNUAL'],active:true,livemode:false,type:'recurring',currency:'usd',unit_amount:plan==='monthly'?499:3999,billing_scheme:'per_unit',recurring:{interval:plan==='monthly'?'month':'year',interval_count:1}});

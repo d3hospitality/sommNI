@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   QUIZ_HISTORY:  'sommni_quiz_history',
   LEARNED_VAULT: 'sommni_learned_vault',
   COURSE_STATE:  'sommni_course_state',
+  CATALOG_VIEW:  'winelens_catalog_view',
 } as const;
 const MIGRATION_KEY = 'winelens_id_migration_v1';
 const BACKUP_KEY = 'sommni_legacy_backup_v1';
@@ -116,6 +117,18 @@ export function deletePairing(id: string): Promise<boolean> {
 // never converted into recall reviews (PRD S-09).
 export interface QuizSession { id: string; wineId: string; wineName: string; date: string; score: number; total: number; pct: number; questions: number }
 export async function getQuizHistory(): Promise<QuizSession[]> { return read(STORAGE_KEYS.QUIZ_HISTORY, []); }
+
+// ═══ DEFAULT CATALOG: shown, hidden, or wines removed one by one ═══
+export interface CatalogView { hidden: boolean; removed: string[] }
+export async function getCatalogView(): Promise<CatalogView> {
+  const v = await read<Partial<CatalogView>>(STORAGE_KEYS.CATALOG_VIEW, {});
+  return { hidden: v.hidden === true, removed: Array.isArray(v.removed) ? v.removed.filter(x => typeof x === 'string') : [] };
+}
+export async function changeCatalogView(change: (view: CatalogView) => CatalogView): Promise<CatalogView> {
+  let next: CatalogView = { hidden: false, removed: [] };
+  await update<Partial<CatalogView>>(STORAGE_KEYS.CATALOG_VIEW, {}, v => { next = change({ hidden: v.hidden === true, removed: Array.isArray(v.removed) ? v.removed : [] }); return next; });
+  return next;
+}
 
 // ═══ FAVORITES ═══
 export async function getFavorites(): Promise<string[]> { return read(STORAGE_KEYS.FAVORITES, []); }

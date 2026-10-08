@@ -22,6 +22,8 @@ export interface FlowContext {
   openDialog(html: string): void; feedback(message: string): void; run(task: () => Promise<void>): Promise<void>; setBusy(value: boolean): void;
   isBusy(): boolean; revision(): number; userId(): string | null; refresh(): Promise<void>; esc(value: unknown): string;
   costGate(feature: Feature, onChange: () => void, quantity?: () => number): Gate;
+  /** Wine cards for saved wines, one at a time (1 token each). */
+  makeCards(ids: string[], consent: boolean, progress: (done: number) => void): Promise<{ made: number; error: string | null }>;
 }
 
 export const MAX_PHOTOS = 6, PHOTO_TARGET = 450 * 1024, MAX_PDF = 3 * 1024 * 1024, MAX_TEXT = 60000, TEXT_PAGE = 6000, MAX_CSV = 400 * 1024;
@@ -307,13 +309,29 @@ export function wineListFlow(ctx: FlowContext) {
     }));
   }
 
-  function done(result: { saved: number; proposed: number; skipped: number }) {
+  function done(result: { saved: number; ids?: string[]; proposed: number; skipped: number }) {
+    const ids = result.ids ?? [], n = ids.length;
     ctx.openDialog(`<p class="wl-kicker">WINE LIST · SAVED</p><h2>${result.saved} ${result.saved === 1 ? 'wine' : 'wines'} in your Winebrary.</h2>
       <ul class="wl-list-summary">${result.proposed ? `<li>${result.proposed} new to wineLENS, suggested to the catalog for review.</li>` : ''}${result.skipped ? `<li>${result.skipped} skipped.</li>` : ''}</ul>
-      <p class="wl-muted">Catalog wines show their notes right away. For the others, open the wine and choose ✦ Get tasting notes. If anyone has already drafted that bottle and vintage, it is free.</p>
-      <div class="wl-list-footer"><button class="wl-primary" id="wl-list-close">Open my Winebrary</button><button class="wl-outline" id="wl-list-another">Upload another list</button></div>`);
+      ${n ? `<div class="wl-card-cta"><div><p class="wl-kicker">✦ WINE CARDS · 1 TOKEN EACH</p><p>A 3D bottle, tasting notes and the year for every wine, pinned on your map and ready on your glasses.</p></div></div>
+      ${ctx.costHTML}<p id="wl-cards-progress" class="wl-muted small" role="status" aria-live="polite"></p>` : '<p class="wl-muted">Catalog wines show their notes right away.</p>'}
+      <div class="wl-list-footer">${n ? `<button class="wl-primary" id="wl-list-cards" disabled>Make ${n} wine ${n === 1 ? 'card' : 'cards'} ✦</button>` : ''}<button class="wl-${n ? 'text-button' : 'primary'}" id="wl-list-close">${n ? 'Not now' : 'Open my Winebrary'}</button><button class="wl-outline" id="wl-list-another">Upload another list</button></div>`);
     ctx.dialog.querySelector('#wl-list-close')!.addEventListener('click', () => ctx.dialog.close());
     ctx.dialog.querySelector('#wl-list-another')!.addEventListener('click', open);
+    if (!n) return;
+    const make = ctx.dialog.querySelector<HTMLButtonElement>('#wl-list-cards')!, progress = ctx.dialog.querySelector('#wl-cards-progress')!;
+    const gate = ctx.costGate('wine_card', () => { make.disabled = ctx.isBusy() || !gate.ready(); }, () => n);
+    const revision = ctx.revision();
+    make.addEventListener('click', () => void ctx.run(async () => {
+      await gate.beforeSpend();
+      progress.textContent = `Making card 1 of ${n}…`;
+      const outcome = await ctx.makeCards(ids, gate.consent(), made => { if (revision === ctx.revision()) progress.textContent = made < n ? `Making card ${made + 1} of ${n}… (${made} ready)` : `${made} of ${n} ready.`; });
+      void ctx.refresh();
+      if (revision !== ctx.revision()) return;
+      if (outcome.error) { void gate.refresh(); throw new Error(`${outcome.made} of ${n} cards made. ${outcome.error} Cards that did not finish were not charged.`); }
+      progress.textContent = `All ${n} wine cards are ready: on your map, and on your glasses under My Winebrary.`;
+      make.hidden = true;
+    }));
   }
 
   return { open, review };

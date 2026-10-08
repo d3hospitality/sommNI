@@ -62,14 +62,16 @@ do $$declare u uuid:='11111111-1111-4111-8111-111111111111'; v uuid:='22222222-2
  update winelens_token_wallets set monthly_limit_units=1 where user_id=u;
  perform test_assert(winelens_reserve_usage(u,'limit','label_scan',1,true)->>'reason'='token_limit','monthly limit');
  update winelens_token_wallets set monthly_limit_units=null where user_id=u;
- -- Rate card v2: 10 included Studio renderings, then 8 tokens each.
- r:=winelens_reserve_usage(u,'mixed','studio_render',12,true);
- perform test_assert(r->>'tokens'='83' and r->>'remaining_allowance'='0','allowance then tokens multi-quantity');
+ -- Rate card v3: wine-list photo pages are included up to 20 a month, then 1 token each.
+ r:=winelens_reserve_usage(u,'mixed','wine_list_page',22,true);
+ perform test_assert(r->>'tokens'='97' and r->>'remaining_allowance'='0','allowance then tokens multi-quantity');
  perform winelens_settle_usage(u,(r->>'reservation_id')::uuid,false);
- r:=winelens_reserve_usage(u,'render-fail','studio_render',1,false);
+ r:=winelens_reserve_usage(u,'page-fail','wine_list_page',1,false);
  update winelens_token_reservations set expires_at=now()-interval '1 second' where id=(r->>'reservation_id')::uuid;
  perform winelens_sweep_reservations(u);
- perform test_assert(winelens_billing_status(u)->'allowances'->'studio_render'->>'remaining'='10','swept allowance');
+ perform test_assert(winelens_billing_status(u)->'allowances'->'wine_list_page'->>'remaining'='20','swept allowance');
+ -- New bottle images have no allowance: 1 token each, with consent.
+ perform test_assert(winelens_reserve_usage(u,'render-consent','studio_render',1,false)->>'reason' is null,'auto spend covers renders');
  begin update winelens_token_ledger set units=0; raise exception 'FAIL mutable ledger'; exception when insufficient_privilege then null; end;
  begin delete from winelens_token_ledger; raise exception 'FAIL deletable ledger'; exception when insufficient_privilege then null; end;
  perform winelens_grant_tokens(v,'cs_other','t10',220);

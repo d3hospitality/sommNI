@@ -12,7 +12,7 @@
 
 import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, TextContainerUpgrade } from '@evenrealities/even_hub_sdk';
 import {
-  WINE_TYPES, COUNTRIES, WineType, TYPE_DISPLAY, getWinesForCountry,
+  WINE_TYPES, COUNTRIES, countriesFor, WineType, TYPE_DISPLAY, getWinesForCountry,
   getGrapesForCountry, getWinesForGrape,
   getFlavorOptionsForType, getRankedWines, Wine,
 } from './constants';
@@ -147,7 +147,7 @@ async function updateFinderResultPreview(
  * firmware does report a hovered row, the globe turns to that country.
  */
 function countriesByWines(type: WineType): string[] {
-  return [...COUNTRIES[type]].sort((a, b) => getWinesForCountry(type, b).length - getWinesForCountry(type, a).length);
+  return [...countriesFor(type)].sort((a, b) => getWinesForCountry(type, b).length - getWinesForCountry(type, a).length);
 }
 async function showCountryFootprint(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
   if (!currentType) return;
@@ -166,7 +166,7 @@ async function hoverCountry(bridge: EvenAppBridge, index: number): Promise<void>
   const text = async () => {
     await bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID: 5, containerName: 'info', content, contentOffset: 0, contentLength: 0 }));
   };
-  const country = COUNTRIES[type][index];
+  const country = countriesFor(type)[index];
   if (country) await pushCatalogGlobe(bridge, country, { settle: true, lead: text });
   else await pushCatalogGlobe(bridge, countriesByWines(type), { settle: true, lead: text }); // Back row: footprint again
 }
@@ -372,7 +372,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
 
     // ── COUNTRIES ──
     if (currentPage === "countries" && currentType) {
-      const countries = COUNTRIES[currentType];
+      const countries = countriesFor(currentType);
       if (idx === countries.length) { navigating = false; await goBack(bridge, baseUrl); return; }
       if (idx >= 0 && idx < countries.length) {
         currentCountry = countries[idx];

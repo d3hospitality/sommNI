@@ -17,9 +17,9 @@ export function accountBilling(getSession: () => Promise<Session | null>) {
     try {
       const state = await request('status'); if (rev !== revision) return;
       el('billing-message').textContent = state.billing_available ? '' : 'Not available yet, you have not been charged.';
-      el('plan-name').textContent = state.pro ? 'wineLENS Pro' : 'Free';
+      el('plan-name').textContent = state.plan === 'owner' ? 'wineLENS owner' : state.pro ? 'wineLENS · yours for life' : 'Free preview';
       el('billing-test').hidden = !state.test_mode;
-      el('plan-period').textContent = state.period_end && state.pro ? `${state.cancel_at_period_end ? 'Ends' : 'Renews'} ${new Date(state.period_end).toLocaleDateString()}` : 'Your wine essentials, always free.';
+      el('plan-period').textContent = state.pro ? 'Owned. No subscription, nothing renews.' : 'Catalog, Atlas, Study and Find My Wine are free. Get wineLENS to make wine cards.';
       el('plan-upgrades').hidden = !!state.pro;
       el('manage-billing').hidden = !state.can_manage;
       el('token-panel').hidden = !state.pro;
@@ -29,19 +29,21 @@ export function accountBilling(getSession: () => Promise<Session | null>) {
       el('allowance-period').textContent = `Resets ${new Date(state.end).toLocaleDateString()}`;
       el('allowance-list').replaceChildren();
       const card = state.rate_card || rateCard;
-      el('billing-home').querySelectorAll<HTMLButtonElement>('[data-plan]').forEach(b => { const plan = b.dataset.plan as keyof typeof rateCard.plans; const spec = card.plans[plan]; b.textContent = `Pro · $${spec.amount / 100}/${spec.interval}`; });
+      const app = state.app || rateCard.app;
+      el('buy-app').textContent = `Get wineLENS · $${(app.amount / 100).toFixed(2)} once`;
+      el('app-offer').textContent = `Yours for life, no subscription. Includes ${app.tokens} tokens: your first ${app.tokens} wine cards.`;
       for (const [key, feature] of Object.entries(card.features) as [string, { label: string }][]) {
         const row = document.createElement('li'); row.textContent = `${feature.label}: ${state.allowances[key].remaining} of ${state.allowances[key].limit} left`; el('allowance-list').append(row);
       }
       el('token-packs').replaceChildren();
       for (const [pack, spec] of Object.entries(state.packs || card.packs) as [string, { amount: number; units: number }][]) {
-        const b = document.createElement('button'); b.className = 'button outline'; b.textContent = `$${spec.amount / 100} · ${spec.units} tokens`; b.disabled = !state.billing_available; b.addEventListener('click', () => void action('checkout-tokens', { pack })); el('token-packs').append(b);
+        const b = document.createElement('button'); b.className = 'button outline'; b.textContent = `$${spec.amount / 100} · ${spec.units} tokens · ${Math.round(spec.amount / spec.units)}¢ a card`; b.disabled = !state.billing_available; b.addEventListener('click', () => void action('checkout-tokens', { pack })); el('token-packs').append(b);
       }
       el('token-rates').textContent = Object.values(card.features as typeof rateCard.features).map(f => `${f.label}: ${f.tokens} ${f.tokens === 1 ? 'token' : 'tokens'}`).join(' · ');
       el('billing-activity').replaceChildren();
       for (const entry of state.ledger) { const li = document.createElement('li'); li.textContent = `${new Date(entry.created_at).toLocaleDateString()} · ${entry.event} · ${entry.feature.replaceAll('_', ' ')} · ${entry.units} tokens${entry.allowance ? ` · ${entry.allowance} included` : ''}`; el('billing-activity').append(li); }
       if (!state.ledger.length) { const li = document.createElement('li'); li.textContent = 'No activity yet.'; el('billing-activity').append(li); }
-      el('billing-home').querySelectorAll<HTMLButtonElement>('[data-plan]').forEach(b => b.disabled = !state.billing_available);
+      (el('buy-app') as HTMLButtonElement).disabled = !state.billing_available;
       (el('manage-billing') as HTMLButtonElement).disabled = !state.management_available;
       el('usage-block').hidden = false; el('activity-block').hidden = false;
     } catch (e) { if (rev === revision) { el('usage-block').hidden = true; el('activity-block').hidden = true; } if (rev === revision) el('billing-message').textContent = e instanceof Error ? e.message : 'Account usage unavailable.'; }
@@ -62,7 +64,7 @@ export function accountBilling(getSession: () => Promise<Session | null>) {
     } catch (e) { (el('auto-spend') as HTMLInputElement).checked = savedAutoSpend; el('billing-message').textContent = e instanceof Error ? e.message : 'Billing unavailable.'; }
     finally { busy = false; }
   }
-  el('billing-home').querySelectorAll<HTMLButtonElement>('[data-plan]').forEach(b => b.addEventListener('click', () => void action('checkout-plan', { plan: b.dataset.plan })));
+  el('buy-app').addEventListener('click', () => void action('checkout-app'));
   el('manage-billing').addEventListener('click', () => void action('portal'));
   el('refresh-billing').addEventListener('click', () => void refresh());
   el('auto-spend').addEventListener('change', () => { const input = el('auto-spend') as HTMLInputElement; void action('auto-spend', { enabled: input.checked }); });

@@ -234,6 +234,6 @@ async function commit({ db, udb, user, body }) {
   await db.from('winelens_list_entries').update({ decision: 'skipped' }).eq('upload_id', upload.id).eq('decision', 'pending');
   let proposed = 0;
   for (const [key, p] of proposals) { try { await rpc(db, 'winelens_propose_wine', { p_key: key, p_wine: p.wine, p_place: p.place, p_user: user.id }); proposed++; } catch { /* the wine is saved; proposing is best effort */ } }
-  return { saved: (saved || []).length, proposed, skipped: entries.length - chosen.length };
+  return { saved: (saved || []).length, ids: (saved || []).map(r => r.id), proposed, skipped: entries.length - chosen.length };
 }
 module.exports = { createWineListHandler, csvItems, textPages, parseDelimited, validItem };

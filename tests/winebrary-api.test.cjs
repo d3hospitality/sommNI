@@ -2,7 +2,7 @@
 const { test } = require('node:test'); const assert = require('node:assert/strict'); const { randomUUID } = require('node:crypto');
 const { createWinebraryHandler } = require('../server/winebrary.cjs');
 const { createStudyHandler } = require('../server/study.cjs');
-const { createNotesHandler, createRenderHandler } = require('../server/ai-jobs.cjs');
+const { createNotesHandler, createRenderHandler, createCardHandler } = require('../server/ai-jobs.cjs');
 const { formatNotes } = require('../prompts/winelens-ai.cjs');
 const { env, invoke, fixture, user } = require('./billing-helpers.cjs');
 const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
@@ -136,7 +136,7 @@ test('Studio rendering: owned reference only, stored draft, refund on failure, r
   assert.equal((await invoke(h, failing)).status, 502); assert.equal(store.get(failing.request_id).status, 'released'); assert.equal(u.files.size, 2);
   const free = fixture(); jobs(free, { reason: 'pro_required' });
   const denied = await invoke(createRenderHandler({ getDb: () => free.db, getUserDb: () => u.db, env, fetchImpl }), { ...body, request_id: randomUUID() });
-  assert.equal(denied.status, 402); assert.match(denied.body.error, /Pro/); assert.equal(renders, 2);
+  assert.equal(denied.status, 402); assert.match(denied.body.error, /tokens/); assert.equal(renders, 2);
 });
 
 test('Study sync: push dedupes and rejects bad events; pull returns own events', async () => {
@@ -197,4 +197,61 @@ test('Shared notes: while one person is drafting a bottle, a second request wait
   assert.equal(second.status, 409); assert.match(second.body.error, /not charged/);
   release(); assert.equal((await slow).body.charged, true);
   assert.equal((await invoke(h, { collection_id: id, request_id: randomUUID() })).body.shared, true);
+});
+
+test('Wine cards: 1 token every time; the bottle image and notes are made once per bottle + vintage, then reused', async () => {
+  const { f, u, wb } = setup(); const shared = new Map(), bottles = new Map(), sharedFiles = new Map(); const store = jobs(f, { shared });
+  const rpc = f.db.rpc;
+  f.db.rpc = async (name, args) => {
+    if (name === 'winelens_bottle_claim') {
+      f.calls.push([name, args]); const b = bottles.get(args.p_key);
+      if (b?.status === 'ready') return { data: { status: 'ready', path: b.path, model: b.model } };
+      if (b && b.request !== args.p_request_id) return { data: { status: 'busy' } };
+      bottles.set(args.p_key, { status: 'pending', request: args.p_request_id }); return { data: { status: 'claimed' } };
+    }
+    if (name === 'winelens_bottle_fill') { f.calls.push([name, args]); const b = bottles.get(args.p_key); if (b?.request === args.p_request_id) Object.assign(b, { status: 'ready', path: args.p_path, model: args.p_model }); return { data: { filled: true } }; }
+    if (name === 'winelens_bottle_release') { f.calls.push([name, args]); const b = bottles.get(args.p_key); if (b?.status === 'pending' && b.request === args.p_request_id) bottles.delete(args.p_key); return { data: { released: true } }; }
+    return rpc(name, args);
+  };
+  f.db.storage = { from: () => ({
+    upload: async (path, bytes) => { sharedFiles.set(path, Buffer.from(bytes)); return { error: null }; },
+    copy: async (from, to) => { if (!sharedFiles.has(from)) return { error: { message: 'missing' } }; u.files.set(to, sharedFiles.get(from)); return { error: null }; },
+  }) };
+  let images = 0, drafts = 0, imageDown = false;
+  const fetchImpl = async (url, init) => {
+    images++; assert.equal(url, 'https://api.openai.com/v1/images/generations');
+    const req = JSON.parse(init.body); assert.equal(req.model, 'gpt-image-2'); assert.equal(req.background, 'transparent'); assert.match(req.prompt, /original, minimal design/); assert.match(req.prompt, /Grand Malbec/);
+    return { ok: !imageDown, json: async () => ({ data: [{ b64_json: png.split(',')[1] }] }) };
+  };
+  const notes = { appearance: 'Opaque purple-black.', nose: 'Blackberry, plum, violet, cocoa.', palate: 'Full Body, Firm Tannins. Dark fruit and spice.', finish: 'Long, warm and smooth.', story: '', confidence: 0.9 };
+  const openai = { chat: { completions: { create: async () => { drafts++; return { choices: [{ message: { content: JSON.stringify(notes) } }] }; } } } };
+  const h = createCardHandler({ getDb: () => f.db, getUserDb: () => u.db, env, fetchImpl, getOpenAI: () => openai });
+  const add = async body => (await invoke(wb, { action: 'add', color: 'Red', vintage_state: 'year', region: 'Mendoza', country: 'Argentina', ...body })).body.item.id;
+  const mine = await add({ wine_name: 'Grand Malbec', producer: 'Terrazas de los Andes', vintage: '2017' });
+  const theirs = await add({ wine_name: 'TERRAZAS DE LOS ANDES Grand Malbec', producer: 'terrazas de los andes', vintage: '2017' });
+  const kept = await add({ wine_name: 'Grand Malbec', producer: 'Terrazas de los Andes', vintage: '2017', notes: 'Mine: plum and smoke.' });
+  // First card: draws the bottle, drafts the notes, charges 1 token, and publishes both for the next card.
+  const first = { collection_id: mine, request_id: randomUUID(), spend_consent: true };
+  const a = await invoke(h, first);
+  assert.equal(a.status, 200); assert.equal(a.body.charged, true); assert.equal(a.body.image_reused, false); assert.equal(a.body.notes_added, true);
+  assert.equal(a.body.item.metadata.image_source, 'generated'); assert.match(a.body.item.image_url, /^https:\/\/signed\.test\//); assert.match(a.body.item.notes, /^LOOK {2}Opaque/); assert.equal(a.body.item.vintage, 2017, 'the year is kept');
+  assert.equal(images, 1); assert.equal(drafts, 1); assert.equal([...bottles.values()][0].status, 'ready'); assert.ok([...sharedFiles.keys()].some(k => /^shared\/[0-9a-f]{64}\.png$/.test(k)));
+  // Same bottle typed differently by someone else: still a card (charged), but nothing is drawn or drafted again.
+  const b = await invoke(h, { collection_id: theirs, request_id: randomUUID(), spend_consent: true });
+  assert.equal(b.status, 200); assert.equal(b.body.charged, true, 'reuse is still charged'); assert.equal(b.body.image_reused, true); assert.equal(b.body.notes_reused, true);
+  assert.equal(images, 1); assert.equal(drafts, 1); assert.equal(f.calls.filter(c => c[0] === 'winelens_begin_job' && c[1].p_feature === 'wine_card').length, 2);
+  // A lost response replays for free; the owner's own notes are never replaced.
+  const again = await invoke(h, first); assert.equal(again.body.replayed, true); assert.equal(again.body.charged, false); assert.equal(images, 1);
+  const c = await invoke(h, { collection_id: kept, request_id: randomUUID(), spend_consent: true });
+  assert.equal(c.body.item.notes, 'Mine: plum and smoke.'); assert.equal(c.body.notes_added, false);
+  // A failed drawing refunds, attaches nothing and frees the bottle for the next card.
+  const other = await add({ wine_name: 'Grand Malbec', producer: 'Terrazas de los Andes', vintage: '2019' });
+  imageDown = true; const failing = { collection_id: other, request_id: randomUUID(), spend_consent: true };
+  const d = await invoke(h, failing);
+  assert.equal(d.status, 502); assert.equal(store.get(failing.request_id).status, 'released');
+  assert.equal(bottles.size, 1, 'claim released'); assert.equal(u.tables.user_collection.find(w => w.id === other).metadata.image_path, undefined);
+  // Free accounts: cards need the app (tokens).
+  const free = fixture(); jobs(free, { reason: 'pro_required' });
+  const denied = await invoke(createCardHandler({ getDb: () => free.db, getUserDb: () => u.db, env, fetchImpl, getOpenAI: () => openai }), { collection_id: mine, request_id: randomUUID() });
+  assert.equal(denied.status, 402); assert.match(denied.body.error, /Wine cards use tokens/);
 });

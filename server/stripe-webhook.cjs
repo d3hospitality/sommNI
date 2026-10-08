@@ -1,5 +1,5 @@
 const { getAdmin, rpc, HttpError, UNAVAILABLE } = require('./service.cjs');
-const { stripeClient, prices, validatePrice } = require('./billing.cjs');
+const { stripeClient } = require('./billing.cjs');
 const card = require('../shared/rate-card.json');
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function readRaw(req) {
@@ -27,27 +27,21 @@ function createWebhookHandler({ getDb = getAdmin, env = process.env, getStripe =
       const db = getDb();
       if (['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(event.type)) {
         if (obj.mode === 'payment' && obj.payment_status === 'paid') {
-          const pack = Object.hasOwn(card.packs, obj.metadata.pack || '') ? card.packs[obj.metadata.pack] : null;
-          if (!pack || obj.amount_total !== pack.amount || obj.currency !== card.currency || obj.client_reference_id !== user) throw new HttpError(400, 'Token payment does not match the pack.');
-          await rpc(db, 'winelens_grant_tokens', { p_user: user, p_stripe_session: obj.id, p_pack: obj.metadata.pack, p_units: pack.units });
+          if (obj.currency !== card.currency || obj.client_reference_id !== user) throw new HttpError(400, 'Payment does not match the account.');
+          if (obj.metadata.purchase === 'app') {
+            // The app: owned for life, with its starter tokens (the database checks amount + tokens against the card).
+            if (obj.amount_total !== card.app.amount) throw new HttpError(400, 'App payment does not match the price.');
+            await rpc(db, 'winelens_grant_app', { p_user: user, p_stripe_session: obj.id, p_amount: card.app.amount, p_tokens: card.app.tokens });
+          } else {
+            const pack = Object.hasOwn(card.packs, obj.metadata.pack || '') ? card.packs[obj.metadata.pack] : null;
+            if (!pack || obj.amount_total !== pack.amount) throw new HttpError(400, 'Token payment does not match the pack.');
+            await rpc(db, 'winelens_grant_tokens', { p_user: user, p_stripe_session: obj.id, p_pack: obj.metadata.pack, p_units: pack.units });
+          }
         }
         const closed = await db.from('winelens_checkout_attempts').update({ expires_at: new Date().toISOString() }).eq('user_id', user).eq('session_id', obj.id);
         if (closed.error) throw new Error('Could not close checkout');
-      } else if (['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted'].includes(event.type)) {
-        // Read current state for out-of-order updates, use deletion tombstone directly.
-        const sub = event.type.endsWith('.deleted') ? obj : await stripe.subscriptions.retrieve(obj.id);
-        if (sub.metadata?.app !== 'winelens' || sub.metadata.user_id !== user || sub.livemode !== event.livemode) throw new HttpError(400, 'Subscription metadata mismatch.');
-        const item = sub.items?.data?.[0];
-        if (sub.items?.data?.length !== 1 || !Object.values(prices(env)).filter(Boolean).includes(item?.price?.id) || item.quantity !== 1) throw new HttpError(400, 'Unexpected subscription price.');
-        const plan = Object.keys(prices(env)).find(plan => prices(env)[plan] === item.price.id);
-        const price = await stripe.prices.retrieve(item.price.id);
-        // Retired prices must still be able to deliver a cancellation tombstone.
-        validatePrice(sub.status === 'canceled' ? { ...price, active: true } : price, plan, env);
-        const start = item.current_period_start || sub.current_period_start, end = item.current_period_end || sub.current_period_end;
-        if (!start || !end || start >= end) throw new HttpError(400, 'Invalid subscription period.');
-        await rpc(db, 'winelens_sync_subscription', { p_user: user, p_event_created: event.created, p_event_id: event.id,
-          p_subscription: { id: sub.id, status: sub.status, price: item.price.id, customer: typeof sub.customer === 'string' ? sub.customer : sub.customer.id, created: sub.created, start: new Date(start*1000).toISOString(), end: new Date(end*1000).toISOString(), cancel_at_period_end: !!sub.cancel_at_period_end } });
       }
+      // Subscriptions are retired (one-time purchases only): any other event is acknowledged and ignored.
       return res.status(200).json({ received: true });
     } catch (e) { return res.status(e instanceof HttpError ? e.status : 503).json({ error: e instanceof HttpError ? e.message : 'Webhook processing unavailable. Retry delivery.' }); }
   };

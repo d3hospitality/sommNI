@@ -13,7 +13,7 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || (process.platform==='darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined),headless:true});
  const page=await browser.newPage({viewport:{width:1440,height:1050}});await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
- let items=[],adds=[],updates=[],attach=[],notes=[],noteCalls=0,renderFail=true;const sharedKeys=new Set();
+ let items=[],adds=[],updates=[],attach=[],notes=[],cards=[],noteCalls=0,renderFail=true;const sharedKeys=new Set();
  const status={pro:true,plan:'pro',tokens:100,auto_spend:false,scan_available:true,rate_card:card,allowances:{label_scan:{remaining:60,limit:60},tasting_notes:{remaining:60,limit:60},studio_render:{remaining:10,limit:10}}};
  await page.route('https://mcmtasetompygfktzhpr.supabase.co/auth/**',route=>route.fulfill({json:session.user}));
  await page.route('**/api/**',async route=>{
@@ -38,6 +38,7 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
    if(sharedKeys.has(key))return route.fulfill({json:{draft:{...draftNotes,text:notesText,model:'test'},shared:true,charged:false,review_required:true}});
    const t=status.allowances.tasting_notes;if(t.remaining===0)assert.equal(body.spend_consent,true,'tokens only with consent');
    noteCalls++;sharedKeys.add(key);assert.match(body.request_id,/^[0-9a-f-]{36}$/);return route.fulfill({json:{draft:{...draftNotes,text:notesText,model:'test'},shared:false,charged:true,review_required:true}});}
+  if(url.pathname==='/api/wine-card'){cards.push(body);assert.equal(body.spend_consent,true,'cards only with consent');const item=items.find(w=>w.id===body.collection_id);Object.assign(item,{image_url:(BASE + '/sommNI/photography/white.png'),notes:notesText});item.metadata={...item.metadata,image_source:'generated',notes_source:'generated'};return route.fulfill({json:{item,image_reused:false,notes_reused:false,notes_added:true}});}
   if(url.pathname==='/api/bottle-render'){assert.equal(body.reference_path,`${user}/${wine}/original.png`);return renderFail?route.fulfill({status:502,json:{error:'The rendering did not finish. Your allowance or tokens were returned.'}}):route.fulfill({json:{draft:{path:`${user}/${wine}/render.png`,source:'generated',url:(BASE + '/sommNI/photography/red.png')}}});}
   return route.fulfill({status:404,json:{error:'Unhandled test path '+url.pathname}});
  });
@@ -55,7 +56,7 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  await page.getByText('No notes yet. Write your own, or get wineLENS notes for this bottle and vintage.').waitFor();
  // Tasting notes: one cost panel, then a reviewed draft.
  await page.getByRole('button',{name:'✦ Get tasting notes'}).click();
- await page.getByText('Included with Pro · 60 of 60 left this month').waitFor();
+ await page.getByText('Included with wineLENS · 60 of 60 left this month').waitFor();
  await page.getByRole('button',{name:'Get tasting notes ✦'}).click();
  await page.getByText(draftNotes.nose).waitFor();assert.equal(noteCalls,1);assert.equal(notes.length,0,'not saved before review');
  await page.getByRole('button',{name:'Save to my notes ↗'}).click();await page.getByText('wineLENS notes · the expected profile, not a tasting').first().waitFor();
@@ -64,7 +65,7 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  assert.equal(await page.getByRole('button',{name:'✦ Get tasting notes'}).count(),0,'nothing new to draft once wineLENS notes are saved');
  // Photo + Studio image.
  await page.getByRole('button',{name:'Add bottle photo ↗',exact:true}).click();
- await page.getByText('Included with Pro · 10 of 10 left this month').waitFor();
+ await page.getByText('Included with wineLENS · 10 of 10 left this month').waitFor();
  assert.equal(await page.getByRole('button',{name:'Create studio image ✦'}).isDisabled(),true,'needs a photo first');
  await page.locator('#wl-file').setInputFiles(path.resolve(__dirname,'../public/photography/red.png'));
  await page.getByText('Photo ready. Use it as it is, or create a studio image.',{exact:true}).waitFor();
@@ -75,10 +76,10 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  await page.getByRole('button',{name:'Show on glasses ↗'}).click();await page.getByText('Open wineLENS in Even Hub and connect your G2 glasses first.',{exact:true}).waitFor();
  await page.getByRole('button',{name:'＋ Add another vintage'}).click();assert.equal(await page.getByLabel('Year',{exact:true}).inputValue(),'');await page.getByLabel('Year',{exact:true}).fill('2020');
  await page.getByRole('button',{name:'Save to Winebrary ↗',exact:true}).click();await page.getByRole('dialog').getByRole('heading',{name:'Grand Malbec',exact:true}).waitFor();assert.equal(items.length,2);assert.equal(items[1].vintage,2017);assert.equal(items[0].vintage,2020);assert.equal(items[0].metadata.image_path,undefined);assert.equal(items[0].notes,null,'new vintage starts without notes');
- // A new vintage is a new bottle: after the Pro allowance, tokens need an explicit tick.
+ // A new vintage is a new bottle: after the monthly allowance, tokens need an explicit tick.
  status.allowances.tasting_notes.remaining=0;
  await page.getByRole('button',{name:'✦ Get tasting notes'}).click();
- await page.getByText('Pro allowance used · uses 1 token (100 left)').waitFor();
+ await page.getByText('Monthly allowance used · uses 1 token (100 left)').waitFor();
  assert.equal(await page.getByRole('button',{name:'Get tasting notes ✦'}).isDisabled(),true,'tokens need consent');
  await page.getByLabel('Use 1 token for this').check();assert.equal(await page.getByRole('button',{name:'Get tasting notes ✦'}).isDisabled(),false);
  await page.getByRole('button',{name:'Close dialog',exact:true}).click();
@@ -109,7 +110,14 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  assert.equal(await page.getByRole('button',{name:'Not sure',exact:true}).getAttribute('aria-pressed'),'true','vintage defaults to Not sure');
  await page.getByRole('button',{name:year,exact:true}).click();await page.screenshot({path:path.resolve(output,'wineLENS-Quick-Vintage.png')});
  const before=adds.length;await page.getByRole('button',{name:'Save to Winebrary ↗',exact:true}).click();
- await page.getByText('Saved to your Winebrary.',{exact:true}).waitFor();
+ await page.getByText(/^Saved to your Winebrary\. Make its wine card/).waitFor();await page.getByRole('button',{name:'Make my wine card ✦'}).waitFor();
+ // Wine card: 1 token with consent; the bottle, notes and year come back on the wine.
+ await page.getByRole('button',{name:'Make my wine card ✦'}).click();await page.getByText('Uses 1 token (100 left)',{exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Make my wine card ✦'}).isDisabled(),true,'consent first');
+ await page.getByLabel('Use 1 token for this').check();await page.screenshot({path:path.resolve(output,'wineLENS-Wine-Card.png')});
+ await page.getByRole('button',{name:'Make my wine card ✦'}).click();
+ await page.getByText('Your wine card is ready: on your map, and on your glasses under My Winebrary.',{exact:true}).waitFor();
+ assert.equal(cards.length,1);await page.getByRole('button',{name:'Redo the card ✦'}).waitFor();
  const quick=adds[before];assert.equal(adds.length,before+1);
  assert.deepEqual([quick.wine_id,quick.vintage_state,quick.vintage,quick.color,quick.wine_name,quick.producer],['wl_albarino-eidos','year',year,'White','Albariño','Eidos']);
  await page.getByRole('button',{name:'Close dialog',exact:true}).click();
@@ -122,8 +130,8 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  await page.getByRole('button',{name:'Save to Winebrary ↗',exact:true}).click();await page.getByText('Enter a four-digit year, or choose Not sure.',{exact:true}).waitFor();assert.equal(adds.length,before+1);
  await page.getByRole('button',{name:'Close dialog',exact:true}).click();
  await page.screenshot({path:path.resolve(output,'wineLENS-Winebrary-Preview.png'),fullPage:true});
- await page.getByRole('button',{name:'My account ↗'}).click();await page.getByText('wineLENS Pro · 100 tokens').waitFor();await page.getByRole('button',{name:'Unlink this device',exact:true}).click();await page.getByRole('button',{name:'Link account ↗',exact:true}).waitFor();assert.equal(await page.locator('[data-wine]').count(),0);
+ await page.getByRole('button',{name:'My account ↗'}).click();await page.getByText('wineLENS · yours for life · 100 tokens').waitFor();await page.getByRole('button',{name:'Unlink this device',exact:true}).click();await page.getByRole('button',{name:'Link account ↗',exact:true}).waitFor();assert.equal(await page.locator('[data-wine]').count(),0);
  const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});await serveG2Bottles(mobile);await mobile.goto((BASE + '/sommNI/'));await mobile.evaluate(()=>document.fonts.ready);await mobile.waitForTimeout(500);await mobile.screenshot({path:path.resolve(output,'wineLENS-Revamp-Mobile.png'),fullPage:true});
- assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['code-linked account session','private Winebrary add','explicit vintage','tasting notes: cost line, reviewed draft, explicit save','token consent gate','same bottle + vintage reused free (job ran once)','photo upload','studio failure preserves wine','approve studio image','G2 disconnected state','add another vintage preserves original','add sheet: scan first, type-ahead, by hand','catalog quick add with year chips','already-saved note and year check','unlink clears collection'],errors}));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['code-linked account session','private Winebrary add','explicit vintage','tasting notes: cost line, reviewed draft, explicit save','token consent gate','same bottle + vintage reused free (job ran once)','photo upload','studio failure preserves wine','approve studio image','G2 disconnected state','add another vintage preserves original','add sheet: scan first, type-ahead, by hand','catalog quick add with year chips','wine card with consent','already-saved note and year check','unlink clears collection'],errors}));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

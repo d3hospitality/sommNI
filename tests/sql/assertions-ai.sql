@@ -1,9 +1,12 @@
--- Winebrary storage/study on wineLENS, rate card v2 and paid AI jobs (20261007190000).
+-- Winebrary storage/study on wineLENS, rate cards v2/v3, paid AI jobs, the app purchase and wine cards.
 create function public.test_assert(ok boolean,label text) returns void language plpgsql as $$begin if ok is distinct from true then raise exception 'FAIL: %',label; end if; end$$;
 insert into auth.users(id,email) values ('66666666-6666-4666-8666-666666666666','notes@example.test'),('77777777-7777-4777-8777-777777777777','other@example.test');
 do $$begin
- perform test_assert((select max(version)=2 from winelens_rate_cards),'rate card v2 current');
+ perform test_assert((select max(version)=3 from winelens_rate_cards),'rate card v3 current');
  perform test_assert((select card->'features' ?& array['label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text'] from winelens_rate_cards where version=2),'v2 features');
+ perform test_assert((select card->'features' ?& array['wine_card','label_scan','tasting_notes','studio_render','wine_list_page','wine_list_text'] and (card->'features'->'wine_card'->>'tokens')::int=1 and (card->'app'->>'amount')::int=999 from winelens_rate_cards where version=3),'v3: wine cards, the app');
+ perform test_assert(not has_function_privilege('authenticated','public.winelens_grant_app(uuid,text,integer,integer)','execute'),'app grant service only');
+ perform test_assert(not has_function_privilege('authenticated','public.winelens_bottle_claim(text,uuid,uuid,jsonb)','execute') and not has_table_privilege('authenticated','public.winelens_shared_bottles','select'),'shared bottles service only');
  perform test_assert(not has_table_privilege('authenticated','public.winelens_list_entries','select') and not has_table_privilege('anon','public.winelens_catalog_proposals','select'),'list tables API-only');
  perform test_assert((select (a.card->'packs')=(b.card->'packs') from winelens_rate_cards a, winelens_rate_cards b where a.version=1 and b.version=2),'pack grants unchanged');
  perform test_assert(exists(select 1 from storage.buckets where id='winelens-bottles' and public=false),'private bottle bucket');
@@ -44,19 +47,36 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  perform test_assert(r->>'replayed'='true' and r->'result'->>'nose'='Cherry.' and r->>'status'='committed','job replay');
  perform test_assert(winelens_begin_job(u,'tasting_notes',md5('n1')::uuid,repeat('e',64),false)->>'reason'='request_mismatch','fingerprint binding');
  perform test_assert(winelens_begin_job(u,'studio_render',md5('n1')::uuid,repeat('f',64),false)->>'reason'='request_mismatch','feature binding');
- -- Pro: Studio allowance first, then consent-gated tokens; failures refund.
- insert into winelens_entitlements(user_id,plan,status,period_start,period_end) values(u,'pro','active',now()-interval '1 day',now()+interval '1 month');
+ -- Free: no wine cards (tokens need the app).
+ perform test_assert(winelens_begin_job(u,'wine_card',md5('card-free')::uuid,repeat('c',64),true)->>'reason'='pro_required','free: cards need the app');
+ -- Buying the app: owned for life, 10 starter tokens, one grant per Stripe session; wrong amount refused.
+ begin perform winelens_grant_app(u,'cs_app_wrong',499,10); raise exception 'FAIL wrong app amount'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
+ perform test_assert(winelens_grant_app(u,'cs_app',999,10)->>'granted'='10','app grant');
+ perform test_assert(winelens_grant_app(u,'cs_app',999,10)->>'replayed'='true','app grant replay');
+ perform test_assert((winelens_period(u)->>'pro')::boolean and (select period_end='infinity' and status='active' from winelens_entitlements where user_id=u),'owned for life');
+ perform test_assert((select units=10 from winelens_token_wallets where user_id=u),'starter tokens');
+ -- v3 packs grant their v3 units (the v1 mapping still reconciles old sessions).
+ perform test_assert(winelens_grant_tokens(u,'cs_v3_pack','t20',100)->>'granted'='100','v3 pack');
+ perform test_assert(winelens_grant_tokens(u,'cs_v3_big','t50',275)->>'granted'='275','v3 big pack');
  perform winelens_grant_tokens(u,'cs_ai_pack','t5',100);
- for i in 1..10 loop
-   r:=winelens_begin_job(u,'studio_render',md5('s'||i)::uuid,repeat('a',64),false);
-   perform winelens_finish_job(u,md5('s'||i)::uuid,(r->>'reservation_id')::uuid,'{"path":"x.png"}');
- end loop;
+ update winelens_token_wallets set units=100 where user_id=u;
+ -- A wine card: 1 token with consent, every time; failures refund.
+ r:=winelens_begin_job(u,'wine_card',md5('card1')::uuid,repeat('c',64),false);
+ perform test_assert(r->>'reason'='consent_required' and r->>'cost'='1','card consent with cost');
+ r:=winelens_begin_job(u,'wine_card',md5('card1')::uuid,repeat('c',64),true);
+ perform test_assert(r->>'source'='tokens' and r->>'tokens'='99','card charged 1');
+ perform test_assert(winelens_finish_job(u,md5('card1')::uuid,(r->>'reservation_id')::uuid,'{"path":"x.png"}')->>'status'='committed','card commit');
+ r:=winelens_begin_job(u,'wine_card',md5('card2')::uuid,repeat('c',64),true);
+ perform test_assert(r->>'tokens'='98','same bottle again is charged again');
+ perform test_assert(winelens_finish_job(u,md5('card2')::uuid,(r->>'reservation_id')::uuid,null)->>'status'='released','failed card releases');
+ perform test_assert((select units=99 from winelens_token_wallets where user_id=u),'card token refunded');
+ -- New bottle images: no allowance, 1 token with consent.
  r:=winelens_begin_job(u,'studio_render',md5('s11')::uuid,repeat('a',64),false);
- perform test_assert(r->>'reason'='consent_required' and r->>'cost'='8','render consent with cost');
+ perform test_assert(r->>'reason'='consent_required' and r->>'cost'='1','render consent with cost');
  r:=winelens_begin_job(u,'studio_render',md5('s11')::uuid,repeat('a',64),true); rid:=(r->>'reservation_id')::uuid;
- perform test_assert(r->>'source'='tokens' and r->>'tokens'='92','render charged 8');
+ perform test_assert(r->>'source'='tokens' and r->>'tokens'='98','render charged 1');
  perform test_assert(winelens_finish_job(u,md5('s11')::uuid,rid,null)->>'status'='released','provider failure releases');
- perform test_assert((select units=100 from winelens_token_wallets where user_id=u),'render tokens refunded');
+ perform test_assert((select units=99 from winelens_token_wallets where user_id=u),'render tokens refunded');
  perform test_assert((select result is null from winelens_ai_jobs where user_id=u and request_id=md5('s11')::uuid),'no result stored on failure');
  perform test_assert(winelens_begin_job(u,'studio_render',md5('s11')::uuid,repeat('a',64),true)->>'status'='released','failed job replay reports release');
  -- A job belongs to its owner.
@@ -65,10 +85,12 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  insert into winelens_usage(user_id,feature,period_start,used) values(u,'tasting_notes',(winelens_period(u)->>'start')::timestamptz,60)
  on conflict (user_id,feature,period_start) do update set used=60;
  r:=winelens_begin_job(u,'tasting_notes',md5('paid-note')::uuid,repeat('b',64),true);
- perform test_assert(r->>'source'='tokens' and r->>'tokens'='99','paid note one token');
- -- Pro photo pages: 5 included, then 3 tokens a page (a 7-page list = 6 tokens).
- r:=winelens_begin_job(u,'wine_list_page',md5('pro-list')::uuid,repeat('c',64),true,7);
- perform test_assert(r->>'source'='tokens' and r->>'tokens'='93' and r->>'remaining_allowance'='0','pro list: allowance then tokens per page');
+ perform test_assert(r->>'source'='tokens' and r->>'tokens'='98','paid note one token');
+ -- Photo pages: 20 included, then 1 token a page (a 22-page list = 2 tokens).
+ r:=winelens_begin_job(u,'wine_list_page',md5('pro-list')::uuid,repeat('c',64),true,20);
+ perform winelens_finish_job(u,md5('pro-list')::uuid,(r->>'reservation_id')::uuid,'{"entries":[]}');
+ r:=winelens_begin_job(u,'wine_list_page',md5('pro-list2')::uuid,repeat('c',64),true,2);
+ perform test_assert(r->>'source'='tokens' and r->>'tokens'='96' and r->>'remaining_allowance'='0','list: allowance then tokens per page');
 end$$;
 -- Shared notes: one paid draft per bottle + vintage; later requests reuse it.
 do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7777-4777-8777-777777777777'; k text:=repeat('a',64); b text:=repeat('b',64); r jsonb; begin
@@ -89,6 +111,16 @@ do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7
  perform test_assert(winelens_share_claim(b,u,md5('share6')::uuid,'{}')->>'status'='claimed','abandoned claim taken over after 5 minutes');
  perform test_assert(winelens_share_release(k,u,md5('share1')::uuid)->>'released'='false','ready notes are never released');
  begin perform winelens_share_claim('not-a-key',u,gen_random_uuid(),'{}'); raise exception 'FAIL bad key'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
+end$$;
+-- Shared bottle images: generated once per bottle + vintage, copied for every later card.
+do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; v uuid:='77777777-7777-4777-8777-777777777777'; k text:=repeat('c',64); r jsonb; begin
+ perform test_assert(winelens_bottle_claim(k,u,md5('b1')::uuid,'{"name":"Barolo"}')->>'status'='claimed','first card claims the image');
+ perform test_assert(winelens_bottle_claim(k,v,md5('b2')::uuid,'{}')->>'status'='busy','second waits while it renders');
+ begin perform winelens_bottle_fill(k,u,md5('b1')::uuid,'7f/../x.png','gpt-image-2'); raise exception 'FAIL bad path'; exception when raise_exception then if SQLERRM like 'FAIL%' then raise; end if; end;
+ perform test_assert(winelens_bottle_fill(k,u,md5('b1')::uuid,'shared/'||k||'.png','gpt-image-2')->>'filled'='true','fill');
+ r:=winelens_bottle_claim(k,v,md5('b3')::uuid,'{}');
+ perform test_assert(r->>'status'='ready' and r->>'path'='shared/'||k||'.png','later card reuses the image');
+ perform test_assert(winelens_bottle_release(k,u,md5('b1')::uuid)->>'released'='false','ready images are never released');
 end$$;
 -- Catalog proposals: one per wine, counted; approval adds it to the public catalog table.
 do $$declare u uuid:='66666666-6666-4666-8666-666666666666'; k text:=repeat('d',64); r jsonb; begin

@@ -77,10 +77,10 @@ let failureDump = async () => {};
   // 1 · Photos: compressed on the phone, billed per page, the panel follows the page count.
   await dialog.getByRole('heading', { name: /A whole list/ }).waitFor();
   await dialog.getByRole('button', { name: /Photos of the pages/ }).click();
-  await dialog.getByText('Included with Pro · 5 of 5 left this month').waitFor();
+  await dialog.getByText('Included with wineLENS · 5 of 5 left this month').waitFor();
   assert.equal(await page.locator('#wl-list-read').isDisabled(), true, 'nothing to read yet');
   await page.locator('#wl-list-photos').setInputFiles([{ name: 'page-1.png', mimeType: 'image/png', buffer: png }, { name: 'page-2.png', mimeType: 'image/png', buffer: png }]);
-  await dialog.getByText('Included with Pro · uses 2 of your 5 left this month').waitFor();
+  await dialog.getByText('Included with wineLENS · uses 2 of your 5 left this month').waitFor();
   assert.equal(await page.locator('.wl-list-thumbs img').count(), 2);
   await dialog.getByRole('button', { name: 'Read 2 pages ✦' }).click();
 
@@ -114,7 +114,10 @@ let failureDump = async () => {};
   const myst = saved.find(w => w.wine_name === 'Reserva');
   assert.deepEqual([myst.region, myst.metadata.country, myst.metadata.place_status, myst.metadata.region_source], ['Valle del Maipo', 'Chile', 'mapped', 'Maipo Valley']);
   assert.equal(f.calls.filter(c => c[0] === 'winelens_propose_wine').length, 2);
-  await dialog.getByRole('button', { name: 'Open my Winebrary' }).click();
+  // Wine cards for the whole list: one token each, with consent.
+  await dialog.getByText('Uses 3 tokens (100 left)', { exact: true }).waitFor();
+  assert.equal(await dialog.getByRole('button', { name: 'Make 3 wine cards ✦' }).isDisabled(), true, 'consent first');
+  await dialog.getByRole('button', { name: 'Not now' }).click();
   await page.locator('.wl-bottle-card', { hasText: 'Grand Malbec' }).getByText('Catalog notes').waitFor();
   assert.equal(await page.locator('.wl-bottle-card').count(), 3);
 
@@ -122,17 +125,17 @@ let failureDump = async () => {};
   status.allowances.wine_list_page.remaining = 1;
   await page.locator('#wl-list').click(); await dialog.getByRole('button', { name: /Photos of the pages/ }).click();
   await page.locator('#wl-list-photos').setInputFiles([1, 2, 3].map(i => ({ name: `p${i}.png`, mimeType: 'image/png', buffer: png })));
-  await dialog.getByText('1 included, then uses 6 tokens (100 left)').waitFor();
+  await dialog.getByText('1 included, then uses 2 tokens (100 left)').waitFor();
   assert.equal(await page.locator('#wl-list-read').isDisabled(), true, 'tokens need consent');
-  await dialog.getByLabel('Use 6 tokens for this').check(); assert.equal(await page.locator('#wl-list-read').isDisabled(), false);
+  await dialog.getByLabel('Use 2 tokens for this').check(); assert.equal(await page.locator('#wl-list-read').isDisabled(), false);
   await dialog.getByRole('button', { name: 'Remove page 3' }).click();
-  await dialog.getByText('1 included, then uses 3 tokens (100 left)').waitFor();
-  assert.equal(await dialog.getByLabel('Use 3 tokens for this').isChecked(), false, 'a new amount needs a new tick');
+  await dialog.getByText('1 included, then uses 1 token (100 left)').waitFor();
+  assert.equal(await dialog.getByLabel('Use 1 token for this').isChecked(), false, 'a new amount needs a new tick');
   status.pro = false; status.plan = 'free'; status.allowances.wine_list_page = { remaining: 1, limit: 1 };
   await dialog.getByRole('button', { name: '← Choose another way' }).click(); await dialog.getByRole('button', { name: /Photos of the pages/ }).click();
   await page.locator('#wl-list-photos').setInputFiles([1, 2].map(i => ({ name: `p${i}.png`, mimeType: 'image/png', buffer: png })));
-  await dialog.getByText('Free includes 1 wine-list photo page a month and 1 is left; this needs 2. Pro includes more.').waitFor();
-  await dialog.getByRole('link', { name: 'See wineLENS Pro ↗' }).waitFor(); assert.equal(await page.locator('#wl-list-read').isDisabled(), true);
+  await dialog.getByText('The free preview includes 1 wine-list photo page a month and 1 is left; this needs 2. The wineLENS app includes more.').waitFor();
+  await dialog.getByRole('link', { name: 'Get wineLENS ↗' }).waitFor(); assert.equal(await page.locator('#wl-list-read').isDisabled(), true);
   status.pro = true; status.plan = 'pro'; status.allowances.wine_list_page = { remaining: 5, limit: 5 };
 
   // 5 · PDFs: a free check first; scans go to photos; text PDFs are billed as text pages.
@@ -144,7 +147,7 @@ let failureDump = async () => {};
   const calls = modelCalls;
   await page.locator('#wl-list-pdf').setInputFiles({ name: 'list.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7 text list') });
   await dialog.getByText('1 PDF page · 1 text page to read.').waitFor(); assert.equal(modelCalls, calls, 'checking a PDF is free');
-  await dialog.getByText('Included with Pro · 100 of 100 left this month').waitFor();
+  await dialog.getByText('Included with wineLENS · 100 of 100 left this month').waitFor();
   await dialog.getByRole('button', { name: 'Read 1 text page ✦' }).click();
   await dialog.getByRole('heading', { name: '4 wines found.' }).waitFor();
   const pdfJob = f.calls.filter(c => c[0] === 'winelens_begin_job').at(-1)[1]; assert.deepEqual([pdfJob.p_feature, pdfJob.p_quantity], ['wine_list_text', 1]);
@@ -160,7 +163,7 @@ let failureDump = async () => {};
   await page.locator('#wl-list').click(); await dialog.getByRole('button', { name: /Paste the list/ }).click();
   await dialog.getByLabel('Wine list').fill('Terrazas de los Andes Grand Malbec 2017 ........ 58\n'.repeat(140));
   await dialog.getByText(/text pages$/).filter({ hasText: '2 text pages' }).waitFor();
-  await dialog.getByText('Included with Pro · uses 2 of your 100 left this month').waitFor();
+  await dialog.getByText('Included with wineLENS · uses 2 of your 100 left this month').waitFor();
   await dialog.getByRole('button', { name: '← Choose another way' }).click(); await dialog.getByRole('button', { name: /A spreadsheet/ }).click();
   await page.locator('#wl-list-csv').setInputFiles({ name: 'list.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('PK') });
   await dialog.getByText(/Save the spreadsheet as CSV first/).waitFor();

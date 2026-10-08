@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════════════
 import { WINE_TYPES, TYPE_DISPLAY, getGrapesForCountry, getWinesForGrape, placeLabel, type WineType } from './constants';
 import { allCatalogWines, type CatalogWine } from './identity';
+import { catalogHidden, catalogWineRemoved, removedCount, setCatalogHidden, removeCatalogWine, restoreCatalogWine, restoreAllCatalogWines } from './catalog-view';
 import { wineReferences } from './study/content';
 import { catalogSections, SOURCE_LABEL } from './notes-format';
 import { catalogPhotoUrl } from './bottle-assets';
@@ -36,7 +37,7 @@ function glassesPath(w: CatalogWine): string {
 function visible(): CatalogWine[] {
   const q = query.trim().toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
   const words = q.split(/\s+/).filter(Boolean);
-  return allCatalogWines().filter(w => (q ? words.every(word => searchText(w).includes(word)) : filter === 'All' || (filter === 'Favorites' ? favorites.includes(w.id) : w.type === filter)));
+  return allCatalogWines().filter(w => !catalogWineRemoved(w.id) && (q ? words.every(word => searchText(w).includes(word)) : filter === 'All' || (filter === 'Favorites' ? favorites.includes(w.id) : w.type === filter)));
 }
 function card(w: CatalogWine): string {
   const { title, producer } = splitWineName(w.wine.name);
@@ -47,14 +48,22 @@ function card(w: CatalogWine): string {
 
 export async function renderCatalog(el: HTMLElement): Promise<void> {
   root = el; favorites = await getFavorites();
-  const all = allCatalogWines(), list = visible();
+  if (catalogHidden()) {
+    el.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">THE CATALOG</p><h2>Only your wines<span>.</span></h2></div></div>
+      <div class="wl-empty wl-catalog-off"><h3>The default wines are hidden.</h3><p>Your glasses, the Wine Atlas and Find My Wine show only the wines in your Winebrary. Study still uses the catalog.</p><button class="wl-primary" id="cat-show">Show the ${allCatalogWines().length} default wines</button></div>`;
+    el.querySelector('#cat-show')!.addEventListener('click', async () => { await setCatalogHidden(false); void renderCatalog(el); });
+    return;
+  }
+  const all = allCatalogWines().filter(w => !catalogWineRemoved(w.id)), list = visible();
   const count = (f: Filter) => f === 'All' ? all.length : f === 'Favorites' ? favorites.length : all.filter(w => w.type === f).length;
   const chips: Filter[] = ['All', ...WINE_TYPES.filter(t => count(t) > 0), 'Favorites'];
   // Group by country (search results stay flat, best matches first by name).
   const groups = new Map<string, CatalogWine[]>();
   // One style: group by country. All or favorites: group by style (fewer, larger groups).
   if (!query.trim()) for (const w of list) { const k = filter === 'All' || filter === 'Favorites' ? TYPE_DISPLAY[w.type] : w.country; groups.set(k, [...(groups.get(k) || []), w]); }
-  el.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">THE CATALOG</p><h2>${all.length} wines<span>.</span> Every note.</h2></div></div>
+  const removed = removedCount();
+  el.innerHTML = `<div class="wl-section-heading"><div><p class="wl-kicker">THE CATALOG</p><h2>${all.length} wines<span>.</span> Every note.</h2></div><div class="wl-heading-actions"><button class="wl-text-button" id="cat-hide">Hide the default wines</button></div></div>
+    ${removed ? `<p class="wl-muted small">${removed} default ${removed === 1 ? 'wine' : 'wines'} removed. <button class="wl-text-button" id="cat-restore">Bring ${removed === 1 ? 'it' : 'them'} back</button></p>` : ''}
     <div class="wl-cat-tools"><label class="wl-search-label"><span class="sr-only">Search the catalog</span><input id="cat-search" type="search" value="${esc(query)}" placeholder="Search wine, producer, grape, region or aroma…" autocomplete="off"></label>
     <div class="wl-chips" role="group" aria-label="Filter by style">${chips.map(c => `<button class="chip ${!query && filter === c ? 'active' : ''}" data-cat-filter="${c}" aria-pressed="${!query && filter === c}">${c === 'Favorites' ? '★ Favorites' : c === 'All' ? 'All' : TYPE_DISPLAY[c]} <span class="chip-count">${count(c)}</span></button>`).join('')}</div></div>
     <p class="wl-muted small" role="status">${query.trim() ? `${list.length} ${list.length === 1 ? 'match' : 'matches'} for “${esc(query.trim())}”` : filter === 'Favorites' && !list.length ? 'No favorites yet. Open a wine and tap ☆ Favorite.' : `${list.length} wines`} · tap a wine for its tasting notes</p>
@@ -65,6 +74,8 @@ export async function renderCatalog(el: HTMLElement): Promise<void> {
       const again = el.querySelector<HTMLInputElement>('#cat-search'); if (again) { again.focus(); if (at !== null) again.setSelectionRange(at, at); }
     });
   });
+  el.querySelector('#cat-hide')!.addEventListener('click', async () => { await setCatalogHidden(true); void renderCatalog(el); });
+  el.querySelector('#cat-restore')?.addEventListener('click', async () => { await restoreAllCatalogWines(); void renderCatalog(el); });
   el.querySelectorAll<HTMLButtonElement>('[data-cat-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.catFilter as Filter; query = ''; void renderCatalog(el); }));
   el.querySelectorAll<HTMLButtonElement>('[data-cat-open]').forEach(b => b.addEventListener('click', () => openWine(b.dataset.catOpen!)));
   el.querySelector('[data-wl-add-catalog]')?.addEventListener('click', () => (document.querySelector('[data-wl-add]') as HTMLElement | null)?.click());
@@ -87,10 +98,14 @@ function openWine(id: string) {
     <section class="wl-notes-block" aria-label="Tasting notes"><div class="wl-notes-head"><p class="wl-kicker">TASTING NOTES</p><span class="wl-source wl-source-catalog">${esc(SOURCE_LABEL.catalog)}</span></div>
     <dl class="wl-notes-dl">${sections.map(s => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.text)}</dd></div>`).join('')}</dl><p class="ref-chip">${ref}</p></section></div>
     <p class="wl-muted small">On your glasses: ${esc(glassesPath(w))}</p>
-    <div class="wl-detail-actions"><button class="wl-primary" data-save-library="${esc(w.id)}">＋ Save to my Winebrary</button><button class="wl-outline" id="cat-fav" aria-pressed="${favorites.includes(w.id)}">${fav()}</button></div>`;
+    <div class="wl-detail-actions"><button class="wl-primary" data-save-library="${esc(w.id)}">＋ Save to my Winebrary</button><button class="wl-outline" id="cat-fav" aria-pressed="${favorites.includes(w.id)}">${fav()}</button><button class="wl-text-button" id="cat-remove">${catalogWineRemoved(w.id) ? 'Bring back to my lists' : 'Remove from my lists'}</button></div>`;
   dialog.querySelector('.wl-close')!.addEventListener('click', () => dialog!.close());
   // Winebrary opens its own dialog for the save; close this one first.
   dialog.querySelector('[data-save-library]')!.addEventListener('click', () => dialog!.close());
+  dialog.querySelector('#cat-remove')!.addEventListener('click', async () => {
+    if (catalogWineRemoved(w.id)) await restoreCatalogWine(w.id); else await removeCatalogWine(w.id);
+    dialog!.close(); if (root) void renderCatalog(root);
+  });
   dialog.querySelector('#cat-fav')!.addEventListener('click', async e => {
     const button = e.currentTarget as HTMLButtonElement, now = await toggleFavorite(w.id);
     favorites = now ? [...favorites, w.id] : favorites.filter(x => x !== w.id);

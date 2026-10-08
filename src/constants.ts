@@ -121,9 +121,22 @@ export const WINES: Record<string, Record<string, Wine[]>> = {
 // Helper Functions
 // ═══════════════════════════════════════════════════════════════════
 
+// Default wines the person removed (identity keys "Type|Country|Name"), set by catalog-view.ts.
+let removedKeys = new Set<string>();
+export function setRemovedCatalogKeys(keys: Iterable<string>): void { removedKeys = new Set(keys); }
+/** The catalog wines for a type + country that are still shown. */
+function visible(type: WineType, country: string): Wine[] {
+  const all = WINES[type]?.[country] || [];
+  return removedKeys.size ? all.filter(w => !removedKeys.has(`${type}|${country}|${w.name}`)) : all;
+}
+/** Countries of a type that still have a wine to show (lists and their click handlers both use this). */
+export function countriesFor(type: WineType): string[] {
+  return removedKeys.size ? COUNTRIES[type].filter(c => visible(type, c).length) : COUNTRIES[type];
+}
+
 /** Get all wines for a type + country (flat list) */
 export function getWinesForCountry(type: WineType, country: string): Wine[] {
-  return WINES[type]?.[country] || [];
+  return visible(type, country);
 }
 
 /** Sentinel for the "Other" bucket that collects single-wine grapes */
@@ -134,7 +147,7 @@ export const OTHER_GRAPE = "Other";
  *  wine, hides the grape (Argentina's one wine is a Malbec, not an "Other"). */
 const GRAPE_ROWS = 6;
 function grapeGroups(type: WineType, country: string): { list: string[]; folded: string[] } {
-  const wines = WINES[type]?.[country] || [];
+  const wines = visible(type, country);
   const counts = new Map<string, number>();
   const order: string[] = [];
   for (const w of wines) {
@@ -162,9 +175,9 @@ export function getOtherGrapes(type: WineType, country: string): string[] {
 export function getWinesForGrape(type: WineType, country: string, grape: string): Wine[] {
   if (grape === OTHER_GRAPE) {
     const others = new Set(getOtherGrapes(type, country));
-    return (WINES[type]?.[country] || []).filter(w => others.has(normalizeGrape(w.grape)));
+    return visible(type, country).filter(w => others.has(normalizeGrape(w.grape)));
   }
-  return (WINES[type]?.[country] || []).filter(w => normalizeGrape(w.grape) === grape);
+  return visible(type, country).filter(w => normalizeGrape(w.grape) === grape);
 }
 
 /** "Côte-de-Beaune, FR" → "Côte-de-Beaune, France". The catalog stores country codes; people read
@@ -232,7 +245,7 @@ function abbreviateGrape(grape: string): string {
 
 /** Keep for backwards compat */
 export function getStylesForCountry(type: WineType, country: string): string[] {
-  const wines = WINES[type]?.[country] || [];
+  const wines = visible(type, country);
   const styleSet = new Set<string>();
   const result: string[] = [];
   for (const w of wines) {
@@ -242,7 +255,7 @@ export function getStylesForCountry(type: WineType, country: string): string[] {
 }
 
 export function getWinesForStyle(type: WineType, country: string, style: string): Wine[] {
-  return (WINES[type]?.[country] || []).filter(w => w.style === style);
+  return visible(type, country).filter(w => w.style === style);
 }
 
 export function formatTastingNotes(wine: Wine): string {

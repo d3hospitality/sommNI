@@ -5,15 +5,16 @@
 const { createHash, randomUUID } = require('node:crypto');
 const OpenAI = require('openai');
 const { endpoint, rpc, only, HttpError, UNAVAILABLE } = require('./service.cjs');
-const { userDb, ownWine, ownedImagePath, signedUrl, BUCKET, UUID } = require('./winebrary.cjs');
-const { NOTES_SYSTEM, NOTES_SCHEMA, NOTE_LIMITS, formatNotes, bottlePrompt, wineContext } = require('../prompts/winelens-ai.cjs');
+const { userDb, ownWine, ownedImagePath, signedUrl, signImages, saveRow, BUCKET, UUID } = require('./winebrary.cjs');
+const { NOTES_SYSTEM, NOTES_SCHEMA, NOTE_LIMITS, formatNotes, bottlePrompt, cardPrompt, wineContext } = require('../prompts/winelens-ai.cjs');
 const { bottleKey } = require('./wine-identity.cjs');
 const sha = value => createHash('sha256').update(value).digest('hex');
 const REFUSALS = {
-  wine_list_page: { pro_required: 'This list needs more photo pages than your free allowance. Upgrade to Pro, or paste or upload the list as text.', label: 'wine list' },
-  wine_list_text: { pro_required: 'You have used this month’s free text pages. Upgrade to Pro for more.', label: 'wine list' },
-  tasting_notes: { pro_required: 'You have used this month’s free tasting notes. Upgrade to Pro for more.', label: 'tasting notes' },
-  studio_render: { pro_required: 'Studio renderings are part of wineLENS Pro.', label: 'rendering' },
+  wine_list_page: { pro_required: 'This list needs more photo pages than the free preview includes. Get the wineLENS app, or paste or upload the list as text.', label: 'wine list' },
+  wine_list_text: { pro_required: 'You have used this month’s free text pages. The wineLENS app includes more.', label: 'wine list' },
+  tasting_notes: { pro_required: 'You have used this month’s free tasting notes. The wineLENS app includes more.', label: 'tasting notes' },
+  studio_render: { pro_required: 'New bottle images use tokens. Get the wineLENS app to add tokens.', label: 'rendering' },
+  wine_card: { pro_required: 'Wine cards use tokens. Get the wineLENS app to add tokens.', label: 'wine card' },
 };
 function refuse(feature, hold) {
   const messages = { ...REFUSALS[feature], consent_required: 'Confirm token use first.', token_limit: 'Your token balance or monthly spending limit is too low.',
@@ -57,6 +58,13 @@ function validateNotes(value) {
   if (!value.nose.trim() || !value.palate.trim() || !Number.isFinite(value.confidence) || value.confidence < 0 || value.confidence > 1) throw new Error('Invalid notes output');
   return { appearance: value.appearance.trim(), nose: value.nose.trim(), palate: value.palate.trim(), finish: value.finish.trim(), story: value.story.trim(), confidence: value.confidence };
 }
+/** One notes draft from the provider (validated). */
+async function draftNotes(openai, model, wine) {
+  const answer = await openai.chat.completions.create({ model, max_completion_tokens: 900,
+    messages: [{ role: 'system', content: NOTES_SYSTEM }, { role: 'user', content: wineContext(wine) }],
+    response_format: { type: 'json_schema', json_schema: { name: 'tasting_notes', strict: true, schema: NOTES_SCHEMA } } });
+  return validateNotes(JSON.parse(answer.choices?.[0]?.message?.content || 'null'));
+}
 function createNotesHandler({ getDb, getUserDb = userDb, env = process.env, getOpenAI = () => new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 45000, maxRetries: 0 }) } = {}) {
   return endpoint(async ({ req, body, db, user }) => {
     const model = env.WINELENS_NOTES_MODEL || 'gpt-4.1-mini';
@@ -83,10 +91,7 @@ function createNotesHandler({ getDb, getUserDb = userDb, env = process.env, getO
       outcome = await runJob({ db, user, feature: 'tasting_notes', requestId: body.request_id, fingerprint: sha(`notes:${wine.id}:${wineContext(wine)}`), consent: body.spend_consent,
         onReplay: stored => draft(stored),
         work: async () => {
-          const answer = await getOpenAI().chat.completions.create({ model, max_completion_tokens: 900,
-            messages: [{ role: 'system', content: NOTES_SYSTEM }, { role: 'user', content: wineContext(wine) }],
-            response_format: { type: 'json_schema', json_schema: { name: 'tasting_notes', strict: true, schema: NOTES_SCHEMA } } });
-          const notes = validateNotes(JSON.parse(answer.choices?.[0]?.message?.content || 'null'));
+          const notes = await draftNotes(getOpenAI(), model, wine);
           return { stored: notes, response: draft(notes) };
         } });
     } catch (e) {
@@ -106,7 +111,7 @@ function createRenderHandler({ getDb, getUserDb = userDb, env = process.env, fet
     checkRequest(body, env);
     const udb = getUserDb(req), wine = await ownWine(udb, user.id, body.collection_id);
     if (!ownedImagePath(body.reference_path, user.id, wine.id)) throw new HttpError(400, 'Upload a photo of this bottle first.');
-    const model = env.WINELENS_IMAGE_MODEL || 'gpt-image-2.5-flare';
+    const model = env.WINELENS_IMAGE_MODEL || IMAGE_MODEL;
     const draft = async stored => ({ path: stored.path, source: 'generated', url: await signedUrl(udb, stored.path), model: stored.model });
     const { result, replayed } = await runJob({ db, user, feature: 'studio_render', requestId: body.request_id,
       fingerprint: sha(`render:${wine.id}:${body.reference_path}`), consent: body.spend_consent, onReplay: stored => stored,
@@ -132,4 +137,94 @@ function createRenderHandler({ getDb, getUserDb = userDb, env = process.env, fet
     return { draft: await draft(result), replayed, review_required: true };
   }, { getDb, maxBytes: 2048 });
 }
-module.exports = { createNotesHandler, createRenderHandler, runJob, validateNotes, bottleKey };
+
+// ── Wine cards: 1 token, every time ────────────────────────────────────
+// A card is the owner's wine made complete: a 3D-style bottle image, tasting notes and the year,
+// placed on the map from its region/country by the app. The bottle image comes from the owner's
+// own label photo when there is one (private), else from the wine's details; that generated image
+// is stored once per bottle + vintage and copied for every later card. Notes reuse the shared
+// notes. Reuse saves the provider cost; the card is still charged (rate card v3).
+const IMAGE_MODEL = 'gpt-image-2';
+async function openaiImage(fetchImpl, env, url, init) {
+  const response = await fetchImpl(url, { method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, ...(init.json ? { 'Content-Type': 'application/json' } : {}) },
+    body: init.json ? JSON.stringify(init.json) : init.form, signal: AbortSignal.timeout(120000) });
+  if (!response.ok) throw new Error('provider');
+  const b64 = (await response.json())?.data?.[0]?.b64_json;
+  if (typeof b64 !== 'string' || !b64) throw new Error('provider');
+  return Buffer.from(b64, 'base64');
+}
+function createCardHandler({ getDb, getUserDb = userDb, env = process.env, fetchImpl = fetch, getOpenAI = () => new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 45000, maxRetries: 0 }) } = {}) {
+  return endpoint(async ({ req, body, db, user }) => {
+    checkRequest(body, env);
+    const udb = getUserDb(req), wine = await ownWine(udb, user.id, body.collection_id), bottle = bottleKey(wine);
+    const imageModel = env.WINELENS_IMAGE_MODEL || IMAGE_MODEL, notesModel = env.WINELENS_NOTES_MODEL || 'gpt-4.1-mini';
+    const photo = wine.metadata?.image_source === 'photograph' && ownedImagePath(wine.metadata?.image_path, user.id, wine.id) ? wine.metadata.image_path : null;
+    const ownNotes = !!wine.notes?.trim();
+    const claims = [];
+    const releaseClaims = () => Promise.all(claims.map(([fn, key]) => rpc(db, fn, { p_key: key, p_user: user.id, p_request_id: body.request_id }).catch(() => {})));
+    let outcome;
+    try {
+      outcome = await runJob({ db, user, feature: 'wine_card', requestId: body.request_id, fingerprint: sha(`card:${wine.id}:${wineContext(wine)}:${photo || ''}`), consent: body.spend_consent,
+        onReplay: stored => stored,
+        work: async () => {
+          const path = `${user.id}/${wine.id}/${randomUUID()}.png`;
+          let imageReused = false, sharedPath = null;
+          // 1. The bottle.
+          if (photo) {
+            const { data: reference, error } = await udb.storage.from(BUCKET).download(photo);
+            if (error || !reference) throw new HttpError(404, 'That bottle photo is no longer available. Upload it again. You were not charged.');
+            const form = new FormData();
+            form.set('model', imageModel); form.set('prompt', bottlePrompt(wine)); form.set('size', '1024x1536'); form.set('quality', 'medium'); form.set('background', 'transparent'); form.set('output_format', 'png');
+            form.set('image', new Blob([await reference.arrayBuffer()], { type: reference.type || 'image/png' }), photo.split('/').pop());
+            const png = await openaiImage(fetchImpl, env, 'https://api.openai.com/v1/images/edits', { form });
+            const saved = await udb.storage.from(BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
+            if (saved.error) throw new Error('storage');
+          } else {
+            const claim = bottle ? await rpc(db, 'winelens_bottle_claim', { p_key: bottle.key, p_user: user.id, p_request_id: body.request_id, p_wine: bottle.wine }) : null;
+            if (claim?.status === 'busy') throw new HttpError(409, 'This bottle is being drawn right now for another card. Try again in a minute. You were not charged.');
+            if (claim?.status === 'ready') {
+              const copied = await db.storage.from(BUCKET).copy(claim.path, path);
+              if (copied.error) throw new Error('storage');
+              imageReused = true;
+            } else {
+              if (claim) claims.push(['winelens_bottle_release', bottle.key]);
+              const png = await openaiImage(fetchImpl, env, 'https://api.openai.com/v1/images/generations', { json: { model: imageModel, prompt: cardPrompt(wine), size: '1024x1536', quality: 'medium', background: 'transparent', output_format: 'png', n: 1 } });
+              const saved = await udb.storage.from(BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
+              if (saved.error) throw new Error('storage');
+              if (bottle) {
+                sharedPath = `shared/${bottle.key}.png`;
+                const shared = await db.storage.from(BUCKET).upload(sharedPath, png, { contentType: 'image/png', upsert: true });
+                if (shared.error) sharedPath = null;
+              }
+            }
+          }
+          // 2. Notes, unless the owner wrote their own: shared when wineLENS has them, else drafted once for everyone.
+          let notes = null, notesReused = false;
+          if (!ownNotes) {
+            const share = bottle ? await rpc(db, 'winelens_share_claim', { p_key: bottle.key, p_user: user.id, p_request_id: body.request_id, p_wine: bottle.wine }) : null;
+            if (share?.status === 'ready') { notes = pickNotes(share.notes); notesReused = true; }
+            else if (share?.status !== 'busy') {
+              if (share) claims.push(['winelens_share_release', bottle.key]);
+              notes = pickNotes(await draftNotes(getOpenAI(), notesModel, wine));
+            }
+          }
+          const stored = { path, image_reused: imageReused, shared_path: sharedPath, notes, notes_reused: notesReused, model: imageModel };
+          return { stored, response: stored, discard: () => udb.storage.from(BUCKET).remove([path]).catch(() => {}) };
+        } });
+    } catch (e) { if (e.released) await releaseClaims(); throw e; }
+    const stored = outcome.result;
+    // Charged: publish what this card drew for the next person, then attach it to the wine (a replay re-attaches).
+    if (!outcome.replayed && bottle) {
+      if (stored.shared_path) await rpc(db, 'winelens_bottle_fill', { p_key: bottle.key, p_user: user.id, p_request_id: body.request_id, p_path: stored.shared_path, p_model: stored.model }).catch(() => {});
+      if (stored.notes && !stored.notes_reused) await rpc(db, 'winelens_share_fill', { p_key: bottle.key, p_user: user.id, p_request_id: body.request_id, p_notes: stored.notes }).catch(() => {});
+    }
+    const current = await ownWine(udb, user.id, wine.id);
+    const keepNotes = !!current.notes?.trim() && current.metadata?.notes_source !== 'generated';
+    const notesText = stored.notes && !keepNotes ? formatNotes(stored.notes) : null;
+    const metadata = { ...current.metadata, image_path: stored.path, image_source: 'generated', image_reviewed_at: new Date().toISOString(), card_at: new Date().toISOString(),
+      ...(notesText ? { notes_source: 'generated' } : {}) };
+    const item = await saveRow(udb.from('user_collection').update({ metadata, ...(notesText ? { notes: notesText } : {}) }).eq('id', current.id).eq('user_id', user.id));
+    return { item: (await signImages(udb, [item]))[0], image_reused: stored.image_reused, notes_reused: stored.notes_reused, notes_added: !!notesText, replayed: outcome.replayed, charged: !outcome.replayed };
+  }, { getDb, maxBytes: 2048 });
+}
+module.exports = { createNotesHandler, createRenderHandler, createCardHandler, runJob, validateNotes, bottleKey, IMAGE_MODEL };
