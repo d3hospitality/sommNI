@@ -39,6 +39,7 @@ import { handleStudyGlassesEvent, openStudyOnGlasses } from './study/glasses';
 import { handleAtlasGlassesEvent, openAtlasOnGlasses, pushCatalogGlobe, pauseAtlasGlasses, resumeAtlasGlasses } from './atlas-app';
 import { rebuildGlassesPage, invalidateImages, sendSerial, imageIdle, suspendImages } from './image-utils';
 import { log } from './ui';
+import { saveFromGlasses } from './quick-save';
 
 // ═══ STATE ═══
 type Page =
@@ -80,6 +81,9 @@ let baseUrlRef: string = "";
 let lastHoveredIndex: number = -1;
 
 // ═══ REGISTER ═══
+/** True while a legacy page change is in flight (taps are dropped meanwhile). Used by tests. */
+export function isNavigating(): boolean { return navigating; }
+
 export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string, onExit: () => void = () => {}): () => void {
   const home = () => { currentPage="home"; lastHoveredIndex=-1; lastNavigationTime=Date.now(); };
   window.addEventListener('winelens-glasses-home', home);
@@ -650,6 +654,15 @@ async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: 
 
     if (type !== undefined && type !== OsEventTypeList.CLICK_EVENT) return;
     await handleClick(bridge, lastSelectedIndex, baseUrl);
+    return;
+  }
+
+  // Tasting notes: a tap on the notes saves this wine to My Winebrary (the footer answers).
+  if (event.textEvent && currentPage === "notes" && event.textEvent.containerName === 'notes') {
+    const type = event.textEvent.eventType;
+    if ((type === undefined || type === OsEventTypeList.CLICK_EVENT) && Date.now() - lastNavigationTime >= NAV_DEBOUNCE_MS) {
+      await saveFromGlasses(bridge, currentWineId);
+    }
     return;
   }
 

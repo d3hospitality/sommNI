@@ -8,14 +8,15 @@
 import { accountRequest, billingStatus, costOf, requestIds, ACCOUNT_PAGE, type BillingStatus, type Feature } from './billing';
 import type { SupabaseClient, Session } from '@supabase/supabase-js';
 import { accountClient, redeemLinkCode, formatLinkCode, unlinkDevice, checkDeviceSession, linkedAccessToken } from './device-link';
-import { lookupWineById } from './identity';
-import { placeLabel } from './constants';
+import { lookupWineById, allCatalogWines, type CatalogWine } from './identity';
+import { placeLabel, TYPE_DISPLAY } from './constants';
 import { catalogPhotoUrl } from './bottle-assets';
 import { splitWineName } from './pages';
 import { libraryNotes, parseSections, SOURCE_LABEL, type NoteSection } from './notes-format';
 import { useAccount, forgetAccount, unsyncedEvents } from './study/store';
 import { syncStudy, setStudyAuth } from './study/sync';
 import { wineListFlow } from './wine-list';
+import { setCatalogSaver, type SaveResult } from './quick-save';
 import { showWineOnGlasses, canShowWine, clearPrivateGlasses, drawGlassesPreview, setLibrarySource, libraryChanged, saveLibraryCache, clearLibraryCache } from './winebrary-glasses';
 
 export interface LibraryWine {
@@ -157,9 +158,9 @@ function render() {
     <div class="wl-library-toolbar"><p class="wl-muted">${userId ? `${items.length} saved ${items.length === 1 ? 'wine' : 'wines'} · Private to your account` : 'Save bottles you love, add each vintage, keep your notes and photos.'}</p>${userId ? `<label class="wl-search-label"><span class="sr-only">Search your wines</span><input id="wl-search" type="search" value="${esc(search)}" placeholder="Search your wines…"></label><button id="wl-refresh" class="wl-text-button">Refresh</button>` : ''}</div>
     ${notice ? `<p role="status" class="wl-notice">${esc(notice)} <button id="wl-retry" class="wl-text-button">Retry</button></p>` : ''}
     ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Link your wineLENS account to save wines, notes and bottle photos, and see them on your glasses.</p><button id="wl-start" class="wl-primary">Link my account ↗</button></div>` : visible.length ? `<div class="wl-library-grid">${visible.map(card).join('')}</div>` : `<div class="wl-empty"><h3>${search ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${search ? 'Try a different name, region or year.' : 'Add a wine, scan a label, upload a wine list, or save one from the Wines catalog.'}</p><button class="wl-primary" id="wl-first">Add a wine ↗</button></div>`}`;
-  root.querySelector('#wl-add')!.addEventListener('click', () => requireAccount(() => editWine()));
+  root.querySelector('#wl-add')!.addEventListener('click', () => requireAccount(() => addWine()));
   root.querySelector('#wl-list')!.addEventListener('click', () => requireAccount(() => wineList.open()));
-  root.querySelector('#wl-first')?.addEventListener('click', () => editWine());
+  root.querySelector('#wl-first')?.addEventListener('click', () => addWine());
   root.querySelector('#wl-start')?.addEventListener('click', signIn);
   root.querySelector('#wl-retry')?.addEventListener('click', refresh);
   root.querySelector('#wl-refresh')?.addEventListener('click', refresh);
@@ -193,7 +194,7 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
   const originalNotes = newVintage ? '' : wine?.notes ?? '', originalSource = newVintage ? undefined : wine?.metadata?.notes_source;
   const field = (name: string, label: string, value: unknown = '', extra = '') => `<label>${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   openDialog(`<p class="wl-kicker">${editing ? 'YOUR COLLECTION' : 'MAKE ROOM FOR SOMETHING GOOD'}</p><h2>${editing ? 'Edit this wine.' : newVintage ? 'Another year. New story.' : 'Add a wine.'}</h2>
-    ${!editing && !newVintage && !wine?.wine_name ? '<div class="wl-choice"><button id="wl-scan-label" class="wl-outline" type="button">Scan the label ✦</button><button id="wl-add-list" class="wl-text-button" type="button">Upload a wine list ✦</button><span class="wl-muted small">or fill in what you know. Manual entry is always free.</span></div>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name', 'Wine name', wine?.wine_name, 'required maxlength="300"')}${field('producer', 'Producer', wine?.producer, 'maxlength="200"')}
+    ${!editing && !newVintage && !wine?.wine_id ? '<p class="wl-muted small wl-by-hand">Fill in what you know. Only the name is required, and manual entry is always free.</p>' : ''}<form id="wl-wine-form"><div class="wl-form-grid">${field('wine_name', 'Wine name', wine?.wine_name, 'required maxlength="300"')}${field('producer', 'Producer', wine?.producer, 'maxlength="200"')}
     <label>Vintage<select name="vintage_state" aria-label="Vintage"><option value="year" ${vintageState === 'year' ? 'selected' : ''}>Known year</option><option value="non_vintage" ${vintageState === 'non_vintage' ? 'selected' : ''}>Non-vintage</option><option value="unknown" ${vintageState === 'unknown' ? 'selected' : ''}>I don’t know yet</option></select></label>
     ${field('vintage', 'Year', newVintage ? '' : wine?.vintage, 'type="number" min="1800" max="' + (new Date().getFullYear() + 1) + '" step="1"')}
     ${field('region', 'Region', wine?.region, 'maxlength="200"')}${field('country', 'Country', wine?.metadata?.country, 'maxlength="100"')}${field('grape', 'Grape', wine?.metadata?.grape, 'maxlength="200"')}
@@ -201,8 +202,6 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
     <label>Your tasting notes<textarea name="notes" maxlength="2000" rows="4" placeholder="What made this bottle memorable? Leave empty to use catalog notes, or draft them later.">${esc(originalNotes)}</textarea></label>
     <p class="wl-muted small">${newVintage ? 'This creates a separate entry. The previous year keeps its own notes and photo.' : originalSource === 'scan' ? 'The notes above are a draft from the label. Edit them freely.' : 'Save now. You can add a bottle photo, draft tasting notes or a studio image next.'}</p>
     <button class="wl-primary" type="submit">${editing ? 'Save changes' : 'Save to Winebrary'} ↗</button></form>`);
-  dialog.querySelector('#wl-scan-label')?.addEventListener('click', () => scanLabel());
-  dialog.querySelector('#wl-add-list')?.addEventListener('click', () => wineList.open());
   const form = dialog.querySelector<HTMLFormElement>('form')!;
   const state = form.querySelector<HTMLSelectElement>('[name=vintage_state]')!;
   const year = form.querySelector<HTMLInputElement>('[name=vintage]')!;
@@ -221,6 +220,127 @@ function editWine(wine?: Partial<LibraryWine>, newVintage = false) {
     if (result.image_detached) feedback('The name, producer or year changed, so the old bottle photo was detached. Add a photo of this bottle.');
     await refresh();
   }); });
+}
+
+// ── Quick add: scan first, then find it by name, then by hand ─────────
+const fold = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+interface CatalogHit { item: CatalogWine; title: string; producer: string; score: number }
+let catalogHaystack: { item: CatalogWine; title: string; producer: string; name: string; all: string }[] | null = null;
+/** Every catalog wine whose name, producer, region, country, grape or style holds all the words typed. */
+export function findCatalogWines(query: string, limit = 6): CatalogHit[] {
+  const words = fold(query).split(/[^a-z0-9]+/).filter(Boolean);
+  if (!words.length) return [];
+  catalogHaystack ??= allCatalogWines().map(item => {
+    const { title, producer } = splitWineName(item.wine.name);
+    return { item, title, producer, name: fold(item.wine.name), all: fold([item.wine.name, item.wine.region, item.country, item.wine.grape, item.type, TYPE_DISPLAY[item.type], item.wine.style].join(' ')) };
+  });
+  const hits: CatalogHit[] = [];
+  for (const h of catalogHaystack) {
+    if (!words.every(w => h.all.includes(w))) continue;
+    // Name matches first (from the start of a word, then anywhere), then place/grape matches.
+    const score = words.reduce((sum, w) => sum + (h.name.startsWith(w) ? 4 : new RegExp(`\\b${w}`).test(h.name) ? 3 : h.name.includes(w) ? 2 : 1), 0);
+    hits.push({ item: h.item, title: h.title, producer: h.producer, score });
+  }
+  return hits.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title)).slice(0, limit);
+}
+const savedVintages = (catalogId: string) => items.filter(w => w.wine_id === catalogId);
+const catalogPlace = (item: CatalogWine) => placeLabel(item.wine.region, item.country);
+const thumb = (item: CatalogWine, cls = 'wl-cat-bottle') => {
+  const url = catalogPhotoUrl(import.meta.env.BASE_URL || './', item.id);
+  return url ? `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy">` : `<span class="${cls} wl-thumb-empty" aria-hidden="true">◎</span>`;
+};
+
+function addWine() {
+  openDialog(`<p class="wl-kicker">YOUR NEXT BOTTLE</p><h2>Add a wine.</h2>
+    <div class="wl-add-hero"><div><p class="wl-kicker">FASTEST</p><p>Take a photo of the front label. wineLENS reads it and fills in every field for you to check.</p></div><button id="wl-scan-label" class="wl-primary" type="button">Scan the label ✦</button></div>
+    <label class="wl-add-search">Or find it by name<input id="wl-find" type="search" autocomplete="off" spellcheck="false" placeholder="Name, producer, region or grape" aria-controls="wl-find-results"></label>
+    <ul id="wl-find-results" class="wl-find-results" aria-label="Matching wines" aria-live="polite"></ul>
+    <div class="wl-add-more"><button id="wl-add-list" class="wl-text-button" type="button">Upload a wine list ✦</button><button id="wl-by-hand" class="wl-text-button" type="button">Enter it by hand</button></div>
+    <p class="wl-muted small">Catalog wines arrive with their tasting notes and bottle photo. Saving is always free.</p>`);
+  const input = dialog.querySelector<HTMLInputElement>('#wl-find')!;
+  const list = dialog.querySelector<HTMLUListElement>('#wl-find-results')!;
+  let hits: CatalogHit[] = [];
+  const draw = () => {
+    const query = input.value.trim();
+    hits = findCatalogWines(query);
+    if (!query) { list.innerHTML = ''; return; }
+    list.innerHTML = hits.map((h, i) => {
+      const owned = savedVintages(h.item.id).length;
+      return `<li><button type="button" class="wl-find-row" data-hit="${i}">${thumb(h.item)}<span class="wl-cat-copy"><span class="wl-kicker">${esc(TYPE_DISPLAY[h.item.type])} · ${esc(catalogPlace(h.item))}</span><strong>${esc(h.title)}</strong><span class="wl-muted">${esc(h.producer || h.item.wine.grape)}${owned ? ' · <em>In your Winebrary</em>' : ''}</span></span><span class="wl-find-go" aria-hidden="true">↗</span></button></li>`;
+    }).join('') + `<li><button type="button" class="wl-find-row wl-find-new" data-new><span class="wl-cat-bottle wl-thumb-empty" aria-hidden="true">＋</span><span class="wl-cat-copy"><strong>Add “${esc(query)}” as a new wine</strong><span class="wl-muted">${hits.length ? 'Not one of these? Enter it yourself.' : 'Not in the catalog yet. Enter what you know.'}</span></span><span class="wl-find-go" aria-hidden="true">→</span></button></li>`;
+    list.querySelectorAll<HTMLButtonElement>('[data-hit]').forEach(b => b.addEventListener('click', () => quickVintage(hits[Number(b.dataset.hit)].item)));
+    list.querySelector('[data-new]')!.addEventListener('click', () => editWine({ wine_name: query }));
+  };
+  input.addEventListener('input', draw);
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const query = input.value.trim(); if (!query) return;
+    if (hits[0]) quickVintage(hits[0].item); else editWine({ wine_name: query });
+  });
+  dialog.querySelector('#wl-scan-label')!.addEventListener('click', () => scanLabel());
+  dialog.querySelector('#wl-add-list')!.addEventListener('click', () => wineList.open());
+  dialog.querySelector('#wl-by-hand')!.addEventListener('click', () => editWine());
+  setTimeout(() => { if (dialog.open && !matchMedia('(pointer: coarse)').matches) input.focus(); }, 0);
+}
+
+/** A catalog wine: pick the year (or not) and it is saved. Details can always come later. */
+function quickVintage(found: CatalogWine) {
+  const { title, producer } = splitWineName(found.wine.name);
+  const now = new Date().getFullYear();
+  const years = Array.from({ length: 8 }, (_, i) => now - 1 - i);
+  const owned = savedVintages(found.id);
+  const chip = (value: string, label: string, on = false) => `<button type="button" class="chip${on ? ' active' : ''}" data-year="${value}" aria-pressed="${on}">${label}</button>`;
+  openDialog(`<p class="wl-kicker">${esc(TYPE_DISPLAY[found.type])} · ${esc(catalogPlace(found))}</p>
+    <div class="wl-quick-head">${thumb(found, 'wl-quick-bottle')}<div><h2>${esc(title)}</h2><p class="wl-muted">${esc([producer, found.wine.grape].filter(Boolean).join(' · '))}</p></div></div>
+    ${owned.length ? `<p class="wl-quick-owned">Already in your Winebrary: ${owned.map(w => esc(vintageLabel(w))).join(', ')}. Saving adds another entry.</p>` : ''}
+    <p class="wl-kicker wl-quick-label" id="wl-year-label">WHICH VINTAGE?</p>
+    <div class="wl-chips wl-year-chips" role="group" aria-labelledby="wl-year-label">${chip('unknown', 'Not sure', true)}${chip('non_vintage', 'NV')}${years.map(y => chip(String(y), String(y))).join('')}${chip('other', 'Older…')}</div>
+    <label class="wl-quick-other" hidden>Year<input id="wl-quick-year" type="number" inputmode="numeric" min="1800" max="${now + 1}" step="1" placeholder="e.g. 2009"></label>
+    <div class="wl-quick-actions"><button id="wl-quick-save" class="wl-primary" type="button">Save to Winebrary ↗</button><button id="wl-quick-details" class="wl-text-button" type="button">Add details first</button></div>
+    <p class="wl-muted small">The catalog tasting notes and photo come with it. You can add your own notes and bottle photo next.</p>`);
+  let pick = 'unknown';
+  const other = dialog.querySelector<HTMLLabelElement>('.wl-quick-other')!;
+  const yearInput = dialog.querySelector<HTMLInputElement>('#wl-quick-year')!;
+  dialog.querySelectorAll<HTMLButtonElement>('[data-year]').forEach(b => b.addEventListener('click', () => {
+    pick = b.dataset.year!;
+    dialog.querySelectorAll<HTMLButtonElement>('[data-year]').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+    other.hidden = pick !== 'other';
+    if (pick === 'other') yearInput.focus();
+  }));
+  const fields = () => {
+    const state = pick === 'unknown' || pick === 'non_vintage' ? pick : 'year';
+    const vintage = pick === 'other' ? yearInput.value.trim() : state === 'year' ? pick : '';
+    return { wine_name: title, producer: producer || null, wine_id: found.id, region: found.wine.region, country: found.country, grape: found.wine.grape, color: found.type, vintage_state: state, vintage };
+  };
+  dialog.querySelector('#wl-quick-save')!.addEventListener('click', () => void run(async () => {
+    const values = fields();
+    if (values.vintage_state === 'year' && !/^\d{4}$/.test(values.vintage)) throw new Error('Enter a four-digit year, or choose Not sure.');
+    const account = userId;
+    const result = await wb('add', values);
+    if (account !== userId) return;
+    setBusy(false); detail(result.item);
+    feedback('Saved to your Winebrary.');
+    await refresh();
+  }));
+  dialog.querySelector('#wl-quick-details')!.addEventListener('click', () => {
+    const v = fields();
+    editWine({ wine_name: v.wine_name, producer: v.producer, wine_id: found.id, region: v.region, notes: '', vintage: v.vintage_state === 'year' && /^\d{4}$/.test(v.vintage) ? Number(v.vintage) : null,
+      metadata: { color: found.type, country: found.country, grape: found.wine.grape, vintage_state: v.vintage_state === 'year' && !/^\d{4}$/.test(v.vintage) ? 'unknown' : v.vintage_state } });
+  });
+}
+
+/** Tap on a tasting-notes page on the glasses → saved here, vintage unknown (set it later on the phone). */
+async function saveCatalogWine(catalogId: string): Promise<SaveResult> {
+  if (!userId) return 'signed-out';
+  if (savedVintages(catalogId).length) return 'exists';
+  const found = lookupWineById(catalogId);
+  if (!found) throw new Error('Unknown catalog wine.');
+  const { title, producer } = splitWineName(found.wine.name);
+  const account = userId;
+  await wb('add', { wine_name: title, producer: producer || null, wine_id: found.id, region: found.wine.region, country: found.country, grape: found.wine.grape, color: found.type, vintage_state: 'unknown', vintage: '' });
+  if (account === userId) await refresh();
+  return 'saved';
 }
 
 // ── Label scan (paid help) ────────────────────────────────────────────
@@ -429,7 +549,7 @@ export function initWinebrary() {
   dialog.addEventListener('cancel', e => { if (busy) e.preventDefault(); });
   wineList = wineListFlow({ dialog, costHTML, openDialog, feedback, run, setBusy, isBusy: () => busy, revision: () => dialogRevision, userId: () => userId, refresh, esc, costGate });
   document.getElementById('wl-account')!.addEventListener('click', () => { if (!userId) signIn(); else accountDialog(); });
-  document.querySelectorAll('[data-wl-add]').forEach(el => el.addEventListener('click', () => requireAccount(() => editWine())));
+  document.querySelectorAll('[data-wl-add]').forEach(el => el.addEventListener('click', () => requireAccount(() => addWine())));
   document.querySelectorAll('[data-open-account]').forEach(el => el.addEventListener('click', () => document.getElementById('wl-account')!.click()));
   document.querySelectorAll('[data-wl-scan]').forEach(el => el.addEventListener('click', () => requireAccount(() => scanLabel())));
   document.querySelectorAll('[data-wl-list]').forEach(el => el.addEventListener('click', () => requireAccount(() => wineList.open())));
@@ -439,9 +559,9 @@ export function initWinebrary() {
     const found = lookupWineById(button.dataset.saveLibrary);
     if (!found) return; // unknown catalog ID: never save it as some other wine
     // Personal notes start empty; the catalog notes still show for this wine via its catalog ID.
-    const { title, producer } = splitWineName(found.wine.name);
-    requireAccount(() => editWine({ wine_name: title, producer: producer || null, wine_id: found.id, region: found.wine.region, notes: '', metadata: { color: found.type, country: found.country, grape: found.wine.grape, vintage_state: 'unknown' } }));
+    requireAccount(() => quickVintage(found));
   });
+  setCatalogSaver(saveCatalogWine);
   let authRevision = 0;
   const applySession = async (session: Session | null) => {
     const revision = ++authRevision;

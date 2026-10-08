@@ -44,6 +44,9 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  await page.goto((BASE + '/sommNI/'));await page.getByRole('button',{name:'Link account ↗',exact:true}).click();await page.getByLabel('Link code').fill('ABCD-2345');await page.getByRole('button',{name:'Link this device',exact:true}).click();await page.getByRole('button',{name:'My account ↗',exact:true}).waitFor();
  await page.getByRole('button',{name:'Winebrary',exact:true}).click();
  await page.getByRole('button',{name:'＋ Add a wine',exact:true}).first().click();
+ // The add sheet leads with the label scan, then finds wines by name, then manual entry.
+ await page.getByRole('button',{name:'Scan the label ✦',exact:true}).waitFor();await page.screenshot({path:path.resolve(output,'wineLENS-Add-Sheet.png')});
+ await page.getByRole('button',{name:'Enter it by hand',exact:true}).click();
  await page.getByLabel('Wine name',{exact:true}).fill('Grand Malbec');await page.getByLabel('Producer',{exact:true}).fill('Terrazas de los Andes');
  await page.getByLabel('Vintage',{exact:true}).selectOption('year');await page.getByLabel('Year',{exact:true}).fill('2017');await page.getByLabel('Region',{exact:true}).fill('Mendoza');
  await page.getByLabel('Country',{exact:true}).fill('Argentina');await page.getByLabel('Grape',{exact:true}).fill('Malbec');
@@ -81,6 +84,12 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  await page.getByRole('button',{name:'Close dialog',exact:true}).click();
  // The same bottle + vintage added again (as anyone would): the notes already exist, so they are free and nothing runs.
  await page.getByRole('button',{name:'＋ Add a wine',exact:true}).first().click();
+ // Type-ahead: accent-folded, every word must match; a free-text row always offers a new wine.
+ await page.getByLabel('Or find it by name',{exact:true}).fill('grand malbec');
+ await page.locator('.wl-find-row').filter({hasText:'Terrazas de los Andes'}).first().waitFor();
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.resolve(output,'wineLENS-Add-Find-Mobile.png')});await page.setViewportSize({width:1440,height:1050});
+ await page.getByRole('button',{name:/Add “grand malbec” as a new wine/}).click();
+ assert.equal(await page.getByLabel('Wine name',{exact:true}).inputValue(),'grand malbec','the typed name carries over');
  await page.getByLabel('Wine name',{exact:true}).fill('Grand Malbec');await page.getByLabel('Producer',{exact:true}).fill('Terrazas de los Andes');
  await page.getByLabel('Vintage',{exact:true}).selectOption('year');await page.getByLabel('Year',{exact:true}).fill('2017');
  await page.getByRole('button',{name:'Save to Winebrary ↗',exact:true}).click();await page.getByRole('dialog').getByRole('heading',{name:'Grand Malbec',exact:true}).waitFor();
@@ -90,9 +99,31 @@ const notesText=['LOOK  '+draftNotes.appearance,'NOSE  '+draftNotes.nose,'PALATE
  await page.getByRole('button',{name:'Get tasting notes ✦'}).click();
  await page.getByText('These notes were already in wineLENS for this bottle and vintage. Nothing was charged.').waitFor();
  assert.equal(noteCalls,1,'the job ran once for 2017');
- await page.getByRole('button',{name:'Close dialog',exact:true}).click();await page.screenshot({path:path.resolve(output,'wineLENS-Winebrary-Preview.png'),fullPage:true});
+ await page.getByRole('button',{name:'Close dialog',exact:true}).click();
+ // A catalog wine: find it, tap a year chip, saved with its catalog ID (notes + photo come with it).
+ await page.getByRole('button',{name:'＋ Add a wine',exact:true}).first().click();
+ await page.getByLabel('Or find it by name',{exact:true}).fill('albarino eidos');
+ await page.locator('.wl-find-row').filter({hasText:'Albariño'}).first().click();
+ await page.getByRole('heading',{name:'Albariño',exact:true}).waitFor();
+ const year=String(new Date().getFullYear()-3);
+ assert.equal(await page.getByRole('button',{name:'Not sure',exact:true}).getAttribute('aria-pressed'),'true','vintage defaults to Not sure');
+ await page.getByRole('button',{name:year,exact:true}).click();await page.screenshot({path:path.resolve(output,'wineLENS-Quick-Vintage.png')});
+ const before=adds.length;await page.getByRole('button',{name:'Save to Winebrary ↗',exact:true}).click();
+ await page.getByText('Saved to your Winebrary.',{exact:true}).waitFor();
+ const quick=adds[before];assert.equal(adds.length,before+1);
+ assert.deepEqual([quick.wine_id,quick.vintage_state,quick.vintage,quick.color,quick.wine_name,quick.producer],['wl_albarino-eidos','year',year,'White','Albariño','Eidos']);
+ await page.getByRole('button',{name:'Close dialog',exact:true}).click();
+ await page.getByRole('button',{name:'＋ Add a wine',exact:true}).first().click();
+ await page.getByLabel('Or find it by name',{exact:true}).fill('Albariño');
+ await page.locator('.wl-find-row').filter({hasText:'In your Winebrary'}).first().click();
+ await page.getByText(`Already in your Winebrary: ${year}. Saving adds another entry.`,{exact:true}).waitFor();
+ // "Older…" asks for the year; a bad year never reaches the server.
+ await page.getByRole('button',{name:'Older…',exact:true}).click();await page.getByLabel('Year',{exact:true}).fill('19');
+ await page.getByRole('button',{name:'Save to Winebrary ↗',exact:true}).click();await page.getByText('Enter a four-digit year, or choose Not sure.',{exact:true}).waitFor();assert.equal(adds.length,before+1);
+ await page.getByRole('button',{name:'Close dialog',exact:true}).click();
+ await page.screenshot({path:path.resolve(output,'wineLENS-Winebrary-Preview.png'),fullPage:true});
  await page.getByRole('button',{name:'My account ↗'}).click();await page.getByText('wineLENS Pro · 100 tokens').waitFor();await page.getByRole('button',{name:'Unlink this device',exact:true}).click();await page.getByRole('button',{name:'Link account ↗',exact:true}).waitFor();assert.equal(await page.locator('[data-wine]').count(),0);
  const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});await serveG2Bottles(mobile);await mobile.goto((BASE + '/sommNI/'));await mobile.evaluate(()=>document.fonts.ready);await mobile.waitForTimeout(500);await mobile.screenshot({path:path.resolve(output,'wineLENS-Revamp-Mobile.png'),fullPage:true});
- assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['code-linked account session','private Winebrary add','explicit vintage','tasting notes: cost line, reviewed draft, explicit save','token consent gate','same bottle + vintage reused free (job ran once)','photo upload','studio failure preserves wine','approve studio image','G2 disconnected state','add another vintage preserves original','unlink clears collection'],errors}));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['code-linked account session','private Winebrary add','explicit vintage','tasting notes: cost line, reviewed draft, explicit save','token consent gate','same bottle + vintage reused free (job ran once)','photo upload','studio failure preserves wine','approve studio image','G2 disconnected state','add another vintage preserves original','add sheet: scan first, type-ahead, by hand','catalog quick add with year chips','already-saved note and year check','unlink clears collection'],errors}));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

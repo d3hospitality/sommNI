@@ -57,6 +57,8 @@ export function libraryBottle(wine: LibraryWine): BottleSource | null {
 export function setWinebraryDeviceConnected(value: boolean) { connected=value; }
 export function canShowWine() { return !!bridge && connected && !sending; }
 export function isLibraryActive() { return active; }
+/** True while a Winebrary page (and its map tiles) is still being sent; taps are dropped meanwhile. */
+export function libraryBusy() { return sending; }
 export function setLibrarySource(read: () => LibrarySource) { readSource=read; }
 /** Current Winebrary snapshot (the Atlas matches these wines to places). */
 export function readLibrary(): LibrarySource { return readSource(); }

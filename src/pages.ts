@@ -20,6 +20,9 @@ import type { Pairing, CourseSlot } from './sync';
 import { lookupWineById } from './identity';
 import { pageList, wholeRowHeight, clipLabel, clipBytes, LIST_ROW_PITCH, type ListPage } from './glasses-list';
 
+/** Tasting-notes footer. A tap on the notes saves the wine to My Winebrary (see quick-save.ts). */
+export const NOTES_HINT = 'Scroll notes · Tap: save · Double tap: Back';
+
 const BACK_LABEL = "Back";
 
 // Home list: Find My Wine + Wine Pairings + Quiz Me + wine types
@@ -406,7 +409,7 @@ export function buildTastingNotesPage(wine: Wine, wineId: string | null): Rebuil
   });
   const footer = new TextContainerProperty({
     xPosition: TEXT_X, yPosition: 258, width: TEXT_W, height: 28,
-    containerID: 8, containerName: 'notes-hint', content: 'Scroll notes · Double tap: Back', isEventCapture: 0,
+    containerID: 8, containerName: 'notes-hint', content: NOTES_HINT, isEventCapture: 0,
   });
 
   return new RebuildPageContainer({

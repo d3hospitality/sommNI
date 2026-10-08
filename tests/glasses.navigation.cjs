@@ -20,6 +20,7 @@ const assert=require('node:assert/strict');
   const G=await import('/sommNI/src/winebrary-glasses.ts');
   const E=await import('/sommNI/src/events.ts');
   const A=await import('/sommNI/src/atlas-app.ts');
+  const Q=await import('/sommNI/src/quick-save.ts');
   const enc=new TextEncoder();const bytes=s=>enc.encode(s).length;
   const out={};
 
@@ -65,8 +66,12 @@ const assert=require('node:assert/strict');
   // Real firmware sends no index (and no eventType) for row 0 clicks.
   // Legacy pages also stream sprites after the rebuild; taps during that are (correctly) dropped, so pause long enough.
   let gap=650;
-  const click=async i=>{handler({listEvent:{containerID:2,containerName:'x',...(i?{currentSelectItemIndex:i}:{})}});await wait(gap);};
-  const dbl=async()=>{handler({sysEvent:{eventType:3}});await wait(gap);};
+  // After the fixed gap, also wait for the page (and any sprites/map tiles it streams) to finish,
+  // so slower machines do not drop the next tap the way the glasses (correctly) would.
+  const Img=await import('/sommNI/src/image-utils.ts');
+  const settled=async()=>{const until=Date.now()+8000;while(Date.now()<until&&(E.isNavigating()||G.libraryBusy()))await wait(50);await Img.imageIdle();};
+  const click=async i=>{handler({listEvent:{containerID:2,containerName:'x',...(i?{currentSelectItemIndex:i}:{})}});await wait(gap);await settled();};
+  const dbl=async()=>{handler({sysEvent:{eventType:3}});await wait(gap);await settled();};
 
   // ── 4. Winebrary on glasses ──
   const wine=(id,wine_name,vintage,state='year',extra={})=>({id,wine_name,producer:'P',vintage,region:'R',notes:'n',metadata:{vintage_state:state},...extra});
@@ -82,6 +87,7 @@ const assert=require('node:assert/strict');
   G.setLibrarySource(()=>({userId:'u1',loading:false,error:'',items}));
   const lib=[];
   const head=()=>shown.at(-1).textObject[0].content;
+
   await click(0);lib.push(last()+':'+head());  // home › My Winebrary › type
   await click(0);lib.push(last());           // Other › countries
   await click(0);lib.push(last());           // Country not set › regions
@@ -130,7 +136,18 @@ const assert=require('node:assert/strict');
   // Pairing › wine › notes › back returns to the pairing (it used to open a grapes list)
   // Outside the Even Hub host, companion data lives in browser storage. One legacy and one canonical ID: both resolve.
   localStorage.setItem('sommni_pairings',JSON.stringify([{id:'p1',name:'Friday tasting',notes:'',wineIds:['w0','wl_cabernet-sauvignon-vasse-felix'],createdAt:'',updatedAt:''}]));
-  await click(P.PAIRINGS_INDEX);const pl=last();await click(0);const pd=last();await click(1);const pn=last();await dbl();
+  await click(P.PAIRINGS_INDEX);const pl=last();await click(0);const pd=last();await click(1);const pn=last();
+  // Tap on the notes saves the wine to My Winebrary; the footer answers in place (no rebuild).
+  const hintNow=()=>texts.filter(t=>t.startsWith('notes-hint:')).at(-1);const rebuilds=shown.length;const saved=[];
+  const tapNotes=async()=>{handler({textEvent:{containerID:5,containerName:'notes'}});await wait(250);return hintNow();};
+  const signedOut=await tapNotes();
+  Q.setCatalogSaver(async id=>{saved.push(id);return 'saved';});const savedHint=await tapNotes();
+  Q.setCatalogSaver(async()=>'exists');const existsHint=await tapNotes();
+  Q.setCatalogSaver(async()=>{throw new Error('offline');});const failHint=await tapNotes();
+  handler({textEvent:{containerID:5,containerName:'notes',eventType:1}});await wait(250);   // scrolling the notes never saves
+  out.tapSave={signedOut,savedHint,existsHint,failHint,saved:[...saved],rebuilt:shown.length-rebuilds,afterScroll:hintNow()};
+  Q.setCatalogSaver(async id=>{saved.push(id);return 'saved';});
+  await dbl();
   out.pairing=[pl,pd,pn,last()];
   for(let i=0;i<3;i++) await dbl();
   out.home=last();
@@ -159,6 +176,8 @@ const assert=require('node:assert/strict');
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);  // next row: a catalog wine
   handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(1500);
   const catalogNotes=last();
+  const beforeAtlasTap=saved.length;handler({textEvent:{containerID:5,containerName:'notes'}});await wait(300);
+  out.atlasTapSave=[saved.slice(beforeAtlasTap),texts.filter(t=>t.startsWith('notes-hint:')).at(-1),last()];
   handler({sysEvent:{eventType:3}});await wait(1800);out.catalogFromAtlas=[catalogNotes,last(),A.atlasStatus().mode];
   handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
   out.atlasStylesAgain=A.atlasStatus().mode;
@@ -201,6 +220,8 @@ const assert=require('node:assert/strict');
  assert.equal(result.atlas[2],'Australia');
  assert.equal(result.atlas[3],'regions');assert.equal(result.atlas[4],'> Napa Valley (1)');
  assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
+ assert.deepEqual(result.tapSave,{signedOut:'notes-hint:Link your account on the phone to save',savedHint:'notes-hint:Saved to My Winebrary  ·  Double tap: Back',existsHint:'notes-hint:Already in My Winebrary  ·  Double tap: Back',failHint:'notes-hint:Not saved. Check the connection and tap again.',saved:['wl_cabernet-sauvignon-vasse-felix'],rebuilt:0,afterScroll:'notes-hint:Not saved. Check the connection and tap again.'});
+ assert.equal(result.atlasTapSave[0].length,1);assert.match(result.atlasTapSave[0][0],/^wl_/);assert.equal(result.atlasTapSave[1],'notes-hint:Saved to My Winebrary  ·  Double tap: Back');assert.equal(result.atlasTapSave[2],'wine-name+sub+notes+kicker+notes-hint');
  assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker+notes-hint','atlas-title+atlas-rows+atlas-hint','detail']);
  assert.equal(result.everyCatalogWineListed,true);
  assert.equal(result.atlas[7],'library-kicker+library-title+library-vintage+library-notes+library-footer+map-caption');  // mapped wine: map-scene layout

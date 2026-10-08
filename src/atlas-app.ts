@@ -27,6 +27,7 @@ import { planWineScene, type ScenePlan } from './wine-scene';
 import { TYPE_DISPLAY, WINE_TYPES, type WineType } from './constants';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
+import { saveFromGlasses, notesOpened } from './quick-save';
 
 let bridge: EvenAppBridge | null = null;
 let baseUrl = '';
@@ -364,6 +365,7 @@ export async function atlasLibraryChanged(): Promise<void> {
 // Yours → the Winebrary wine page; catalog → the tasting notes page. Double tap returns to the
 // same Atlas view. Each page claims the display, so the Atlas transport is idle first.
 let notesOpen = false;
+let notesWineId: string | null = null;
 let openingWine = false;
 function selectedBottle(): BottleSource | null | undefined {
   if (!navigator || navigator.mode !== 'detail') return undefined;
@@ -380,6 +382,8 @@ async function openCatalogNotes(item: CatalogWine): Promise<void> {
   await imageIdle();
   if (!await rebuildGlassesPage(bridge, buildTastingNotesPage(item.wine, item.id))) throw new Error('The glasses did not accept the tasting notes.');
   notesOpen = true;
+  notesWineId = item.id;
+  notesOpened();
   void pushTastingNotesImages(bridge, baseUrl, item.id).catch(error => console.warn('[Atlas] bottle image unavailable', error));
 }
 async function openPending(): Promise<void> {
@@ -425,8 +429,12 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
 export function handleAtlasGlassesEvent(event: EvenHubEvent): boolean {
   if (openingWine) return true;
   if (notesOpen) {
-    // Tasting notes opened from the Atlas: the text scrolls by itself; double tap goes back.
+    // Tasting notes opened from the Atlas: the text scrolls by itself; tap saves; double tap goes back.
     const type = event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType;
+    if ((type === undefined || type === OsEventTypeList.CLICK_EVENT) && event.textEvent?.containerName === 'notes' && bridge) {
+      void saveFromGlasses(bridge, notesWineId);
+      return true;
+    }
     if (type === OsEventTypeList.DOUBLE_CLICK_EVENT) {
       openingWine = true;
       void openAtlasOnGlasses().catch(error => fail(error instanceof Error ? error : new Error(String(error)))).finally(() => { openingWine = false; });

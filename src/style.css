@@ -904,3 +904,31 @@ img{max-width:100%}
 .wl-review-row{grid-template-columns:1fr;padding:14px}
 .wl-review-row .wl-list-form{margin-top:10px}
 @media(max-width:760px){.wl-section-heading{flex-wrap:wrap}.wl-heading-actions{justify-content:flex-start}.wl-list-sources{grid-template-columns:1fr}.wl-list-footer{bottom:-28px;margin:20px -22px -28px;padding:14px 22px 20px}.wl-list-footer .wl-primary{width:100%}.wl-list-form.wl-form-grid{grid-template-columns:1fr}}
+/* Add a wine: scan first, then type-ahead over the catalog, then by hand */
+.wl-add-hero{display:flex;align-items:center;justify-content:space-between;gap:16px 22px;padding:20px 22px;border-radius:8px;background:linear-gradient(135deg,#F1E5DD,#FFFDF8);border:1px solid var(--line);margin:0 0 24px}
+.wl-add-hero .wl-kicker{color:var(--accent);margin:0 0 4px}
+.wl-add-hero p:not(.wl-kicker){font-size:14px;line-height:1.6;max-width:380px}
+.wl-add-hero .wl-primary{flex:none;min-height:52px;padding:14px 24px;font-size:14px}
+.wl-dialog label.wl-add-search{font-size:12px;letter-spacing:.3px;margin-bottom:8px}
+.wl-dialog .wl-add-search input{padding:15px 14px;font-size:17px;border-radius:6px}
+.wl-find-results{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.wl-find-row{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg-card);color:var(--ink);min-height:66px}
+.wl-find-row:hover,.wl-find-row:focus-visible{border-color:var(--accent)}
+.wl-find-row .wl-cat-bottle{width:40px;height:56px}
+.wl-find-row em{font-style:normal;color:var(--accent)}
+.wl-find-new{border-style:dashed}
+.wl-thumb-empty{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:18px;background:#F1E5DD;border-radius:4px}
+.wl-find-go{color:var(--accent);font-size:16px}
+.wl-add-more{display:flex;flex-wrap:wrap;gap:4px 18px;margin:14px 0 4px}
+.wl-quick-head{display:flex;align-items:center;gap:18px;margin:4px 0 12px}
+.wl-quick-head h2{margin:0 0 6px}
+.wl-quick-head .wl-muted{margin:0}
+.wl-quick-bottle{width:64px;height:120px;object-fit:contain;flex:none}
+span.wl-quick-bottle{display:flex}
+.wl-quick-owned{font-size:13px;line-height:1.6;padding:10px 14px;border-radius:6px;background:#F1E5DD;margin:0 0 14px}
+.wl-quick-label{color:var(--accent);margin:18px 0 10px}
+.wl-year-chips .chip{min-height:40px;min-width:58px;font-size:13px}
+.wl-dialog label.wl-quick-other{margin:14px 0 0;max-width:200px}
+.wl-quick-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:24px 0 8px}
+.wl-by-hand{margin:-6px 0 18px}
+@media(max-width:600px){.wl-add-hero{flex-direction:column;align-items:stretch;padding:18px}.wl-add-hero .wl-primary{width:100%}.wl-quick-actions .wl-primary{width:100%}.wl-quick-bottle{width:52px;height:96px}}
