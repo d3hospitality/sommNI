@@ -1,0 +1,19 @@
+/** Serial checks keep release validation lightweight and reproducible on a clean checkout. */
+import {build} from 'esbuild';
+import {spawnSync} from 'node:child_process';
+import {mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+const tests=['phone-shell.test.mjs','setup-guide.test.mjs','guide-placement.test.mjs','wheel-motion.test.mjs','lens-mask.test.mjs','home-globe.test.mjs','photo-input.test.mjs','photo-upload-selection.test.mjs','bottle-studio.test.mjs','research.batch.mjs','menu-import.test.mjs','menu-import-ui.test.mjs','menu-batch-integration.test.mjs','contributor-profiles.database.mjs','contributor-profile-ui.test.mjs','friday-catalog.test.mjs','add-wine-session.test.mjs','add-wine-glasses.test.mjs','atlas-voice.test.mjs','scroll-bottle-preview.test.mjs'];
+const bundle=new Set(['wheel-motion.test.mjs','menu-import.test.mjs','atlas-voice.test.mjs','add-wine-session.test.mjs']);
+const temp=await mkdtemp(join(tmpdir(),'sommni-beta-checks-'));
+const failed=[];
+for(const test of tests){
+ let path='tests/'+test;
+ if(bundle.has(test)){const out=join(temp,test);await build({entryPoints:[path],bundle:true,platform:'node',format:'esm',outfile:out});path=out;}
+ const result=spawnSync(process.execPath,['--no-warnings',path],{stdio:'inherit'});
+ console.log(`${result.status===0?'PASS':'FAIL'} ${test}`);
+ if(result.status!==0)failed.push(test);
+}
+if(failed.length){console.error('Failed:',failed);process.exitCode=1;}
+else console.log(`All ${tests.length} beta checks passed.`);

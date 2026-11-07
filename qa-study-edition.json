@@ -1,0 +1,1356 @@
+{
+  "status": 200,
+  "body": {
+    "id": "daily:6:f9a8c8f0f832e157:2026-10-19:en",
+    "day": "2026-10-19",
+    "locale": "en",
+    "version": "6",
+    "catalog_version": "f9a8c8f0f832e157",
+    "wines": [
+      {
+        "id": "wl_pouilly-fuisse-louis-latour",
+        "name": "Pouilly-Fuissé – Louis Latour"
+      },
+      {
+        "id": "wl_chardonnay-schug",
+        "name": "Chardonnay – Schug"
+      },
+      {
+        "id": "wl_ferrari-trento-trentodoc-brut-rose",
+        "name": "Ferrari Trento Trentodoc Brut Rosé"
+      },
+      {
+        "id": "wl_chateauneuf-du-pape-vieilles-vignes-marcoux",
+        "name": "Châteauneuf-du-Pape \"Vieilles Vignes\" – Marcoux"
+      },
+      {
+        "id": "wl_ilatraia-brancaia",
+        "name": "Ilatraia – Brancaia"
+      },
+      {
+        "id": "wl_pinot-noir-joseph-phelps-freestone",
+        "name": "Pinot Noir – Joseph Phelps (Freestone)"
+      },
+      {
+        "id": "wl_sancerre-cote-des-monts-damnes-hubert-brochard",
+        "name": "Sancerre \"Côte des Monts Damnés\" – Hubert Brochard"
+      },
+      {
+        "id": "wl_dom-perignon",
+        "name": "Dom Pérignon"
+      }
+    ],
+    "questions": [
+      {
+        "wine_id": "wl_pouilly-fuisse-louis-latour",
+        "question": "You are adding Pouilly-Fuissé – Louis Latour to a grape-based tasting flight. Which catalog heading should contain it?",
+        "options": [
+          "Chardonnay",
+          "Pinot Gris",
+          "Sauvignon Blanc",
+          "Chenin Blanc"
+        ],
+        "correct_index": 0,
+        "explanation": "The catalog identifies Chardonnay as the grape, although the displayed name foregrounds Pouilly-Fuissé. Separating the wine name from the grape entry helps you organize a flight without guessing from its apple or toast descriptions.",
+        "lesson": {
+          "in_the_glass": "The profile describes ripe apple and pear alongside light toast and white flowers. Expect several scent families together, rather than treating the Chardonnay entry as a complete prediction of the wine’s aromas.",
+          "key_detail": {
+            "concept_id": "aroma",
+            "term": "Aroma: what you smell",
+            "meaning": "Aromas are scents described through comparisons, not added ingredients. Here, apple and pear belong to the fruit family, while white flowers provide a separate floral reference.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Why doesn’t wine taste like grapes?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2022/january/13/why-doesn-t-wine-taste-like-grapes"
+            }
+          },
+          "try_this": "Recall the four grape options, then sort this wine’s apple, flower and toast descriptions into families.",
+          "profile_keys": [
+            "grape",
+            "aroma"
+          ],
+          "references": [
+            {
+              "key": "grape",
+              "quote": "Chardonnay",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Ripe apple, pear, light toast, white flowers, subtle mineral.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "grape",
+        "evidence_quote": "Chardonnay",
+        "id": "q1",
+        "subject": "Pouilly-Fuissé – Louis Latour",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_pouilly-fuisse-louis-latour",
+        "question": "A catalog is organized by region and country. Where should you file Pouilly-Fuissé – Louis Latour?",
+        "options": [
+          "Carneros, United States",
+          "Burgundy, France",
+          "Loire Valley, France",
+          "Rhône Valley, France"
+        ],
+        "correct_index": 1,
+        "explanation": "The origin entry places this wine in Burgundy, France. That establishes its catalog location; the separate tasting fields establish the sensory expectations. Keeping those jobs distinct prevents a regional name from becoming proof of a particular flavor.",
+        "lesson": {
+          "in_the_glass": "The profile describes a medium, clean, lightly nutty finish alongside ripe apple and pear aromas. Expect orchard-fruit scents followed by a closing impression whose duration and character deserve separate attention.",
+          "key_detail": {
+            "concept_id": "finish",
+            "term": "Finish: flavor persistence",
+            "meaning": "Finish means how long pleasant flavor remains after tasting. This wine’s medium finish describes duration, while lightly nutty describes character; neither detail follows simply from its Burgundy address.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Describing wines using the Wine SAT",
+              "url": "https://www.wsetglobal.com/media/6714/wset_l4diploma_cag_tasting_en_aug2018.pdf"
+            }
+          },
+          "try_this": "Write Burgundy under location, then place medium and lightly nutty under duration and character respectively.",
+          "profile_keys": [
+            "origin",
+            "aroma",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "origin",
+              "quote": "Burgundy, FR · France",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Ripe apple, pear, light toast, white flowers, subtle mineral.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Medium, clean, lightly nutty.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "origin",
+        "evidence_quote": "Burgundy, FR · France",
+        "id": "q2",
+        "subject": "Pouilly-Fuissé – Louis Latour",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_pouilly-fuisse-louis-latour",
+        "question": "A guest asks how Pouilly-Fuissé – Louis Latour is described on the palate. Which summary matches the catalog?",
+        "options": [
+          "Light weight, high acidity, citrus fruit and chalky depth",
+          "Full weight, firm tannins, dark fruit and peppery warmth",
+          "Medium weight, creamy texture, stone fruit and powerful toast",
+          "Medium weight, fresh acidity, orchard fruit and gentle oak"
+        ],
+        "correct_index": 3,
+        "explanation": "The palate entry combines medium body with fresh acidity, clean orchard fruit and gentle oak. This is a useful reminder that weight and freshness are separate dimensions: a wine can have noticeable substance while still feeling mouthwatering.",
+        "lesson": {
+          "in_the_glass": "The profile describes medium body and fresh acidity, with gentle oak supporting clean orchard fruit. Expect moderate weight rather than heaviness, with freshness accompanying the fruit instead of replacing its presence.",
+          "key_detail": {
+            "concept_id": "body",
+            "term": "Body: perceived weight",
+            "meaning": "Body is the sensation of weight and fullness in your mouth, not the strength of an aroma. Medium body here describes physical presence separately from the apple and pear scents.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Describe an imaginary sip twice: first its weight, then its mouthwatering freshness, using separate phrases.",
+          "profile_keys": [
+            "palate",
+            "aroma"
+          ],
+          "references": [
+            {
+              "key": "palate",
+              "quote": "Medium Body, Fresh Acidity. Clean orchard fruit, gentle oak, Mâconnais approachability.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Ripe apple, pear, light toast, white flowers, subtle mineral.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "palate",
+        "evidence_quote": "Medium Body, Fresh Acidity. Clean orchard fruit, gentle oak, Mâconnais approachability.",
+        "id": "q3",
+        "subject": "Pouilly-Fuissé – Louis Latour",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_chardonnay-schug",
+        "question": "A guest wants the catalog’s style summary for Chardonnay – Schug. Which description should you give?",
+        "options": [
+          "Dry, without oak influence",
+          "Dry, with oak influence",
+          "Sweet, with oak influence",
+          "Sweet, without oak influence"
+        ],
+        "correct_index": 1,
+        "explanation": "The catalog explicitly labels Schug’s style Dry – Oaked. Its baked apple aroma should therefore be read as a fruit description, not a sweetness claim, while gentle oak on the palate supports the stated oak-influenced style.",
+        "lesson": {
+          "in_the_glass": "The profile describes baked apple and Meyer lemon aromas with gentle oak on the palate. Expect fruit and oak impressions together within the catalog’s dry style, rather than reading baked fruit as sweetness.",
+          "key_detail": {
+            "concept_id": "fruit_sweetness",
+            "term": "Fruitiness versus sweetness",
+            "meaning": "Fruit descriptions concern scent and flavor, whereas sweetness is a taste. Schug’s baked apple wording can sound dessert-like, but the separate dry style entry is the relevant catalog guide.",
+            "source": {
+              "publisher": "WSET",
+              "title": "How to taste wine",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2023/december/19/how-to-taste-wine/"
+            }
+          },
+          "try_this": "Pair the words baked apple with dry, then explain why those descriptions can coexist.",
+          "profile_keys": [
+            "style",
+            "aroma",
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "style",
+              "quote": "Dry – Oaked",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Baked apple, Meyer lemon, light toast, white flowers.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "palate",
+              "quote": "Medium Body, Fresh Acidity. Carneros cool-climate character, citrus and orchard fruit with gentle oak.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "style",
+        "evidence_quote": "Dry – Oaked",
+        "id": "q4",
+        "subject": "Chardonnay – Schug",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_chardonnay-schug",
+        "question": "You are preparing a regional introduction for Schug’s Carneros Chardonnay. Which use of the supplied regional guide is best supported?",
+        "options": [
+          "Introduce Carneros as Sonoma Valley; use the valley name as its exact appellation.",
+          "Introduce Carneros as Sonoma Coast; use the coastal name as its exact appellation.",
+          "Introduce Carneros through Russian River’s fog account; treat their settings as interchangeable.",
+          "Introduce Carneros separately; keep Russian River’s fog account attached to Russian River."
+        ],
+        "correct_index": 3,
+        "explanation": "The guide distinguishes Carneros from Russian River Valley and other Sonoma settings. Its Pacific fog statement belongs to Russian River Valley. Accurate regional teaching starts with the listed origin before deciding which landscape background applies.",
+        "lesson": {
+          "in_the_glass": "The profile describes fresh acidity with citrus and orchard fruit, giving a mouthwatering expectation alongside those fruit flavors. These tasting details come from the palate entry, rather than from borrowing another appellation’s fog story.",
+          "key_detail": {
+            "concept_id": "acidity",
+            "term": "Acidity: mouthwatering freshness",
+            "meaning": "Acidity stimulates saliva, creating a mouthwatering sensation. Schug’s fresh-acidity description concerns that feeling in the mouth; it does not require a borrowed regional explanation to be useful.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Understanding acidity in wine",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/understanding-acidity-in-wine"
+            }
+          },
+          "try_this": "Match Carneros to this bottle, Russian River to the fog statement, and acidity to mouthwatering.",
+          "profile_keys": [
+            "context",
+            "origin",
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "context",
+              "quote": "Sonoma’s appellations distinguish coastal influence and different vineyard settings. The regional guide describes Pacific fog in Russian River Valley, cool coastal conditions and the separate identity of Carneros. These are connected but not interchangeable places. Read Sonoma Valley, Sonoma Coast, Russian River or Carneros as a more useful starting point than a single California stereotype. A broad California label does not by itself establish one Sonoma appellation; confirm the exact origin before borrowing a narrower landscape story.",
+              "source": {
+                "publisher": "Sonoma County Vintners",
+                "title": "Coast, fog and smaller place names",
+                "url": "https://sonomawine.com/appellations/",
+                "checked": "2026-10-19"
+              }
+            },
+            {
+              "key": "origin",
+              "quote": "Carneros, US · United States",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "palate",
+              "quote": "Medium Body, Fresh Acidity. Carneros cool-climate character, citrus and orchard fruit with gentle oak.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "context",
+        "evidence_quote": "Sonoma’s appellations distinguish coastal influence and different vineyard settings. The regional guide describes Pacific fog in Russian River Valley, cool coastal conditions and the separate identity of Carneros. These are connected but not interchangeable places. Read Sonoma Valley, Sonoma Coast, Russian River or Carneros as a more useful starting point than a single California stereotype. A broad California label does not by itself establish one Sonoma appellation; confirm the exact origin before borrowing a narrower landscape story.",
+        "id": "q5",
+        "subject": "Chardonnay – Schug",
+        "source": {
+          "publisher": "Sonoma County Vintners",
+          "title": "Coast, fog and smaller place names",
+          "url": "https://sonomawine.com/appellations/",
+          "checked": "2026-10-19"
+        }
+      },
+      {
+        "wine_id": "wl_chardonnay-schug",
+        "question": "A guest asks how Chardonnay – Schug is described on the palate. Which summary best translates the catalog?",
+        "options": [
+          "Light weight, high acidity, and predominantly chalky citrus",
+          "Medium weight, mouthwatering freshness, and gently oaked orchard fruit",
+          "Full weight, firm drying grip, and concentrated dark fruit",
+          "Medium-plus weight, creamy texture, and layered stone fruit"
+        ],
+        "correct_index": 1,
+        "explanation": "The catalog combines medium body with fresh acidity, citrus, orchard fruit and gentle oak. This teaches two separate dimensions: how much weight the wine carries and how refreshing its mouthwatering sensation may feel.",
+        "lesson": {
+          "in_the_glass": "The profile describes baked apple and Meyer lemon aromas alongside fresh acidity on the palate. Expect orchard-fruit and citrus impressions with mouthwatering lift, rather than treating baked-fruit scent as a measure of weight.",
+          "key_detail": {
+            "concept_id": "body",
+            "term": "Body: perceived weight",
+            "meaning": "Body means the weight and fullness felt in the mouth. Schug’s medium-body description concerns that physical impression, while its apple and lemon descriptors describe fruit character rather than heaviness.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Write two headings, weight and freshness; place medium body and fresh acidity under the appropriate heading.",
+          "profile_keys": [
+            "palate",
+            "aroma"
+          ],
+          "references": [
+            {
+              "key": "palate",
+              "quote": "Medium Body, Fresh Acidity. Carneros cool-climate character, citrus and orchard fruit with gentle oak.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Baked apple, Meyer lemon, light toast, white flowers.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "palate",
+        "evidence_quote": "Medium Body, Fresh Acidity. Carneros cool-climate character, citrus and orchard fruit with gentle oak.",
+        "id": "q6",
+        "subject": "Chardonnay – Schug",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_ferrari-trento-trentodoc-brut-rose",
+        "question": "You are preparing a grape note for Ferrari Trento Trentodoc Brut Rosé. Which pairing matches this catalog entry?",
+        "options": [
+          "Pinot Nero and Cabernet Franc",
+          "Pinot Nero and Chardonnay",
+          "Chardonnay and Sauvignon Blanc",
+          "Chardonnay and Petit Verdot"
+        ],
+        "correct_index": 1,
+        "explanation": "The grape field identifies Pinot Nero and Chardonnay for this rosé. Recording the actual pairing keeps the introduction specific to this entry; a shared house name or sparkling category does not establish every cuvée’s grapes.",
+        "lesson": {
+          "in_the_glass": "The profile describes strawberry and white cherry aromas together with a dry, crisp finish. Those fruit scents offer a useful expectation of character, while the finish supplies a separate expectation about taste.",
+          "key_detail": {
+            "concept_id": "fruit_sweetness",
+            "term": "Fruit scent versus sweetness",
+            "meaning": "Fruit descriptions concern aroma and flavour, whereas sweetness is a taste. Here, strawberry and white cherry language can sit comfortably beside the catalog’s dry finish without implying a sweet wine.",
+            "source": {
+              "publisher": "WSET",
+              "title": "How to taste wine",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2023/december/19/how-to-taste-wine/"
+            }
+          },
+          "try_this": "Recall the two listed grapes, then separate the strawberry aroma cue from the dry finish cue.",
+          "profile_keys": [
+            "grape",
+            "aroma",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "grape",
+              "quote": "Pinot Nero/Chardonnay (Rosé)",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Strawberry, white cherry, rose hip, fresh bread.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Dry, crisp, lightly fruity.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "grape",
+        "evidence_quote": "Pinot Nero/Chardonnay (Rosé)",
+        "id": "q7",
+        "subject": "Ferrari Trento Trentodoc Brut Rosé",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_ferrari-trento-trentodoc-brut-rose",
+        "question": "Which introduction accurately uses the supplied historical context for Ferrari Trento Trentodoc Brut Rosé?",
+        "options": [
+          "A Champagne origin explains why every Ferrari release uses the same grapes.",
+          "A shared house name establishes identical maturation for its rosé and white releases.",
+          "A Champagne-inspired vision reached Trentino in 1902, linking its story to in-bottle sparkling fermentation.",
+          "The rosé’s bubble appearance alone establishes its fermentation method and release details."
+        ],
+        "correct_index": 2,
+        "explanation": "The supplied context connects Giulio Ferrari’s 1902 Trentino project with a Champagne-inspired vision and the classic method. It also stresses that individual releases retain distinct identities, so house history cannot supply missing blend or maturation details.",
+        "lesson": {
+          "in_the_glass": "The profile describes fine perlage in its pink-copper appearance and fresh bread among its aromas. These invite separate observations of bubbles and scent; neither observation alone establishes the production method.",
+          "key_detail": {
+            "concept_id": "bubbles",
+            "term": "Mousse: bubble sensation",
+            "meaning": "Mousse describes how bubbles feel, including the physical prickle from dissolved carbon dioxide. With this wine’s fine perlage description, assess that sensation separately from fresh bread aromas and mouthwatering freshness.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Recall which fact comes from historical context and which comes from appearance: in-bottle fermentation or fine perlage.",
+          "profile_keys": [
+            "context",
+            "appearance",
+            "aroma"
+          ],
+          "references": [
+            {
+              "key": "context",
+              "quote": "Giulio Ferrari brought a Champagne-inspired sparkling vision to Trentino in 1902. Trentodoc’s account connects that beginning with the classic method, in which the sparkling fermentation happens in bottle. This gives Ferrari a story about a technique adapted to a particular place. The rosé and white entries should still be introduced separately: grape choice and cuvée identity matter within one house. The method connects them, while the individual release determines the detailed blend, maturation and tasting profile.",
+              "source": {
+                "publisher": "Trentodoc",
+                "title": "A bottle-fermentation idea takes root",
+                "url": "https://www.trentodoc.com/en/the-classic-method/",
+                "checked": "2026-10-19"
+              }
+            },
+            {
+              "key": "appearance",
+              "quote": "Pale pink-copper, fine perlage.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Strawberry, white cherry, rose hip, fresh bread.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "context",
+        "evidence_quote": "Giulio Ferrari brought a Champagne-inspired sparkling vision to Trentino in 1902. Trentodoc’s account connects that beginning with the classic method, in which the sparkling fermentation happens in bottle. This gives Ferrari a story about a technique adapted to a particular place. The rosé and white entries should still be introduced separately: grape choice and cuvée identity matter within one house. The method connects them, while the individual release determines the detailed blend, maturation and tasting profile.",
+        "id": "q8",
+        "subject": "Ferrari Trento Trentodoc Brut Rosé",
+        "source": {
+          "publisher": "Trentodoc",
+          "title": "A bottle-fermentation idea takes root",
+          "url": "https://www.trentodoc.com/en/the-classic-method/",
+          "checked": "2026-10-19"
+        }
+      },
+      {
+        "wine_id": "wl_ferrari-trento-trentodoc-brut-rose",
+        "question": "A guest wants a palate summary of Ferrari Trento Trentodoc Brut Rosé. Which description follows the catalog?",
+        "options": [
+          "Full and concentrated, with firm grip and powerful dark fruit",
+          "Light to medium in weight, with fresh acidity and delicate red fruit",
+          "Medium-plus in weight, with creamy texture and layered stone fruit",
+          "Medium in weight, with gentle oak and clean orchard fruit"
+        ],
+        "correct_index": 1,
+        "explanation": "The palate entry pairs light–medium body with fresh acidity and crisp, delicate red fruit. The useful distinction is between modest perceived weight and refreshing mouthwatering sensation: a wine can offer both without those terms meaning the same thing.",
+        "lesson": {
+          "in_the_glass": "The profile describes a crisp, delicate palate and a dry, lightly fruity finish. Expect red-fruit impressions to carry into a clean close, with freshness remaining a separate sensation from the fruit itself.",
+          "key_detail": {
+            "concept_id": "acidity",
+            "term": "Acidity: mouthwatering freshness",
+            "meaning": "Acidity stimulates saliva, creating a mouthwatering impression. The fresh-acidity description here helps translate the catalog’s crispness into a physical sensation, distinct from the wine’s light–medium weight or red-fruit flavour.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Understanding acidity in wine",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/understanding-acidity-in-wine"
+            }
+          },
+          "try_this": "Sort these catalog cues into weight, freshness and flavour: light–medium body, fresh acidity, red fruit.",
+          "profile_keys": [
+            "palate",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "palate",
+              "quote": "Light–Medium Body, Fresh Acidity. Crisp and delicate, Alpine red fruit with a clean finish.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Dry, crisp, lightly fruity.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "palate",
+        "evidence_quote": "Light–Medium Body, Fresh Acidity. Crisp and delicate, Alpine red fruit with a clean finish.",
+        "id": "q9",
+        "subject": "Ferrari Trento Trentodoc Brut Rosé",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_chateauneuf-du-pape-vieilles-vignes-marcoux",
+        "question": "You need a grape description for Marcoux’s Châteauneuf-du-Pape “Vieilles Vignes.” Which wording preserves the catalog’s level of certainty?",
+        "options": [
+          "Entirely Grenache, with a single-variety composition confirmed",
+          "Equal Grenache and Syrah, with their proportions confirmed",
+          "Grenache-dominant, with the exact vintage blend unconfirmed",
+          "Syrah-dominant, with the exact vintage blend unconfirmed"
+        ],
+        "correct_index": 2,
+        "explanation": "The entry establishes Grenache as dominant but leaves the exact vintage blend unconfirmed. That supports a useful introduction without inventing percentages: the leading grape is known, while the complete composition remains an open detail.",
+        "lesson": {
+          "in_the_glass": "The profile describes ripe blackberry and kirsch aromas alongside full body and firm tannins. Expect concentrated fruit impressions with substantial weight and drying grip, treating those as distinct parts of the catalog’s sensory picture.",
+          "key_detail": {
+            "concept_id": "tannin",
+            "term": "Tannin: drying grip",
+            "meaning": "Tannins interact with saliva proteins to create drying friction on gums and cheeks. The firm-tannin description points to that grip, which should be distinguished from both full-bodied weight and ripe fruit aromas.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Recall the leading grape, then label full body as weight and firm tannins as drying grip.",
+          "profile_keys": [
+            "grape",
+            "aroma",
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "grape",
+              "quote": "Grenache-dominant (exact vintage blend unconfirmed)",
+              "source": {
+                "publisher": "Domaine de Marcoux",
+                "title": "Vieilles Vignes: Grenache-dominant parcels; no vintage-specific blend asserted",
+                "url": "https://www.domainedemarcoux.fr/en/vin/chateauneuf-du-pape-vieilles-vignes-red/"
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Ripe blackberry, kirsch, garrigue, lavender, black pepper, warm stones.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "palate",
+              "quote": "Full Body, Firm Tannins. Old-vine concentration, powerful Grenache fruit with garrigue-infused complexity.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "grape",
+        "evidence_quote": "Grenache-dominant (exact vintage blend unconfirmed)",
+        "id": "q10",
+        "subject": "Châteauneuf-du-Pape \"Vieilles Vignes\" – Marcoux",
+        "source": {
+          "publisher": "Domaine de Marcoux",
+          "title": "Vieilles Vignes: Grenache-dominant parcels; no vintage-specific blend asserted",
+          "url": "https://www.domainedemarcoux.fr/en/vin/chateauneuf-du-pape-vieilles-vignes-red/"
+        }
+      },
+      {
+        "wine_id": "wl_chateauneuf-du-pape-vieilles-vignes-marcoux",
+        "question": "A guest groups Marcoux’s Châteauneuf-du-Pape with Hermitage as interchangeable Rhône reds. Which introduction best follows the catalog’s regional context?",
+        "options": [
+          "Introduce both through southern Rhône Grenache, then distinguish their named cuvées.",
+          "Introduce both through northern Rhône Syrah, then distinguish their named cuvées.",
+          "Introduce the northern white-grape context, then check Marcoux’s particular grape selection.",
+          "Introduce the southern Grenache-led context, then check Marcoux’s particular grape selection."
+        ],
+        "correct_index": 3,
+        "explanation": "The regional reference distinguishes northern Syrah-led reds from southern blends involving Grenache. Marcoux’s profile identifies Grenache dominance, so regional context provides a starting framework while the individual entry supplies the bottle-specific information.",
+        "lesson": {
+          "in_the_glass": "The profile describes ripe blackberry and kirsch alongside garrigue and lavender. Those details suggest fruit and herbal-floral scent families together, giving a more specific expectation than the broad label “Rhône red.”",
+          "key_detail": {
+            "concept_id": "aroma",
+            "term": "Aroma: scent families",
+            "meaning": "Aroma means what you smell. Blackberry and lavender are sensory comparisons, not ingredients; grouping them into fruit and floral families helps translate this entry into an understandable guest description.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Why doesn’t wine taste like grapes?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2022/january/13/why-doesn-t-wine-taste-like-grapes"
+            }
+          },
+          "try_this": "Recall the north–south grape distinction, then sort blackberry, lavender and garrigue into scent families.",
+          "profile_keys": [
+            "context",
+            "grape",
+            "aroma"
+          ],
+          "references": [
+            {
+              "key": "context",
+              "quote": "The Rhône changes its grape vocabulary as you travel along the valley. Syrah anchors the northern red appellations; white varieties include Viognier and Marsanne. In the south, Grenache commonly joins Syrah, Mourvèdre and other partners. The distinction helps explain why Hermitage, Côte-Rôtie and Châteauneuf-du-Pape should not be introduced as interchangeable Rhône reds. Begin with the appellation and its part of the valley, then ask what this producer selected and how the named cuvée differs from its neighbours.",
+              "source": {
+                "publisher": "Inter Rhône",
+                "title": "Follow the river north and south",
+                "url": "https://www.vins-rhone.com/sites/vignoble/files/documentation/2026-04/INTER-RHONE-ENCYCLOPEDIE-2026-EN-BAT_0.pdf",
+                "checked": "2026-10-19"
+              }
+            },
+            {
+              "key": "grape",
+              "quote": "Grenache-dominant (exact vintage blend unconfirmed)",
+              "source": {
+                "publisher": "Domaine de Marcoux",
+                "title": "Vieilles Vignes: Grenache-dominant parcels; no vintage-specific blend asserted",
+                "url": "https://www.domainedemarcoux.fr/en/vin/chateauneuf-du-pape-vieilles-vignes-red/"
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Ripe blackberry, kirsch, garrigue, lavender, black pepper, warm stones.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "context",
+        "evidence_quote": "The Rhône changes its grape vocabulary as you travel along the valley. Syrah anchors the northern red appellations; white varieties include Viognier and Marsanne. In the south, Grenache commonly joins Syrah, Mourvèdre and other partners. The distinction helps explain why Hermitage, Côte-Rôtie and Châteauneuf-du-Pape should not be introduced as interchangeable Rhône reds. Begin with the appellation and its part of the valley, then ask what this producer selected and how the named cuvée differs from its neighbours.",
+        "id": "q11",
+        "subject": "Châteauneuf-du-Pape \"Vieilles Vignes\" – Marcoux",
+        "source": {
+          "publisher": "Inter Rhône",
+          "title": "Follow the river north and south",
+          "url": "https://www.vins-rhone.com/sites/vignoble/files/documentation/2026-04/INTER-RHONE-ENCYCLOPEDIE-2026-EN-BAT_0.pdf",
+          "checked": "2026-10-19"
+        }
+      },
+      {
+        "wine_id": "wl_chateauneuf-du-pape-vieilles-vignes-marcoux",
+        "question": "Which guest-facing description best translates the catalog’s palate entry for Marcoux’s “Vieilles Vignes”?",
+        "options": [
+          "Full weight, firm grip and concentrated Grenache fruit.",
+          "Light weight, soft grip and delicate red-fruit flavours.",
+          "Medium weight, gentle grip and clean orchard-fruit flavours.",
+          "Full weight, soft grip and creamy stone-fruit flavours."
+        ],
+        "correct_index": 0,
+        "explanation": "The palate explicitly combines full body with firm tannins and powerful Grenache fruit. Translating these separately helps a guest understand both substantial mouth weight and drying grip, rather than treating concentration as a single sensation.",
+        "lesson": {
+          "in_the_glass": "The profile describes full body and a long, peppery finish. Expect substantial perceived weight during the sip, followed by persistent peppery flavour; the duration is a separate observation from the wine’s initial fullness.",
+          "key_detail": {
+            "concept_id": "tannin",
+            "term": "Tannin: drying grip",
+            "meaning": "Tannins create drying friction on gums and cheeks through interaction with saliva proteins. Here, firm tannins describe that tactile grip, while full body describes a different sensation: weight in the mouth.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Describe full body and firm tannins in separate phrases: one about weight, one about drying friction.",
+          "profile_keys": [
+            "palate",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "palate",
+              "quote": "Full Body, Firm Tannins. Old-vine concentration, powerful Grenache fruit with garrigue-infused complexity.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Long, peppery, warm and persistent.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "palate",
+        "evidence_quote": "Full Body, Firm Tannins. Old-vine concentration, powerful Grenache fruit with garrigue-infused complexity.",
+        "id": "q12",
+        "subject": "Châteauneuf-du-Pape \"Vieilles Vignes\" – Marcoux",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_ilatraia-brancaia",
+        "question": "You are filing Ilatraia – Brancaia by its catalog origin rather than by grape associations. Which shelf heading fits?",
+        "options": [
+          "Tuscany, Italy",
+          "Bordeaux, France",
+          "Sonoma Coast, United States",
+          "Rhône Valley, France"
+        ],
+        "correct_index": 0,
+        "explanation": "The catalog places Ilatraia in Tuscany, Italy. Its Cabernet-based grape selection does not change that location; an origin entry identifies where the wine belongs, while grape names answer a separate question about its composition.",
+        "lesson": {
+          "in_the_glass": "The profile describes cassis and black cherry alongside cedar and dried mint. These supply dark-fruit, woody and herbal scent expectations; the Tuscany heading locates the entry without independently establishing any of those aromas.",
+          "key_detail": {
+            "concept_id": "aroma",
+            "term": "Aroma: scent comparisons",
+            "meaning": "Aromas are smells described through familiar comparisons, rather than a list of added ingredients. Cassis and dried mint help communicate different scent families without turning the wine’s regional address into a flavour rule.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Why doesn’t wine taste like grapes?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2022/january/13/why-doesn-t-wine-taste-like-grapes"
+            }
+          },
+          "try_this": "Recall Ilatraia’s region and country, then name two aroma families separately from its location.",
+          "profile_keys": [
+            "origin",
+            "grape",
+            "aroma"
+          ],
+          "references": [
+            {
+              "key": "origin",
+              "quote": "Tuscany, IT · Italy",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "grape",
+              "quote": "Cabernet Sauvignon/Petit Verdot/Cabernet Franc",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Cassis, black cherry, graphite, cedar, dried mint.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "origin",
+        "evidence_quote": "Tuscany, IT · Italy",
+        "id": "q13",
+        "subject": "Ilatraia – Brancaia",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_ilatraia-brancaia",
+        "question": "A guest asks how Ilatraia is expected to feel on the palate. Which description matches the catalog?",
+        "options": [
+          "Medium weight with soft tannins and bright red fruit.",
+          "Full weight with firm tannins and concentrated dark fruit.",
+          "Full weight with soft tannins and gentle orchard fruit.",
+          "Light weight with firm tannins and delicate herbal fruit."
+        ],
+        "correct_index": 1,
+        "explanation": "The palate entry specifies full body, firm tannins and concentrated dark fruit. These describe weight, drying texture and flavour separately, making a more useful expectation than simply calling the wine powerful.",
+        "lesson": {
+          "in_the_glass": "The profile describes concentrated dark fruit on the palate and a long, tannic finish. Expect fruit concentration during the sip alongside a drying close, while assessing flavour persistence separately from any lingering grip.",
+          "key_detail": {
+            "concept_id": "body",
+            "term": "Body: perceived weight",
+            "meaning": "Body is the sensation of weight and fullness in your mouth, not the strength of a smell. Ilatraia’s full-body description concerns physical presence; its concentrated dark fruit describes another dimension.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Write three separate headings—weight, grip, fruit—and assign Ilatraia’s palate descriptors to each.",
+          "profile_keys": [
+            "palate",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "palate",
+              "quote": "Full Body, Firm Tannins. Cabernet-dominated power, concentrated dark fruit with Maremma warmth.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Long, tannic, dry and powerful.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "palate",
+        "evidence_quote": "Full Body, Firm Tannins. Cabernet-dominated power, concentrated dark fruit with Maremma warmth.",
+        "id": "q14",
+        "subject": "Ilatraia – Brancaia",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_pinot-noir-joseph-phelps-freestone",
+        "question": "A wine list needs the exact catalog origin for Joseph Phelps (Freestone) Pinot Noir. Which heading should the editor use?",
+        "options": [
+          "Carneros, United States",
+          "Sonoma Coast, United States",
+          "Russian River Valley, United States",
+          "Sonoma Valley, United States"
+        ],
+        "correct_index": 1,
+        "explanation": "The origin field specifies Sonoma Coast. The regional context treats Sonoma’s appellations as distinct, so using the exact entry is more accurate than substituting another nearby name or borrowing its particular landscape story.",
+        "lesson": {
+          "in_the_glass": "The profile describes strawberry and cranberry aromas with medium body and soft tannins. That connects bright red-fruit scents with moderate perceived weight and gentle grip, rather than deriving a tasting prediction from the coastal address alone.",
+          "key_detail": {
+            "concept_id": "tannin",
+            "term": "Tannin: tactile grip",
+            "meaning": "Tannin describes drying friction on gums and cheeks, not aroma intensity. The soft-tannin wording suggests a gentle version of that texture, which can be assessed separately from the listed strawberry and cranberry scents.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Recall the exact appellation, then separate the catalog’s fruit scents from its mouthfeel descriptors.",
+          "profile_keys": [
+            "origin",
+            "context",
+            "aroma",
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "origin",
+              "quote": "Sonoma Coast, US · United States",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "context",
+              "quote": "Sonoma’s appellations distinguish coastal influence and different vineyard settings. The regional guide describes Pacific fog in Russian River Valley, cool coastal conditions and the separate identity of Carneros. These are connected but not interchangeable places. Read Sonoma Valley, Sonoma Coast, Russian River or Carneros as a more useful starting point than a single California stereotype. A broad California label does not by itself establish one Sonoma appellation; confirm the exact origin before borrowing a narrower landscape story.",
+              "source": {
+                "publisher": "Sonoma County Vintners",
+                "title": "Coast, fog and smaller place names",
+                "url": "https://sonomawine.com/appellations/",
+                "checked": "2026-10-19"
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Strawberry, cranberry, sea breeze, light herbs.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "palate",
+              "quote": "Medium Body, Soft Tannins. Cool-climate Sonoma Coast, bright fruit with maritime influence.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "origin",
+        "evidence_quote": "Sonoma Coast, US · United States",
+        "id": "q15",
+        "subject": "Pinot Noir – Joseph Phelps (Freestone)",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_pinot-noir-joseph-phelps-freestone",
+        "question": "A guest asks for the catalog's aromatic preview of Joseph Phelps Freestone Pinot Noir. Which description fits?",
+        "options": [
+          "Cassis and black cherry with cedar and mint",
+          "White peach and citrus with brioche and almond",
+          "Blackberry and kirsch with lavender and pepper",
+          "Strawberry and cranberry with sea breeze and herbs"
+        ],
+        "correct_index": 3,
+        "explanation": "The catalog pairs red berries with sea-breeze and light herbal notes. Grouping those descriptions into fruit and accompanying accents gives a guest a clearer aromatic preview than relying on the grape name alone.",
+        "lesson": {
+          "in_the_glass": "The profile describes strawberry and cranberry aromas alongside medium body and soft tannins. Expect a red-fruited impression with moderate mouth weight and gentle grip, keeping scent separate from the texture experienced while sipping.",
+          "key_detail": {
+            "concept_id": "aroma",
+            "term": "Aroma: scent families",
+            "meaning": "Aromas are scent comparisons rather than added ingredients. Here, strawberry and cranberry belong together as fruit references, while light herbs provide a separate family to notice.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Why doesn’t wine taste like grapes?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2022/january/13/why-doesn-t-wine-taste-like-grapes"
+            }
+          },
+          "try_this": "Recall the four aroma notes, then sort them into fruit, herbal, and sea-breeze descriptions.",
+          "profile_keys": [
+            "aroma",
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "aroma",
+              "quote": "Strawberry, cranberry, sea breeze, light herbs.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "palate",
+              "quote": "Medium Body, Soft Tannins. Cool-climate Sonoma Coast, bright fruit with maritime influence.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "aroma",
+        "evidence_quote": "Strawberry, cranberry, sea breeze, light herbs.",
+        "id": "q16",
+        "subject": "Pinot Noir – Joseph Phelps (Freestone)",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_sancerre-cote-des-monts-damnes-hubert-brochard",
+        "question": "You are filing Hubert Brochard's Sancerre “Côte des Monts Damnés” by its catalog origin. Which regional shelf is correct?",
+        "options": [
+          "Burgundy, France",
+          "Rhône Valley, France",
+          "Champagne, France",
+          "Loire Valley, France"
+        ],
+        "correct_index": 3,
+        "explanation": "The catalog places this Sancerre in France's Loire Valley. That establishes its geographic filing, while the separate tasting fields supply sensory expectations; a regional name alone does not establish a particular aroma or texture.",
+        "lesson": {
+          "in_the_glass": "The profile describes lemon zest and white peach aromas with a long, mineral finish. This connects a fruit-led aromatic introduction to sustained sensory impressions after tasting, rather than treating origin as a flavour guarantee.",
+          "key_detail": {
+            "concept_id": "finish",
+            "term": "Finish: flavour duration",
+            "meaning": "Finish means how long pleasant flavour remains after tasting. The catalog's long finish describes persistence, which should be considered separately from the strength of its lemon-zest aroma.",
+            "source": {
+              "publisher": "WSET",
+              "title": "Describing wines using the Wine SAT",
+              "url": "https://www.wsetglobal.com/media/6714/wset_l4diploma_cag_tasting_en_aug2018.pdf"
+            }
+          },
+          "try_this": "Recall the regional shelf, then name one aroma and one finish detail from this entry.",
+          "profile_keys": [
+            "origin",
+            "aroma",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "origin",
+              "quote": "Loire Valley, FR · France",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "aroma",
+              "quote": "Lemon zest, white peach, gun flint, herbs, chalky minerality.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Long, mineral, powerful for Sancerre.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "origin",
+        "evidence_quote": "Loire Valley, FR · France",
+        "id": "q17",
+        "subject": "Sancerre \"Côte des Monts Damnés\" – Hubert Brochard",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_sancerre-cote-des-monts-damnes-hubert-brochard",
+        "question": "Which guest-facing description best translates the catalog palate for Hubert Brochard's “Côte des Monts Damnés”?",
+        "options": [
+          "Medium weight, soft drying grip, bright red fruit and herbal impressions",
+          "Light-to-medium weight, pronounced mouthwatering freshness, concentrated citrus and mineral impressions",
+          "Full weight, firm drying grip, concentrated dark fruit and peppery impressions",
+          "Medium-plus weight, creamy texture, layered stone fruit and toasted impressions"
+        ],
+        "correct_index": 1,
+        "explanation": "The palate explicitly combines light–medium body with high acidity and concentrated ripe citrus. This teaches an important distinction: a wine can deliver intense flavour without feeling especially heavy in the mouth.",
+        "lesson": {
+          "in_the_glass": "The profile describes high acidity alongside ripe citrus and mineral depth. Expect a mouthwatering sensation accompanying concentrated flavour; the stated light–medium body keeps perceived weight distinct from that intensity.",
+          "key_detail": {
+            "concept_id": "body",
+            "term": "Body: mouth weight",
+            "meaning": "Body is the sensation of weight and fullness, not how strongly a flavour registers. This entry's light–medium body can therefore sit comfortably alongside its intense, concentrated palate description.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Explain how a light–medium-bodied wine can still have intense flavour, using this citrus description.",
+          "profile_keys": [
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "palate",
+              "quote": "Light–Medium Body, High Acidity. Intense and concentrated (steep-slope fruit), mineral depth with ripe citrus.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "palate",
+        "evidence_quote": "Light–Medium Body, High Acidity. Intense and concentrated (steep-slope fruit), mineral depth with ripe citrus.",
+        "id": "q18",
+        "subject": "Sancerre \"Côte des Monts Damnés\" – Hubert Brochard",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_dom-perignon",
+        "question": "A wine-list editor needs the catalog's region and country for Dom Pérignon. Which entry should they use?",
+        "options": [
+          "Burgundy, France",
+          "Loire Valley, France",
+          "Trentino, Italy",
+          "Champagne, France"
+        ],
+        "correct_index": 3,
+        "explanation": "The catalog identifies Champagne, France, as the origin. Its regional context also explains why the cuvée or vintage matters: Champagne entries represent particular assemblies and releases, rather than an interchangeable expression of a house name.",
+        "lesson": {
+          "in_the_glass": "The profile describes a creamy mousse together with medium-plus body and creamy texture. Expect bubble sensation and substantial mouth weight to be separate observations, even when both contribute to a rounded tactile impression.",
+          "key_detail": {
+            "concept_id": "bubbles",
+            "term": "Mousse: bubble sensation",
+            "meaning": "Mousse describes how bubbles feel, with dissolved carbon dioxide adding physical prickle. The catalog's creamy mousse is a texture description; assess it separately from weight or aroma.",
+            "source": {
+              "publisher": "WSET",
+              "title": "The secret language of wine: what is mouthfeel?",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2026/the-secret-language-of-wine-what-is-mouthfeel"
+            }
+          },
+          "try_this": "Name the region and country, then distinguish bubble texture from mouth weight in one sentence.",
+          "profile_keys": [
+            "origin",
+            "context",
+            "appearance",
+            "palate"
+          ],
+          "references": [
+            {
+              "key": "origin",
+              "quote": "Champagne, FR · France",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "context",
+              "quote": "Champagne blending can bring together grape varieties, vineyard origins and harvest years. Reserve wines let a producer draw on earlier seasons for a non-vintage blend, while a vintage Champagne speaks through one harvest. A second fermentation in bottle creates the sparkling stage. The label’s cuvée, edition or vintage is therefore essential to the story: it identifies a particular assembly and release, not merely a famous house name. Blanc de Blancs, rosé and prestige cuvées are different directions within that shared regional framework.",
+              "source": {
+                "publisher": "Comité Champagne",
+                "title": "A wine assembled across several dimensions",
+                "url": "https://www.champagne.fr/system/files/2022-11/brochure_civc_2020_en_bd.pdf",
+                "checked": "2026-10-19"
+              }
+            },
+            {
+              "key": "appearance",
+              "quote": "Gold with green-gold tints, creamy mousse.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "palate",
+              "quote": "Medium+ Body, Creamy Texture. Layered stone fruit and toast, powerful yet poised, seamless integration.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "origin",
+        "evidence_quote": "Champagne, FR · France",
+        "id": "q19",
+        "subject": "Dom Pérignon",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      },
+      {
+        "wine_id": "wl_dom-perignon",
+        "question": "Which aromatic preview matches the catalog entry for Dom Pérignon?",
+        "options": [
+          "Baked apple, Meyer lemon, light toast and white flowers",
+          "Lemon zest, white peach, herbs, gun flint and chalk",
+          "Toasted brioche, white peach, almond, smoke and candied citrus",
+          "Strawberry, white cherry, rose hip and fresh bread"
+        ],
+        "correct_index": 2,
+        "explanation": "The aroma field brings together bakery, fruit, nut and smoke comparisons. Sorting these into families makes the description easier to remember while preserving the distinction between scented fruit references and sweetness on the palate.",
+        "lesson": {
+          "in_the_glass": "The profile describes toasted brioche and almond aromas followed by very long, toasty-mineral persistence. Expect the toast theme to connect the initial scent with the finish, while duration remains a separate observation.",
+          "key_detail": {
+            "concept_id": "fruit_sweetness",
+            "term": "Fruit scent versus sweetness",
+            "meaning": "Fruit descriptors concern aroma and flavour, whereas sweetness is a taste. Candied citrus in this aroma list is therefore a scent comparison, not a measurement of sweetness.",
+            "source": {
+              "publisher": "WSET",
+              "title": "How to taste wine",
+              "url": "https://www.wsetglobal.com/knowledge-centre/blog/2023/december/19/how-to-taste-wine/"
+            }
+          },
+          "try_this": "Sort the five listed aromas into families, then explain why candied citrus describes scent here.",
+          "profile_keys": [
+            "aroma",
+            "finish"
+          ],
+          "references": [
+            {
+              "key": "aroma",
+              "quote": "Toasted brioche, white peach, almond, smoke, candied citrus.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            },
+            {
+              "key": "finish",
+              "quote": "Very long, complex, toasty-mineral persistence.",
+              "source": {
+                "publisher": "wineLENS catalog",
+                "title": "Catalog reference; exact vintage unconfirmed",
+                "url": ""
+              }
+            }
+          ]
+        },
+        "evidence_key": "aroma",
+        "evidence_quote": "Toasted brioche, white peach, almond, smoke, candied citrus.",
+        "id": "q20",
+        "subject": "Dom Pérignon",
+        "source": {
+          "publisher": "wineLENS catalog",
+          "title": "Catalog reference; exact vintage unconfirmed",
+          "url": ""
+        }
+      }
+    ],
+    "created_at": "2026-10-19T09:14:35.165Z",
+    "cached": false
+  }
+}

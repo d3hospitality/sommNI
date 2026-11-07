@@ -1,5 +1,14 @@
+import japanPrefectures from './data/japan-prefecture-regions.json';
+import { prefectureKey } from './sake';
+import { announceWineContext, catalogContext, libraryContext, libraryPhoto } from './wine-context';
+import { placeSearchScore } from './atlas/place-search';
+import { wineRegionRows, wineRegionFor, wineRegionById } from './atlas/wine-regions';
+import { AtlasVoiceCapture, type CaptureState } from './atlas/voice-capture';
+import { betaProvider } from './beta/client';
+import { getLocale } from './intelligence/client';
+import { openPlaceGlasses } from './intelligence/glasses';
 // ═══════════════════════════════════════════════════════════════════
-// Wine Atlas inside wineLENS — integration layer around src/atlas/ (Codex's module).
+// Wine Atlas inside sommNI — integration layer around src/atlas/ (Codex's module).
 //
 //  • Home › Wine Atlas: AtlasGlasses owns the display and its events until double tap
 //    from the country list returns Home. Its own serial transport is the only sender
@@ -12,23 +21,19 @@
 // Catalog browsing stays country → grape → wine until region mappings are reviewed.
 // ═══════════════════════════════════════════════════════════════════
 
-import { OsEventTypeList, type EvenAppBridge, type EvenHubEvent } from '@evenrealities/even_hub_sdk';
-import { GlobeRenderer, type AtlasData, type Country, type Region, type View } from './atlas/renderer';
+import { OsEventTypeList, RebuildPageContainer, TextContainerProperty, type EvenAppBridge, type EvenHubEvent } from '@evenrealities/even_hub_sdk';
+import { GlobeRenderer, type AtlasData, type Country, type Region } from './atlas/renderer';
 import { AtlasNavigator } from './atlas/navigator';
 import { AtlasGlasses } from './atlas/glasses';
 import { claimDisplay, dropDisplay } from './display';
 import { rebuildGlassesPage, invalidateImages, imageIdle, currentImageEpoch, pushGrayImage, pushLogoToGlasses, sendSerial, pushTastingNotesImages } from './image-utils';
 import { rebuildHomePage, buildTastingNotesPage } from './pages';
-import { allCatalogWines, lookupWineById, type CatalogWine } from './identity';
-import { catalogBottleSources } from './bottle-assets';
-import type { BottleSource } from './bottle-raster';
-import { readLibrary, libraryBottle, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
+import { allCatalogWines, lookupWineById, catalogPhoto, type CatalogWine } from './identity';
+import { readLibrary, showWineFromAtlas, vintageShort, setWinePlacer, setWineSceneBuilder, setPlaceSceneBuilder, fallbackPlace, type WinePlace } from './winebrary-glasses';
 import { planWineScene, type ScenePlan } from './wine-scene';
-import { TYPE_DISPLAY, WINE_TYPES, type WineType } from './constants';
+import { TYPE_DISPLAY } from './constants';
 import type { LibraryWine } from './winebrary';
 import regionLinks from './data/atlas-region-links.json';
-import { catalogWineShown } from './catalog-view';
-import { saveFromGlasses, notesOpened } from './quick-save';
 
 let bridge: EvenAppBridge | null = null;
 let baseUrl = '';
@@ -37,13 +42,13 @@ let glasses: AtlasGlasses | null = null;
 let navigator: CatalogAtlasNavigator | null = null;
 let active = false;
 
-export interface AtlasStatus { active: boolean; mode: string; style: string; country: string; region: string | null; error: string | null }
+export interface AtlasStatus { active: boolean; mode: string; country: string; region: string | null; error: string | null }
 let lastError: string | null = null;
 
 let listening = false;
 export function connectAtlasGlasses(b: EvenAppBridge, url: string): void {
   bridge = b; baseUrl = url;
-  if (!listening) { listening = true; window.addEventListener('winelens-library-changed', () => { void atlasLibraryChanged(); }); }
+  if (!listening) { listening = true; window.addEventListener('winelens-library-changed', () => { void atlasLibraryChanged(); }); window.addEventListener('sommni-catalog-updated', () => { void atlasLibraryChanged(); }); window.addEventListener('pagehide',()=>{void cancelAtlasVoice(false).catch(console.warn);}); }
   // My Winebrary browses Red/White… › country › region with the same placement as the Atlas,
   // and its detail page draws the wine's map scene.
   setWinePlacer(placeLibraryWines);
@@ -55,7 +60,7 @@ async function placeScene(countryName: string, regionName: string | null): Promi
   const renderer = await loadAtlasRenderer();
   const country = renderer.data.countries.find(c => c.name === countryName) ?? countryByAnyName(renderer, countryName);
   if (!country) return null;
-  const region = regionName ? renderer.data.regions.find(r => r.name === regionName && r.country === country.code) ?? null : null;
+  const region = regionName ? renderer.data.regions.find(r => (r.name === regionName || (country.code==='JPN'&&prefectureKey(r.name)===prefectureKey(regionName))) && r.country === country.code) ?? null : null;
   return planWineScene(renderer, { country, region, imageUrl: null });
 }
 
@@ -84,14 +89,21 @@ async function libraryWineScene(wine: LibraryWine): Promise<ScenePlan | null> {
   const renderer = await loadAtlasRenderer();
   const placed = placeLibraryWine(renderer, linkTable(), wine);
   if (!placed.country) return null;
-  return planWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: libraryBottle(wine) });
+  return planWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: libraryPhoto(wine) });
+}
+
+/** Catalog browsing shares the Winebrary bottle-over-origin renderer. */
+export async function catalogBrowseScene(wineId: string | null, country: string): Promise<ScenePlan | null> {
+  const item = lookupWineById(wineId);
+  if (!item) return placeScene(country, null);
+  return libraryWineScene({id:item.id,wine_id:item.id,wine_name:item.wine.name,producer:null,vintage:null,notes:null,region:item.wine.region,metadata:{country:item.country},image_url:catalogPhoto(item.id,baseUrl)||undefined});
 }
 
 /** Map data is ~1 MB: load it once, on first use (Atlas entry or first country list). */
 export function loadAtlasRenderer(): Promise<GlobeRenderer> {
   if (!rendererPromise) {
     const root = baseUrl || new URL('./', location.href).href;
-    rendererPromise = GlobeRenderer.load(new URL('atlas/', root).href);
+    rendererPromise = GlobeRenderer.load(new URL('atlas/', root).href).then(renderer=>{renderer.data.regions=[...renderer.data.regions.filter(r=>r.country!=='JPN'),...japanPrefectures as Region[]];const japan=renderer.data.countries.find(c=>c.code==='JPN');if(japan)japan.regionCount=47;return renderer;});
     rendererPromise.catch(() => { rendererPromise = null; });
   }
   return rendererPromise;
@@ -100,22 +112,24 @@ export function loadAtlasRenderer(): Promise<GlobeRenderer> {
 export function atlasStatus(): AtlasStatus {
   return {
     active,
-    mode: navigator?.mode ?? 'types',
+    mode: navigator?.mode ?? 'countries',
     country: navigator?.country.name ?? '',
-    region: navigator && (navigator.mode === 'regions' || navigator.mode === 'detail') ? navigator.region?.name ?? null : null,
-    style: navigator ? typeLabel(navigator.type) : 'All wines',
+    region: navigator && navigator.mode !== 'countries' ? navigator.region?.name ?? null : null,
     error: lastError,
   };
 }
 /** Foreground lifecycle keeps the cursor while stopping queued Atlas frames. */
-export async function pauseAtlasGlasses(): Promise<void> { await glasses?.close(); }
+export async function pauseAtlasGlasses(): Promise<void> { await cancelAtlasVoice(false); await glasses?.close(); }
 export async function resumeAtlasGlasses(): Promise<void> { if (active) await glasses?.open(); }
-function announce(): void { window.dispatchEvent(new CustomEvent('winelens-atlas-change', { detail: atlasStatus() })); }
+function announce(): void {
+  if(active&&navigator){const entry=navigator.mode==='detail'&&!navigator.infoSelected?navigator.wines[navigator.wineIndex]:null;announceWineContext(entry?(entry.kind==='catalog'?catalogContext(entry.item):libraryContext(entry.wine)):{title:navigator.mode==='countries'?'Explore '+navigator.country.name:navigator.region?.name||navigator.country.name,country:navigator.country.name,region:navigator.mode==='countries'?null:navigator.view.region?.name});}
+  window.dispatchEvent(new CustomEvent('winelens-atlas-change', { detail: atlasStatus() })); }
 function fail(error: Error): void { lastError = error.message; console.error('[Atlas] ' + error.message); announce(); }
 
 async function release(): Promise<void> {
   if (!glasses) return;
   active = false;
+  await cancelAtlasVoice(false);
   try { await glasses.close(); } finally { announce(); }
 }
 
@@ -128,13 +142,10 @@ async function exitToHome(): Promise<void> {
   await pushLogoToGlasses(bridge, baseUrl);
 }
 
-// ═══ Scope: the Atlas shows only where wineLENS (and your Winebrary) has wines ═══
-// Countries come from the catalog and the signed-in Winebrary. Regions are winerymap clusters
-// explicitly linked to a catalog region (src/data/atlas-region-links.json), or named exactly
-// like a Winebrary wine's region. Adding wines widens the Atlas automatically; anything
-// unmatched stays reachable through catalog browsing and My Winebrary.
+// All mapped places remain reachable for learning. Saved wines mark coverage;
+// catalog and personal wines are attached to their source groups without gating history.
 interface RegionLink { region: string; clusters: string[]; link: string; review: string; note: string }
-/** A wine listed in a region view: one of yours (Winebrary) or one from the wineLENS catalog. */
+/** A wine listed in a region view: one of yours (Winebrary) or one from the sommNI catalog. */
 export type AtlasEntry = { kind: 'library'; wine: LibraryWine } | { kind: 'catalog'; item: CatalogWine };
 export interface CatalogAtlas {
   data: AtlasData; countries: Country[];
@@ -165,7 +176,7 @@ function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink
   const twin = wine.wine_id ? lookupWineById(wine.wine_id) : null;
   if (twin) {
     const country = atlasCountryFor(renderer, twin.country);
-    const regions = country ? (links.get(twin.wine.region)?.clusters ?? []).map(n => renderer.data.regions.find(r => r.name === n && r.country === country.code)).filter((r): r is Region => !!r) : [];
+    const regions = country ? (links.get(twin.wine.region)?.clusters ?? (country?.code==='JPN'?renderer.data.regions.filter(r=>r.country==='JPN'&&prefectureKey(r.name)===prefectureKey(twin.wine.region)).map(r=>r.name):[])).map(n => renderer.data.regions.find(r => r.name === n && r.country === country.code)).filter((r): r is Region => !!r) : [];
     return { country, regions, place: twin.wine.region.split(',')[0].trim() };
   }
   const [place = '', suffix] = (wine.region ?? '').split(',').map(p => p.trim());
@@ -176,7 +187,7 @@ function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink
   const known = country ?? linkCountry;
   if (!place) return { country: known, regions: [], place };
   // … and its clusters; otherwise a cluster with exactly this name (in the wine's country, or unambiguous).
-  const candidates = link?.clusters.length ? link.clusters.map(n => renderer.data.regions.filter(r => r.name === n)).flat() : renderer.data.regions.filter(r => norm(r.name) === norm(place));
+  const candidates = link?.clusters.length ? link.clusters.map(n => renderer.data.regions.filter(r => r.name === n)).flat() : renderer.data.regions.filter(r => (norm(r.name) === norm(place)||(known?.code==='JPN'&&r.country==='JPN'&&prefectureKey(r.name)===prefectureKey(place))));
   const inCountry = known ? candidates.filter(r => r.country === known.code) : candidates;
   if (!known && new Set(candidates.map(r => r.country)).size > 1) return { country: null, regions: [], place };
   const regions = inCountry.length ? [inCountry[0]] : [];
@@ -184,17 +195,10 @@ function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink
   return { country: resolved, regions, place };
 }
 
-/** A Winebrary wine's style: its catalog twin's, else its own colour. Unknown styles appear under All wines only. */
-function libraryStyle(wine: LibraryWine): WineType | null {
-  const twin = wine.wine_id ? lookupWineById(wine.wine_id) : null;
-  if (twin) return twin.type;
-  return ({ red: 'Red', white: 'White', sparkling: 'Sparkling', rose: 'Rose', 'rosé': 'Rose', orange: 'Orange', dessert: 'Dessert' } as Record<string, WineType>)[(wine.metadata?.color ?? '').toLowerCase()] ?? null;
-}
-
-export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[] = [], type: AtlasType = null): CatalogAtlas {
+export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[] = []): CatalogAtlas {
   const links = linkTable();
   const countryWines = new Map<string, number>(), mineByRegion = new Map<string, number>(), mineByCountry = new Map<string, number>();
-  const regions = new Map<string, Region>(), unmapped = new Set<string>(), unlinked = new Set<string>();
+  const regions = new Map<string, Region>(renderer.data.regions.map(r=>[r.id,r])), unmapped = new Set<string>(), unlinked = new Set<string>();
   const mine = new Map<string, AtlasEntry[]>(), catalog = new Map<string, AtlasEntry[]>();
   const push = (map: Map<string, AtlasEntry[]>, id: string, entry: AtlasEntry) => map.set(id, [...(map.get(id) ?? []), entry]);
   const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
@@ -211,19 +215,17 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
     return row;
   };
   for (const item of allCatalogWines()) {
-    if (type && item.type !== type) continue;
-    if (!catalogWineShown(item.id)) continue;   // hidden catalog, or a default wine the person removed
     const country = atlasCountryFor(renderer, item.country);
     if (!country) continue;
     bump(countryWines, country.code);
     let linked = (links.get(item.wine.region)?.clusters ?? [])
       .map(name => renderer.data.regions.find(r => r.name === name && r.country === country.code))
       .filter((r): r is Region => !!r);
+    if(!linked.length&&country.code==='JPN')linked=renderer.data.regions.filter(r=>r.country==='JPN'&&prefectureKey(r.name)===prefectureKey(item.wine.region));
     if (!linked.length) { unlinked.add(item.wine.region); linked = [placeRow(country, item.wine.region.split(',')[0].trim())]; }
     for (const r of linked) { regions.set(r.id, r); push(catalog, r.id, { kind: 'catalog', item }); }
   }
   for (const wine of libraryItems) {
-    if (type && libraryStyle(wine) !== type) continue;
     const placed = placeLibraryWine(renderer, links, wine);
     if (!placed.country) continue;           // no country: stays in My Winebrary only
     bump(mineByCountry, placed.country.code);
@@ -232,120 +234,202 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
   }
   const entries = new Map<string, AtlasEntry[]>();
   for (const id of regions.keys()) entries.set(id, [...(mine.get(id) ?? []), ...(catalog.get(id) ?? [])]);
+  // Broad wine regions stay visible above appellations, without losing the precise rows.
+  const uniqueEntries = [...new Map([...entries.values()].flat().map(entry => [
+    entry.kind === 'catalog' ? 'catalog:'+entry.item.id : 'library:'+entry.wine.id, entry,
+  ])).values()];
+  for (const area of wineRegionRows(renderer.data)) {
+    const wines = uniqueEntries.filter(entry => {
+      const twin = entry.kind === 'catalog' ? entry.item : lookupWineById(entry.wine.wine_id);
+      const country = twin?.country ?? (entry.kind === 'library' ? entry.wine.metadata?.country ?? entry.wine.region?.split(',')[1] ?? '' : '');
+      const place = twin?.wine.region ?? (entry.kind === 'library' ? entry.wine.region ?? '' : '');
+      return wineRegionFor(country, place)?.id === area.id;
+    });
+    regions.set(area.id, area); entries.set(area.id, wines);
+    mineByRegion.set(area.id, wines.filter(w=>w.kind==='library').length);
+  }
   const countries = renderer.data.countries
-    .filter(c => countryWines.has(c.code) || mineByCountry.has(c.code))
+    .slice()
     .sort((a, b) => ((mineByCountry.get(b.code) ?? 0) - (mineByCountry.get(a.code) ?? 0)) || ((countryWines.get(b.code) ?? 0) - (countryWines.get(a.code) ?? 0)) || a.name.localeCompare(b.name));
   return { data: { ...renderer.data, regions: [...regions.values()] }, countries, countryWines, entries, mineByRegion, mineByCountry, unmapped, unlinked: [...unlinked].sort() };
 }
 
 const entryLabel = (e: AtlasEntry) => e.kind === 'library' ? [e.wine.wine_name, vintageShort(e.wine)].filter(Boolean).join(' ') : e.item.wine.name;
 
-/** A wine style to browse the Atlas by; null = every wine. */
-export type AtlasType = WineType | null;
-const STYLE_LABEL: Record<WineType, string> = { Red: 'Red', White: 'White', Sparkling: 'Sparkling', Rose: 'Rosé', Orange: 'Orange', Dessert: 'Dessert' };
-const typeLabel = (type: AtlasType) => type ? STYLE_LABEL[type] : 'All wines';
-const scopeSize = (scope: CatalogAtlas) => [...scope.countryWines.values(), ...scope.mineByCountry.values()].reduce((a, b) => a + b, 0);
+type AtlasMenuKind='search'|'scope'|'clear'|'info'|'country'|'region'|'all';
+type AtlasMenuItem={kind:AtlasMenuKind;label:string;id?:string};
+export class CatalogAtlasNavigator extends AtlasNavigator {
+  wineIndex=0;
+  infoSelected=false;
+  pendingPlace:false|{country:string;region:string|null}=false;
+  pending:AtlasEntry|null=null;
+  pendingSearch=false;
+  query='';
+  searchMessage='';
+  showAllRegions=false;
+  wineAreaId:string|null=null;
+  private allAreaWines=false;
+  private menuAction:AtlasMenuKind|null=null;
+  constructor(private scope:CatalogAtlas,public signedIn:boolean){super(scope.data);this.countries=scope.countries;}
+  setScope(scope:CatalogAtlas,signedIn:boolean):void {
+    const code=this.country?.code,regionId=this.region?.id,mode=this.mode;
+    this.scope=scope;this.data=scope.data;this.countries=scope.countries;this.signedIn=signedIn;
+    this.countryIndex=Math.max(0,this.countries.findIndex(c=>c.code===code));
+    const index=this.regions.findIndex(r=>r.id===regionId);this.regionIndex=Math.max(0,index);
+    if(mode==='detail'&&index<0&&!(this.allAreaWines&&scope.entries.has(this.wineAreaId??''))){this.mode='regions';this.infoSelected=false;this.menuAction=null;}
+    this.wineIndex=Math.min(this.wineIndex,Math.max(0,this.wines.length-1));
+  }
+  chooseCountry(code:string):void {this.wineAreaId=null;this.allAreaWines=false;super.chooseCountry(code);this.query='';this.searchMessage='';this.showAllRegions=false;this.menuAction=null;this.infoSelected=false;this.wineIndex=0;}
+  chooseRegion(id:string):void {
+    this.query='';
+    if(wineRegionById(id)){this.wineAreaId=id;this.allAreaWines=false;this.mode='regions';this.regionIndex=0;this.menuAction='all';this.infoSelected=false;return;}
+    if(!(this.scope.entries.get(id)?.length))this.showAllRegions=true;super.chooseRegion(id);this.menuAction=null;this.infoSelected=true;this.wineIndex=0;
+  }
+  get region():Region|undefined{return this.allAreaWines&&this.wineAreaId?this.scope.data.regions.find(r=>r.id===this.wineAreaId):super.region;}
+  get view(){return this.mode==='regions'&&(this.menuAction||this.infoSelected)?{country:this.country,...(this.wineAreaId?{region:this.scope.data.regions.find(r=>r.id===this.wineAreaId)}:{})}:super.view;}
+  get wines():AtlasEntry[]{return this.region?this.scope.entries.get(this.region.id)??[]:[];}
+  private count(region:Region){return this.scope.entries.get(region.id)?.length??0;}
+  get regions():Region[]{
+    let list=super.regions;if(!this.scope)return list;
+    list=list.filter(r=>wineRegionById(r.id)||!wineRegionFor(r.country,r.name)||!['bordeaux','burgundy','bourgogne'].includes(norm(r.name)));
+    if(this.wineAreaId){
+      const area=this.wineAreaId;
+      const entryIds=new Set((this.scope.entries.get(area)??[]).map(e=>e.kind==='catalog'?'catalog:'+e.item.id:'library:'+e.wine.id));
+      list=list.filter(r=>!wineRegionById(r.id)&&wineRegionFor(r.country,r.name)?.id===area&&
+        !['bordeaux','burgundy','bourgogne'].includes(norm(r.name)));
+      list=list.filter(r=>!(this.scope.entries.get(r.id)?.length)||(this.scope.entries.get(r.id)??[]).some(e=>entryIds.has(e.kind==='catalog'?'catalog:'+e.item.id:'library:'+e.wine.id)));
+    }else if(!this.query){list=list.filter(r=>!!wineRegionById(r.id)||!wineRegionFor(r.country,r.name));}
+    return list.filter(r=>this.query?placeSearchScore(r.name,this.query,this.country.name)>0:this.showAllRegions||this.count(r)>0)
+      .sort((a,b)=>Number(this.count(b)>0)-Number(this.count(a)>0)||(this.query?placeSearchScore(b.name,this.query,this.country.name)-placeSearchScore(a.name,this.query,this.country.name):0)||Number(!!wineRegionById(b.id))-Number(!!wineRegionById(a.id))||(this.scope.mineByRegion.get(b.id)??0)-(this.scope.mineByRegion.get(a.id)??0)||this.count(b)-this.count(a)||a.name.localeCompare(b.name));
+  }
+  get title(){return this.mode==='countries'?'WINE ATLAS':(wineRegionById(this.wineAreaId??'')?.name??this.country.name)+(this.query?' · SEARCH':'');}
+  get labels():string[]{return this.mode==='countries'?this.countries.map(c=>c.name):this.regions.map(r=>`${this.count(r)}w · ${r.name}`);}
+  private get menu():AtlasMenuItem[]{
+    const entries:AtlasMenuItem[]=[{kind:'search',label:'Search by voice'}];
+    if(this.mode==='regions'&&this.wineAreaId&&!this.query)entries.push({kind:'all',label:'View all wines · '+(this.scope.entries.get(this.wineAreaId)?.length??0)});
+    if(this.mode==='countries')entries.push(...this.countries.filter(c=>!this.query||placeSearchScore(c.name,this.query,c.code)>0).map(c=>({kind:'country' as const,id:c.code,label:c.name})));
+    else entries.push(...this.regions.map(r=>({kind:'region' as const,id:r.id,label:this.count(r)?`${this.count(r)}w · ${r.name}`:`/ ${r.name}`})));
+    if(this.query)entries.push({kind:'clear',label:'Clear search'});
+    else if(this.mode==='regions')entries.push({kind:'scope',label:this.showAllRegions?'Only regions with wines':'All regions & history'});
+    if(this.mode==='regions')entries.push({kind:'info',label:'About '+(wineRegionById(this.wineAreaId??'')?.name??this.country.name)});
+    return entries;
+  }
+  private get cursor(){const id=this.mode==='countries'?this.country.code:this.region?.id;return Math.max(0,this.menu.findIndex(item=>this.menuAction?item.kind===this.menuAction:item.id===id));}
+  private focus(item:AtlasMenuItem){
+    this.infoSelected=false;this.searchMessage='';
+    if(item.kind==='country'){this.countryIndex=this.countries.findIndex(c=>c.code===item.id);this.regionIndex=0;this.menuAction=null;}
+    else if(item.kind==='region'){this.regionIndex=this.regions.findIndex(r=>r.id===item.id);this.menuAction=null;}
+    else{this.menuAction=item.kind;this.infoSelected=item.kind==='info';}
+  }
+  search(text:string){
+    if(!text.trim()){this.searchMessage='No speech heard. Tap to retry.';this.menuAction='search';return;}
+    // A region spoken at the country menu should not fail just because it is not a country.
+    if(this.mode==='countries'&&!this.countries.some(c=>placeSearchScore(c.name,text,c.code)>0)){
+      const hits=this.scope.data.regions.filter(r=>placeSearchScore(r.name,text,this.countries.find(c=>c.code===r.country)?.name??'')>0)
+        .sort((a,b)=>placeSearchScore(b.name,text)-placeSearchScore(a.name,text)||this.count(b)-this.count(a));
+      const hit=hits[0],countryIndex=hit?this.countries.findIndex(c=>c.code===hit.country):-1;
+      if(countryIndex>=0){this.countryIndex=countryIndex;this.mode='regions';}
+    }
+    this.query=text.trim();this.regionIndex=0;this.infoSelected=false;this.menuAction=null;this.searchMessage='';
+    const match=this.menu.find(item=>item.kind==='region'||item.kind==='country');
+    if(match)this.focus(match);else{this.menuAction='search';this.searchMessage='No match. Tap to try again.';}
+  }
+  get hint():string {
+    if(this.searchMessage)return this.searchMessage;
+    if(this.mode!=='detail'){
+      const selected=this.menu[this.cursor];
+      if(selected.kind==='search')return 'Tap: speak · Double tap: back';
+      if(selected.kind==='scope')return 'Tap: switch region list';
+      if(selected.kind==='all')return 'Tap: all wines in this region';
+      if(selected.kind==='clear')return 'Tap: clear search';
+      if(selected.kind==='info')return 'Tap: place history';
+      return this.mode==='regions'?`${this.regionIndex+1}/${this.regions.length} · Tap: ${wineRegionById(this.region?.id??'')?'appellations':'wines'}`:'Tap: regions · Voice above';
+    }
+    if(this.infoSelected)return 'Tap: history · Scroll: wines';
+    return this.wines.length?`${this.wineIndex+1}/${this.wines.length} · Tap: open wine`:'Double tap: regions';
+  }
+  get rows():string {
+    if(this.mode!=='detail'){
+      const items=this.menu,index=this.cursor,start=Math.max(0,Math.min(index-2,items.length-6));
+      return items.slice(start,start+6).map((item,i)=>`${start+i===index?'>':' '} ${item.label}`).join('\n');
+    }
+    const region=this.region!,wines=this.wines,mine=this.scope.mineByRegion.get(region.id)??0,catalog=wines.length-mine;
+    const header=mine&&catalog?`MINE ${mine} · CATALOG ${catalog}`:mine?`MY WINEBRARY · ${mine}`:`SOMMNI CATALOG · ${catalog}`;
+    const name=this.scope.unmapped.has(region.id)?`${region.name} · not mapped yet`:region.name;
+    if(!wines.length)return ['> About '+name,'','No wines here yet','History stays open. Tap to learn.'].join('\n');
+    const start=Math.max(0,Math.min(this.wineIndex-1,wines.length-4));
+    const list=wines.slice(start,start+4).map((wine,i)=>`${!this.infoSelected&&start+i===this.wineIndex?'>':' '} ${entryLabel(wine)}`);
+    return [`${this.infoSelected?'>':' '} About ${name}`,header,...list].join('\n');
+  }
+  scroll(delta:number):void {
+    if(this.mode!=='detail'){const menu=this.menu;this.focus(menu[Math.max(0,Math.min(menu.length-1,this.cursor+delta))]);return;}
+    if(!this.wines.length){this.infoSelected=true;return;}
+    if(this.infoSelected){if(delta>0)this.infoSelected=false;return;}
+    if(delta<0&&this.wineIndex===0){this.infoSelected=true;return;}
+    this.wineIndex=Math.max(0,Math.min(this.wines.length-1,this.wineIndex+delta));
+  }
+  select():void {
+    if(this.mode==='detail'){
+      if(this.infoSelected||!this.wines.length)this.pendingPlace={country:this.country.name,region:this.region?.name??null};
+      else this.pending=this.wines[this.wineIndex]??null;
+      return;
+    }
+    const item=this.menu[this.cursor];
+    if(item.kind==='search'){this.pendingSearch=true;return;}
+    if(item.kind==='all'){this.allAreaWines=true;this.mode='detail';this.wineIndex=0;this.infoSelected=false;this.menuAction=null;return;}
+    if(item.kind==='info'){this.pendingPlace={country:this.country.name,region:wineRegionById(this.wineAreaId??'')?.name??null};return;}
+    if(item.kind==='scope'){this.showAllRegions=!this.showAllRegions;this.regionIndex=0;this.menuAction=this.regions.length?null:'search';this.infoSelected=false;return;}
+    if(item.kind==='clear'){this.query='';this.regionIndex=0;this.menuAction=null;this.searchMessage='';return;}
+    if(item.kind==='country'){this.mode='regions';this.query='';this.showAllRegions=false;this.regionIndex=0;this.menuAction=this.regions.length?null:'search';this.infoSelected=false;return;}
+    if(item.id&&wineRegionById(item.id)){this.chooseRegion(item.id);return;}
+    this.mode='detail';this.wineIndex=0;this.infoSelected=true;this.menuAction=null;
+  }
+  back():void {
+    if(this.mode==='detail'){const all=this.allAreaWines;this.allAreaWines=false;this.mode='regions';this.wineIndex=0;this.infoSelected=false;this.menuAction=all?'all':null;return;}
+    if(this.query){this.query='';this.regionIndex=0;this.menuAction=null;this.searchMessage='';return;}
+    if(this.wineAreaId){const id=this.wineAreaId;this.wineAreaId=null;this.allAreaWines=false;this.regionIndex=Math.max(0,this.regions.findIndex(r=>r.id===id));this.menuAction=null;this.showAllRegions=false;return;}
+    super.back();this.query='';this.showAllRegions=false;this.menuAction=null;this.infoSelected=false;
+  }
+  get exitsOnBack(){return this.mode==='countries'&&!this.query;}
+}
 
-class CatalogAtlasNavigator extends AtlasNavigator {
-  wineIndex = 0;
-  /** Set by a tap on a wine in the region view; atlas-app opens it. */
-  pending: AtlasEntry | null = null;
-  typeIndex = 0;
-  /** All wines, then each style that has wines (catalog + yours), with counts. */
-  types: { type: AtlasType; count: number }[] = [];
-  private scope: CatalogAtlas;
-  constructor(private scopeFor: (type: AtlasType) => CatalogAtlas, public signedIn: boolean) {
-    const all = scopeFor(null);
-    super(all.data);
-    this.scope = all; this.countries = all.countries; this.mode = 'types';
-    this.types = this.typeOptions(all);
-  }
-  private typeOptions(all: CatalogAtlas) {
-    return [{ type: null as AtlasType, count: scopeSize(all) }, ...WINE_TYPES.map(type => ({ type: type as AtlasType, count: scopeSize(this.scopeFor(type)) })).filter(t => t.count > 0)];
-  }
-  get type(): AtlasType { return this.types[this.typeIndex]?.type ?? null; }
-  /** Point the Atlas at one style: its countries (most wines first), its regions, its wines. */
-  private useType(index: number): void {
-    this.typeIndex = Math.max(0, Math.min(this.types.length - 1, index));
-    this.scope = this.scopeFor(this.type); this.data = this.scope.data; this.countries = this.scope.countries;
-    this.countryIndex = 0; this.regionIndex = 0; this.wineIndex = 0;
-  }
-  get atTop(): boolean { return this.mode === 'types'; }
-  /** Picking a style lights every country that makes it, turned to the one with the most wines. */
-  get view(): View { return this.mode === 'types' ? { ...super.view, footprint: this.countries.map(c => c.id) } : super.view; }
-  get index(): number { return this.mode === 'types' ? this.typeIndex : super.index; }
-
-  /** New scope (Winebrary loaded, signed out …): same style, and the same country/region when still present. */
-  rescope(scopeFor: (type: AtlasType) => CatalogAtlas, signedIn: boolean): void {
-    const code = this.country?.code, regionId = this.region?.id, mode = this.mode, type = this.type;
-    this.scopeFor = scopeFor; this.signedIn = signedIn;
-    this.types = this.typeOptions(scopeFor(null));
-    this.typeIndex = Math.max(0, this.types.findIndex(t => t.type === type));
-    this.scope = scopeFor(this.type); this.data = this.scope.data; this.countries = this.scope.countries;
-    this.countryIndex = Math.max(0, this.countries.findIndex(c => c.code === code));
-    const r = regionId ? this.regions.findIndex(x => x.id === regionId) : -1;
-    if ((mode === 'regions' || mode === 'detail') && r >= 0) this.regionIndex = r;
-    else { if (mode !== 'types') this.mode = 'countries'; this.regionIndex = 0; }
-    this.wineIndex = Math.min(this.wineIndex, Math.max(0, this.wines.length - 1));
-  }
-  /** Straight to a country (phone "Open on glasses"): all wines, that country. */
-  chooseCountry(code: string): void {
-    if (!this.countries.some(c => c.code === code)) this.useType(0);
-    super.chooseCountry(code);
-  }
-  get wines(): AtlasEntry[] { return this.region ? this.scope.entries.get(this.region.id) ?? [] : []; }
-  get title(): string {
-    if (this.mode === 'types') return 'WINE ATLAS · PICK A STYLE';
-    return this.mode === 'countries' ? `${typeLabel(this.type).toUpperCase()} · ${this.countries.length} ${this.countries.length === 1 ? 'COUNTRY' : 'COUNTRIES'}` : super.title;
-  }
-  get labels(): string[] {
-    if (this.mode === 'types') return this.types.map(t => `${typeLabel(t.type)} · ${t.count}`);
-    if (this.mode !== 'countries') return this.regions.map(r => { const n = this.scope.mineByRegion.get(r.id) ?? 0; return n ? `${r.name} (${n})` : r.name; });
-    return this.countries.map(c => { const n = this.scope.mineByCountry.get(c.code) ?? 0; return n ? `${c.name} (${n})` : c.name; });
-  }
-  get hint(): string {
-    if (this.mode === 'types') return `${this.typeIndex + 1} / ${this.types.length}   Tap: countries`;
-    if (this.mode === 'detail') return this.wines.length ? `${this.wineIndex + 1} / ${this.wines.length}   Tap: open wine` : 'Double tap: regions';
-    return super.hint;
-  }
-  /** Region view: your Winebrary wines, then catalog wines from this place. Scroll + tap opens one. */
-  get rows(): string {
-    if (this.mode !== 'detail') return super.rows;
-    const r = this.region!, wines = this.wines;
-    const mine = this.scope.mineByRegion.get(r.id) ?? 0, catalog = wines.length - mine;
-    const header = mine && catalog ? `MINE ${mine} · CATALOG ${catalog}` : mine ? `MY WINEBRARY · ${mine}` : `WINELENS CATALOG · ${catalog}`;
-    const name = this.scope.unmapped.has(r.id) ? `${r.name} · not mapped yet` : r.name;
-    if (!wines.length) return [name, '', 'No wines here yet'].join('\n');
-    const start = Math.max(0, Math.min(this.wineIndex - 1, wines.length - 4));
-    const list = wines.slice(start, start + 4).map((w, i) => `${start + i === this.wineIndex ? '>' : ' '} ${entryLabel(w)}`);
-    return [name, header, ...list].join('\n');
-  }
-  /** Your wines first, then mapped places, then catalog wines, then the source's winery count. */
-  get regions(): Region[] {
-    const scope = this.scope;
-    const list = super.regions;
-    if (!scope) return list;
-    const mine = (r: Region) => scope.mineByRegion.get(r.id) ?? 0;
-    const mapped = (r: Region) => scope.unmapped.has(r.id) ? 0 : 1;
-    const all = (r: Region) => scope.entries.get(r.id)?.length ?? 0;
-    return list.sort((a, b) => mine(b) - mine(a) || mapped(b) - mapped(a) || all(b) - all(a) || b.count - a.count || a.name.localeCompare(b.name));
-  }
-  scroll(delta: number): void {
-    if (this.mode === 'types') { this.useType(this.typeIndex + delta); return; }
-    if (this.mode === 'detail') { this.wineIndex = Math.max(0, Math.min(this.wines.length - 1, this.wineIndex + delta)); return; }
-    super.scroll(delta);
-  }
-  select(): void {
-    if (this.mode === 'types') { if (this.countries.length) this.mode = 'countries'; return; }
-    if (this.mode === 'detail') { this.pending = this.wines[this.wineIndex] ?? null; return; }
-    if (this.mode === 'regions') this.wineIndex = 0;
-    super.select();
-  }
-  back(): void {
-    if (this.mode === 'countries') { this.mode = 'types'; return; }
-    if (this.mode === 'detail') this.wineIndex = 0;
-    super.back();
-  }
+let voiceCapture:AtlasVoiceCapture|null=null;
+let voiceTraffic:Promise<unknown>=Promise.resolve();
+// Atlas transport is stopped during capture. These page and microphone calls share one queue.
+function voiceSerial<T>(task:()=>Promise<T>):Promise<T>{const next=voiceTraffic.catch(()=>{}).then(task);voiceTraffic=next;return next;}
+export function buildAtlasVoicePage(state:CaptureState,country:string){
+  const status=state==='opening'?'Opening microphone…':state==='listening'?'Listening · say a place name':'Finding your region…';
+  return new RebuildPageContainer({containerTotalNum:1,textObject:[new TextContainerProperty({containerID:1,containerName:'atlas-voice',xPosition:20,yPosition:18,width:536,height:252,isEventCapture:1,content:`SEARCH BY VOICE\n${country}\n\n${status}\n${state==='listening'?'Speak now · up to 6 seconds\nTap when finished':'Please wait'}\nDouble tap: cancel`})]});
+}
+async function cancelAtlasVoice(restore:boolean){
+  const capture=voiceCapture;if(!capture)return;voiceCapture=null;
+  await capture.cancel();await voiceTraffic.catch(()=>{});
+  if(restore&&active)await glasses?.open();
+}
+async function startAtlasVoice(){
+  if(!bridge||!navigator||voiceCapture||!active)return;
+  const nav=navigator,b=bridge;
+  const finish=async(message?:string,text?:string)=>{
+    if(voiceCapture!==capture)return;
+    voiceCapture=null;
+    if(!active)return;
+    if(message){nav.searchMessage=message;lastError=message;}else{nav.search(text??'');lastError=null;}
+    await glasses?.open();announce();
+  };
+  const capture=new AtlasVoiceCapture({
+    control:open=>voiceSerial(()=>b.audioControl(open)),
+    state:state=>voiceSerial(async()=>{if(voiceCapture!==capture||!active)return;if(!await b.rebuildPageContainer(buildAtlasVoicePage(state,nav.mode==='countries'?'Say a country or region':nav.country.name+' · say a region')))throw Error('Voice page was not accepted.');}),
+    transcribe:async(pcm,signal)=>{
+      let binary='';for(const byte of pcm)binary+=String.fromCharCode(byte);
+      const result=await betaProvider({action:'transcribe',pcm:btoa(binary),sample_rate:16000,locale:getLocale()},signal);
+      return typeof result.text==='string'?result.text:'';
+    },
+    result:text=>finish(undefined,text),
+    error:error=>finish(error.name==='AbortError'?'Search timed out. Tap to retry.':error.message),
+  });
+  voiceCapture=capture;lastError=null;
+  try{await glasses?.close();if(voiceCapture===capture)await capture.start();}
+  catch(error){await capture.cancel();await finish(error instanceof Error?error.message:String(error));}
 }
 
 function libraryScope(): { items: LibraryWine[]; signedIn: boolean } {
@@ -358,7 +442,7 @@ export async function atlasLibraryChanged(): Promise<void> {
   if (!navigator || !rendererPromise) return;
   const renderer = await rendererPromise;
   const { items, signedIn } = libraryScope();
-  navigator.rescope(type => catalogAtlas(renderer, items, type), signedIn);
+  navigator.setScope(catalogAtlas(renderer, items), signedIn);
   announce();
   if (active) glasses?.refresh();
 }
@@ -367,15 +451,12 @@ export async function atlasLibraryChanged(): Promise<void> {
 // Yours → the Winebrary wine page; catalog → the tasting notes page. Double tap returns to the
 // same Atlas view. Each page claims the display, so the Atlas transport is idle first.
 let notesOpen = false;
-let notesWineId: string | null = null;
 let openingWine = false;
-function selectedBottle(): BottleSource | null | undefined {
-  if (!navigator || navigator.mode !== 'detail') return undefined;
+function selectedBottle(): string | null | undefined {
+  if (!navigator || navigator.mode !== 'detail' || navigator.infoSelected) return undefined;
   const entry = navigator.wines[navigator.wineIndex];
   if (!entry) return null;
-  if (entry.kind === 'library') return libraryBottle(entry.wine);
-  const sources = catalogBottleSources(baseUrl, entry.item.id);
-  return sources.length ? sources : null;
+  return entry.kind==='library'?libraryPhoto(entry.wine):catalogPhoto(entry.item.id,baseUrl);
 }
 async function openCatalogNotes(item: CatalogWine): Promise<void> {
   if (!bridge) return;
@@ -384,8 +465,6 @@ async function openCatalogNotes(item: CatalogWine): Promise<void> {
   await imageIdle();
   if (!await rebuildGlassesPage(bridge, buildTastingNotesPage(item.wine, item.id))) throw new Error('The glasses did not accept the tasting notes.');
   notesOpen = true;
-  notesWineId = item.id;
-  notesOpened();
   void pushTastingNotesImages(bridge, baseUrl, item.id).catch(error => console.warn('[Atlas] bottle image unavailable', error));
 }
 async function openPending(): Promise<void> {
@@ -403,6 +482,8 @@ async function openPending(): Promise<void> {
   } finally { openingWine = false; }
 }
 function changed(): void {
+  if(navigator?.pendingSearch){navigator.pendingSearch=false;void startAtlasVoice().catch(error=>fail(error instanceof Error?error:Error(String(error))));}
+  if(navigator?.pendingPlace){const place=navigator.pendingPlace;const wines=place.region?navigator.wines.flatMap(w=>w.kind==='catalog'?[w.item]:[]):allCatalogWines().filter(w=>w.country===place.country);navigator.pendingPlace=false;void openPlaceGlasses(place.country,place.region,wines,()=>openAtlasOnGlasses()).catch(console.warn);}
   if (navigator?.pending) void openPending();
   announce();
 }
@@ -416,9 +497,8 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
   await imageIdle();
   await claimDisplay('atlas', release);
   const { items, signedIn } = libraryScope();
-  const scopeFor = (type: AtlasType) => catalogAtlas(renderer, items, type);
-  if (!navigator) navigator = new CatalogAtlasNavigator(scopeFor, signedIn);
-  else navigator.rescope(scopeFor, signedIn);
+  if (!navigator) navigator = new CatalogAtlasNavigator(catalogAtlas(renderer, items), signedIn);
+  else navigator.setScope(catalogAtlas(renderer, items), signedIn);
   if (countryCode) navigator.chooseCountry(countryCode);
   if (!glasses) glasses = new AtlasGlasses(bridge, navigator, renderer, changed, fail, exitToHome, selectedBottle);
   lastError = null;
@@ -429,14 +509,17 @@ export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
 
 /** Atlas consumes events before any other module while it owns the display. */
 export function handleAtlasGlassesEvent(event: EvenHubEvent): boolean {
+  if(voiceCapture){
+    if(event.audioEvent){voiceCapture.feed(event.audioEvent.audioPcm);return true;}
+    const type=event.textEvent?.eventType??event.listEvent?.eventType??event.sysEvent?.eventType;
+    if(type===OsEventTypeList.DOUBLE_CLICK_EVENT)void cancelAtlasVoice(true).catch(fail);
+    else if((type===0||type===undefined&&!!(event.sysEvent||event.textEvent||event.listEvent))&&voiceCapture.state==='listening')void voiceCapture.finish().catch(fail);
+    return true;
+  }
   if (openingWine) return true;
   if (notesOpen) {
-    // Tasting notes opened from the Atlas: the text scrolls by itself; tap saves; double tap goes back.
+    // Tasting notes opened from the Atlas: the text scrolls by itself; double tap goes back.
     const type = event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType;
-    if ((type === undefined || type === OsEventTypeList.CLICK_EVENT) && event.textEvent?.containerName === 'notes' && bridge) {
-      void saveFromGlasses(bridge, notesWineId);
-      return true;
-    }
     if (type === OsEventTypeList.DOUBLE_CLICK_EVENT) {
       openingWine = true;
       void openAtlasOnGlasses().catch(error => fail(error instanceof Error ? error : new Error(String(error)))).finally(() => { openingWine = false; });
@@ -469,17 +552,18 @@ export interface CatalogGlobeOptions { settle?: boolean; lead?: () => Promise<un
 export async function pushCatalogGlobe(b: EvenAppBridge, countryNames: string | string[], options: CatalogGlobeOptions = {}): Promise<boolean> {
   const { settle = false, lead, names = ['globe-top', 'globe-bottom'] } = options;
   clearTimeout(globeTimer); globeWake?.(); globeWake = null;
+  invalidateImages();
+  const epoch = currentImageEpoch();
+  if (lead) await sendSerial(lead, epoch);
   let renderer: GlobeRenderer;
   try { renderer = await loadAtlasRenderer(); } catch { return false; }
   const countries = (Array.isArray(countryNames) ? countryNames : [countryNames])
     .map(name => atlasCountryFor(renderer, name)).filter((c): c is Country => !!c);
+  if (epoch !== currentImageEpoch()) return true;
   if (!countries.length) return false;
-  invalidateImages();
-  const epoch = currentImageEpoch();
-  // Text leads the image, in the same queue, so the two never interleave on the bridge.
-  if (lead) void sendSerial(lead, epoch).catch(error => console.warn('[Atlas] catalog text update failed', error));
   if (settle) await new Promise<void>(resolve => { globeWake = resolve; globeTimer = setTimeout(resolve, GLOBE_SETTLE_MS); });
   if (epoch !== currentImageEpoch()) return true;
+  announceWineContext({title:countries.length===1?countries[0].name:'Explore these wine countries',country:countries[0].name});
   const center = countries[0].center;
   const gray = renderer.render({ country: countries[0], center }, GLOBE_SIZE).gray;
   // Footprint: each further country lights its own outline on the same camera (pixel max).

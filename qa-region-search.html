@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · regions & voice</title>
+<style>body{font:16px/1.5 system-ui;background:#101810;color:#d5dfc1;max-width:980px;margin:32px auto;padding:20px}small{letter-spacing:3px;color:#b6c68f}h1{font-size:34px}button,input,select{font:inherit;border:1px solid #6e8458;background:#d0d8b6;color:#101810;padding:10px 14px;border-radius:8px;margin:5px}#g2{position:relative;width:576px;height:288px;border:1px solid #566d40;background:#020602;margin:24px auto;color:#a6e283;font:18px/30px monospace;overflow:hidden}#g2 pre{margin:0;white-space:pre-wrap;line-height:30px;position:absolute}#g2 img{position:absolute;image-rendering:auto}pre#results{white-space:pre-wrap;padding:20px;background:#1b2619;border-radius:12px}#mic{color:#a7db76}p{color:#b1c29a}@media(max-width:640px){#g2{transform:scale(.6);transform-origin:left top;margin-bottom:-90px}}</style>
+<small>ソムニ / SOMMNI</small><h1>Less scrolling. More wine.</h1><p>Actual glasses UI and navigation, using a simulated bridge. Speech fixture tests transcription routing without opening a microphone or calling a paid provider.</p>
+<select id="country" aria-label="Preview country"><option value="ITA">Italy</option><option value="FRA">France</option><option value="USA">United States</option></select><button id="open">Open regions</button><button id="checks">Run navigation checks</button>
+<div id="g2" aria-label="Glasses display"></div><p id="mic" role="status">Loading…</p>
+<button id="up">Scroll up</button><button id="down">Scroll down</button><button id="tap">Tap</button><button id="back">Double tap / back</button>
+<div><input id="speech" aria-label="Speech fixture" value="show me wines from Toscana"><button id="speak">Send speech fixture</button></div><pre id="results"></pre>
+<script type="module">
+import {catalogAtlas,CatalogAtlasNavigator,connectAtlasGlasses,openAtlasOnGlasses,handleAtlasGlassesEvent,loadAtlasRenderer,atlasStatus,pauseAtlasGlasses,buildAtlasVoicePage} from './src/atlas-app.ts';
+import {wineRegionFor,wineRegionById} from './src/atlas/wine-regions.ts';
+import {validateGlassesPage} from './src/glasses-page.ts';
+import {buildAtlasPage} from './src/atlas/glasses.ts';
+const display=document.querySelector('#g2'),status=document.querySelector('#mic'),result=document.querySelector('#results');
+let boxes=new Map(),calls=[],inflight=0,peak=0,audioOpen=false;
+async function operation(fn){inflight++;peak=Math.max(peak,inflight);try{return await fn()}finally{inflight--;}}
+const mock={
+ async rebuildPageContainer(page){return operation(()=>{validateGlassesPage(page);display.replaceChildren();boxes=new Map();for(const box of [...(page.textObject??[]),...(page.imageObject??[])]){const node=document.createElement('content' in box?'pre':'img');node.style.cssText=`left:${box.xPosition}px;top:${box.yPosition}px;width:${box.width}px;height:${box.height}px`;if('content' in box)node.textContent=box.content;node.dataset.name=box.containerName;display.append(node);boxes.set(box.containerName,node);}return true;});},
+ async textContainerUpgrade(box){return operation(()=>{const node=boxes.get(box.containerName);if(node)node.textContent=box.content;return true;});},
+ async updateImageRawData(box){return operation(async()=>{const node=boxes.get(box.containerName);if(node){const url=URL.createObjectURL(new Blob([new Uint8Array(box.imageData)],{type:'image/png'}));node.src=url;await node.decode();URL.revokeObjectURL(url);}return 'success';});},
+ async audioControl(open){return operation(()=>{calls.push(open);audioOpen=open;status.textContent=open?'Simulated microphone: open':'Simulated microphone: closed';return true;});},
+ async setLocalStorage(){return true;},async getLocalStorage(){return '';},async imuControl(){return true;}
+};
+const originalFetch=window.fetch;
+window.fetch=(input,init)=>{if(typeof input==='string'&&input.endsWith('/functions/v1/winelens-beta')&&init?.body){const body=JSON.parse(init.body);if(body.action==='transcribe'){if(audioOpen)throw Error('Microphone still open at transcription');if(body.sample_rate!==16000||!body.pcm)throw Error('Missing PCM payload');return Promise.resolve(new Response(JSON.stringify({text:document.querySelector('#speech').value}),{headers:{'content-type':'application/json'}}));}}return originalFetch(input,init);};
+connectAtlasGlasses(mock,new URL('./',location.href).href);
+const renderer=await loadAtlasRenderer();
+const event=(type)=>handleAtlasGlassesEvent({sysEvent:{eventType:type,eventSource:1}});
+async function open(){await openAtlasOnGlasses(document.querySelector('#country').value);event(0);status.textContent='Regions containing current catalog or saved wines. Scroll up for voice search.';}
+await open();
+document.querySelector('#open').onclick=open;
+document.querySelector('#up').onclick=()=>event(1);document.querySelector('#down').onclick=()=>event(2);document.querySelector('#tap').onclick=()=>event(0);document.querySelector('#back').onclick=()=>event(3);
+document.querySelector('#speak').onclick=()=>{handleAtlasGlassesEvent({audioEvent:{audioPcm:new Uint8Array(6400)}});event(0);};
+document.querySelector('#checks').onclick=async()=>{
+ const checks=[];const check=(ok,message)=>{if(!ok)throw Error(message);checks.push(message)};
+ try{
+  const scope=catalogAtlas(renderer),nav=new CatalogAtlasNavigator(scope,false);
+  const countryReport=[];
+  for(const country of scope.countries){nav.chooseCountry(country.code);nav.select();const expected=scope.data.regions.filter(r=>r.country===country.code&&(scope.entries.get(r.id)?.length??0)>0&&(wineRegionById(r.id)||!wineRegionFor(r.country,r.name)));check(nav.regions.length===expected.length,country.name+': only regions with wines');if(expected.length)check(nav.regions.every(r=>scope.entries.get(r.id)?.length),'all visible regions contain a wine');countryReport.push({country:country.name,available:expected.length,all:scope.data.regions.filter(r=>r.country===country.code).length});validateGlassesPage(buildAtlasPage(nav));}
+  for(const [query,id] of [['Bordeaux','wine:FRA:bordeaux'],['Burgundy','wine:FRA:burgundy'],['Bourgogne','wine:FRA:burgundy']]){
+   nav.chooseCountry('ITA');nav.search(query);check(nav.country.code==='FRA'&&nav.mode==='regions','country-menu search finds '+query);
+   nav.select();check(nav.wineAreaId===id&&nav.rows.includes('View all wines'),'broad region opens appellations: '+query);
+   const children=nav.regions;check(children.length>0&&children.every(r=>wineRegionFor(r.country,r.name)?.id===id),'correct child appellations: '+query);
+   nav.select();check(nav.mode==='detail'&&nav.wines.length>0&&nav.region.id===id,'View all opens aggregate wines: '+query);
+   const count=nav.wines.length;nav.setScope(scope,false);check(nav.mode==='detail'&&nav.wines.length===count,'scope refresh preserves View all');validateGlassesPage(buildAtlasPage(nav));
+   nav.back();check(nav.wineAreaId===id&&nav.rows.includes('> View all wines'),'back restores aggregate action');
+   nav.scroll(1);nav.select();check(nav.mode==='detail'&&nav.region.id!==id,'child appellation opens its wines');nav.back();check(nav.mode==='regions'&&nav.wineAreaId===id,'back restores appellations');
+   nav.back();check(nav.mode==='regions'&&!nav.wineAreaId&&nav.region.id===id,'back restores broad region');nav.back();check(nav.exitsOnBack,'country list is still the exit boundary');
+  }
+  nav.chooseCountry('ITA');nav.select();check(nav.regions.some(r=>r.name==='Tuscany'),'Tuscany is surfaced despite lacking cluster geometry');
+  nav.search('show me wines from Toscana');check(nav.region.name==='Tuscany'&&nav.wines.length>0,'spoken Toscana resolves to Tuscany');nav.select();check(nav.mode==='detail'&&nav.wines.length>0,'voice result opens its wines');nav.back();nav.back();check(!nav.query&&nav.mode==='regions','back clears a search before leaving regions');
+  nav.search('Piemonte');check(nav.regions.some(r=>r.name==='Piedmont'),'Piemonte resolves to Piedmont');nav.search('a fictional wine region');check(nav.regions.length===0&&nav.rows.includes('Clear search'),'no match preserves recovery controls');nav.back();
+  nav.showAllRegions=true;check(nav.regions.length>8,'history-only regions stay reachable');const ordered=nav.regions.map(r=>!!scope.entries.get(r.id)?.length),last=ordered.lastIndexOf(true);check(ordered.slice(0,last+1).every(Boolean),'all actual wines rank above every empty mapped cluster');
+  const history=nav.regions.find(r=>!scope.entries.get(r.id)?.length);nav.chooseRegion(history.id);nav.select();check(nav.pendingPlace?.region===history.name,'history-only place can open its history');
+  const custom={id:'qa-custom-region',wine_name:'QA private wine',producer:'Test',region:'Quiet Hills',vintage:null,notes:null,metadata:{country:'Italy'}};
+  nav.setScope(catalogAtlas(renderer,[custom]),true);nav.chooseCountry('ITA');nav.select();check(nav.regions[0].name==='Quiet Hills','new personal wine region rises to the top without geometry');
+  nav.chooseCountry('FRA');nav.search('Italy');check(!nav.exitsOnBack,'search back does not exit Atlas');nav.back();check(nav.exitsOnBack,'unfiltered country list retains exit behavior');
+  for(const state of ['opening','listening','transcribing'])validateGlassesPage(buildAtlasVoicePage(state,'Italy'));
+  result.textContent=JSON.stringify({passed:true,checks:checks.length,italy:countryReport.find(r=>r.country==='Italy'),france:countryReport.find(r=>r.country==='France'),bridgePeak:peak,microphoneCalls:calls},null,2);
+ }catch(error){result.textContent=JSON.stringify({passed:false,error:error.message},null,2);}
+};
+window.addEventListener('pagehide',()=>void pauseAtlasGlasses());
+</script></html>

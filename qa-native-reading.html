@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>sommNI native reading probe</title><pre id="result">Starting</pre><script type="module">
+import {waitForEvenAppBridge,CreateStartUpPageContainer,RebuildPageContainer,TextContainerProperty,TextContainerUpgrade} from '@evenrealities/even_hub_sdk';
+const bridge=await waitForEvenAppBridge();
+const page=new RebuildPageContainer({containerTotalNum:1,textObject:[new TextContainerProperty({containerID:5,containerName:'notes',xPosition:4,yPosition:4,width:568,height:280,content:'Initial reading',isEventCapture:1})]});
+const ready=await bridge.createStartUpPageContainer(new CreateStartUpPageContainer(page));console.log('[READING_PROBE] startup',ready);
+const results=[];
+for(const n of [500,999,1000,1100,1500,1900])for(const explicit of [false,true]){
+ const text=('Native scrolling test. '+n+' ').repeat(100).slice(0,n);const p=new TextContainerUpgrade({containerID:5,containerName:'notes',content:text,contentOffset:0,contentLength:explicit?text.length:0});
+ const ok=await bridge.textContainerUpgrade(p);results.push({n,explicit,ok});console.log('[READING_PROBE]',JSON.stringify(results.at(-1)));document.querySelector('#result').textContent=JSON.stringify(results,null,2);
+}
+const start='START OF FULL READING\n'+Array.from({length:18},(_,i)=>'Opening line '+i+' about the wine maker.').join('\n')+'\n';
+const tail='SECOND PART OF SAME READING\n'+Array.from({length:15},(_,i)=>'Continuing line '+i+' about the estate.').join('\n')+'\nEND OF FULL READING';
+page.textObject[0].content=start;await bridge.rebuildPageContainer(page);
+const append=await bridge.textContainerUpgrade(new TextContainerUpgrade({containerID:5,containerName:'notes',contentOffset:start.length,contentLength:tail.length,content:tail}));console.log('[READING_PROBE] append',JSON.stringify({start:start.length,tail:tail.length,append}));
+console.log('[READING_PROBE] complete');
+</script>

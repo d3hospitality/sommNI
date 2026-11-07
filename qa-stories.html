@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>sommNI · All history QA</title><h1>215 wines / sourced history navigation</h1><p>In-browser regression with a mock bridge. No microphone or external writes.</p><pre id="result">Running…</pre><script type="module">
+import {allCatalogWines,lookupWineById} from './src/identity.ts';
+import {storyWines,storyCards,wineHistoryCards,STORY_SOURCES} from './src/history/content.ts';
+import {storyPassages,buildStoryPage,storyWineMenu,buildStoryWineMenu,connectHistoryGlasses,setHistoryConnected,openHistoryOnGlasses,handleHistoryGlassesEvent,historyStatus} from './src/history/glasses.ts';
+import {validateGlassesPage} from './src/glasses-page.ts';
+import {imageIdle} from './src/image-utils.ts';
+const checks=[],check=(value,label)=>{if(!value)throw Error(label);checks.push(label)},wait=ms=>new Promise(r=>setTimeout(r,ms));
+const normal=text=>text.replace(/\s+/g,' ').trim();
+try {
+ const wines=storyWines();check(wines.length===215&&allCatalogWines().length===215,'215 wines covered');
+ check(storyCards('unknown','wine').length===0,'unknown IDs do not return another wine');
+ let frames=0,chapters=0;const metrics=[];
+ for(const w of wines){
+  check(JSON.stringify(storyCards(w.id,'wine'))===JSON.stringify(storyCards(w.legacyId,'wine')),'stable legacy identity: '+w.legacyId);
+  let wordCount=0;
+  for(const topic of ['region','wine','time']){
+   const cards=storyCards(w.id,topic);check(cards.length>0,w.legacyId+' '+topic+' is populated');
+   for(const [i,c] of cards.entries()){
+    check(!!STORY_SOURCES[c.source],c.id+' has source metadata');
+    const parts=storyPassages(c);const text=(c.date==='The wine in context'?'':c.date+' · ')+c.title+' '+c.cue+' '+c.detail;
+    check(normal(parts.join(' '))===normal(text),c.id+' complete text survives pagination');
+    for(const [part,p] of parts.entries()){
+     check(new TextEncoder().encode(p).length<1999,c.id+' whole chapter fits native scroll buffer');
+     validateGlassesPage(buildStoryPage(c,topic,i,cards.length,part));frames++;
+    }
+    if(topic!=='time')wordCount+=(c.cue+' '+c.detail).split(/\s+/).length;
+    chapters++;
+   }
+  }
+  metrics.push({id:w.id,legacyId:w.legacyId,words:wordCount});
+ }
+ const visited=[];for(let page=0;page<storyWineMenu().pageCount;page++){
+  const menu=storyWineMenu(page);validateGlassesPage(buildStoryWineMenu(page));
+  visited.push(...menu.rows.filter(r=>r.kind==='item').map(r=>wines[r.index].id));
+ }
+ check(visited.length===215&&new Set(visited).size===215,'all 215 selectable once across bounded menus');
+ check(lookupWineById('w94').type==='Sparkling'&&lookupWineById('w122').type==='Dessert','corrected styles retain legacy lookup');
+ check(lookupWineById('w55').wine.grape==='Syrah'&&lookupWineById('w176').wine.grape==='Chardonnay'&&lookupWineById('w187').wine.grape==='Pinot Noir'&&lookupWineById('w209').wine.grape==='Xynisteri','confirmed grape corrections present');
+ const shown=[],exits=[];const bridge={textContainerUpgrade:async()=>true,rebuildPageContainer:async p=>{validateGlassesPage(p);shown.push(p);return true},updateImageRawData:async()=> 'success',shutDownPageContainer:async x=>{exits.push(x);return true}};
+ connectHistoryGlasses(bridge);setHistoryConnected(true);
+ const last=()=>shown.at(-1),send=async event=>{await wait(370);handleHistoryGlassesEvent(event);await imageIdle();for(let attempt=0;attempt<100&&historyStatus().busy;attempt++)await wait(50);check(!historyStatus().busy,'navigation settled');};
+ await openHistoryOnGlasses();await send({listEvent:{currentSelectItemIndex:0}});for(let page=0;page<11;page++){
+  const menu=storyWineMenu(page);await send({listEvent:{currentSelectItemIndex:menu.rows.findIndex(r=>r.kind==='more')}});
+  check(last().textObject[0].content.includes((page+2)+'/12'),'next menu '+(page+2));
+ }
+ const finalMenu=storyWineMenu(11),finalRow=finalMenu.rows.findLastIndex(r=>r.kind==='item');
+ await send({listEvent:{currentSelectItemIndex:finalRow}});check(last().listObject[0].itemContainer.itemCount===wineHistoryCards(wines.at(-1).id).length,'last wine opens its sourced chapters');
+ await send({listEvent:{currentSelectItemIndex:0}});const first=last().textObject[1].content;
+ await send({textEvent:{eventType:2}});check(last().textObject[1].content===first,'scroll preserves the full native chapter');
+ await send({textEvent:{eventType:1}});check(last().textObject[1].content===first,'scroll back restores the preceding passage');
+ await send({sysEvent:{eventType:3}});await send({sysEvent:{eventType:3}});check(last().textObject[0].content.includes('12/12'),'back preserves last wine menu');
+ setHistoryConnected(false);await openHistoryOnGlasses(wines[0].id);check(historyStatus().message.includes('Connect'),'disconnected request is handled');setHistoryConnected(true);
+ await openHistoryOnGlasses();await send({sysEvent:{eventType:3}});check(last().listObject?.[0].containerName==='home-list'&&exits.length===0,'stories return to Home without closing app');
+ document.querySelector('#result').textContent=JSON.stringify({passed:checks.length,wines:215,chapters,frames,menuPages:12,minimumWords:Math.min(...metrics.map(x=>x.words)),maximumWords:Math.max(...metrics.map(x=>x.words)),metrics,checks},null,2);
+}catch(error){document.querySelector('#result').textContent=JSON.stringify({error:String(error),stack:error.stack,passed:checks.length},null,2)}
+document.documentElement.dataset.complete='true';
+</script></html>

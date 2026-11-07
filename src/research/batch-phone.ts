@@ -1,0 +1,57 @@
+import { mountMenuImport } from './menu-import';
+import './menu-import.css';
+import { WineBatch, batchQueries, type BatchRow } from './batch';
+import { artworkOwner } from '../artwork-store';
+import { researchAction, escape } from './client';
+import { prepareBottleArtwork } from './bottle-jobs';
+import { bottleIdentity, inlineBottle } from './bottles';
+import { finishWineArtwork, shareWineControl } from '../wine-contributions';
+import { referenceNotes } from '../reference-notes';
+import { highlightArrival } from './arrival';
+
+export function mountBatchResearch(host:HTMLElement){
+ host.innerHTML=`<div class="batch-input"><div data-menu-import></div><form class="batch-form"><label>Or enter one wine per line<textarea name="wines" rows="4" maxlength="80200" required placeholder="Orin Swift Machete 2022\nChâteau Montelena Chardonnay 2023\nTignanello 2021"></textarea></label><p class="depth-caption">Up to 200 wines. We’ll research the details and prepare real bottle photos. Uncheck anything you don’t want; nothing saves until you choose Save checked.</p><button type="submit" class="wl-primary">Find these bottles →</button></form></div><section class="batch-review" hidden aria-label="Review multiple wines"><div class="batch-toolbar"><label class="research-check"><input type="checkbox" data-all checked> Check all</label><button type="button" data-clear class="wl-text-button">Clear batch</button></div><p data-status role="status" aria-live="polite"></p><div class="batch-rows"></div><div class="batch-footer"><button type="button" data-save class="wl-primary" disabled>Save checked</button><button type="button" data-library class="wl-text-button">Open Winebrary →</button></div>${shareWineControl('batch-share')}</section><p data-error role="alert"></p>`;
+ const form=host.querySelector<HTMLFormElement>('.batch-form')!,review=host.querySelector<HTMLElement>('.batch-review')!,rows=host.querySelector<HTMLElement>('.batch-rows')!,save=host.querySelector<HTMLButtonElement>('[data-save]')!,all=host.querySelector<HTMLInputElement>('[data-all]')!,clear=host.querySelector<HTMLButtonElement>('[data-clear]')!,error=host.querySelector<HTMLElement>('[data-error]')!;
+ let batch:WineBatch|undefined;
+ const input=host.querySelector<HTMLElement>('.batch-input')!;
+ const resetMenu=mountMenuImport(host.querySelector<HTMLElement>('[data-menu-import]')!,startBatch);
+ function rowContent(row:BatchRow){
+  const w=row.draft?.result;
+  return `<label class="batch-select"><input type="checkbox" data-select="${row.id}" ${row.selected?'checked':''} ${['saving','saved','duplicate'].includes(row.state)?'disabled':''} aria-label="Keep ${escape(w?.wine_name||row.query)}"><span class="batch-photo">${row.bottle?`<img src="${escape(row.bottle.url)}" alt="${escape(w?.wine_name)} bottle photograph">`:'<span>Finding<br>bottle</span>'}</span></label><div class="batch-copy"><h3>${escape(w?.wine_name||row.query)}</h3>${w?`<p>${escape([w.producer,w.vintage_state==='year'?w.vintage:w.vintage_state==='non_vintage'?'Non-vintage':'Year unknown'].filter(Boolean).join(' · '))}</p><p class="depth-caption">${escape([w.region,w.country,w.grape].filter(Boolean).join(' · '))}</p>`:''}<p class="batch-state">${escape(!row.selected&&!['saved','duplicate'].includes(row.state)?'Skipped · check to include':row.message)}</p>${row.imageMessage?`<p class="depth-caption">${escape(row.imageMessage)}</p>`:''}${row.state==='error'?`<button type="button" data-retry="${row.id}" class="wl-text-button">Retry this wine</button>`:''}${row.artwork==='error'&&row.state==='ready'?`<button type="button" data-photo-retry="${row.id}" class="wl-text-button">Retry bottle photo</button>`:''}${w?`<details><summary>Notes</summary><p class="research-pre">${escape(w.uncertainty||'AI-assisted reference details. Check the identity and vintage before saving.')}</p><p class="research-pre">${escape(referenceNotes(w.tasting_notes)||'No reference notes returned.')}</p></details>`:''}</div>`;
+ }
+ function paint(row?:BatchRow){
+  if(!batch)return;
+  if(!rows.children.length){for(const r of batch.rows){const node=document.createElement('article');node.dataset.row=String(r.id);node.className='batch-row';node.innerHTML=rowContent(r);rows.append(node);}}
+  if(row){const node=rows.querySelector<HTMLElement>(`[data-row="${row.id}"]`)!;const open=node.querySelector('details')?.open;const focused=node.contains(document.activeElement)?(document.activeElement as HTMLElement).getAttribute('data-select'):null;node.innerHTML=rowContent(row);node.dataset.state=row.state;node.dataset.selected=String(row.selected);if(open&&node.querySelector('details'))node.querySelector('details')!.open=true;if(focused!==null)node.querySelector<HTMLInputElement>('[data-select]')?.focus({preventScroll:true});if(row.state==='ready')highlightArrival(node);}
+  const ready=batch.rows.filter(r=>r.selected&&r.state==='ready').length,saved=batch.rows.filter(r=>r.state==='saved').length,active=batch.rows.filter(r=>r.selected&&['queued','researching'].includes(r.state)).length;
+  host.querySelector('[data-status]')!.textContent=`${ready} checked & ready · ${saved} saved · ${active} still finding`;
+  save.textContent=batch.saving?'Saving checked wines…':`Save checked${ready?' ('+ready+')':''}`;save.disabled=batch.saving||!ready;clear.disabled=batch.saving;
+  const editable=batch.rows.filter(r=>!['saving','saved','duplicate'].includes(r.state));all.checked=editable.length>0&&editable.every(r=>r.selected);all.indeterminate=editable.some(r=>r.selected)&&!all.checked;all.disabled=!editable.length;
+ }
+ function reset(){resetMenu();batch?.dispose();batch=undefined;rows.innerHTML='';review.hidden=true;input.hidden=false;error.textContent='';}
+ function startBatch(queries:string[]){error.textContent='';try{
+  const scope=artworkOwner();if(!scope)throw Error('Your device library is still opening. Try again in a moment.');
+  const current=()=>artworkOwner()===scope;
+  batch?.dispose();
+  batch=new WineBatch({current,changed:paint,
+   research:async(query,signal)=>(await researchAction({action:'research',query,request_id:crypto.randomUUID()},signal)).draft,
+   artwork:async wine=>prepareBottleArtwork(wine,scope),
+   save:async(row,signal)=>{
+    const check=()=>{signal.throwIfAborted();if(!current())throw Error('Account changed. Start again in the current Winebrary.');};check();
+    const result=await researchAction({action:'confirm',draft_id:row.draft.id,confirmed:true,review:row.draft.result},signal);check();
+    let warning='';
+    if(row.bottle&&!result.item.image_url){try{const photo=await inlineBottle(row.bottle);check();const attached=await researchAction({action:'attach_bottle',collection_id:result.item.id,expected:bottleIdentity(result.item),only_if_missing:true,photo,provenance:row.bottle.provenance},signal);check();result.item=attached.item;}catch(e){check();warning=' Photo attachment will retry.';}}
+    const message=await finishWineArtwork(result.item,scope,true);check();
+    window.dispatchEvent(new CustomEvent('winelens-research-saved',{detail:{id:result.item.id}}));
+    return (result.duplicate?'Already in Winebrary; existing notes and photo kept. ':'')+message+warning;
+   }});
+  rows.innerHTML='';input.hidden=true;review.hidden=false;batch.start(queries);
+ }catch(e){error.textContent=(e as Error).message;}}
+ form.onsubmit=event=>{event.preventDefault();try{startBatch(batchQueries(String(new FormData(form).get('wines')||'')));}catch(e){error.textContent=(e as Error).message;}};
+ rows.addEventListener('change',event=>{const input=event.target as HTMLInputElement;if(input.matches('[data-select]'))batch?.select(Number(input.dataset.select),input.checked);});
+ rows.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('button');if(button?.dataset.retry!==undefined)batch?.retry(Number(button.dataset.retry));if(button?.dataset.photoRetry!==undefined)batch?.retryArtwork(Number(button.dataset.photoRetry));});
+ all.onchange=()=>{const selected=all.checked;batch?.rows.forEach(r=>batch?.select(r.id,selected));};
+ clear.onclick=()=>{if(!batch?.saving)reset();};save.onclick=()=>void batch?.saveSelected();
+ host.querySelector<HTMLButtonElement>('[data-library]')!.onclick=()=>document.querySelector<HTMLButtonElement>('.tab[data-tab="winebrary"]')?.click();
+ return reset;
+}

@@ -1,5 +1,6 @@
+import { bottleImageUrl } from './bottle-assets';
 // ═══════════════════════════════════════════════════════════════════
-// wineLENS — catalog wine identity (PRD I-01)
+// sommNI — catalog wine identity (PRD I-01)
 //
 // Canonical IDs (`wl_…`) are immutable and stored in data/catalog-identity.json.
 // They are matched by catalog key "Type|Country|Name", never by position, so
@@ -12,9 +13,9 @@
 // Unknown IDs resolve to null. There is no fallback wine.
 // ═══════════════════════════════════════════════════════════════════
 import identity from './data/catalog-identity.json';
-import { WINE_TYPES, COUNTRIES, WINES, type Wine, type WineType } from './constants';
+import { WINE_TYPES, COUNTRIES, WINES, type Wine, type WineType, updateCatalogCount } from './constants';
 
-export interface CatalogWine { id: string; legacyId: string | null; wine: Wine; type: WineType; country: string }
+export interface CatalogWine { id: string; legacyId: string | null; wine: Wine; type: WineType; country: string; imageUrl?:string; community?:boolean; vintages?:string[]; referenceUrl?:string }
 interface IdentityEntry { id: string; key: string; legacy_id: string | null; status: string }
 
 const entries = (identity as { entries: IdentityEntry[] }).entries;
@@ -58,3 +59,26 @@ export function assetIdFor(id: string | null | undefined): string | null {
 }
 
 export function allCatalogWines(): CatalogWine[] { return [...index().values()]; }
+
+const sharedEntries=new Map<string,CatalogWine>();
+export function registerSharedWines(rows:any[]){
+ const current=index();
+ for(const row of rows){
+  if(!/^community-[a-f0-9-]{36}$/.test(row.id)||typeof row.wine_name!=='string')continue;
+  const previous=sharedEntries.get(row.id);
+  if(previous){const wines=WINES[previous.type]?.[previous.country];const i=wines?.indexOf(previous.wine)??-1;if(i>=0)wines.splice(i,1);byKey.delete(`${previous.type}|${previous.country}|${previous.wine.name}`);}
+  const type=WINE_TYPES.find(t=>t.toLowerCase()===String(row.color).toLowerCase().replace('é','e'))||'Unclassified';
+  const country=/^(usa|us|united states of america)$/i.test(row.country)?'United States':row.country||'Country to confirm';
+  const name=[row.wine_name,row.producer].filter(Boolean).join(' – ');
+  const wine:Wine={name,grape:row.color?.toLowerCase()==='sake'?(row.rice_variety||'Rice to confirm'):(row.grape||'Grape to confirm'),style:[row.sake_classification,row.sake_style].filter(Boolean).join(' · ')||'Community supplied',region:row.region||country,appearance:'',nose:'',palate:row.tasting_notes||'Reference tasting notes have not been supplied yet.',finish:'',anecdote:''};
+  const entry:CatalogWine={id:row.id,legacyId:null,wine,type,country,imageUrl:row.image_url,community:true,vintages:row.vintages,referenceUrl:row.reference_url};
+  sharedEntries.set(row.id,entry);current.set(row.id,entry);
+  if(!COUNTRIES[type].includes(country))COUNTRIES[type].push(country);
+  (WINES[type]??={})[country]??=[];WINES[type][country].push(wine);
+  const key=`${type}|${country}|${name}`;byKey.set(key,{id:row.id,key,legacy_id:null,status:'active'});
+ }
+ updateCatalogCount(current.size);
+}
+export function catalogPhoto(id:string|null|undefined,base='./'):string|null{
+ const entry=lookupWineById(id);return entry?.legacyId?bottleImageUrl(base,entry.legacyId):entry?.imageUrl||null;
+}

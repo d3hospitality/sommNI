@@ -1,3 +1,9 @@
+# Current Even Hub beta: sommNI 3.7.39
+
+See [release notes](docs/releases/3.7.39.md) for the current companion build, checks and backend status. Use Node.js 24 and `npm ci`; `npm run pack:beta` produces the Even Hub package.
+
+---
+
 # ソムニ sommNI
 
 <p align="center">

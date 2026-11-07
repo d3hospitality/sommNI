@@ -1,0 +1,34 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · wine-specific anecdotes</title>
+<style>body{margin:0;background:#fbf7ef;color:#273528;font:16px/1.7 system-ui}main{max-width:900px;margin:auto;padding:32px}h1{font:46px/1.1 Georgia,serif}select,button{font:inherit;padding:12px;border:1px solid #bfb9a7;border-radius:8px;background:transparent;color:inherit}button{cursor:pointer}pre{white-space:pre-wrap;background:#e8eee2;padding:20px;font:13px/1.6 monospace}#story{white-space:pre-wrap;max-width:65ch}a{color:#75394b}.meta{font-size:13px;color:#61705e}</style>
+<main><p class="meta">ソムニ / SOURCED WINE ANECDOTES</p><h1>Every bottle has a story.</h1><label>Choose a wine <select id="wine"></select></label> <button id="open">Open tasting notes</button><article><h2 id="title"></h2><p id="scope" class="meta"></p><p id="story"></p><div id="sources"></div></article><h2>Catalog verification</h2><pre id="result">Running…</pre></main>
+<script type="module">
+import records from './src/data/catalog-anecdotes.json';
+import {getCatalogAnecdote,installCatalogAnecdotes,anecdoteSourcesHtml} from './src/catalog-anecdotes.ts';
+import {allCatalogWines,lookupWineById} from './src/identity.ts';
+import {buildTastingNotesPage} from './src/pages.ts';
+import {readingText} from './src/reading/document.ts';
+import {libraryReading} from './src/winebrary-glasses.ts';
+import {openWineNotes} from './src/wine-notes.ts';
+import {wineNotesText} from './src/research/client.ts';
+const wines=allCatalogWines(),select=document.querySelector('#wine'),checks=[];
+const check=(ok,message)=>{if(!ok)throw Error(message);checks.push(message)},bytes=s=>new TextEncoder().encode(s).length;
+for(const wine of wines){const option=document.createElement('option');option.value=wine.id;option.textContent=wine.wine.name;select.append(option);}
+select.value=lookupWineById('w2').id;
+function show(){const record=getCatalogAnecdote(select.value);document.querySelector('#title').textContent=record?.title||'Research pending';document.querySelector('#scope').textContent=record?`${record.scope==='producer'?'Producer history':'Wine history'} · AI-researched ${record.generated_at.slice(0,10)}`:'';document.querySelector('#story').textContent=record?.anecdote||'';document.querySelector('#sources').innerHTML=record?anecdoteSourcesHtml(record):'';}
+select.onchange=show;document.querySelector('#open').onclick=()=>openWineNotes(select.value);show();
+try{
+ check(records.length===215,'All 215 catalog wines are bundled offline');check(new Set(records.map(r=>r.anecdote)).size===215,'Every anecdote is distinct');
+ let maxNotes=0,maxLibrary=0;
+ for(const wine of wines){const record=getCatalogAnecdote(wine.id);check(!!record,wine.legacyId+' canonical record exists');check(getCatalogAnecdote(wine.legacyId)===record,wine.legacyId+' stable legacy mapping');check(record.anecdote===wine.wine.anecdote,wine.legacyId+' catalog uses researched anecdote');check(record.anecdote.split('\n\n').length===2,wine.legacyId+' two readable paragraphs');check(record.sources.length>0&&record.sources.every(s=>new URL(s.url).protocol==='https:'),wine.legacyId+' real HTTPS source links');
+ const notes=readingText(buildTastingNotesPage(wine.wine,wine.id),5);check(notes.includes(record.anecdote),wine.legacyId+' complete anecdote on G2');check(bytes(notes)<=1999,wine.legacyId+' native text buffer fits');maxNotes=Math.max(maxNotes,bytes(notes));
+ const saved={wine_id:wine.id,wine_name:wine.wine.name,notes:'My own impression stays unchanged.',metadata:{}};const text=libraryReading(saved);check(text.includes(record.anecdote)&&text.includes(saved.notes),wine.legacyId+' saved wine has story and personal note');maxLibrary=Math.max(maxLibrary,bytes(text));const exported=wineNotesText(saved);check(exported.includes(record.anecdote)&&exported.includes(saved.notes)&&record.sources.every(s=>exported.includes(s.url)),wine.legacyId+' export includes anecdote, personal note and citations');
+ }
+ const sample=records[0],before=getCatalogAnecdote(sample.wine_id).anecdote;
+ check(installCatalogAnecdotes([{...sample,sources:[{title:'Bad',url:'javascript:alert(1)'}]}])===0,'Unsafe citation URL rejected');
+ check(installCatalogAnecdotes([{...sample,wine_id:'not-a-catalog-wine'}])===0,'Unrecognized identity rejected');
+ check(installCatalogAnecdotes([{...sample,generated_at:'2000-01-01T00:00:00Z',anecdote:'Stale content. '.repeat(25)}])===0,'Older cloud revision cannot replace bundled content');
+ check(getCatalogAnecdote(sample.wine_id).anecdote===before,'Rejected updates preserve offline notes');
+ document.querySelector('#result').textContent=JSON.stringify({passed:checks.length,wines:wines.length,maxNotesBytes:maxNotes,maxLibraryBytes:maxLibrary,wineSpecific:records.filter(r=>r.scope==='wine').length,producerContext:records.filter(r=>r.scope==='producer').length},null,2);
+}catch(error){document.querySelector('#result').textContent=JSON.stringify({error:String(error),passed:checks.length},null,2)}
+document.documentElement.dataset.complete='true';
+</script></html>

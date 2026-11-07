@@ -1,0 +1,48 @@
+<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><title>Wine context regression checks</title>
+<style>body{background:#101010;color:#eee;font:15px system-ui;padding:20px}button{padding:14px}pre{white-space:pre-wrap}main{max-width:650px}</style>
+<button id="run">Run companion / glasses checks</button><pre id="result">Ready. Uses a mock G2 bridge, never writes account data.</pre><main></main>
+<script type="module">
+import * as C from './src/wine-context';
+import * as A from './src/atlas-app';
+import * as G from './src/winebrary-glasses';
+import * as I from './src/identity';
+import {imageIdle} from './src/image-utils';
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+document.querySelector('#run').onclick=async()=>{
+ const result=document.querySelector('#result'),checks=[];const check=(ok,label)=>{if(!ok)throw Error(label);checks.push('PASS '+label);result.textContent=checks.join('\n');};
+ try{
+  C.initGlassesContext();
+  let imageTransfers=0;
+  const bridge={rebuildPageContainer:async()=>true,updateImageRawData:async()=>{imageTransfers++;return 'success'},textContainerUpgrade:async()=>true,getLocalStorage:async()=>'',setLocalStorage:async()=>true};
+  const base=new URL('./',location.href).href;
+  const wine=I.allCatalogWines().find(w=>w.country==='Italy'&&w.wine.region==='Tuscany, IT');
+  const personal={id:'qa-personal',wine_name:wine.wine.name,producer:null,vintage:2020,notes:'QA only',wine_id:wine.id,region:wine.wine.region,metadata:{country:'Italy',color:'Red'}};
+  check(C.libraryPhoto(personal)===I.catalogPhoto(wine.id,base),'Saved catalog wine without its own image gets the catalog photograph');
+  const photo='https://example.com/approved-photo.png';check(C.libraryPhoto({...personal,image_url:photo})===photo,'Approved personal artwork takes precedence');
+  check(!C.libraryPhoto({...personal,wine_id:undefined}),'Unknown wines never borrow another bottle');
+  G.connectWinebraryGlasses(bridge,base);G.setWinebraryDeviceConnected(true);G.setLibrarySource(()=>({userId:'qa-only',loading:false,error:'',items:[personal]}));
+  A.connectAtlasGlasses(bridge,base);
+  await A.openAtlasOnGlasses('ITA');await delay(500);
+  check(C.glassesContext()?.country==='Italy','Opening Italy on glasses updates companion origin');
+  A.handleAtlasGlassesEvent({textEvent:{eventType:0}});await delay(500);
+  A.handleAtlasGlassesEvent({textEvent:{eventType:0}});await delay(500);
+  check(A.atlasStatus().mode==='detail','Glasses reach the regional wine list');
+  A.handleAtlasGlassesEvent({textEvent:{eventType:2}});await delay(600);
+  check(!!C.glassesContext()?.photo,'Scrolling from regional history to a bottle updates companion photo');
+  check(!!document.querySelector('.glasses-context-panel:not([hidden]) img'),'Matching phone panel is visible');
+  A.handleAtlasGlassesEvent({textEvent:{eventType:3}});await delay(500);
+  check(!C.glassesContext()?.photo,'Back to region list clears the previous bottle');
+  await G.showWineOnGlasses(personal);await delay(600);
+  check(C.glassesContext()?.libraryId===personal.id,'Personal wine sent to glasses is mirrored on phone');
+  check(!!C.glassesContext()?.photo,'Personal glasses view uses catalog photo fallback');
+  await imageIdle();const before=imageTransfers;
+  const update=C.mountWineContext(document.createElement('div'));
+  const host=document.createElement('section');document.querySelector('main').append(host);await C.mountWineContext(host)(C.catalogContext(wine));await delay(100);
+  check(imageTransfers===before,'Drawing phone map sends zero additional G2 image transfers');
+  check(host.querySelector('canvas').getAttribute('aria-label').includes('Tuscany'),'Phone map resolves Tuscany within Italy');
+  await G.clearPrivateGlasses();check(!C.glassesContext(),'Clearing private glasses clears companion selection');
+  check(document.querySelector('.glasses-context-panel').hidden,'Private preview hidden after account reset');
+  result.textContent+='\nALL CHECKS PASSED';
+ }catch(error){result.textContent+='\nFAIL '+error.message;console.error(error);}
+};
+</script>

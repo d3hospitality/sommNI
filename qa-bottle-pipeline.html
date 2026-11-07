@@ -1,0 +1,42 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · Found wine bottle pipeline</title><style>
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#0c100b;color:#e9e9de}body{max-width:1080px;margin:0 auto;padding:38px 28px}header small{color:#b7a579;letter-spacing:3px}h1{font-size:38px;letter-spacing:-1px;margin-bottom:10px}p{color:#aeb6a7;line-height:1.55}button{border:1px solid #888361;border-radius:8px;padding:13px 18px;background:#bdb78c;color:#11170e;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:30px 0}.card{padding:20px;background:#141a12;border:1px solid #343e2d;border-radius:16px}.card h2{font-size:14px;font-weight:500;color:#b6bdac}.stage{height:340px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#0a0d08}.stage.photo{background:#eee}.stage img{width:100%;height:100%;object-fit:contain}.stage canvas{height:288px;width:120px;image-rendering:pixelated}.card small{display:block;color:#8f9a86;margin-top:16px;line-height:1.5}pre{white-space:pre-wrap;font-size:12px;color:#aabf9a}#status{min-height:24px}a{color:#c6b682}@media(max-width:700px){.grid{grid-template-columns:1fr}h1{font-size:28px}}</style>
+<header><small>ソムニ / SOMMNI · BOTTLE PIPELINE</small><h1>A found wine. The same real bottle.</h1><p>Original photograph → transparent cutout → the existing G2 bottle renderer.<br>Real label pixels and proportions; no invented artwork.</p></header>
+<div class="grid"><section class="card"><h2>01 / REFERENCE PHOTOGRAPH</h2><div class="stage photo"><img src="./.qa-bottle/reference.webp" alt="Original Vasse Felix Cabernet Sauvignon photograph"></div><small>Full bottle, including neck and base. The source label and pictured vintage remain unchanged.</small></section><section class="card"><h2>02 / TRANSPARENT BOTTLE</h2><div class="stage"><img id="cutout" src="./.qa-bottle/cutout.png" alt="Transparent photographic bottle cutout"></div><small>384 × 768 PNG · photographic extraction<br>Compact U2Net · hosted on Supabase.</small></section><section class="card"><h2>03 / G2 BOTTLE RASTER</h2><div class="stage"><canvas id="g2" width="100" height="240"></canvas></div><small>Actual app renderer · 16 grayscale levels<br>Quiet floor stage, preserved dark glass.</small></section></div>
+<button id="verify">Verify cutout, reuse and Winebrary save</button> <a href="./#home">Open sommNI →</a><p id="status" role="status">Ready. This check uses a temporary test wine and removes only that test record afterwards.</p><pre id="result"></pre>
+<script type="module">
+import {stageCanvas,toGreenLevels} from './src/bottle-raster.ts';
+import {catalogBottleCandidates,createBottleCutout,photoData,bottleIdentity} from './src/research/bottles.ts';
+import {betaResearch} from './src/beta/client.ts';
+import {localStore} from './src/beta/store.ts';
+const output=document.querySelector('#result'),status=document.querySelector('#status');
+async function glasses(url){const stage=await stageCanvas(url,100,240),data=stage.getContext('2d').getImageData(0,0,100,240),gray=toGreenLevels(data.data,100);for(let i=0;i<gray.length;i++){data.data[i*4]=gray[i]*.62;data.data[i*4+1]=gray[i];data.data[i*4+2]=gray[i]*.4;data.data[i*4+3]=255;}document.querySelector('#g2').getContext('2d').putImageData(data,0,0);return gray;}
+await glasses('./.qa-bottle/cutout.png');
+document.querySelector('#verify').onclick=async()=>{
+ const button=document.querySelector('#verify');button.disabled=true;const checks=[];const id=crypto.randomUUID();
+ const assert=(condition,name)=>{if(!condition)throw Error(name);checks.push(name)};
+ try{
+  status.textContent='Checking Supabase photo finishing, cached reuse and Winebrary save…';
+  assert(catalogBottleCandidates({wine_name:'Cabernet Sauvignon',producer:'Vasse Felix'})[0]?.legacyId==='w1','exact producer + cuvée resolves catalog photograph');
+  assert(catalogBottleCandidates({wine_name:'Cabernet Sauvignon',producer:'Another Estate'}).length===0,'another producer cannot inherit a similar bottle');
+  assert(catalogBottleCandidates({wine_name:'Vasse Felix',producer:'Vasse Felix'}).length===0,'producer-only query cannot inherit a cuvée');
+  const photo=await photoData(new File([await(await fetch('./.qa-bottle/reference.webp')).blob()],'reference.webp',{type:'image/webp'}));
+  const bottle=await createBottleCutout(photo),again=await createBottleCutout(photo);
+  assert(bottle.url===again.url,'repeat reference returns identical cached photographic cutout');
+  assert(bottle.provenance.segmentation==='u2netp-browser-filled-silhouette','on-device U2Net outline + Supabase finishing; no generated label art');
+  document.querySelector('#cutout').src=bottle.url;
+  const bitmap=await createImageBitmap(await(await fetch(bottle.url)).blob());const c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;c.getContext('2d').drawImage(bitmap,0,0);bitmap.close();const rgba=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+  assert(c.width===384&&c.height===768,'catalog-sized transparent web master');
+  assert(rgba[3]===0&&rgba[(c.width*c.height-1)*4+3]===0,'background has actual PNG transparency');
+  const gray=await glasses(bottle.url);assert(gray.some(n=>n>0)&&gray.every(n=>n%17===0),'existing G2 rasterizer yields visible 16-level artwork');
+  const wine={id,wine_name:'Temporary cutout check '+id,producer:'QA only',vintage:2021,region:'Test',notes:'Keep these personal notes',metadata:{vintage_state:'year',tasting_notes:'Keep these reference notes'},updated_at:new Date().toISOString()};
+  await localStore('wines','put',wine);
+  const attached=await betaResearch({action:'attach_bottle',collection_id:id,expected:bottleIdentity(wine),photo:bottle.url,provenance:bottle.provenance});
+  const saved=await localStore('wines','get',id);
+  assert(saved.image_url===bottle.url&&attached.item.image_url===bottle.url,'cutout persists and reloads with the Winebrary item');
+  assert(saved.notes===wine.notes&&saved.metadata.tasting_notes===wine.metadata.tasting_notes,'attaching artwork preserves both sets of notes');
+  assert(saved.metadata.bottle_provenance.source_sha256===bottle.provenance.source_sha256,'source provenance persists with the wine');
+  let rejected=false;try{await betaResearch({action:'attach_bottle',collection_id:id,expected:{...bottleIdentity(wine),vintage:2015},photo:bottle.url});}catch{rejected=true}assert(rejected,'changed vintage prevents stale artwork attachment');
+  output.textContent=JSON.stringify({passed:true,checks:checks.length,details:checks},null,2);status.textContent='Verified: cutout → cached reuse → Winebrary → G2. Temporary test wine removed.';
+ }catch(error){output.textContent=JSON.stringify({passed:false,checks,error:error.message},null,2);status.textContent=error.message;}finally{await localStore('wines','delete',id);button.disabled=false;}
+};
+</script></html>

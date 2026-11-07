@@ -1,0 +1,23 @@
+#wine-research .menu-import{max-width:680px;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--line,#393b30)}
+#wine-research .menu-import h3{font-size:17px;margin:0 0 8px}
+#wine-research .menu-import form{display:grid;gap:10px}
+#wine-research .menu-import label{font-size:12px;display:grid;gap:6px}
+#wine-research .menu-import input[type=url]{width:100%;min-width:0;box-sizing:border-box;font-size:13px}
+#wine-research .menu-upload{position:relative;display:flex;align-items:center;gap:12px;border:1px dashed var(--gold,#ddc976);border-radius:12px;padding:15px;color:var(--gold,#ddc976);font-size:13px;background:rgba(221,201,118,.04)}
+#wine-research .menu-upload>span:first-child{font-size:26px;font-weight:300}
+#wine-research .menu-upload small{display:block;color:var(--muted,#aaa);font-size:10px;margin-top:4px}
+#wine-research .menu-upload input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+#wine-research .menu-upload:focus-within{outline:2px solid var(--gold,#ddc976);outline-offset:3px}
+#wine-research [data-menu-status]{font-size:12px;line-height:1.5}
+#wine-research [data-file-name]:empty,#wine-research [data-menu-status]:empty{display:none}
+#wine-research .menu-entry{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:start;gap:8px;padding:12px 0;border-top:1px solid var(--line,#393b30)}
+#wine-research .menu-entry>input{margin-top:12px;accent-color:var(--gold,#ddc976)}
+#wine-research .menu-entry textarea[data-query]{width:100%;box-sizing:border-box;font-size:13px;padding:9px 10px;min-width:0;min-height:56px;line-height:1.4;resize:vertical}
+#wine-research .menu-entry small,#wine-research .menu-entry summary{font-size:10px;color:var(--muted,#aaa);line-height:1.6}
+#wine-research .menu-entry details{margin-top:4px}
+#wine-research .menu-entry details p{font-size:12px;line-height:1.5;margin:6px 0}
+#wine-research .menu-review-reason{font-size:11px;line-height:1.5;color:var(--gold,#ddc976);margin:5px 0}
+#wine-research .menu-entry.needs-review{border-left:2px solid var(--gold,#ddc976);padding-left:8px}
+#wine-research [data-menu-research]{margin-top:12px;width:100%}
+
+#wine-research .menu-reading-notes{margin:8px 0 14px;font-size:11px;color:var(--muted,#aaa)}

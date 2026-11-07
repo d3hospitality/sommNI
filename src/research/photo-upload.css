@@ -1,0 +1,16 @@
+.sommni-photo-upload{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch;margin:12px 0;min-width:0}
+.sommni-photo-upload .sommni-photo-tile,.sommni-photo-upload .sommni-photo-camera{position:relative;display:flex;align-items:center;gap:12px;margin:0!important;padding:14px!important;min-height:72px;min-width:0;border:1px solid var(--wl-border,#494536);border-radius:10px;background:rgba(230,205,137,.035);color:var(--wl-text,#eee9dc);cursor:pointer;overflow:hidden}
+.sommni-photo-tile svg{width:28px;height:54px;flex:none;color:var(--wl-accent,#dbc477)}
+.sommni-photo-tile strong{display:block;font-family:inherit;font-weight:500;font-size:13px;line-height:1.4;letter-spacing:0}
+.sommni-photo-tile small{display:block;font-size:11px;line-height:1.4;color:var(--wl-muted,#a6a397);margin-top:4px}
+.sommni-photo-upload .sommni-photo-camera{font-size:12px;justify-content:center;flex-direction:column;gap:4px;padding:12px!important}
+.sommni-photo-camera>span{font-size:23px;line-height:1}
+.sommni-photo-upload input[type=file]{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;margin:0!important;padding:0!important;cursor:pointer;z-index:1}
+.sommni-photo-tile:focus-within,.sommni-photo-camera:focus-within{outline:2px solid var(--wl-accent,#dbc477);outline-offset:3px}
+.sommni-photo-tile:hover,.sommni-photo-camera:hover{border-color:var(--wl-accent,#dbc477);background:rgba(230,205,137,.08)}
+.sommni-photo-tile:has(input:disabled),.sommni-photo-camera:has(input:disabled){opacity:.5;cursor:wait}
+.sommni-photo-filename{grid-column:1/-1;font-size:11px;color:#bcb49c;overflow-wrap:anywhere;line-height:1.4}.sommni-photo-filename:empty{display:none}
+#wine-research .research-input-row{display:block}#wine-research .history-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#wine-research .history-tabs button{min-width:0;padding:10px 6px;line-height:1.35;white-space:normal;min-height:44px}
+#wine-research .research-fields{gap:12px}#wine-research .research-extra{margin:14px 0}#wine-research #research-submit,#wine-research #research-confirm>button[type=submit]{width:100%;min-height:46px}
+.bottle-studio-tools{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.bottle-studio-tools .sommni-photo-upload{margin:0}.bottle-studio-tools>button{justify-self:start;min-height:44px}.bottle-studio-save>button{flex:1;min-height:44px}
+@media(max-width:360px){.sommni-photo-upload{grid-template-columns:minmax(0,1fr)}.sommni-photo-upload .sommni-photo-camera{flex-direction:row;min-height:44px}.sommni-photo-tile strong{font-size:12px}}

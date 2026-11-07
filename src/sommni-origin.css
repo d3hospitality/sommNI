@@ -1,0 +1,210 @@
+/* sommNI × D3 Hospitality. Neutral charcoal, warm yellow and editorial type.
+   Web companion only: bottle pixels and G2 rendering stay independent. */
+:root{color-scheme:dark;--ivory:#0b0b0c;--bg:#0b0b0c;--bg-card:#0b0b0c;--bg-card-hover:#151514;--ink:#efe9dd;--text:var(--ink);--accent:#e4b84d;--gold:var(--accent);--muted:#aaa399;--text-dim:var(--muted);--gold-dim:#e4b84d;--line:#383630;--border:var(--line);--rose:#151514;--sage:#151514;--butter:#151514;--gold-dark:#383630;--radius:9px}
+body{background:var(--bg);color:var(--text)}
+::selection{background:#e4b84d;color:#0b0b0c}
+.wl-sidebar{background:#0b0b0c;padding-top:28px}.wl-wordmark{display:flex;flex-direction:column;text-decoration:none;gap:1px;color:var(--gold);line-height:1.15}.origin-japanese{font-size:39px;font-weight:800;letter-spacing:5px}.origin-wordmark{font-size:17px;font-weight:700;letter-spacing:5px;margin-top:9px;text-transform:uppercase}.wl-sidebar-caption{color:#aa8b4d;font-size:10px;line-height:1.6;max-width:145px;margin-bottom:30px}.wl-sidebar-note p{color:#cbc4b6}
+.tab{border-radius:5px}.tab.active{background:#151514;color:#e4b84d;box-shadow:inset 2px 0 var(--gold)}.tab:hover{background:#151514;color:#efe9dd}.wl-context-brand{color:var(--gold)}.header{min-height:80px}.wl-workspace{max-width:1440px}.wl-kicker{color:#aa8b4d;letter-spacing:1.6px;font-size:10px}.wl-page-heading h1,.wl-section-title h2{font-weight:500}.wl-primary{background:#e4b84d;color:#0b0b0c;border:1px solid #e4b84d;box-shadow:none;font-weight:700}.wl-primary:hover{background:#e4b84d;color:#0b0b0c}.wl-outline{background:transparent;color:#e4b84d;border-color:#aa8b4d}.wl-outline:hover{background:#151514}.wl-primary,.wl-outline{border-radius:5px}.wl-text-button{color:#e4b84d}.wl-account-button{color:#e4b84d}.wl-close,.intel-close{background:#151514;color:var(--text)}
+.lens-home{min-height:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;position:relative;background:radial-gradient(ellipse at 50% 28%,#e4b84d10,transparent 65%),#0b0b0c;padding:24px 24px 32px;margin:0}.lens-home::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.25;background-image:radial-gradient(#aaa399 0.6px,transparent .6px);background-size:6px 6px;mask-image:radial-gradient(ellipse,#000,transparent 70%)}.lens-home-center{position:relative;z-index:1;padding:0;min-height:0}.home-origin-stage{width:100%;height:250px;display:grid;place-items:center}.home-origin-stage #home-logo{position:static;inset:auto;transform:none;width:340px;max-width:90%;height:auto;opacity:.95;filter:none;mix-blend-mode:normal}.lens-home .wl-hero-actions{margin:10px 0 0;justify-content:center}.wl-launch{border-radius:7px;background:#0b0b0c;padding:20px 16px}.wl-launch strong{font-size:14px}.wl-launch small{font-size:11px}.wl-launch-icon{border-radius:5px;color:#e4b84d}.wl-launch:hover{background:#151514;box-shadow:none}.wl-launch-grid{margin:16px 0 32px}
+.wl-stat-panel,.wl-style-panel{border-radius:8px}.stat-value{color:var(--gold)}.stat-label{color:#aaa399}.type-badge:hover{background:#151514!important}.wl-discovery-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr)}.wl-atlas{background:#0b0b0c;border:1px solid #383630;border-radius:9px}.wl-atlas-visual{height:300px;justify-content:center;padding:0;background:radial-gradient(ellipse,#151514 0%,#0b0b0c 72%)}.wl-atlas canvas{width:340px;height:340px;max-width:100%;object-fit:contain;margin:0;mix-blend-mode:normal;opacity:1;filter:none}.wl-atlas-visual>.wl-kicker{top:20px;left:22px;color:#e4b84d;z-index:1}.atlas-motion-toggle{position:absolute;bottom:14px;right:16px;z-index:1;padding:8px 12px;min-height:38px;color:#cbc4b6;border:1px solid #555047;border-radius:4px;background:#151514d9;font:11px inherit;cursor:pointer}.wl-atlas h3{color:#efe9dd}.wl-atlas-source,.wl-atlas .st-status{color:#aaa399}.atlas-coverage{font-size:12px;color:#e4b84d;margin:14px 0}.atlas-legend{display:flex;flex-wrap:wrap;gap:12px 18px;color:#aaa399;font-size:11px;margin:14px 0 20px}.atlas-legend span{display:flex;align-items:center;gap:7px}.atlas-legend i{display:inline-block;width:14px;height:14px;border-radius:2px}.atlas-legend .owned{background:#e4b84d;border:1px solid #e4b84d}.atlas-legend .unexplored{background:repeating-linear-gradient(135deg,#aaa399 0 1px,#383630 1px 4px);border:1px solid #aaa399}.orbit-stage .atlas-legend{justify-content:center;padding:0 14px}.coverage-status{padding:12px;border:1px dashed #aaa399;border-radius:4px;color:#cbc4b6!important;background:repeating-linear-gradient(135deg,#aaa3990c 0 2px,transparent 2px 7px)}.coverage-status[data-covered=true]{border-style:solid;border-color:#aa8b4d;color:#e4b84d!important;background:#e4b84d10}
+.wl-g2-card{background:#0b0b0c}.wl-glasses-mini{border:1px solid #383630;border-radius:6px;background:#0b0b0c}.wl-g2-card h3{font-size:25px}.wl-notes-primer{border-color:var(--line)}.wl-footer{color:var(--muted)}
+/* Keep bottle photographs intact; surround them with a neutral photographic stage. */
+.wl-cat-card,.wl-bottle-card,.card,.flow-card,.course-slot,.pairing-card,.st-card,.st-season,.wl-empty,.wl-cat-tools,.beta-depth,.beta-inventory,.intel-reference{background:var(--bg-card);border-color:var(--line);color:var(--text)}.wl-cat-stage,.wl-bottle-stage,.wl-detail-photo{background:#383630}.wl-cat-type{color:#efe9dd}.wl-cat-copy,.wl-bottle-copy{color:var(--text)}.wl-cat-nose{color:#aaa399}.wl-vintage{background:#151514;color:#e4b84d}.wl-welcome-art{background:#151514}.wl-welcome-art>span{color:#cbc4b6}.wl-dialog,.intel-dialog,.depth-dialog{background:#0b0b0c;color:var(--text);border:1px solid #383630;border-radius:10px}.wl-dialog::backdrop,.intel-dialog::backdrop,.depth-dialog::backdrop{background:#000b;backdrop-filter:blur(7px)}input:not([type=checkbox]):not([type=radio]),textarea,select,.wl-search-label input,.wl-cat-tools .wl-search-label input,.wl-dialog input:not([type=file]),.wl-dialog select,.wl-dialog textarea{background:#0b0b0c;color:#efe9dd;border-color:#555047}input::placeholder,textarea::placeholder{color:#aaa399}.chip{background:#151514;color:#cbc4b6;border:1px solid #383630}.chip.active,.chip[aria-pressed=true]{background:#e4b84d;color:#0b0b0c}.wl-cost,.wl-list-footer{background:#151514;border-color:var(--line);color:var(--text)}
+.history-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;border:1px solid var(--line);padding:24px;background:#0b0b0c;border-radius:8px}.history-entry-grid label,.history-entry-grid strong{display:block;font-size:14px;color:#e4b84d}.history-entry-grid select{display:block;width:100%;min-height:48px;padding:12px;margin-top:15px;border-radius:5px;font:14px inherit}.history-entry-grid p{font-size:13px;color:var(--muted);margin:10px 0 16px}.wine-history{color:var(--text);margin:32px 0;border-color:var(--line);padding:28px 0}.history-heading>p,.history-heading #history-wine{color:#aaa399}.history-heading h2{font-family:inherit;font-weight:500;font-size:36px}.history-layout{margin-top:28px}.history-layout nav{border-color:#555047}.history-layout nav button{color:#cbc4b6}.history-layout nav button[aria-current=location]{background:#383630;color:#e4b84d;box-shadow:inset 3px 0 var(--gold)}#history-detail{background:#151514;border:1px solid #383630;border-radius:6px}#history-detail h3{font-family:inherit;font-size:28px;line-height:1.25;color:#efe9dd}.history-date{color:#e4b84d}.history-recall{background:#151514;color:#efe9dd;border-color:#aa8b4d;border-radius:0}.history-chapter{border-color:var(--line)}#history-detail a,.history-example a{color:#e4b84d}.history-glasses h3{font-family:inherit}.history-glasses p{color:#aaa399}.place-insight{border-color:var(--line)}.place-insight h3{color:#e4b84d}.place-insight p{color:#cbc4b6}.place-insight a{color:#e4b84d}
+/* App modules share the original dark surface rather than pale inset cards. */
+.intel-card,.intel-panel,.sommelier-panel,.community-panel,.daily-panel,.intel-answer,.intel-question,.intel-result,.intel-reference,.research-panel,.beta-card,.beta-scan-card{background:#151514;color:var(--text);border-color:var(--line)}
+#dot-dialog{background:#0b0b0c;color:#efe9dd}.orbit-stage{background:radial-gradient(ellipse at 50% 40%,#55504720,transparent 70%);border-color:#555047}.orbit-history,.orbit-search{background:#151514;border-color:#555047}.orbit-details h3,.orbit-path{color:#e4b84d}.orbit-search-row input{background:#0b0b0c;color:#efe9dd;border-color:#aaa399}.orbit-search-row input::placeholder{color:#aaa399}.orbit-tools button{background:#151514;color:#efe9dd;border-color:#555047}.orbit-tools button[aria-pressed=true]{background:#e4b84d;color:#151514}.orbit-details select{background:#151514}.orbit-boundary-note,.orbit-muted{color:#aaa399!important}
+@media(min-width:1450px){.lens-home{padding-top:15px}.home-origin-stage{height:270px}}
+@media(max-width:1000px){.wl-discovery-grid{grid-template-columns:1fr}.wl-g2-card{display:none}.wl-atlas{grid-template-columns:minmax(240px,1fr) minmax(0,1fr)}.wl-atlas-visual{height:100%;min-height:330px}.wl-atlas canvas{width:100%;height:auto}}
+@media(max-width:760px){.wl-sidebar{background:#0b0b0c}.wl-wordmark{flex-direction:row;align-items:center;gap:12px}.origin-japanese{font-size:27px;letter-spacing:3px}.origin-wordmark{font-size:14px;margin:0;letter-spacing:3px}.tab-bar{gap:5px}.tab.active{box-shadow:inset 0 -2px var(--gold)}.wl-context-brand{display:none}.lens-home{padding:12px 16px 25px}.home-origin-stage{height:215px}.home-origin-stage #home-logo{width:285px}.wl-launch-grid{gap:8px}.wl-launch{padding:14px 10px}.wl-launch strong{font-size:12px}.wl-launch small{font-size:10px}.wl-launch-icon{width:30px;height:34px}.wl-launch>.wl-icon{display:none}.wl-atlas{grid-template-columns:1fr}.wl-atlas-visual{height:290px;min-height:0}.wl-atlas canvas{width:330px;height:330px}.history-entry-grid{grid-template-columns:1fr;padding:20px;gap:25px}.history-heading h2{font-size:30px}.history-heading>p{margin-top:14px}.history-layout{gap:18px}.wl-hero-actions{gap:12px!important}.wl-launch-grid{grid-template-columns:1fr}.wl-launch{padding:14px 16px}.wl-launch small{font-size:12px}.wl-launch strong{font-size:14px}.wl-launch>.wl-icon{display:block}.wl-launch-icon{width:40px;height:40px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}.wl-launch:hover,.wl-cat-card:hover,.wl-bottle-card:hover{transform:none}}
+#wine-sommelier,#community-wines,.intel-daily,.wine-research,#sommelier-intake{background:#151514;color:var(--text);border:1px solid var(--line);border-radius:9px}#wine-sommelier h2,#community-wines h2,.intel-daily h2{font-family:inherit;font-weight:500;font-size:32px}.intel-bubble,.intel-lesson section{background:#151514;color:#efe9dd;border-color:#383630}.intel-bubble.guest,.intel-lesson .intel-practice{background:#151514;border-color:#555047}.intel-options button,.intel-suggestions button{background:#151514;color:#efe9dd;border-color:#555047;border-radius:5px}.intel-options .correct{background:#383630;border-color:#aaa399}.intel-options .incorrect{background:#383630;border-color:#e4b84d}.intel-explanation blockquote{background:#151514;color:#cbc4b6;border-color:#aaa399}.intel-lesson h4,.intel-lesson-sources summary,.intel-explanation>.wl-kicker,.taste-why,.intel-match small,.translation-status{color:#cbc4b6}.intel-form input,.intel-form select,.intel-form textarea,#sommelier-input,#language-settings select,#taste-answer,.wine-research input:not([type=checkbox]),.wine-research textarea,.wine-research select{background:#0b0b0c;color:#efe9dd;border-color:#555047}.wine-research h2,.wine-research label{color:var(--text)}.research-sources>a{color:#e4b84d}.wine-research .depth-switch button{color:#efe9dd;border-color:#555047}.wine-research .depth-switch button[aria-pressed=true]{background:#e4b84d;color:#151514}#wine-notes-dialog,#reading-room,.notes-bottle-zoom{background:#151514;color:#efe9dd;border-color:#555047}.notes-sections h3,.notes-result small,.notes-anecdote-sources summary,.notes-anecdote-sources a,.read-source{color:#e4b84d}.notes-result{color:#efe9dd;border-color:var(--line)}.notes-result:hover{background:#151514}#notes-count{color:#cbc4b6}.wine-search-bar{background:#151514;border-color:#555047}.wine-search-bar label,.wine-search-bar input{color:#efe9dd}.read-passage{color:#efe9dd}.read-passages h3{color:#e4b84d}.notes-bottle-open{color:#e4b84d}
+@media(max-width:760px){.wl-launch{flex-direction:row;align-items:center;min-height:78px}.wl-launch>span:nth-child(2){flex:1}.wl-launch>.wl-icon{align-self:center;margin:0}}
+
+/* D3 editorial shell. Local fallbacks keep the packaged app readable offline. */
+:root {
+  --bg: #0b0b0c; --ivory: var(--bg); --bg-card: #121213;
+  --bg-card-hover: #1b1a17; --text: #efe9dd; --ink: var(--text);
+  --accent: #e4b84d; --gold: var(--accent); --gold-dim: #c9a86a;
+  --muted: #aaa399; --text-dim: var(--muted); --border: #302e29;
+  --line: var(--border); --radius: 10px;
+  --d3-serif: 'Fraunces', Georgia, serif;
+  --d3-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+body { font-family: 'Space Grotesk', system-ui, sans-serif; }
+#app { max-width: 1800px; grid-template-columns: 224px minmax(0, 1fr); }
+.wl-workspace { width: 100%; max-width: 1440px; padding: 0 clamp(22px, 3.7vw, 64px); }
+.wl-sidebar { background: #0e0e0f; padding: 34px 18px 24px; }
+.wl-sidebar-caption { color: var(--muted); }
+.wl-sidebar-note p { font-family: var(--d3-serif); font-size: 19px; color: var(--text); line-height: 1.4; }
+.wl-wordmark { color: var(--accent); }
+.origin-wordmark { text-transform: none; letter-spacing: 3px; }
+.tab { min-height: 46px; border-radius: 6px; }
+.tab.active { background: #e4b84d12; color: var(--accent); box-shadow: inset 2px 0 var(--accent); }
+.tab:hover { background: #201e19; color: var(--text); }
+.header { min-height: 84px; }
+.wl-context, .wl-kicker, .wl-sidebar-caption, .sommni-showcase-label, .stat-label, .wl-footer,
+.wl-edition, .wl-account-button { font-family: var(--d3-mono); }
+.wl-context { font-size: 11px; gap: 12px; }
+.wl-context-brand { color: var(--muted); font-size: 9px; letter-spacing: 1px; }
+.wl-kicker { color: var(--gold-dim); font-weight: 400; font-size: 10px; letter-spacing: 1.5px; }
+.wl-account-button { font-size: 10px; font-weight: 400; }
+.wl-primary, .wl-outline { font-size: 12px; min-height: 46px; padding: 12px 20px; border-radius: 6px; }
+.wl-primary { background: var(--accent); color: #15120b; border-color: var(--accent); }
+.wl-primary:hover { background: #f5cc68; color: #15120b; }
+.wl-outline { border-color: #595044; color: var(--text); }
+.wl-outline:hover { background: #252118; border-color: var(--accent); }
+.wl-text-button { color: var(--accent); }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+#main-content { padding-top: 32px; }
+.lens-home { border: 0; border-radius: 0; background: transparent; padding: 0; overflow: visible; }
+.lens-home::before { display: none; }
+.lens-home-center { display: grid; width: 100%; justify-items: stretch; grid-template-columns: 1fr 1fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+.sommni-hero-copy { text-align: left; padding: 20px 0 28px; }
+.sommni-eyebrow { display: flex; align-items: center; gap: 12px; font-size: 9px; letter-spacing: 1.7px; }
+.sommni-eyebrow>span { width: 28px; height: 1px; background: var(--gold-dim); flex: none; }
+.sommni-hero-title { font: italic 300 clamp(62px, 7.3vw, 116px)/1 var(--d3-serif); letter-spacing: -5px; color: var(--accent); margin: 30px 0 22px; }
+.sommni-hero-title>span { font-style: normal; }
+.sommni-hero-title small { display: block; font: 500 21px/1.5 system-ui, sans-serif; letter-spacing: 13px; margin: 18px 0 0 4px; color: var(--text); }
+.sommni-hero-intro { font: 300 clamp(20px, 2vw, 27px)/1.4 var(--d3-serif); color: var(--text); }
+.lens-home .wl-hero-actions { justify-content: flex-start; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.sommni-scan { display: block; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.sommni-showcase { text-align: left; border: 1px solid #39342a; border-radius: 12px; padding: 18px; background: #0e0e0f; min-width: 0; }
+.sommni-showcase-label { display: flex; justify-content: space-between; gap: 12px; font-size: 8px; letter-spacing: 1.3px; color: var(--muted); }
+.sommni-showcase-label>span:last-child { color: var(--accent); }
+.home-origin-stage { height: 284px; position: relative; isolation: isolate; overflow: hidden; margin: 16px 0; background: radial-gradient(ellipse at 50% 70%, #5d4e2b45, transparent 65%); border-radius: 5px; }
+.home-origin-stage::after { content: ''; position: absolute; bottom: 0; height: 25px; width: 75%; background: radial-gradient(ellipse, #bda47025, transparent 70%); border-top: 1px solid #76624432; z-index: -1; }
+.home-origin-stage #home-logo { position: absolute; width: 290px; max-width: 100%; opacity: .16; inset: 0; margin: auto; height: auto; z-index: -1; }
+.sommni-hero-bottle { display: block; height: 268px; width: auto; max-width: 75%; object-fit: contain; filter: drop-shadow(12px 10px 10px #0008); }
+.sommni-showcase-caption { display: flex; justify-content: space-between; align-items: end; gap: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+.sommni-showcase-caption strong { display: block; font: 300 24px/1.4 var(--d3-serif); }
+.sommni-showcase-caption small { display: block; color: var(--muted); font-size: 11px; }
+.sommni-showcase-caption .wl-kicker { font-size: 8px; letter-spacing: .8px; }
+.sommni-showcase-caption button { font-size: 10px; flex: none; }
+.wl-launch-grid { gap: 0; margin: 32px 0 42px; border-block: 1px solid var(--line); }
+.wl-launch { background: transparent; border: 0; border-right: 1px solid var(--line); border-radius: 0; padding: 22px 18px; }
+.wl-launch:last-child { border-right: 0; }
+.wl-launch:hover { transform: none; background: #191815; }
+.wl-launch-icon { background: transparent; color: var(--accent); width: 28px; }
+.wl-launch strong { font: 400 19px/1.3 var(--d3-serif); }
+.wl-launch small { font-size: 11px; }
+.wl-launch>.wl-icon { color: var(--gold-dim); }
+.wl-section-title h2, .wl-page-heading h1, .wl-atlas h3, .wl-g2-card h3,
+.wl-notes-primer h2, #wine-sommelier h2, #community-wines h2, .intel-daily h2,
+.wine-research h2, .history-heading h2, #history-detail h3, .wl-dialog h2,
+.wl-empty h3, .st-head h2 { font-family: var(--d3-serif); font-weight: 300; letter-spacing: -.7px; }
+.wl-section-title h2 { font-size: 34px; }
+.wl-stat-panel, .wl-style-panel { background: #111112; border-radius: 8px; }
+.stat-value { font: 300 36px/1.2 var(--d3-serif); color: var(--accent); }
+.stat-label { color: var(--muted); font-size: 9px; }
+.wl-overview-grid { margin-bottom: 32px; }
+.wl-atlas { background: #101011; border-color: var(--line); }
+.wl-atlas-visual { background: radial-gradient(ellipse, #28251b, #0c0c0d 75%); }
+.wl-g2-card { background: #101011; }
+.wl-atlas h3, .wl-g2-card h3 { font-size: 31px; }
+.wl-cat-card, .wl-bottle-card { border-radius: 9px; overflow: hidden; }
+.wl-cat-stage, .wl-bottle-stage, .wl-detail-photo { background: #343332; }
+.wl-cat-copy strong, .wl-bottle-copy h3 { font-family: var(--d3-serif); }
+.wl-cat-nose, .wl-cat-type { color: #bcb5a8; }
+.wl-vintage, .chip.active, .chip[aria-pressed=true] { background: var(--accent); color: #15120b; }
+.chip { border-color: #484238; background: #191816; color: var(--text); }
+.st-start, .st-mode, .st-rating, .st-option, .st-more, .st-progress, .st-about,
+.intel-bubble, .intel-lesson section, .wl-list-footer { background: #191816; border-color: var(--line); color: var(--text); }
+.intel-options .correct { background: #233725; border-color: #71936c; }
+.intel-options .incorrect { background: #402522; border-color: #b47b65; }
+input, select, textarea { accent-color: var(--accent); }
+.wl-notes-primer { padding-top: 36px; }
+.wl-footer { font-size: 9px; letter-spacing: 1px; }
+@media (min-width: 1450px) { .home-origin-stage { height: 330px; } .sommni-hero-bottle { height: 310px; } }
+@media (max-width: 1100px) and (min-width: 761px) {
+  #app { grid-template-columns: 190px minmax(0,1fr); }
+  .wl-workspace { padding-inline: 24px; }
+  .wl-context-brand { display: none; }
+  .sommni-hero-title { font-size: 67px; letter-spacing: -3px; }
+  .sommni-eyebrow { font-size: 8px; letter-spacing: .6px; }
+  .sommni-showcase-caption { flex-wrap: wrap; gap: 0; }
+  .wl-launch { padding-inline: 10px; gap: 8px; }
+  .wl-launch strong { font-size: 17px; }
+  .wl-launch small { font-size: 10px; }
+}
+@media (max-width: 760px) {
+  #app { display: block; }
+  .wl-sidebar { padding: 15px 18px 0; background: #0e0e0f; }
+  .wl-workspace { padding-inline: 18px; }
+  .wl-wordmark { flex-direction: row; }
+  .header { min-height: 70px; }
+  .wl-header-actions { gap: 10px; }
+  .wl-account-button { max-width: 136px; line-height: 1.5; text-align: right; }
+  #main-content { padding-top: 18px; }
+  .lens-home-center { grid-template-columns: 1fr; gap: 22px; }
+  .sommni-hero-copy { padding: 12px 4px 0; }
+  .sommni-hero-title { font-size: clamp(76px,20vw,105px); margin-block: 22px 18px; }
+  .sommni-hero-title small { font-size: 18px; margin-top: 14px; }
+  .sommni-hero-intro { font-size: 24px; }
+  .lens-home .wl-hero-actions { margin-top: 24px; }
+  .sommni-showcase { padding: 16px; }
+  .home-origin-stage { height: 225px; margin-block: 10px; }
+  .sommni-hero-bottle { height: 215px; }
+  .home-origin-stage #home-logo { width: 250px; }
+  .sommni-showcase-caption strong { font-size: 23px; }
+  .wl-launch-grid { margin: 24px 0 32px; }
+  .wl-launch { min-height: 76px; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px 8px; }
+  .wl-launch:last-child { border-bottom: 0; }
+  .wl-launch strong { font-size: 21px; }
+  .wl-launch small { font-size: 12px; }
+  .wl-section-title h2 { font-size: 31px; }
+}
+/* Shared headings and selected states in the research/history modules. */
+.wl-page-heading h2, #beta-catalog h2, #wine-research .research-heading h2, .notes-heading h2,
+#notes-body>h2, .beta-depth>summary strong { font-family: var(--d3-serif); font-weight: 300; }
+.history-tabs button { border: 1px solid #595044; border-radius: 6px; background: transparent; color: var(--text); }
+.history-tabs button[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: #15120b; }
+input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #e4b84d24; }
+.wl-search-label:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px #e4b84d24; }
+
+/* Compact, wrapping navigation: every destination stays visible on phones. */
+.sommni-pair-code { display:block; font:500 clamp(26px,7vw,44px)/1.5 var(--d3-mono); color:var(--gold); letter-spacing:.1em; margin:20px 0 8px; }
+.pair-fallback { display:grid; gap:8px; margin-top:14px; }.pair-fallback[hidden]{display:none}
+.pair-fallback input { width:100%; padding:10px; }.pair-status { margin-top:18px; line-height:1.5; }
+.guest-import { margin:20px 0; }.guest-import ul{max-height:200px;overflow:auto;padding:15px 25px}.guest-import button{margin:16px 0}
+.sommni-hero-title { font-size:clamp(48px,6vw,86px); letter-spacing:-.045em; }
+.sommni-hero-intro { font-size:clamp(18px,1.8vw,24px); text-wrap:balance; }
+.wl-page-heading h1,.wl-page-heading h2,#beta-catalog h2,.history-heading h2,#wine-sommelier h2,#community-wines h2,.intel-daily h2,#wine-research .research-heading h2 { font-size:clamp(25px,3.2vw,36px); line-height:1.18; text-wrap:balance; overflow-wrap:anywhere; }
+.wl-section-title h2 { font-size:clamp(25px,2.8vw,32px); }
+@media(max-width:760px){
+ .wl-sidebar { position:relative; top:0; height:auto; padding:14px 14px 10px; }
+ .tab-bar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; width:100%; overflow:visible; padding:10px 0 0; }
+ .tab { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; width:auto; min-width:0; min-height:54px; padding:7px 2px; font-size:clamp(10px,2.65vw,12px); white-space:normal; text-align:center; line-height:1.2; }
+ .tab .wl-icon { display:block; width:17px; height:17px; }
+ .tab[data-tab=settings] { margin:0; }.tab.active{box-shadow:inset 0 -2px var(--accent)}
+ .header { flex-wrap:wrap; gap:8px; min-height:62px; padding:12px 0; }
+ .wl-context { display:none; }.wl-header-actions { width:100%; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+ .wl-account-button { max-width:none; padding:8px 0 8px 12px; font-size:11px; }
+ .sommni-hero-title { font-size:clamp(48px,14vw,76px); margin:18px 0; }
+ .sommni-hero-title small { font-size:clamp(14px,4vw,18px); letter-spacing:9px; }
+ .sommni-hero-intro { font-size:clamp(18px,5vw,23px); }
+ .wl-launch strong { font-size:clamp(17px,4.8vw,21px); }
+}
+
+/* 3.7.12: one photographic catalog across D3, companion and G2. */
+.wl-cat-stage,.wl-bottle-stage,.wl-detail-photo{background:transparent}
+.wl-cat-card,.wl-bottle-card{background:transparent;border-radius:0;border-width:0 0 1px}
+.wl-cat-stage{height:280px}.wl-cat-bottle{height:245px;filter:none}
+.wl-bottle-stage img,.notes-heading img{filter:none}
+.wl-cat-stage:after{display:none}
+.wl-cat-type{background:#151514dd;color:#efe9dd}
+.wl-cat-country{display:grid;gap:8px;max-width:360px;font-size:14px}
+.wl-cat-country select{min-height:48px;width:100%;padding:12px;border:1px solid #555047;border-radius:6px;font:16px inherit}
+.wl-cat-group{display:flex;align-items:baseline;gap:14px;margin:30px 0 18px;padding-bottom:12px;border-bottom:1px solid var(--line);font:28px var(--d3-serif)}
+.wl-cat-group span{font:12px var(--d3-sans);color:var(--muted)}
+#cat-reset{margin-bottom:18px;min-height:44px}
+@media(max-width:760px){.wl-cat-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.wl-cat-stage{height:230px;padding:12px 4px}.wl-cat-bottle{height:210px}.wl-cat-copy{padding:15px 4px}.wl-cat-copy strong{font-size:19px}.wl-cat-copy>*{overflow-wrap:anywhere}.wl-cat-country{max-width:none}.wl-cat-tools input{font-size:16px}}
+
+/* Primary exploration actions share a compact typographic hierarchy. */
+.wl-launch-grid .wl-launch{padding:12px 14px;gap:10px;border-radius:6px;min-width:0}
+.wl-launch-grid .wl-launch strong{font-size:12px;letter-spacing:.01em;line-height:1.4;text-transform:none}
+.wl-launch-grid .wl-launch small{font-size:10px;line-height:1.4}
+.wl-launch-grid .wl-launch-icon{width:30px;height:30px;flex-shrink:0}
+
+.sommni-title-line{display:flex;align-items:center;gap:14px}.sommni-title-line .sommni-hero-title{min-width:0}#home-region-globe{flex:0 0 64px;width:64px;height:64px;min-height:0;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}#home-region-globe canvas{display:block;width:64px;height:64px}#home-region-globe:hover{background:#e4b84d0a}#home-region-globe:focus-visible{outline:1px solid var(--gold);outline-offset:4px}@media(max-width:400px){#home-region-globe,#home-region-globe canvas{width:52px;height:52px}#home-region-globe{flex-basis:52px}.sommni-title-line{gap:8px}}

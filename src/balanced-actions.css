@@ -1,0 +1,14 @@
+/* Shared rule: every action row reaches the same two outer edges. */
+.balanced-actions.balanced-actions{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ width:100%;gap:8px;align-items:stretch;box-sizing:border-box;
+}
+.balanced-actions.balanced-actions>button{
+ width:100%;min-width:0;max-width:100%;min-height:44px;margin:0;
+ box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;
+ text-align:center;line-height:1.4;
+}
+/* Odd sets lead with a full-width action; pairs below share the same width. */
+.balanced-actions>button:first-child:nth-last-child(odd),
+.balanced-actions--primary>button:first-child,
+.balanced-actions--primary>button:last-child:nth-child(even){grid-column:1/-1}

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// wineLENS study scheduler — wl-steps-v1 (PRD S-06, S-07, S-09)
+// sommNI study scheduler — wl-steps-v1 (PRD S-06, S-07, S-09)
 //
 // Pure and deterministic: the same ordered event log always yields the same
 // state, on the phone, on G2 and (later) on the server.

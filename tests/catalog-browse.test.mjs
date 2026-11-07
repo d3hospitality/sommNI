@@ -1,0 +1,18 @@
+import {build} from 'esbuild';
+import assert from 'node:assert/strict';
+const bundle=await build({entryPoints:['src/beta/catalog-browse.ts'],bundle:true,format:'esm',platform:'node',write:false});
+const {browseCatalog}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
+const wine=(id,name,country,region,type,grape,vintages=[])=>({id,country,type,vintages,wine:{name,region,grape,style:'Dry',nose:'',palate:''}});
+const wines=[wine('a','Brunello – Casanova','Italy','Toscana','Red','Sangiovese',['2021']),wine('b','Rosso – Producer','Italia','Tuscany','Red','Sangiovese',['2023']),wine('c','Bianco – Estate','Italy','Sicily','White','Grillo'),wine('d','Machete – Orin Swift','USA','California','Red','Petite Sirah',['2022']),wine('e','Junmai – Kura','Japan','Niigata','Sake','Gohyakumangoku')];
+const state={query:'',country:'',region:'',filter:'All',grouping:'auto',sort:'name'},favorites=new Set(['d']);
+let result=browseCatalog(wines,state,favorites);
+assert.equal(result.wines.length,5);assert.equal(result.groups.flatMap(([,w])=>w).length,5);assert.equal(result.groups.find(([k])=>k==='Italy')[1].length,3,'Alias countries share one heading');
+result=browseCatalog(wines,{...state,country:'Italy'},favorites);assert.equal(result.level,'region');assert.equal(result.groups.find(([k])=>k==='Tuscany')[1].length,2);assert.equal(result.styleCount('Red'),2);assert.equal(result.styleCount('White'),1);assert.equal(result.title,'Wines of Italy');
+result=browseCatalog(wines,{...state,country:'Italy',region:'Tuscany',sort:'vintage'},favorites);assert.equal(result.level,'style');assert.deepEqual(result.wines.map(w=>w.id),['b','a']);
+result=browseCatalog(wines,{...state,country:'Italy',region:'Tuscany',filter:'Red',grouping:'variety'},favorites);assert.equal(result.level,'variety');assert.equal(result.groups[0][0],'Sangiovese');
+result=browseCatalog(wines,{...state,query:'united states orin 2022'},favorites);assert.deepEqual(result.wines.map(w=>w.id),['d'],'Search covers normalized country, producer and vintage');assert.deepEqual(result.countries,[['United States',1]]);
+result=browseCatalog(wines,{...state,filter:'Favorites'},favorites);assert.deepEqual(result.wines.map(w=>w.id),['d']);
+result=browseCatalog(wines,{...state,country:'Italy',filter:'Sake'},favorites);assert.equal(result.wines.length,0);assert.deepEqual(result.countries,[['Japan',1]],'Facets expose a valid way out of an empty intersection');
+result=browseCatalog(wines,{...state,query:'nothing'},favorites);assert.equal(result.groups.length,0);
+result=browseCatalog([...wines,wine('new','New shared bottle','Spain','Rioja','Red','Tempranillo')],state,favorites);assert.equal(result.wines.length,6,'New master bottles enter browsing without hard-coded counts');
+console.log('Catalog matching, dependent counts, adaptive headings, alias grouping, vintages, favorites, empty intersections and new shared bottles passed.');

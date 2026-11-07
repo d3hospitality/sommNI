@@ -1,14 +1,14 @@
-# wineLENS / Focus Pour
+# sommNI / Focus Pour
 
 The supplied wine-glass/focus-frame reference was simplified into a compact mark: one wine line, a short stem, open optical corners, and no sparkle or shaded liquid. Chroma composition and Atelier colours remain the visual direction.
 
 ## Masters and exports
 
-`identity.json` is the source geometry and palette. `wordmark.json` contains the Space Grotesk glyph outlines used on glasses. The wordmark SVGs contain paths, not live text; they do not need a font installed. The OFL font files and licence are included in `fonts/`.
+`identity.json` is the source geometry and palette. `wordmark.json` contains the Space Grotesk glyph outlines for sommNI. `japanese.json` contains outlined ソムニ glyphs; no Japanese font file is redistributed. The wordmark SVGs contain paths, not live text; they do not need a font installed. The OFL font files and licence are included in `fonts/`.
 
 `public/brand/` includes primary, reverse, black and white marks; a distinct micro mark; outlined horizontal lockups; favicons; Apple/app/maskable icons; a 120px Google branding logo; a 1200×630 social card; native grayscale marks; and the actual 190×190 glasses panel.
 
-Use oxblood `#772B39`, ivory `#FBF7EF`, blush `#E8D0CA`, olive `#8A9270`, and ink `#302822`. Olive is a supporting colour, not body text on ivory. Keep green confined to glasses previews. Preserve the exact spelling **wineLENS**.
+Use oxblood `#772B39`, ivory `#FBF7EF`, blush `#E8D0CA`, olive `#8A9270`, and ink `#302822`. Olive is a supporting colour, not body text on ivory. Keep green confined to glasses previews. Preserve the exact spelling **sommNI**.
 
 ## Usage
 
@@ -21,9 +21,9 @@ Use oxblood `#772B39`, ivory `#FBF7EF`, blush `#E8D0CA`, olive `#8A9270`, and in
 
 ## G2 implementation
 
-`src/brand-mark.ts` draws the same vector geometry directly to the production 190×190 canvas. It includes the outlined wordmark and quantizes to 16 grayscale levels. Black is off; white is full illumination. `src/image-utils.ts` sends the existing two 190×95 halves through the existing serial queue. Container IDs, page counts, event capture, catalog, tasting notes and graceful exit logic are unchanged. No image network fetch, font load, new image container, or animation is needed.
+`src/brand-mark.ts` renders the outlined name and Japanese subtitle. The home display places sommNI above a 96×120 sparse, fixed-fill wine glass and ソムニ below it. `src/intelligence/motion.ts` calibrates/filter head-sensor samples; `src/image-utils.ts` serializes hardware and image transfers, paints only changed poses, and disables IMU off Home. Unsupported hosts show a still glass. There is no pouring or draining cycle.
 
-The native export was verified for dimensions, grayscale channels and 16-level quantization. The interactive preview's menu typography and green glow are illustrative. Physical G2 optical brightness and final legibility still require device acceptance.
+The 190×190 `g2-home-panel.png` is the static phone/finder brand panel, not the animated home layout. Optical brightness, head-axis direction and sensitivity require physical G2 acceptance.
 
 ## Build
 

@@ -14,3 +14,9 @@ dist-site/
 
 site/.vite-site/
 .vercel
+
+# Local evidence, secrets and generated release artifacts
+outputs/
+.qa*/
+supabase/.temp/
+backend/research-evidence/

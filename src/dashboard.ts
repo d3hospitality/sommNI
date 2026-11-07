@@ -1,20 +1,23 @@
+import { renderBetaCatalog, showBetaCatalogType, showBetaCatalogGrape } from './beta/catalog';
 // ═══════════════════════════════════════════════════════════════════
-// wineLENS — phone companion tabs (Home, Wines, Pairings, Dinner, Study, Settings)
-// Winebrary lives in winebrary.ts; the catalog in catalog-phone.ts.
-// Vanilla TS — runs inside the Even Hub webview
+// sommNI — Phone-side Interactive Dashboard
+// Full feature parity with sommni-dashboard-v2.jsx
+// Vanilla TS — runs inside Even Hub webview
 // ═══════════════════════════════════════════════════════════════════
 
 import {
+  getInventory, getInventoryStats, adjustStock, setStock,
   getPairings, createPairing, updatePairing, deletePairing,
-  getFavorites, getCourseState, saveCourseState,
+  getFavorites, toggleFavorite, getCourseState, saveCourseState,
   type Pairing, type CourseSlot,
 } from './sync';
-import { getWineId, lookupWineById } from './identity';
-import { renderCatalog, showCatalogType } from './catalog-phone';
+import { getWineId, lookupWineById, allCatalogWines } from './identity';
+import { wineReferences } from './study/content';
 import { initStudyPanel, renderStudyPanel } from './study/phone';
 import {
   WINES, WINE_TYPES, COUNTRIES, TYPE_DISPLAY, TOTAL_WINES,
-  scoreWine, getRankedWines, getFlavorOptionsForType,
+  getWinesForCountry, getGrapesForCountry,
+  getWinesForGrape, scoreWine, getRankedWines, getFlavorOptionsForType,
   type Wine, type WineType,
 } from './constants';
 
@@ -30,6 +33,14 @@ const TYPE_COLORS: Record<string, string> = {
 
 let activeTab = 'home';
 
+// Cellar state
+let cellarView: 'types' | 'countries' | 'grapes' | 'wines' = 'types';
+let cellarType: WineType | null = null;
+let cellarCountry: string | null = null;
+let cellarGrape: string | null = null;
+let cellarFilter: 'all' | '85' | '86' = 'all';
+let cellarSearch = '';
+let inventoryCache: Record<string, number> = {};
 let favoritesCache: string[] = [];
 
 // Course builder state
@@ -102,21 +113,60 @@ export function initDashboard(): void {
   document.addEventListener('input', handleGlobalInput);
   void refreshAll();
 
-  const tabs = document.querySelectorAll<HTMLButtonElement>('.tab');
-  tabs.forEach(tab => {
+  document.querySelector('.skip-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    const main = document.getElementById('main-content');
+    main?.focus(); main?.scrollIntoView({ block: 'start' });
+  });
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tab')];
+  const labels: Record<string, string> = { home: 'Overview', history: 'Wine History', cellar: 'Wine catalog', winebrary: 'Your Winebrary', study: 'Study', pairings: 'Pairings', courses: 'Dinner planner', settings: 'Settings' };
+  function activate(id: string) {
+    const next = Object.prototype.hasOwnProperty.call(labels, id) ? id : 'home';
+    const changed = activeTab !== next;
+    activeTab = next;
+    tabs.forEach(t => {
+      const selected = t.dataset.tab === activeTab;
+      t.classList.toggle('active', selected);
+      if (selected) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    document.querySelectorAll<HTMLElement>('.tab-panel').forEach(panel => {
+      const selected = panel.id === `tab-${activeTab}`;
+      panel.classList.toggle('active', selected);
+      panel.hidden = !selected;
+    });
+    const context = document.getElementById('wl-page-name');
+    if (context) context.textContent = labels[activeTab];
+    document.title = `${labels[activeTab]} · sommNI`;
+    tabs.find(t => t.dataset.tab === activeTab)?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+    window.dispatchEvent(new CustomEvent('sommni-tab-changed',{detail:{tab:activeTab}}));
+    void refreshTab(activeTab);
+    if (changed) window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      const panel = document.getElementById(`tab-${tab.dataset.tab}`);
-      if (panel) panel.classList.add('active');
-      activeTab = tab.dataset.tab!;
-      refreshTab(activeTab);
+      const id = tab.dataset.tab!;
+      if (location.hash !== `#${id}`) history.pushState(null, '', `#${id}`);
+      activate(id);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    });
+    tab.addEventListener('keydown', e => {
+      const keys: Record<string, number> = { ArrowRight: (index + 1) % tabs.length, ArrowDown: (index + 1) % tabs.length, ArrowLeft: (index + tabs.length - 1) % tabs.length, ArrowUp: (index + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 };
+      if (keys[e.key] === undefined) return;
+      e.preventDefault();
+      tabs[keys[e.key]].focus();
     });
   });
+  // Native back/forward and shareable section URLs stay in step with the visible panel.
+  window.addEventListener('hashchange', () => {
+    const id = location.hash.slice(1);
+    // Anchor links such as Skip to content must not switch the current section.
+    if (!id || Object.prototype.hasOwnProperty.call(labels, id)) activate(id);
+  });
+  activate(location.hash.slice(1));
 }
 
 export async function refreshAll(): Promise<void> {
+  inventoryCache = await getInventory();
   favoritesCache = await getFavorites();
   pairingsCache = await getPairings();
   courseSlots = await getCourseState();
@@ -127,8 +177,8 @@ export async function refreshAll(): Promise<void> {
 async function refreshTab(tabId: string): Promise<void> {
   try {
     switch (tabId) {
-      case 'home': renderHome(); break;
-      case 'cellar': await renderCellar(); break;
+      case 'home': favoritesCache = await getFavorites(); renderHome(); break;
+      case 'cellar': await renderCellar(); await renderBetaCatalog(); break;
       case 'courses': renderCourses(); break;
       case 'pairings': renderPairings(); break;
       case 'study': await renderStudyPanel(); break;
@@ -149,6 +199,34 @@ async function handleGlobalClick(e: Event): Promise<void> {
   const val2 = target.dataset.value2 || '';
 
   switch (action) {
+    // ── Cellar ──
+    case 'cellar-type':
+      cellarType = val as WineType; cellarView = 'countries'; await renderCellar(); break;
+    case 'cellar-country':
+      cellarCountry = val; cellarView = 'grapes'; await renderCellar(); break;
+    case 'cellar-grape':
+      cellarGrape = val; cellarView = 'wines'; await renderCellar(); break;
+    case 'cellar-back':
+      if (cellarView === 'wines') { cellarView = 'grapes'; cellarGrape = null; }
+      else if (cellarView === 'grapes') { cellarView = 'countries'; cellarCountry = null; }
+      else if (cellarView === 'countries') { cellarView = 'types'; cellarType = null; }
+      await renderCellar(); break;
+    case 'cellar-filter':
+      cellarFilter = val as 'all' | '85' | '86'; await renderCellar(); break;
+    case 'stock-plus':
+    case 'stock-minus': {
+      if (!lookupWineById(val)) break; // never write stock against an unknown ID
+      await adjustStock(val, action === 'stock-plus' ? 1 : -1);
+      inventoryCache = await getInventory(); // show what was actually stored
+      await renderCellar(); break;
+    }
+    case 'toggle-fav': {
+      if (!lookupWineById(val)) break;
+      const nowFav = await toggleFavorite(val);
+      if (nowFav) { favoritesCache.push(val); } else { favoritesCache = favoritesCache.filter(id => id !== val); }
+      await renderCellar(); break;
+    }
+
     // ── Courses ──
     case 'course-start':
       activeCourseIdx = parseInt(val); courseStep = 0; renderCourses(); break;
@@ -266,6 +344,16 @@ async function handleGlobalClick(e: Event): Promise<void> {
 
 function handleGlobalInput(e: Event): void {
   const target = e.target as HTMLElement;
+  if (target.id === 'cellar-search') {
+    cellarSearch = (target as HTMLInputElement).value;
+    const cursorPos = (target as HTMLInputElement).selectionStart;
+    renderCellar();
+    const restored = document.getElementById('cellar-search') as HTMLInputElement | null;
+    if (restored) {
+      restored.focus();
+      if (cursorPos !== null) restored.setSelectionRange(cursorPos, cursorPos);
+    }
+  }
   if (target.id === 'pairing-search') {
     pairingSearchQ = (target as HTMLInputElement).value;
     const cursorPos = (target as HTMLInputElement).selectionStart;
@@ -309,28 +397,148 @@ function typeColor(type: string): string { return TYPE_COLORS[type] || '#c4a84d'
 // ═══════════════════════════════════════════════════════════════════
 
 function renderHome(): void {
-  // Restaurant stock counting (86 list) is parked for the venue edition; the consumer home is about wines and notes.
+  const invEntries = Object.values(inventoryCache);
+  const totalBottles = invEntries.reduce((s, n) => s + n, 0);
+  const oos = invEntries.filter(n => n === 0).length;
+
   setText('home-wines', String(TOTAL_WINES));
+  setText('home-tracked', String(invEntries.length));
   setText('home-pairings', String(pairingsCache.length));
   setText('home-favorites', String(favoritesCache.length));
-  const typeCounts: Record<string, number> = {};
-  for (const t of WINE_TYPES) { let c = 0; for (const country of COUNTRIES[t]) c += (WINES[t]?.[country] || []).length; typeCounts[t] = c; }
-  setHTML('home-types', WINE_TYPES.map(t =>
-    `<button class="type-badge" data-home-type="${t}" style="background:${typeColor(t)}22;color:${typeColor(t)};border-color:${typeColor(t)}44">${TYPE_DISPLAY[t]} · ${typeCounts[t]}</button>`
-  ).join(''));
-  document.querySelectorAll<HTMLButtonElement>('[data-home-type]').forEach(b => b.addEventListener('click', () => {
-    showCatalogType(b.dataset.homeType as WineType);
-    document.querySelector<HTMLButtonElement>('.tab[data-tab="cellar"]')?.click();
-  }));
+
+  const grapes=new Map<string,number>();
+  for(const entry of allCatalogWines().filter(w=>w.type!=='Sake'))for(const grape of new Set(entry.wine.grape.replace(/^Bordeaux Blend \(([^)]+)\)$/, '$1').replace(/\([^)]*\)/g,'').split(/[\/,]/).map(g=>g.trim()).filter(Boolean)))grapes.set(grape,(grapes.get(grape)??0)+1);
+  setHTML('home-types',[...grapes].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([grape,count])=>`<button class="type-badge" data-beta-grape="${esc(grape)}">${esc(grape)} · ${count}</button>`).join(''));
+  document.querySelectorAll<HTMLButtonElement>('[data-beta-grape]').forEach(button=>button.addEventListener('click',()=>{showBetaCatalogGrape(button.dataset.betaGrape!);document.querySelector<HTMLButtonElement>('.tab[data-tab="cellar"]')?.click();}));
+
+  const grapesButton=document.getElementById('home-open-grapes');
+  if(grapesButton)grapesButton.onclick=()=>{showBetaCatalogGrape('');document.querySelector<HTMLButtonElement>('.tab[data-tab="cellar"]')?.click();};
+  const sakeButton=document.getElementById('home-sake');
+  if(sakeButton)sakeButton.onclick=()=>{showBetaCatalogType('Sake');document.querySelector<HTMLButtonElement>('.tab[data-tab="cellar"]')?.click();};
+
+  // Alerts
+  const alerts: string[] = [];
+  for (const [wid, stock] of Object.entries(inventoryCache)) {
+    const w = lookupWineById(wid);
+    if (!w) continue;
+    if (stock === 0) alerts.push(`<div class="alert-item alert-86"><span>${esc(w.wine.name.split('–')[0].trim())}</span><span class="badge-86">86</span></div>`);
+    else if (stock <= 2) alerts.push(`<div class="alert-item alert-85"><span>${esc(w.wine.name.split('–')[0].trim())}</span><span class="badge-85">${stock} left</span></div>`);
+  }
+  setHTML('home-alerts', alerts.length > 0 ? alerts.join('') : '<span class="muted">All stocked up</span>');
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// WINES TAB — the catalog with search, style chips and full tasting notes
+// CELLAR TAB — hierarchical browse: Type > Country > Grape > Wines
 // ═══════════════════════════════════════════════════════════════════
 
 async function renderCellar(): Promise<void> {
   const content = $('cellar-content');
-  if (content) await renderCatalog(content);
+  if (!content) return;
+
+  let html = '';
+
+  // Breadcrumb
+  const crumbs: string[] = ['All Types'];
+  if (cellarType) crumbs.push(TYPE_DISPLAY[cellarType]);
+  if (cellarCountry) crumbs.push(cellarCountry);
+  if (cellarGrape) crumbs.push(cellarGrape);
+  const showBack = cellarView !== 'types';
+
+  html += `<div class="breadcrumb">`;
+  if (showBack) html += `<button class="btn-back" data-action="cellar-back">‹</button>`;
+  html += `<span class="crumb-text">${crumbs.join(' › ')}</span></div>`;
+
+  // Filter chips (only at wine level)
+  if (cellarView === 'wines') {
+    html += `<div class="filter-row">
+      ${(['all', '85', '86'] as const).map(f =>
+        `<button class="chip ${cellarFilter === f ? 'active' : ''}" data-action="cellar-filter" data-value="${f}">${f === 'all' ? 'All' : f === '85' ? '85 Low' : '86 OOS'}</button>`
+      ).join('')}
+      <input id="cellar-search" class="search-input" placeholder="Search..." value="${esc(cellarSearch)}" />
+    </div>`;
+  }
+
+  if (cellarView === 'types') {
+    html += '<div class="browse-grid">';
+    for (const t of WINE_TYPES) {
+      let count = 0;
+      for (const c of COUNTRIES[t]) count += (WINES[t]?.[c] || []).length;
+      html += `<button class="browse-card" data-action="cellar-type" data-value="${t}" style="border-left:3px solid ${typeColor(t)}">
+        <div class="browse-title">${TYPE_DISPLAY[t]}</div>
+        <div class="browse-sub">${count} wines</div>
+      </button>`;
+    }
+    html += '</div>';
+
+  } else if (cellarView === 'countries' && cellarType) {
+    html += '<div class="browse-list">';
+    for (const country of COUNTRIES[cellarType]) {
+      const wines = WINES[cellarType]?.[country] || [];
+      html += `<button class="browse-row" data-action="cellar-country" data-value="${esc(country)}">
+        <span>${esc(country)}</span><span class="browse-count">${wines.length}</span>
+      </button>`;
+    }
+    html += '</div>';
+
+  } else if (cellarView === 'grapes' && cellarType && cellarCountry) {
+    const grapes = getGrapesForCountry(cellarType, cellarCountry);
+    html += '<div class="browse-list">';
+    for (const grape of grapes) {
+      const wines = getWinesForGrape(cellarType, cellarCountry, grape);
+      html += `<button class="browse-row" data-action="cellar-grape" data-value="${esc(grape)}">
+        <span>${esc(grape)}</span><span class="browse-count">${wines.length}</span>
+      </button>`;
+    }
+    html += '</div>';
+
+  } else if (cellarView === 'wines' && cellarType && cellarCountry && cellarGrape) {
+    let wines = getWinesForGrape(cellarType, cellarCountry, cellarGrape);
+
+    // Apply search
+    if (cellarSearch.trim()) {
+      const q = cellarSearch.toLowerCase();
+      wines = wines.filter(w => w.name.toLowerCase().includes(q) || w.grape.toLowerCase().includes(q));
+    }
+
+    html += '<div class="wine-cards">';
+    for (const wine of wines) {
+      const wineId = getWineId(cellarType, cellarCountry, wine.name);
+      if (!wineId) continue; // no canonical identity: not shown rather than mis-linked
+      const stock = inventoryCache[wineId] ?? null;
+      const isFav = favoritesCache.includes(wineId);
+      const refs = wineReferences(wineId);
+      const refChip = refs.claims.length
+        ? `<p class="ref-chip ref-verified">Producer-sourced facts · ${[...new Set(refs.claims.map(c => c.source.publisher))].map(esc).join(', ')} · checked ${esc(refs.claims[0].reviewed_at)}</p>`
+        : refs.open.length ? `<p class="ref-chip ref-open">Reference under review: ${esc(refs.open[0].note)}</p>`
+        : '<p class="ref-chip">Catalog details not yet verified</p>';
+
+      // Apply filter
+      if (cellarFilter === '85' && (stock === null || stock === 0 || stock > 2)) continue;
+      if (cellarFilter === '86' && stock !== 0) continue;
+
+      const stockClass = stock === null ? '' : stock === 0 ? 'stock-out' : stock <= 2 ? 'stock-low' : 'stock-ok';
+
+      html += `<div class="wine-card">
+        <div class="wine-card-top">
+          <div class="wine-card-info">
+            <div class="wine-card-name">${esc(wine.name.split('–')[0].trim())}</div>
+            <div class="wine-card-meta">${esc(wine.region)} · ${esc(wine.style)}</div>
+            ${refChip}
+          </div>
+          <button class="wl-text-button" data-save-library="${wineId}">＋ Winebrary</button><button class="fav-btn ${isFav ? 'faved' : ''}" data-action="toggle-fav" data-value="${wineId}">${isFav ? '★' : '☆'}</button>
+        </div>
+        <button class="wl-outline" data-wine-notes="${wineId}">Read tasting notes ↗</button>
+        <div class="stock-row">
+          <button class="stock-btn" data-action="stock-minus" data-value="${wineId}">−</button>
+          <span class="stock-value ${stockClass}">${stock ?? '—'}</span>
+          <button class="stock-btn" data-action="stock-plus" data-value="${wineId}">+</button>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════════════════

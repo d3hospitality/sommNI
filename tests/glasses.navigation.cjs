@@ -1,18 +1,17 @@
-const { serveG2Bottles } = require('./g2-backend.cjs');
-const BASE = process.env.WL_BASE_URL || 'http://localhost:5186';
+const TEST_ORIGIN = process.env.WINELENS_TEST_ORIGIN || 'http://localhost:5186';
 // G2 navigation + content-limit tests against a mock Even bridge (no glasses, no network).
 // Limits come from simulator 0.9.5 probes: list rows ≤ 63 UTF-8 bytes, text ≤ 999 bytes, ≤ 20 rows.
-// Needs the dev server on http://localhost:5186/sommNI/ (npm run dev).
+// Needs the dev server on the dev server (npm run dev; WINELENS_TEST_ORIGIN can override its origin).
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || (process.platform==='darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : undefined),headless:true});
- const page=await browser.newPage();await serveG2Bottles(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{ if(m.type()==='error'||process.env.VERBOSE) console.log('[page]',m.type(),m.text()); });
  // Exercise the mock bridge in isolation: Main.ts would otherwise overwrite
  // connection state asynchronously while these direct module tests are running.
- await page.route((BASE + '/sommNI/'), route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 navigation test</title>'}));
- await page.goto((BASE + '/sommNI/'));
+ await page.route(TEST_ORIGIN+'/sommNI/', route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>G2 navigation test</title>'}));
+ await page.goto(TEST_ORIGIN+'/sommNI/');
  const result=await page.evaluate(async()=>{
   const L=await import('/sommNI/src/glasses-list.ts');
   const P=await import('/sommNI/src/pages.ts');
@@ -20,7 +19,6 @@ const assert=require('node:assert/strict');
   const G=await import('/sommNI/src/winebrary-glasses.ts');
   const E=await import('/sommNI/src/events.ts');
   const A=await import('/sommNI/src/atlas-app.ts');
-  const Q=await import('/sommNI/src/quick-save.ts');
   const enc=new TextEncoder();const bytes=s=>enc.encode(s).length;
   const out={};
 
@@ -50,9 +48,9 @@ const assert=require('node:assert/strict');
   out.catalogPages=pages;out.catalogProblems=problems.slice(0,10);
 
   // ── 3. Mock bridge shared by the flows below ──
-  const shown=[];let rejectNext=false;let handler=null;let lastRebuild=0;const store={};const images=[];const texts=[];
+  const shown=[];let rejectNext=false;let handler=null;const store={};const images=[];const texts=[];
   const bridge={
-   rebuildPageContainer:async pg=>{ if(rejectNext){rejectNext=false;return false;} shown.push(pg);lastRebuild=Date.now();return true; },
+   rebuildPageContainer:async pg=>{ if(rejectNext){rejectNext=false;return false;} shown.push(pg);return true; },
    updateImageRawData:async u=>{images.push(u.containerName);return 'success';},
    textContainerUpgrade:async u=>{texts.push(u.containerName+':'+u.content);return true;},
    onEvenHubEvent:cb=>{handler=cb;return()=>{};},
@@ -66,13 +64,8 @@ const assert=require('node:assert/strict');
   // Real firmware sends no index (and no eventType) for row 0 clicks.
   // Legacy pages also stream sprites after the rebuild; taps during that are (correctly) dropped, so pause long enough.
   let gap=650;
-  // After the fixed gap, also wait for the page (and any sprites/map tiles it streams) to finish,
-  // so slower machines do not drop the next tap the way the glasses (correctly) would.
-  const Img=await import('/sommNI/src/image-utils.ts');
-  // Every module also ignores taps for a moment after a rebuild (ghost clicks): wait that out too.
-  const settled=async()=>{const until=Date.now()+8000;while(Date.now()<until&&(E.isNavigating()||G.libraryBusy()))await wait(50);await Img.imageIdle();const since=Date.now()-lastRebuild;if(since<550)await wait(550-since);};
-  const click=async i=>{handler({listEvent:{containerID:2,containerName:'x',...(i?{currentSelectItemIndex:i}:{})}});await wait(gap);await settled();};
-  const dbl=async()=>{handler({sysEvent:{eventType:3}});await wait(gap);await settled();};
+  const click=async i=>{handler({listEvent:{containerID:2,containerName:'x',...(i?{currentSelectItemIndex:i}:{})}});await wait(gap);};
+  const dbl=async()=>{handler({sysEvent:{eventType:3}});await wait(gap);};
 
   // ── 4. Winebrary on glasses ──
   const wine=(id,wine_name,vintage,state='year',extra={})=>({id,wine_name,producer:'P',vintage,region:'R',notes:'n',metadata:{vintage_state:state},...extra});
@@ -88,7 +81,6 @@ const assert=require('node:assert/strict');
   G.setLibrarySource(()=>({userId:'u1',loading:false,error:'',items}));
   const lib=[];
   const head=()=>shown.at(-1).textObject[0].content;
-
   await click(0);lib.push(last()+':'+head());  // home › My Winebrary › type
   await click(0);lib.push(last());           // Other › countries
   await click(0);lib.push(last());           // Country not set › regions
@@ -137,18 +129,7 @@ const assert=require('node:assert/strict');
   // Pairing › wine › notes › back returns to the pairing (it used to open a grapes list)
   // Outside the Even Hub host, companion data lives in browser storage. One legacy and one canonical ID: both resolve.
   localStorage.setItem('sommni_pairings',JSON.stringify([{id:'p1',name:'Friday tasting',notes:'',wineIds:['w0','wl_cabernet-sauvignon-vasse-felix'],createdAt:'',updatedAt:''}]));
-  await click(P.PAIRINGS_INDEX);const pl=last();await click(0);const pd=last();await click(1);const pn=last();
-  // Tap on the notes saves the wine to My Winebrary; the footer answers in place (no rebuild).
-  const hintNow=()=>texts.filter(t=>t.startsWith('notes-hint:')).at(-1);const rebuilds=shown.length;const saved=[];
-  const tapNotes=async()=>{handler({textEvent:{containerID:5,containerName:'notes'}});await wait(250);return hintNow();};
-  const signedOut=await tapNotes();
-  Q.setCatalogSaver(async id=>{saved.push(id);return 'saved';});const savedHint=await tapNotes();
-  Q.setCatalogSaver(async()=>'exists');const existsHint=await tapNotes();
-  Q.setCatalogSaver(async()=>{throw new Error('offline');});const failHint=await tapNotes();
-  handler({textEvent:{containerID:5,containerName:'notes',eventType:1}});await wait(250);   // scrolling the notes never saves
-  out.tapSave={signedOut,savedHint,existsHint,failHint,saved:[...saved],rebuilt:shown.length-rebuilds,afterScroll:hintNow()};
-  Q.setCatalogSaver(async id=>{saved.push(id);return 'saved';});
-  await dbl();
+  await click(P.PAIRINGS_INDEX);const pl=last();await click(0);const pd=last();await click(1);const pn=last();await dbl();
   out.pairing=[pl,pd,pn,last()];
   for(let i=0;i<3;i++) await dbl();
   out.home=last();
@@ -161,9 +142,7 @@ const assert=require('node:assert/strict');
   const rows=()=>shown.at(-1).textObject.find(t=>t.containerName==='atlas-rows').content;
   const rowsNow=()=>texts.filter(t=>t.startsWith('atlas-rows:')).at(-1)?.slice(11)??rows();
   await click(P.ATLAS_INDEX);await wait(1200);
-  out.atlasStyles=[A.atlasStatus().mode,rows().split('\n')[0]];   // the Atlas opens on wine styles
-  handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(900);   // All wines → countries
-  const atlas=[last(),rowsNow().split('\n')[0]];
+  const atlas=[last(),rows().split('\n')[0]];
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);
   atlas.push(A.atlasStatus().country);
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:1}});await wait(600);   // back up to the first country
@@ -177,11 +156,8 @@ const assert=require('node:assert/strict');
   handler({textEvent:{containerID:2,containerName:'atlas-rows',eventType:2}});await wait(600);  // next row: a catalog wine
   handler({textEvent:{containerID:2,containerName:'atlas-rows'}});await wait(1500);
   const catalogNotes=last();
-  const beforeAtlasTap=saved.length;handler({textEvent:{containerID:5,containerName:'notes'}});await wait(300);
-  out.atlasTapSave=[saved.slice(beforeAtlasTap),texts.filter(t=>t.startsWith('notes-hint:')).at(-1),last()];
   handler({sysEvent:{eventType:3}});await wait(1800);out.catalogFromAtlas=[catalogNotes,last(),A.atlasStatus().mode];
-  handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
-  out.atlasStylesAgain=A.atlasStatus().mode;
+  handler({sysEvent:{eventType:3}});await wait(600);handler({sysEvent:{eventType:3}});await wait(600);
   handler({sysEvent:{eventType:3}});await wait(1200);atlas.push(last(),A.atlasStatus().active);
   out.atlas=atlas;out.atlasImages=[...new Set(images)];
   // Catalog scope: only countries with wines; regions only through explicit links
@@ -216,13 +192,10 @@ const assert=require('node:assert/strict');
  assert.equal(result.home,'home-list');
  assert.equal(result.globe.atOpen,2);assert.deepEqual(result.globe.hover,['globe-top','globe-bottom']);
  assert.ok(result.globe.info.at(-1).startsWith('info:France'),result.globe.info.join('|'));
- assert.deepEqual(result.atlasStyles,['types','> All wines · 217']);assert.equal(result.atlasStylesAgain,'types','Back from countries returns to the styles');
  assert.deepEqual(result.atlas.slice(0,2),['atlas-title+atlas-rows+atlas-hint','> United States (1)']);
  assert.equal(result.atlas[2],'Australia');
  assert.equal(result.atlas[3],'regions');assert.equal(result.atlas[4],'> Napa Valley (1)');
  assert.equal(result.atlas[5],'detail');assert.match(result.atlas[6],/^Napa Valley\nMINE 1 · CATALOG \d+\n> Estate Cabernet 2019\n  \S/);
- assert.deepEqual(result.tapSave,{signedOut:'notes-hint:Link your account on the phone to save',savedHint:'notes-hint:Saved to My Winebrary  ·  Double tap: Back',existsHint:'notes-hint:Already in My Winebrary  ·  Double tap: Back',failHint:'notes-hint:Not saved. Check the connection and tap again.',saved:['wl_cabernet-sauvignon-vasse-felix'],rebuilt:0,afterScroll:'notes-hint:Not saved. Check the connection and tap again.'});
- assert.equal(result.atlasTapSave[0].length,1);assert.match(result.atlasTapSave[0][0],/^wl_/);assert.equal(result.atlasTapSave[1],'notes-hint:Saved to My Winebrary  ·  Double tap: Back');assert.equal(result.atlasTapSave[2],'wine-name+sub+notes+kicker+notes-hint');
  assert.deepEqual(result.catalogFromAtlas,['wine-name+sub+notes+kicker+notes-hint','atlas-title+atlas-rows+atlas-hint','detail']);
  assert.equal(result.everyCatalogWineListed,true);
  assert.equal(result.atlas[7],'library-kicker+library-title+library-vintage+library-notes+library-footer+map-caption');  // mapped wine: map-scene layout

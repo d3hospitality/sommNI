@@ -1,16 +1,15 @@
 // ═══════════════════════════════════════════════════════════════════
-// wineLENS — study review sync with the account API (PRD S-08)
+// sommNI — study review sync with the account API (PRD S-08)
 //
-// POST /api/study {action:'push', events}  → { accepted: string[], duplicates: string[] }
-// POST /api/study {action:'pull'}          → { events: ReviewEvent[] }
-// (the wineLENS account API — the same backend as Winebrary and billing)
+// POST /api/study/reviews  { events: ReviewEvent[] } → { accepted: string[], duplicates: string[] }
+// GET  /api/study/reviews                            → { events: ReviewEvent[] }
 //
 // The server takes ownership from the verified token and stores each
 // (user, event_id) once. Retries resend the same event IDs, so an offline
 // replay or a double submit can never count twice. Events are only sent for
 // the signed-in owner of the local log.
 // ═══════════════════════════════════════════════════════════════════
-import { accountRequest } from '../billing';
+import { account } from '../account-client';
 import { currentOwner, unsyncedEvents, markSynced, mergeEvents, onStudyChange, type ReviewEvent } from './store';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'offline' | 'unavailable' | 'error' | 'signed-out';
@@ -45,16 +44,9 @@ async function run(): Promise<SyncState> {
       if (auth !== who) return state; // account changed mid-flight: do not touch the new log
       await markSynced([...(res.accepted ?? []), ...(res.duplicates ?? [])]);
     }
-    // The server answers at most 1000 events per pull, oldest first: page by time (duplicates merge once).
-    let since: string | undefined;
-    for (let page = 0; page < 20; page++) {
-      const remote = await call('GET', token, undefined, since);
-      if (auth !== who || currentOwner() !== who.userId) return state;
-      const events = (remote.events ?? []) as ReviewEvent[];
-      await mergeEvents(events);
-      if (events.length < 1000 || events[events.length - 1].occurred_at === since) break;
-      since = events[events.length - 1].occurred_at;
-    }
+    const remote = await call('GET', token);
+    if (auth !== who || currentOwner() !== who.userId) return state;
+    await mergeEvents((remote.events ?? []) as ReviewEvent[]);
     return (state = unsyncedEvents().length ? 'error' : 'synced');
   } catch (error) {
     const status = (error as { status?: number }).status;
@@ -62,9 +54,18 @@ async function run(): Promise<SyncState> {
     return state;
   }
 }
-async function call(method: 'GET' | 'POST', _token: string, body?: { events: unknown[] }, since?: string): Promise<{ accepted?: string[]; duplicates?: string[]; events?: unknown[] }> {
-  try { return await accountRequest('study', method === 'POST' ? { action: 'push', events: body!.events } : { action: 'pull', ...(since ? { since } : {}) }); }
-  catch (error) { throw Object.assign(new Error('Study sync failed'), { status: (error as { status?: number }).status }); }
+async function call(method: 'GET' | 'POST', token: string, body?: unknown): Promise<{ accepted?: string[]; duplicates?: string[]; events?: unknown[] }> {
+  const session=(await account.auth.getSession()).data.session;
+  if(!session||session.access_token!==token)throw Error('Account changed.');
+  const owner=session.user.id;
+  if(method==='POST'){
+    const events=(body as {events:ReviewEvent[]}).events;
+    if(events.some(e=>e.user_id!==owner))throw Error('Review owner mismatch.');
+    const {error}=await account.from('study_review_events').upsert(events.map(e=>({...e,user_id:owner,scheduler_version:String(e.scheduler_version)})),{onConflict:'user_id,event_id',ignoreDuplicates:true});
+    if(error)throw error;return {accepted:events.map(e=>e.event_id)};
+  }
+  const {data,error}=await account.from('study_review_events').select('*').eq('user_id',owner).order('occurred_at');
+  if(error)throw error;return {events:(data||[]).map(e=>({...e,scheduler_version:e.scheduler_version}))};
 }
 
 // Try again shortly after new reviews and whenever the connection returns.

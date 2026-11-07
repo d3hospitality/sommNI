@@ -1,10 +1,10 @@
+import { maskGrayLens, lensPixel } from './lens-mask';
 /** Offline, orthographic 3D globe. Inverse projection avoids antimeridian seams
  * and clips the hidden hemisphere before rasterization. No WebGL dependency. */
 export interface Country { id: number; code: string; name: string; center: [number, number]; regionCount: number; wineryCount: number }
-export interface Region { id: string; name: string; sourceKey: string; country: string; center: [number, number]; radius: number; points: [number, number][]; count: number; geometryKind: 'winery-cluster' }
+export interface Region { id: string; name: string; sourceKey: string; country: string; center: [number, number]; radius: number; points: [number, number][]; count: number; geometryKind: 'winery-cluster' | 'administrative-region' }
 export interface AtlasData { countries: Country[]; regions: Region[]; provenance: { sourcePointCount: number; excluded: {points: number}[] } }
-/** footprint: further country ids lit like the selected one (a wine style's countries). */
-export interface View { country: Country; region?: Region; center?: [number, number]; radius?: number; footprint?: number[] }
+export interface View { country: Country; region?: Region; center?: [number, number]; radius?: number }
 export interface Frame { size: number; gray: Uint8Array; selected: Uint8Array }
 const DEG = Math.PI / 180;
 const BAYER = [0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
@@ -41,13 +41,12 @@ export class GlobeRenderer {
     const count=size*size, gray=new Uint8Array(count), selected=new Uint8Array(count);
     const idmap=new Int16Array(count).fill(-1), light=new Float32Array(count), grids=new Uint8Array(count);
     const sinP=Math.sin(center[1]*DEG),cosP=Math.cos(center[1]*DEG);
-    const lit=new Set([view.country.id,...(view.footprint??[])]);
     for(let y=0;y<size;y++)for(let x=0;x<size;x++) {
       const dx=(x+.5-size/2)/scale,dy=-(y+.5-size/2)/scale, r2=dx*dx+dy*dy;
       if(r2>=1)continue;
       const z=Math.sqrt(1-r2),lat=Math.asin(dy*cosP+z*sinP)/DEG;
       let lon=center[0]+Math.atan2(dx,z*cosP-dy*sinP)/DEG;lon=((lon+540)%360)-180;
-      const i=y*size+x,id=this.countryAt(lon,lat);idmap[i]=id;selected[i]=Number(lit.has(id));
+      const i=y*size+x,id=this.countryAt(lon,lat);idmap[i]=id;selected[i]=Number(id===view.country.id);
       light[i]=.52+.48*Math.max(0,z*.87-dx*.3+dy*.25);
       const step=angular<.5?.1:angular<2?.5:angular<5?1:angular<20?5:30, tolerance=angular/size*.27;
       if(Math.abs(lon/step-Math.round(lon/step))*step<tolerance || Math.abs(lat/step-Math.round(lat/step))*step<tolerance)grids[i]=1;
@@ -56,7 +55,7 @@ export class GlobeRenderer {
     for(let y=1;y<size-1;y++)for(let x=1;x<size-1;x++) {
       const i=y*size+x, id=idmap[i];if(id<0)continue;
       const near=[idmap[i-1],idmap[i+1],idmap[i-size],idmap[i+size]];
-      if(near.some(n=>n!==id))edge[i]=selected[i] || near.some(n=>lit.has(n)) ? 2 : 1;
+      if(near.some(n=>n!==id))edge[i]=selected[i] || near.includes(view.country.id) ? 2 : 1;
     }
     for(let y=0;y<size;y++)for(let x=0;x<size;x++) {
       const i=y*size+x;if(idmap[i]<0)continue;
@@ -84,6 +83,7 @@ export class GlobeRenderer {
       const p=project(view.country.center[0],view.country.center[1],center,scale,size);
       if(p.visible){const x=Math.round(p.x),y=Math.round(p.y);for(let t=-2;t<=2;t++){mark(x+t,y-3,170);mark(x+t,y+3,170);mark(x-3,y+t,170);mark(x+3,y+t,170);}}
     }
+    maskGrayLens(gray,size,size,size/2-10);
     return {size,gray,selected};
   }
 }
@@ -95,7 +95,7 @@ export function paintFrame(canvas:HTMLCanvasElement, frame:Frame, mode:'green'|'
     if(mode==='gray'){data.data[o]=data.data[o+1]=data.data[o+2]=v;}
     else if(mode==='green'){data.data[o]=Math.round(v*.23);data.data[o+1]=v;data.data[o+2]=Math.round(v*.29);}
     else {const c=frame.selected[i]?[246,176,144]:[210,218,197];data.data[o]=13+v*c[0]/255;data.data[o+1]=23+v*c[1]/255;data.data[o+2]=21+v*c[2]/255;}
-    data.data[o+3]=255;
+    data.data[o+3]=lensPixel(i%frame.size,Math.floor(i/frame.size),frame.size,frame.size,frame.size/2-10)?255:0;
   }
   ctx.putImageData(data,0,0);
 }

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createResearchService} from '../supabase/functions/winelens-research/service.ts';
+const owner=crypto.randomUUID(),id=crypto.randomUUID();
+let row:any={id,user_id:owner,wine_name:'Brunello',producer:'Caparzo',vintage:2019,notes:'Private observations',metadata:{tasting_notes:'Reference notes'}},conflict=false,uploads=0;
+const db:any={from(table:string){let filters:any[]=[],update:any;const chain:any={select(){return chain},eq(key:string,value:any){assert.notEqual(key,'updated_at');filters.push([key,value]);return chain},filter(key:string,operator:string,value:any){assert.equal(key,'metadata');filters.push([key,operator==='is'?null:JSON.parse(value)]);return chain},update(value:any){update=value;return chain},async maybeSingle(){if(table==='wl_account_deletions')return {data:null};if(filters.some(([k,v])=>JSON.stringify(row[k])!==JSON.stringify(v))||update&&conflict)return {data:null};if(update)row={...row,...update};return {data:structuredClone(row)}}};return chain},storage:{from(){return {async upload(){uploads++;return {data:{}}},async createSignedUrl(){return {data:{signedUrl:'https://example.com/private-bottle.png'}}}}}}};
+const service=createResearchService({db,env:()=>undefined,fetch:async()=>{throw Error('No provider call expected')}});
+const photo='data:image/png;base64,'+(await readFile('.qa-bottle/cutout.png')).toString('base64');
+const request={action:'attach_bottle',collection_id:id,expected:{wine_name:row.wine_name,producer:row.producer,vintage:row.vintage},photo,provenance:{source_page:'https://example.com/wine',secret:'not allowed'}};
+const result=await service(owner,request);assert.ok(result.item.image_url);assert.equal(row.notes,'Private observations');assert.equal(row.metadata.tasting_notes,'Reference notes');assert.equal(row.metadata.bottle_provenance.secret,undefined);assert.ok(row.metadata.image_path.startsWith(owner+'/'));
+await assert.rejects(()=>service(crypto.randomUUID(),request),/Wine not found/);
+await assert.rejects(()=>service(owner,{...request,expected:{...request.expected,vintage:2020}}),/changed/);
+conflict=true;await assert.rejects(()=>service(owner,request),/changed while preparing/);
+console.log('PASS: real-schema image attachment, private ownership, preserved notes, safe provenance, concurrent metadata edit rejected.');

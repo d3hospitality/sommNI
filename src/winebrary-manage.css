@@ -1,0 +1,53 @@
+.wl-view-toolbar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:12px 0 24px;color:var(--muted);font-size:12px}
+.wl-view-toolbar label{display:flex;align-items:center;gap:7px;font-size:10px}.wl-view-toolbar select{padding:10px;border:1px solid var(--line);border-radius:5px;font:inherit}.wl-view-toolbar>span{margin-left:auto}
+.wl-view-switch{display:flex;border:1px solid var(--line);border-radius:6px;padding:3px;gap:3px}.wl-view-switch button{padding:6px 10px;min-height:30px;color:var(--text);background:none;border:0;border-radius:3px;font:inherit;font-size:10px;line-height:1.4;cursor:pointer}.wl-view-switch button[aria-pressed=true]{color:var(--bg);background:var(--gold)}
+@keyframes sommni-arrival{0%,25%{box-shadow:inset 0 0 0 2px #c4a84d;background-color:#c4a84d20}100%{box-shadow:inset 0 0 0 2px transparent;background-color:transparent}}
+.sommni-arrived{animation:sommni-arrival 2.4s ease-out}.wine-research .sommni-arrived{border-radius:8px}
+@media(prefers-reduced-motion:reduce){.sommni-arrived{animation:none;outline:2px solid var(--gold);outline-offset:3px}}
+.wl-edit-extra{border-top:1px solid var(--line);padding:16px 0;margin:10px 0}.wl-edit-extra summary{cursor:pointer;font-size:13px;color:var(--gold)}
+
+.research-bottle-options button[aria-pressed="true"]{outline:3px solid #f3dc4c;outline-offset:3px;background:rgba(243,220,76,.12);box-shadow:0 0 0 7px rgba(243,220,76,.08)}
+.research-bottle-options button[aria-pressed="true"] span::after{content:" · Selected ✓";color:var(--wl-accent,#b29c00);font-weight:700}
+
+/* Compact rows reveal detail in place, with no horizontal table scrolling. */
+:is(#winebrary-content,#beta-catalog) .wl-library-toolbar{display:flex;gap:8px 12px;padding:10px 0;margin:0 0 12px}
+:is(#winebrary-content,#beta-catalog) .wl-library-toolbar>.wl-muted{flex:1 1 180px;margin:0;font-size:11px}
+:is(#winebrary-content,#beta-catalog) .wl-search-label{flex:1 1 210px;min-width:0}
+:is(#winebrary-content,#beta-catalog) .wl-search-label input{padding:9px 12px;font-size:13px;margin:0;box-sizing:border-box}
+:is(#winebrary-content,#beta-catalog) .wl-library-toolbar button{padding:8px 0;margin:0;font-size:11px}
+#winebrary-content .wl-view-toolbar{gap:12px;margin:8px 0 14px}
+#winebrary-content .wl-view-switch button{padding:6px 10px}
+#winebrary-content .wl-view-toolbar select{padding:6px 8px;max-width:160px;min-height:32px;font-size:10px}
+.wl-compact-list{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:28px}
+.wl-compact-row{border-top:1px solid var(--line)}.wl-compact-row:first-child{border-top:0}
+.wl-compact-row details{min-width:0}.wl-compact-row summary{display:grid;grid-template-columns:32px minmax(0,1fr) 52px minmax(100px,22%) 20px;gap:12px;align-items:center;min-height:64px;padding:8px 14px;box-sizing:border-box;cursor:pointer;list-style:none}
+.wl-compact-row summary::-webkit-details-marker{display:none}.wl-compact-row summary:hover{background:var(--bg-card-hover)}
+.wl-row-bottle{display:grid;place-items:center;width:32px;height:46px;color:var(--muted)}.wl-row-bottle img{width:100%;height:100%;object-fit:contain}
+.wl-row-identity,.wl-row-origin{min-width:0}.wl-row-identity strong,.wl-row-identity small,.wl-row-origin>span,.wl-row-origin small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl-row-identity strong{font-size:13px;font-weight:500;line-height:1.5}.wl-row-identity small,.wl-row-origin small{font-size:11px;color:var(--muted);line-height:1.5;margin-top:2px}.wl-row-vintage,.wl-row-origin>span{font-size:12px;line-height:1.5}.wl-row-vintage{font-variant-numeric:tabular-nums;color:var(--gold)}
+.wl-row-chevron{color:var(--muted);text-align:center;font-size:17px;transition:transform .15s}.wl-compact-row details[open] .wl-row-chevron{transform:rotate(180deg)}.wl-compact-row details[open] .wl-row-identity strong,.wl-compact-row details[open] .wl-row-identity small{white-space:normal;overflow-wrap:anywhere}
+.wl-row-expanded{display:flex;align-items:flex-start;gap:20px;padding:12px 18px 20px 14px;border-top:1px solid var(--line)}.wl-row-full-bottle{width:90px;height:190px;object-fit:contain;flex-shrink:0}.wl-row-information{flex:1;min-width:0}
+.wl-row-information dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 20px;margin:0 0 14px}.wl-row-information dt{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:4px}.wl-row-information dd{font-size:12px;line-height:1.5;margin:0;overflow-wrap:anywhere}.wl-row-note{font-size:12px!important;line-height:1.7;white-space:pre-line;max-width:65ch;margin:10px 0 14px;overflow-wrap:anywhere}
+.wl-row-actions{display:flex;flex-wrap:wrap;gap:6px}.wl-row-actions button{padding:9px 11px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--text);font:inherit;font-size:11px;cursor:pointer;min-height:36px}.wl-row-actions button:first-child{color:var(--gold)}.wl-row-actions button:hover{border-color:var(--gold)}
+.wl-remove-list{max-height:220px;overflow:auto;padding-left:22px;line-height:1.8}.wl-compact-row :focus-visible,.wl-view-switch button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:600px){.wl-compact-row summary{grid-template-columns:26px minmax(0,1fr) 38px 14px;gap:8px;padding-right:10px;min-height:70px}.wl-row-bottle{grid-row:1/3;width:26px;height:44px}.wl-row-identity{grid-column:2;grid-row:1}.wl-row-vintage{grid-column:3;grid-row:1/3;align-self:start;padding-top:2px;font-size:11px}.wl-row-chevron{grid-column:4;grid-row:1/3}.wl-row-origin{grid-column:2;grid-row:2;display:flex;gap:6px;margin-top:-5px}.wl-row-origin>span,.wl-row-origin small{font-size:10px;margin:0}.wl-row-origin small::before{content:'· ';}.wl-row-identity strong{font-size:12px}.wl-row-identity small{font-size:10px}.wl-row-expanded{gap:12px;padding:12px 12px 16px;flex-wrap:wrap}.wl-row-full-bottle{width:64px;height:140px}.wl-row-information{flex-basis:150px}.wl-row-information dl{grid-template-columns:1fr;gap:10px}#winebrary-content .wl-view-toolbar{gap:8px}#winebrary-content .wl-view-toolbar>span{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){.wl-row-chevron{transition:none}}
+
+@media(max-width:600px){.wl-row-expanded{display:grid;grid-template-columns:64px minmax(0,1fr)}.wl-row-information{display:contents}.wl-row-information>*{grid-column:1/-1}.wl-row-information dl{grid-column:2;margin-bottom:0}.wl-row-note{margin:0}.wl-row-full-bottle{grid-column:1;grid-row:1}}
+
+/* Swipe reveals per-bottle actions without selection controls. */
+.wl-compact-row{display:block;position:relative;overflow:hidden}
+.wl-swipe-content{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 36px;background:var(--bg);transform:translateX(var(--swipe-x,0px));transition:transform .18s ease;touch-action:pan-y}
+.wl-compact-row.actions-open{--swipe-x:-156px}.wl-compact-row.is-swiping .wl-swipe-content{transition:none}
+.wl-swipe-dock{position:absolute;right:0;top:0;width:156px;height:64px;display:flex;background:var(--bg-card)}
+.wl-swipe-dock button{flex:1;min-width:0;border:0;border-left:1px solid var(--line);background:transparent;color:var(--gold);font:inherit;font-size:11px;cursor:pointer}.wl-swipe-dock button[data-remove-wine]{color:#efa8a0}.wl-swipe-dock button[data-close-actions]{flex:0 0 36px;font-size:22px}
+.wl-row-more{align-self:start;height:64px;border:0;background:transparent;color:var(--muted);font-size:22px;cursor:pointer}.wl-row-more:hover{color:var(--gold)}
+@media(max-width:600px){.wl-swipe-content{grid-template-columns:minmax(0,1fr) 30px}.wl-swipe-dock,.wl-row-more{height:70px}.wl-compact-row summary{padding-right:2px}}
+@media(prefers-reduced-motion:reduce){.wl-swipe-content{transition:none}}
+
+.wl-swipe-hint{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 2px 12px;color:var(--muted);font-size:11px;line-height:1.5}.wl-swipe-arrow{color:var(--gold);font-size:23px;line-height:1}.wl-swipe-hint strong{color:var(--gold);font-weight:500}.wl-swipe-hint small{margin-left:auto;font-size:10px}@media(max-width:380px){.wl-swipe-hint small{flex-basis:100%;margin-left:31px}}
+
+/* Quiet, non-interactive origin dividers in the continuous Winebrary. */
+.wl-compact-list .wl-origin-divider{margin:0;padding:18px 18px 6px 26px;border-top:1px solid var(--line);font:600 11px/1.4 var(--font-sans,sans-serif);letter-spacing:.04em;text-transform:none;color:var(--gold)}
+.wl-compact-list .wl-origin-divider:first-child{border-top:0}
+.wl-compact-list .wl-region-divider{margin:0;padding:5px 18px 9px 38px;font:400 10px/1.5 var(--font-sans,sans-serif);letter-spacing:.04em;color:var(--muted,#aaa399)}

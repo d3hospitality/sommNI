@@ -1,0 +1,53 @@
+<!doctype html><meta charset="utf-8"><title>sommNI · G2 Home motion</title>
+<style>body{background:#101711;color:#e3efdc;font:15px system-ui;margin:32px;max-width:1120px}h1{font:32px Georgia}canvas{background:#020603;image-rendering:pixelated;width:864px;max-width:100%;border:1px solid #304332;border-radius:8px}button{padding:12px 18px;background:#c8d8bc;border:0;border-radius:5px;margin:8px 6px 14px 0}pre{white-space:pre-wrap;font-size:12px;color:#a6ba9a}p{color:#a6ba9a}</style>
+<h1>sommNI · on glasses</h1><p>The actual 576 × 288 G2 layout and transmitted image frames. Text is approximated for this browser preview.</p>
+<canvas id="screen" width="576" height="288"></canvas><br><button id="play">Preview head tilt</button><label>Simulated head roll <input id="tilt" type="range" min="-25" max="25" value="0"></label><button id="stop">Pause preview</button><button id="test">Run lifecycle checks</button><button id="impulse">Compare liquid frames</button><div id="frames" style="display:flex;gap:10px;flex-wrap:wrap"></div><pre id="result">Choose Preview head tilt or Run lifecycle checks.</pre>
+<script type="module">
+import {buildHomePage,rebuildHomePage,buildWineTypesPage} from './src/pages';
+import {validateGlassesPage} from './src/glasses-page';
+import {rebuildGlassesPage,pushHomeToGlasses,pushLogoToGlasses,pauseHomePour,resumeHomePour,configureHomeMotion,invalidateImages,suspendImages,imageIdle,sendSerial} from './src/image-utils';
+import {homeGlassGray,paintGlass,GLASS_WIDTH,GLASS_HEIGHT} from './src/intelligence/pour';
+import {Liquid,APERTURE} from './src/home-directions/fluid';
+import {encodeCompactGrayscalePng,encodeGrayscalePng} from './src/pngEncoder';
+import {claimDisplay,dropDisplay} from './src/display';
+const screen=document.querySelector('#screen'),ctx=screen.getContext('2d'),result=document.querySelector('#result'),wait=ms=>new Promise(r=>setTimeout(r,ms));
+let page,flight=0,peak=0,delay=15,fail=false,frames=[],pages=[],hold=null,imu=false,imuCalls=[];const listeners=new Set();
+function sample(degrees=0){const a=degrees*Math.PI/180;for(const cb of listeners)cb({sysEvent:{eventType:8,imuData:{x:0,y:Math.sin(a),z:Math.cos(a)}}});}
+async function operation(task){peak=Math.max(peak,++flight);try{await wait(delay);return await task();}finally{flight--;}}
+function drawPage(p){page=p;ctx.fillStyle='#020603';ctx.fillRect(0,0,576,288);ctx.font='18px sans-serif';ctx.fillStyle='#adff96';const list=p.listObject?.[0];if(list){list.itemContainer.itemName.forEach((name,i)=>ctx.fillText(name,list.xPosition+8,list.yPosition+26+i*40));ctx.strokeStyle='#adff96';ctx.strokeRect(3,3,list.width-3,38);}for(const box of p.textObject??[])ctx.fillText(box.content,box.xPosition,box.yPosition+20);}
+const bridge={
+ onEvenHubEvent:cb=>{listeners.add(cb);return()=>listeners.delete(cb);},
+ imuControl:on=>operation(()=>{imu=on;imuCalls.push(on);return true;}),
+ rebuildPageContainer:p=>operation(()=>{validateGlassesPage(p);pages.push(p);drawPage(p);return true;}),
+ updateImageRawData:img=>operation(async()=>{if(hold){const waiting=hold;hold=null;await waiting;}if(fail)return 'sendFailed';const box=page.imageObject.find(b=>b.containerName===img.containerName);if(!box)throw Error('Stale image sent to '+img.containerName);const data=new Uint8Array(img.imageData),bitmap=await createImageBitmap(new Blob([data],{type:'image/png'}));if(bitmap.width!==box.width||bitmap.height!==box.height)throw Error('Image size mismatch');const layer=document.createElement('canvas');layer.width=box.width;layer.height=box.height;const c=layer.getContext('2d');c.drawImage(bitmap,0,0);const rgba=c.getImageData(0,0,box.width,box.height);for(let i=0;i<rgba.data.length;i+=4){const level=rgba.data[i];rgba.data[i]=level*.66;rgba.data[i+1]=level;rgba.data[i+2]=level*.55;rgba.data[i+3]=255;}ctx.putImageData(rgba,box.xPosition,box.yPosition);bitmap.close();frames.push({name:img.containerName,data:Array.from(data),at:performance.now()});return 'success';}),
+ shutDownPageContainer:()=>operation(()=>true),
+};
+async function home(){await rebuildGlassesPage(bridge,rebuildHomePage());await pushLogoToGlasses(bridge,'');sample(0);}
+document.querySelector('#play').onclick=async()=>{configureHomeMotion(true);await home();result.textContent='Fixed fill · move the head-roll slider, then stop. Watch the surface lag, ripple and settle. Real G2 uses its head sensor; there is no idle loop.';};
+document.querySelector('#tilt').oninput=e=>{for(let i=0;i<12;i++)sample(Number(e.target.value));};
+document.querySelector('#stop').onclick=()=>{pauseHomePour();result.textContent='Preview paused.';};
+document.querySelector('#test').onclick=async()=>{
+ const checks=[],check=(ok,text)=>{if(!ok)throw Error(text);checks.push(text);result.textContent=JSON.stringify({running:true,checks},null,2);};
+ try{
+  validateGlassesPage(buildHomePage());check(buildHomePage().imageObject.every(i=>i.width<=288&&i.height<=144),'G2 images fit hardware bounds');
+  check(GLASS_WIDTH===128&&GLASS_HEIGHT===144&&buildHomePage().imageObject.length===1,'one 128×144 composite keeps the small background and glass in one transfer');
+  const hashes=new Set([-.3,0,.3].map(r=>homeGlassGray(r).join(',')));check(hashes.size===3,'head poses change the actual glass pixels');check(Math.max(...homeGlassGray())===136,'sparse glass stays dimmer than native text');
+  const gray=homeGlassGray(),compact=await encodeCompactGrayscalePng(GLASS_WIDTH,GLASS_HEIGHT,gray);check(compact.length<encodeGrayscalePng(GLASS_WIDTH,GLASS_HEIGHT,gray).length/4,'compressed grayscale Home frame uses less than a quarter of the raw payload');
+  check(compact.length<11600,'new composite is smaller on the wire than the old 96×120 glass');
+  configureHomeMotion(true);await home();await imageIdle();check(imu,'head sensor started only on Home');const initial=frames.length;await wait(1000);check(frames.length===initial,'still head generates zero idle image transfers');
+  for(let i=0;i<30;i++)sample(i%2?.05:-.05);await wait(700);check(frames.length===initial,'tiny sensor jitter does not trigger image transfers');
+  for(let i=0;i<12;i++)sample(20);await wait(800);await imageIdle();check(frames.length>initial,'head tilt starts a small-image slosh response');await wait(6500);await imageIdle();const settled=frames.length;await wait(1200);check(frames.length===settled,'sloshing settles then stops image traffic');check(settled-initial<=24,'settling tail is bounded to small low-rate transfers');check(pages.length===1,'head motion never rebuilds menu');check(peak===1,'sensor and images serialize on the bridge');
+  await rebuildGlassesPage(bridge,buildWineTypesPage());await imageIdle();check(!imu&&listeners.size===0,'leaving Home stops and unsubscribes IMU');const away=frames.length;sample(-20);await wait(700);check(frames.length===away,'head events cannot overwrite a newer page');await pushHomeToGlasses(bridge);check(frames.length===away,'late home artwork is discarded');
+  await home();suspendImages(true);await imageIdle();check(!imu,'background turns sensor off');const paused=frames.length;await wait(700);check(frames.length===paused,'background has no image traffic');suspendImages(false);await resumeHomePour();await imageIdle();check(imu,'foreground resumes sensor on Home');
+  configureHomeMotion(false);await imageIdle();check(!imu,'motion setting stops sensor');const still=frames.length;await wait(700);check(frames.length===still,'disabled motion paints only a still glass');
+  configureHomeMotion(true);await imageIdle();await claimDisplay('qa-other',()=>{});invalidateImages();await imageIdle();check(!imu,'display handoff stops motion');dropDisplay('qa-other');await resumeHomePour();await imageIdle();
+  pauseHomePour();await imageIdle();check(!imu&&listeners.size===0,'exit removes hardware subscription');await sendSerial(()=>bridge.shutDownPageContainer(1));
+  await home();delay=900;for(let i=0;i<25;i++)sample(i===24?-20:20);await wait(1900);pauseHomePour();await imageIdle();check(peak===1,'slow transfers do not overlap');delay=15;
+  fail=true;await home();await imageIdle();check(!imu&&listeners.size===0,'failed frame keeps head sensor off');fail=false;
+  await home();pauseHomePour();await imageIdle();await rebuildGlassesPage(bridge,rebuildHomePage());let release;hold=new Promise(r=>release=r);const pending=resumeHomePour();await wait(5200);const changed=rebuildGlassesPage(bridge,buildWineTypesPage());await wait(60);check(flight===1,'timed-out transfer retains exclusive queue ownership');release();await pending;await changed;await imageIdle();check(peak===1,'navigation waits for unfinished transport');
+  result.textContent=JSON.stringify({passed:true,checks:checks.length,details:checks,peakConcurrentBridgeCalls:peak,homeFrameBytes:(await encodeCompactGrayscalePng(GLASS_WIDTH,GLASS_HEIGHT,homeGlassGray())).length},null,2);document.title='PASS · G2 Home motion';
+ }catch(error){result.textContent=JSON.stringify({passed:false,error:String(error),checks},null,2);document.title='FAIL · G2 Home motion';}finally{pauseHomePour();}
+};
+document.querySelector('#impulse').onclick=()=>{const model=new Liquid(APERTURE),target={roll:.35,pitch:.16};model.setPose(target,0);const parent=document.querySelector('#frames');parent.replaceChildren();for(const t of [0,160,450,1000,1800,6000]){const figure=document.createElement('figure'),c=document.createElement('canvas'),caption=document.createElement('figcaption');figure.style.margin='0';c.width=GLASS_WIDTH;c.height=GLASS_HEIGHT;c.style.width='200px';model.advance(t);paintGlass(c,target.roll,target.pitch,false,model.surface());caption.textContent=(t/1000).toFixed(2)+' s';figure.append(c,caption);parent.append(figure);}};
+drawPage(buildHomePage());
+</script>

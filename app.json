@@ -1,29 +1,35 @@
 {
   "package_id": "com.d3hospitality.sommni",
   "edition": "202601",
-  "name": "wineLENS",
-  "version": "3.0.0",
-  "min_app_version": "2.0.0",
+  "name": "sommNI Beta",
+  "version": "3.7.39",
+  "min_app_version": "2.2.10",
   "min_sdk_version": "0.0.9",
   "entrypoint": "index.html",
   "permissions": [
     {
       "name": "network",
-      "desc": "Loads wines and private account bottle images",
+      "desc": "Loads research, study, translations and voice search. Processes selected bottle photos with Supabase. Shared wine details and artwork enter our shared master catalog; personal notes stay private. Optional D3 account pairing syncs your own wines and study progress.",
       "whitelist": [
         "https://d3hospitality.github.io",
         "https://sommni-api.vercel.app",
         "https://mcmtasetompygfktzhpr.supabase.co",
-        "https://sommni-beige.vercel.app"
+        "https://sommni-beige.vercel.app",
+        "https://www.google.com",
+        "https://d3hospitality.com"
       ]
     },
     {
       "name": "g2-microphone",
-      "desc": "Voice search for wines using push-to-talk"
+      "desc": "Supports push-to-talk wine search."
     },
     {
       "name": "album",
-      "desc": "Choose a bottle photograph for your private Winebrary."
+      "desc": "Choose a bottle photograph for your Winebrary and the shared wine catalog."
+    },
+    {
+      "name": "camera",
+      "desc": "Photograph a wine label for identification after you choose to research it."
     }
   ],
   "supported_languages": [

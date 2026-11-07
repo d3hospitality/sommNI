@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>sommNI bottle raster checks</title><h1>215 bottle raster checks</h1><p id="status">Running</p><pre id="results"></pre><script type="module">const run=async()=>{
+      const { bottleCanvas, toGreenLevels } = await import('/sommNI/src/bottle-raster.ts');
+      const manifest = await (await fetch('/sommNI/bottles/manifest.json')).json();
+      const failures = [], previews = [];
+      for (const asset of manifest.assets) {
+        try {
+          const canvas = await bottleCanvas(`/sommNI/bottles/${asset.file}`, 100, 240);
+          const ctx = canvas.getContext('2d');
+          const gray = toGreenLevels(ctx.getImageData(0, 0, 100, 240).data);
+          let pixels = 0, minY = 240, maxY = -1;
+          for (let y = 0; y < 240; y++) for (let x = 0; x < 100; x++) {
+            const value = gray[y * 100 + x];
+            if (value % 17) throw Error('Not 16-level grayscale');
+            if (value) {
+              pixels++; minY = Math.min(y, minY); maxY = Math.max(y, maxY);
+              if (x < 3 || x > 96 || y < 3 || y > 236) throw Error('Clipped display margin');
+            }
+          }
+          if (pixels < 100 || maxY - minY < 175) throw Error('Bottle too small or blank');
+          const preview = ctx.createImageData(100, 240);
+          for (let i = 0; i < gray.length; i++) {
+            preview.data[i * 4 + 1] = gray[i]; preview.data[i * 4 + 3] = 255;
+          }
+          ctx.putImageData(preview, 0, 0);
+          previews.push({ id: asset.id, png: canvas.toDataURL('image/png').split(',')[1], pixels });
+        } catch (error) { failures.push({ id: asset.id, error: String(error) }); }
+      }
+      return { count: manifest.assets.length, pending: manifest.issues.length, failures, previews };};try{const result=await run();document.querySelector('#status').textContent=result.failures.length?'FAIL':'PASS';document.querySelector('#results').textContent=JSON.stringify({count:result.count,pending:result.pending,failures:result.failures},null,2)}catch(e){document.querySelector('#status').textContent='FAIL';document.querySelector('#results').textContent=e.stack}</script>

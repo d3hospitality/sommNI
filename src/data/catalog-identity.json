@@ -568,7 +568,7 @@
   },
   {
    "id": "wl_sea-smoke-sea-spray",
-   "key": "Red|United States|Sea Smoke \"Sea Spray\"",
+   "key": "Sparkling|United States|Sea Smoke \"Sea Spray\"",
    "legacy_id": "w94",
    "status": "active"
   },
@@ -736,7 +736,7 @@
   },
   {
    "id": "wl_les-carmes-de-rieussec-chateau-rieussec",
-   "key": "White|France|Les Carmes de Rieussec – Château Rieussec",
+   "key": "Dessert|France|Les Carmes de Rieussec – Château Rieussec",
    "legacy_id": "w122",
    "status": "active"
   },

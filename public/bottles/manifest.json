@@ -1,9 +1,9 @@
 {
-  "pipeline": "photographic-v2",
+  "pipeline": "photographic-v3",
   "assets": [
     {
       "id": "w0",
-      "name": "Grand Malbec – Terrazas de los Andes",
+      "name": "Grand Malbec \u2013 Terrazas de los Andes",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w0/ref_02.png",
@@ -21,7 +21,7 @@
     },
     {
       "id": "w1",
-      "name": "Cabernet Sauvignon – Vasse Felix",
+      "name": "Cabernet Sauvignon \u2013 Vasse Felix",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w1/ref_02.webp",
@@ -39,7 +39,7 @@
     },
     {
       "id": "w2",
-      "name": "Henry’s Seven – Henschke",
+      "name": "Henry\u2019s Seven \u2013 Henschke",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w2/ref_03.jpg",
@@ -57,7 +57,7 @@
     },
     {
       "id": "w3",
-      "name": "Aloxe-Corton – Louis Latour",
+      "name": "Aloxe-Corton \u2013 Louis Latour",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w3/ref_05.png",
@@ -75,7 +75,7 @@
     },
     {
       "id": "w4",
-      "name": "Aloxe-Corton – Tollot-Beaut",
+      "name": "Aloxe-Corton \u2013 Tollot-Beaut",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w4/ref_06.jpg",
@@ -93,7 +93,7 @@
     },
     {
       "id": "w5",
-      "name": "Château Margaux Grand Vin",
+      "name": "Ch\u00e2teau Margaux Grand Vin",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w5/ref_06.png",
@@ -111,7 +111,7 @@
     },
     {
       "id": "w6",
-      "name": "Gevrey-Chambertin – Jean-Claude Boisset",
+      "name": "Gevrey-Chambertin \u2013 Jean-Claude Boisset",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w6/ref_03.png",
@@ -129,7 +129,7 @@
     },
     {
       "id": "w7",
-      "name": "Gevrey-Chambertin – Taupenot-Merme",
+      "name": "Gevrey-Chambertin \u2013 Taupenot-Merme",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w7/ref_01.jpg",
@@ -147,7 +147,7 @@
     },
     {
       "id": "w8",
-      "name": "Nuits-Saint-Georges – Maison Latour",
+      "name": "Nuits-Saint-Georges \u2013 Maison Latour",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w8/ref_06.jpg",
@@ -165,7 +165,7 @@
     },
     {
       "id": "w9",
-      "name": "Santenay 1er Cru \"Grand Clos Rousseau\" – Remoissenet",
+      "name": "Santenay 1er Cru \"Grand Clos Rousseau\" \u2013 Remoissenet",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w9/ref_03.webp",
@@ -183,7 +183,7 @@
     },
     {
       "id": "w10",
-      "name": "Vosne-Romanée 1er Cru \"Les Chaumes\" – Gros Frère et Sœur",
+      "name": "Vosne-Roman\u00e9e 1er Cru \"Les Chaumes\" \u2013 Gros Fr\u00e8re et S\u0153ur",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w10/ref_03.jpg",
@@ -201,7 +201,7 @@
     },
     {
       "id": "w11",
-      "name": "Vosne-Romanée – Jean-Claude Boisset",
+      "name": "Vosne-Roman\u00e9e \u2013 Jean-Claude Boisset",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w11/ref_09.jpg",
@@ -219,7 +219,7 @@
     },
     {
       "id": "w12",
-      "name": "Château Armens Grand Cru",
+      "name": "Ch\u00e2teau Armens Grand Cru",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w12.png",
@@ -237,7 +237,7 @@
     },
     {
       "id": "w13",
-      "name": "Château La Gaffelière Premier Grand Cru",
+      "name": "Ch\u00e2teau La Gaffeli\u00e8re Premier Grand Cru",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w13/ref_03.png",
@@ -255,7 +255,7 @@
     },
     {
       "id": "w14",
-      "name": "Château l’Ecuyer",
+      "name": "Ch\u00e2teau l\u2019Ecuyer",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w14/ref_05.png",
@@ -273,7 +273,7 @@
     },
     {
       "id": "w15",
-      "name": "Le Pauillac de Latour – Château Latour",
+      "name": "Le Pauillac de Latour \u2013 Ch\u00e2teau Latour",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w15/ref_04.jpg",
@@ -291,7 +291,7 @@
     },
     {
       "id": "w16",
-      "name": "Châteauneuf-du-Pape \"Vieilles Vignes\" – Marcoux",
+      "name": "Ch\u00e2teauneuf-du-Pape \"Vieilles Vignes\" \u2013 Marcoux",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w16/ref_08.png",
@@ -309,7 +309,7 @@
     },
     {
       "id": "w17",
-      "name": "Châteauneuf-du-Pape Rouge – Domaine de Marcoux",
+      "name": "Ch\u00e2teauneuf-du-Pape Rouge \u2013 Domaine de Marcoux",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w17/ref_01.jpg",
@@ -327,7 +327,7 @@
     },
     {
       "id": "w18",
-      "name": "Côte-Rôtie \"La Mouline\" – Guigal",
+      "name": "C\u00f4te-R\u00f4tie \"La Mouline\" \u2013 Guigal",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w18/ref_02.png",
@@ -345,7 +345,7 @@
     },
     {
       "id": "w19",
-      "name": "Côte-Rôtie \"La Turque\" – Guigal",
+      "name": "C\u00f4te-R\u00f4tie \"La Turque\" \u2013 Guigal",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w19/ref_09.png",
@@ -363,7 +363,7 @@
     },
     {
       "id": "w20",
-      "name": "Côte-Rôtie \"Mon Village\" – Stéphane Ogier",
+      "name": "C\u00f4te-R\u00f4tie \"Mon Village\" \u2013 St\u00e9phane Ogier",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w20/ref_01.jpg",
@@ -381,7 +381,7 @@
     },
     {
       "id": "w21",
-      "name": "Hermitage – Jean-Louis Chave",
+      "name": "Hermitage \u2013 Jean-Louis Chave",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w21/ref_06.jpg",
@@ -399,7 +399,7 @@
     },
     {
       "id": "w22",
-      "name": "Château Mongravey Cru Bourgeois",
+      "name": "Ch\u00e2teau Mongravey Cru Bourgeois",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w22/ref_07.png",
@@ -417,7 +417,7 @@
     },
     {
       "id": "w23",
-      "name": "Dame de Gaffelière – Château La Gaffelière",
+      "name": "Dame de Gaffeli\u00e8re \u2013 Ch\u00e2teau La Gaffeli\u00e8re",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w23.png",
@@ -435,7 +435,7 @@
     },
     {
       "id": "w24",
-      "name": "Margaux du Château Margaux",
+      "name": "Margaux du Ch\u00e2teau Margaux",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w24/ref_05.jpg",
@@ -453,7 +453,7 @@
     },
     {
       "id": "w25",
-      "name": "Chianti Classico \"Montebuoni\" – Castello di Ama",
+      "name": "Chianti Classico \"Montebuoni\" \u2013 Castello di Ama",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w25/ref_06.jpg",
@@ -471,7 +471,7 @@
     },
     {
       "id": "w26",
-      "name": "Barbaresco \"San Giuliano\" – Paolo Manzone",
+      "name": "Barbaresco \"San Giuliano\" \u2013 Paolo Manzone",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w26/ref_04.jpg",
@@ -489,7 +489,7 @@
     },
     {
       "id": "w27",
-      "name": "Barbaresco \"Vanotu\" – Pelissero",
+      "name": "Barbaresco \"Vanotu\" \u2013 Pelissero",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w27/ref_09.jpg",
@@ -507,7 +507,7 @@
     },
     {
       "id": "w28",
-      "name": "Barbaresco – Gaja",
+      "name": "Barbaresco \u2013 Gaja",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w28/ref_10.jpg",
@@ -525,7 +525,7 @@
     },
     {
       "id": "w29",
-      "name": "Barolo \"Comune di Verduno\" – Fratelli Alessandria",
+      "name": "Barolo \"Comune di Verduno\" \u2013 Fratelli Alessandria",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w29/ref_02.png",
@@ -543,7 +543,7 @@
     },
     {
       "id": "w30",
-      "name": "Barolo \"Garretti\" – La Spinetta",
+      "name": "Barolo \"Garretti\" \u2013 La Spinetta",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w30/ref_06.webp",
@@ -561,7 +561,7 @@
     },
     {
       "id": "w31",
-      "name": "Barolo \"Gianetto\" – Guido Porro",
+      "name": "Barolo \"Gianetto\" \u2013 Guido Porro",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w31/ref_01.png",
@@ -579,7 +579,7 @@
     },
     {
       "id": "w32",
-      "name": "Barolo \"Serradenari\" – Giulia Negri",
+      "name": "Barolo \"Serradenari\" \u2013 Giulia Negri",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w32/ref_09.jpg",
@@ -597,7 +597,7 @@
     },
     {
       "id": "w33",
-      "name": "Barolo \"Serralunga d’Alba\" – Paolo Manzone",
+      "name": "Barolo \"Serralunga d\u2019Alba\" \u2013 Paolo Manzone",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w33/ref_05.jpg",
@@ -615,7 +615,7 @@
     },
     {
       "id": "w34",
-      "name": "Barolo Riserva – Paolo Manzone",
+      "name": "Barolo Riserva \u2013 Paolo Manzone",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w34/ref_01.jpg",
@@ -633,7 +633,7 @@
     },
     {
       "id": "w35",
-      "name": "Barolo – Borgogno",
+      "name": "Barolo \u2013 Borgogno",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w35/ref_08.png",
@@ -651,7 +651,7 @@
     },
     {
       "id": "w36",
-      "name": "Brunello \"Cerretalto\" – Casanova di Neri",
+      "name": "Brunello \"Cerretalto\" \u2013 Casanova di Neri",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w36/ref_01.png",
@@ -669,7 +669,7 @@
     },
     {
       "id": "w37",
-      "name": "Brunello \"Tenuta Nuova\" – Casanova di Neri",
+      "name": "Brunello \"Tenuta Nuova\" \u2013 Casanova di Neri",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w37/ref_08.jpg",
@@ -687,7 +687,7 @@
     },
     {
       "id": "w38",
-      "name": "Brunello di Montalcino 1.5L – Col di Lamo",
+      "name": "Brunello di Montalcino 1.5L \u2013 Col di Lamo",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w38.jpg",
@@ -705,7 +705,7 @@
     },
     {
       "id": "w39",
-      "name": "Brunello di Montalcino Riserva – Col di Lamo",
+      "name": "Brunello di Montalcino Riserva \u2013 Col di Lamo",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w39.jpg",
@@ -723,7 +723,7 @@
     },
     {
       "id": "w40",
-      "name": "Brunello di Montalcino – Altesino",
+      "name": "Brunello di Montalcino \u2013 Altesino",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w40/ref_05.png",
@@ -741,7 +741,7 @@
     },
     {
       "id": "w41",
-      "name": "Brunello di Montalcino – Biondi-Santi",
+      "name": "Brunello di Montalcino \u2013 Biondi-Santi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w41/ref_05.jpg",
@@ -759,7 +759,7 @@
     },
     {
       "id": "w42",
-      "name": "Brunello di Montalcino – Canalicchio di Sopra",
+      "name": "Brunello di Montalcino \u2013 Canalicchio di Sopra",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w42/ref_06.png",
@@ -777,7 +777,7 @@
     },
     {
       "id": "w43",
-      "name": "Brunello di Montalcino – Casanova di Neri",
+      "name": "Brunello di Montalcino \u2013 Casanova di Neri",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w43/ref_08.png",
@@ -795,7 +795,7 @@
     },
     {
       "id": "w44",
-      "name": "Brunello di Montalcino – Castello Romitorio",
+      "name": "Brunello di Montalcino \u2013 Castello Romitorio",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w44/ref_03.png",
@@ -813,7 +813,7 @@
     },
     {
       "id": "w45",
-      "name": "Brunello di Montalcino – Col di Lamo",
+      "name": "Brunello di Montalcino \u2013 Col di Lamo",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w45/ref_02.png",
@@ -831,7 +831,7 @@
     },
     {
       "id": "w46",
-      "name": "Brunello di Montalcino – Ridolfi",
+      "name": "Brunello di Montalcino \u2013 Ridolfi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w46/ref_04.png",
@@ -849,7 +849,7 @@
     },
     {
       "id": "w47",
-      "name": "Chianti Classico Gran Selezione \"San Lorenzo\" – Castello di Ama",
+      "name": "Chianti Classico Gran Selezione \"San Lorenzo\" \u2013 Castello di Ama",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w47/ref_10.png",
@@ -867,7 +867,7 @@
     },
     {
       "id": "w48",
-      "name": "Flaccianello della Pieve – Fontodi",
+      "name": "Flaccianello della Pieve \u2013 Fontodi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w48/ref_07.png",
@@ -885,7 +885,7 @@
     },
     {
       "id": "w49",
-      "name": "Poggio Valente – Fattoria La Pupille",
+      "name": "Poggio Valente \u2013 Fattoria La Pupille",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w49/ref_09.png",
@@ -903,7 +903,7 @@
     },
     {
       "id": "w50",
-      "name": "Tignanello – Antinori",
+      "name": "Tignanello \u2013 Antinori",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w50/ref_09.jpg",
@@ -921,7 +921,7 @@
     },
     {
       "id": "w51",
-      "name": "Haiku – Castello di Ama",
+      "name": "Haiku \u2013 Castello di Ama",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w51/ref_06.png",
@@ -939,7 +939,7 @@
     },
     {
       "id": "w52",
-      "name": "Il Blu – Brancaia",
+      "name": "Il Blu \u2013 Brancaia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w52/ref_03.jpg",
@@ -957,7 +957,7 @@
     },
     {
       "id": "w53",
-      "name": "Ilatraia – Brancaia",
+      "name": "Ilatraia \u2013 Brancaia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w53/ref_04.png",
@@ -975,7 +975,7 @@
     },
     {
       "id": "w54",
-      "name": "Modus – Ruffino",
+      "name": "Modus \u2013 Ruffino",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w54/ref_09.jpg",
@@ -993,7 +993,7 @@
     },
     {
       "id": "w55",
-      "name": "Case Via – Fontodi",
+      "name": "Case Via \u2013 Fontodi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w55/ref_05.webp",
@@ -1011,7 +1011,7 @@
     },
     {
       "id": "w56",
-      "name": "Il Fauno di Arcanum – Tenuta di Arceno",
+      "name": "Il Fauno di Arcanum \u2013 Tenuta di Arceno",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w56/ref_10.jpg",
@@ -1029,7 +1029,7 @@
     },
     {
       "id": "w57",
-      "name": "Irrosso – Casanova di Neri",
+      "name": "Irrosso \u2013 Casanova di Neri",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w57/ref_02.png",
@@ -1047,7 +1047,7 @@
     },
     {
       "id": "w58",
-      "name": "Le Volte dell’Ornellaia",
+      "name": "Le Volte dell\u2019Ornellaia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w58/ref_08.png",
@@ -1065,7 +1065,7 @@
     },
     {
       "id": "w59",
-      "name": "Magnetic – Donne Fittipaldi",
+      "name": "Magnetic \u2013 Donne Fittipaldi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w59.png",
@@ -1083,7 +1083,7 @@
     },
     {
       "id": "w60",
-      "name": "Nebbiolo \"No Name\" – Borgogno",
+      "name": "Nebbiolo \"No Name\" \u2013 Borgogno",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w60/ref_07.png",
@@ -1101,7 +1101,7 @@
     },
     {
       "id": "w61",
-      "name": "Pater-Patriae Pinot Noir – Tenuta Cafaggiolo",
+      "name": "Pater-Patriae Pinot Noir \u2013 Tenuta Cafaggiolo",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w61.jpeg",
@@ -1119,7 +1119,7 @@
     },
     {
       "id": "w62",
-      "name": "Rosso di Montalcino \"Giovanni Neri\" – Casanova di Neri",
+      "name": "Rosso di Montalcino \"Giovanni Neri\" \u2013 Casanova di Neri",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w62/ref_03.jpg",
@@ -1137,7 +1137,7 @@
     },
     {
       "id": "w63",
-      "name": "Rosso di Montalcino – Canalicchio di Sopra",
+      "name": "Rosso di Montalcino \u2013 Canalicchio di Sopra",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w63/ref_05.jpg",
@@ -1155,7 +1155,7 @@
     },
     {
       "id": "w64",
-      "name": "Toscana Rosso – Il Borro",
+      "name": "Toscana Rosso \u2013 Il Borro",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w64/ref_01.png",
@@ -1173,7 +1173,7 @@
     },
     {
       "id": "w65",
-      "name": "Tre – Brancaia",
+      "name": "Tre \u2013 Brancaia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w65/ref_02.png",
@@ -1191,7 +1191,7 @@
     },
     {
       "id": "w66",
-      "name": "Barbera d’Alba \"Fiorenza\" – Paolo Manzone",
+      "name": "Barbera d\u2019Alba \"Fiorenza\" \u2013 Paolo Manzone",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w66/ref_10.jpg",
@@ -1209,7 +1209,7 @@
     },
     {
       "id": "w67",
-      "name": "Barbera d’Alba \"Piani\" – Pelissero",
+      "name": "Barbera d\u2019Alba \"Piani\" \u2013 Pelissero",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w67/ref_01.png",
@@ -1227,7 +1227,7 @@
     },
     {
       "id": "w68",
-      "name": "Chianti Classico Riserva – Volpaia",
+      "name": "Chianti Classico Riserva \u2013 Volpaia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w68/ref_05.png",
@@ -1281,7 +1281,7 @@
     },
     {
       "id": "w71",
-      "name": "Love Letter – Mersel",
+      "name": "Love Letter \u2013 Mersel",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w71/ref_02.jpg",
@@ -1299,7 +1299,7 @@
     },
     {
       "id": "w72",
-      "name": "Gabriel – Adobe Guadalupe",
+      "name": "Gabriel \u2013 Adobe Guadalupe",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w72/ref_06.jpg",
@@ -1317,7 +1317,7 @@
     },
     {
       "id": "w73",
-      "name": "Líquen Alfrocheiro – João Cabral Almeida",
+      "name": "L\u00edquen Alfrocheiro \u2013 Jo\u00e3o Cabral Almeida",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w73/ref_02.png",
@@ -1335,7 +1335,7 @@
     },
     {
       "id": "w74",
-      "name": "Maria Izabel Tinto – Quinta Maria Izabel",
+      "name": "Maria Izabel Tinto \u2013 Quinta Maria Izabel",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w74/ref_06.jpg",
@@ -1353,7 +1353,7 @@
     },
     {
       "id": "w75",
-      "name": "Pinot Noir – Storm",
+      "name": "Pinot Noir \u2013 Storm",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w75/ref_06.jpg",
@@ -1371,7 +1371,7 @@
     },
     {
       "id": "w76",
-      "name": "Rioja Reserva – Montaña",
+      "name": "Rioja Reserva \u2013 Monta\u00f1a",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w76.png",
@@ -1389,7 +1389,7 @@
     },
     {
       "id": "w77",
-      "name": "Rioja Reserva – Valenciso",
+      "name": "Rioja Reserva \u2013 Valenciso",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w77/ref_05.png",
@@ -1407,7 +1407,7 @@
     },
     {
       "id": "w78",
-      "name": "Castillo Ygay Gran Reserva Especial – Marqués de Murrieta",
+      "name": "Castillo Ygay Gran Reserva Especial \u2013 Marqu\u00e9s de Murrieta",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w78/ref_05.png",
@@ -1425,7 +1425,7 @@
     },
     {
       "id": "w79",
-      "name": "Imperial Gran Reserva – CVNE",
+      "name": "Imperial Gran Reserva \u2013 CVNE",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w79/ref_06.png",
@@ -1443,7 +1443,7 @@
     },
     {
       "id": "w80",
-      "name": "Valbuena 5 Años – Vega Sicilia",
+      "name": "Valbuena 5 A\u00f1os \u2013 Vega Sicilia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w80/ref_04.jpg",
@@ -1461,7 +1461,7 @@
     },
     {
       "id": "w81",
-      "name": "Contador – Benjamín Romeo",
+      "name": "Contador \u2013 Benjam\u00edn Romeo",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w81/ref_05.jpg",
@@ -1479,7 +1479,7 @@
     },
     {
       "id": "w82",
-      "name": "Malleolus de Sanchomartín – Emilio Moro",
+      "name": "Malleolus de Sanchomart\u00edn \u2013 Emilio Moro",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w82/ref_04.png",
@@ -1497,7 +1497,7 @@
     },
     {
       "id": "w83",
-      "name": "Veraton – Bodegas Alto Moncayo",
+      "name": "Veraton \u2013 Bodegas Alto Moncayo",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w83/ref_06.jpg",
@@ -1515,7 +1515,7 @@
     },
     {
       "id": "w84",
-      "name": "10 Años Después – Valenciso",
+      "name": "10 A\u00f1os Despu\u00e9s \u2013 Valenciso",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w84/ref_09.png",
@@ -1533,7 +1533,7 @@
     },
     {
       "id": "w85",
-      "name": "Pinot Noir \"Botanica\" – Antica Terra",
+      "name": "Pinot Noir \"Botanica\" \u2013 Antica Terra",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w85/ref_02.jpg",
@@ -1551,7 +1551,7 @@
     },
     {
       "id": "w86",
-      "name": "Pinot Noir \"Plow\" – Lingua Franca",
+      "name": "Pinot Noir \"Plow\" \u2013 Lingua Franca",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w86/ref_03.jpg",
@@ -1569,7 +1569,7 @@
     },
     {
       "id": "w87",
-      "name": "Pinot Noir – Bergström (Le Pré du Col)",
+      "name": "Pinot Noir \u2013 Bergstr\u00f6m (Le Pr\u00e9 du Col)",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w87/ref_01.png",
@@ -1587,7 +1587,7 @@
     },
     {
       "id": "w88",
-      "name": "Pinot Noir – Domaine Drouhin",
+      "name": "Pinot Noir \u2013 Domaine Drouhin",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w88/ref_02.png",
@@ -1605,7 +1605,7 @@
     },
     {
       "id": "w89",
-      "name": "Pinot Noir – Hanzell Estate",
+      "name": "Pinot Noir \u2013 Hanzell Estate",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w89/ref_02.png",
@@ -1623,7 +1623,7 @@
     },
     {
       "id": "w90",
-      "name": "Pinot Noir – Joseph Phelps (Freestone)",
+      "name": "Pinot Noir \u2013 Joseph Phelps (Freestone)",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w90/ref_02.png",
@@ -1641,7 +1641,7 @@
     },
     {
       "id": "w91",
-      "name": "Pinot Noir – Keller Estate",
+      "name": "Pinot Noir \u2013 Keller Estate",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w91/ref_06.png",
@@ -1659,7 +1659,7 @@
     },
     {
       "id": "w92",
-      "name": "Pinot Noir – Paul Hobbs",
+      "name": "Pinot Noir \u2013 Paul Hobbs",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w92/ref_01.png",
@@ -1677,7 +1677,7 @@
     },
     {
       "id": "w93",
-      "name": "Pinot Noir – St. Innocent (Momtazi)",
+      "name": "Pinot Noir \u2013 St. Innocent (Momtazi)",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w93/ref_02.jpg",
@@ -1713,7 +1713,7 @@
     },
     {
       "id": "w95",
-      "name": "Cain Cuvée \"NV14\"",
+      "name": "Cain Cuv\u00e9e \"NV14\"",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w95.jpg",
@@ -1749,7 +1749,7 @@
     },
     {
       "id": "w97",
-      "name": "The Mascot – Harlan Family",
+      "name": "The Mascot \u2013 Harlan Family",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w97/ref_02.jpg",
@@ -1767,7 +1767,7 @@
     },
     {
       "id": "w98",
-      "name": "Cabernet Sauvignon \"Brother’s Vineyard\" – Snowden",
+      "name": "Cabernet Sauvignon \"Brother\u2019s Vineyard\" \u2013 Snowden",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w98/ref_01.png",
@@ -1785,7 +1785,7 @@
     },
     {
       "id": "w99",
-      "name": "Cabernet Sauvignon \"Highest Beauty\" – To Kalon",
+      "name": "Cabernet Sauvignon \"Highest Beauty\" \u2013 To Kalon",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w99/ref_02.jpg",
@@ -1803,7 +1803,7 @@
     },
     {
       "id": "w100",
-      "name": "Cabernet Sauvignon \"Palermo\" – Orin Swift",
+      "name": "Cabernet Sauvignon \"Palermo\" \u2013 Orin Swift",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w100/ref_02.png",
@@ -1821,7 +1821,7 @@
     },
     {
       "id": "w101",
-      "name": "Cabernet Sauvignon – Caymus",
+      "name": "Cabernet Sauvignon \u2013 Caymus",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w101/ref_01.png",
@@ -1839,7 +1839,7 @@
     },
     {
       "id": "w102",
-      "name": "Cabernet Sauvignon – Chimney Rock",
+      "name": "Cabernet Sauvignon \u2013 Chimney Rock",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w102/ref_02.png",
@@ -1857,7 +1857,7 @@
     },
     {
       "id": "w103",
-      "name": "Cabernet Sauvignon – Faust",
+      "name": "Cabernet Sauvignon \u2013 Faust",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w103/ref_03.png",
@@ -1875,7 +1875,7 @@
     },
     {
       "id": "w104",
-      "name": "Cabernet Sauvignon – Joseph Phelps",
+      "name": "Cabernet Sauvignon \u2013 Joseph Phelps",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w104/ref_04.png",
@@ -1893,7 +1893,7 @@
     },
     {
       "id": "w106",
-      "name": "Cabernet Sauvignon – Sinegal Estate",
+      "name": "Cabernet Sauvignon \u2013 Sinegal Estate",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w106/ref_05.png",
@@ -1911,7 +1911,7 @@
     },
     {
       "id": "w107",
-      "name": "Darius II – Darioush",
+      "name": "Darius II \u2013 Darioush",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w107/ref_02.jpg",
@@ -1929,7 +1929,7 @@
     },
     {
       "id": "w108",
-      "name": "Double Diamond Cabernet – Schrader",
+      "name": "Double Diamond Cabernet \u2013 Schrader",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w108/ref_07.png",
@@ -1947,7 +1947,7 @@
     },
     {
       "id": "w109",
-      "name": "Isosceles – Justin",
+      "name": "Isosceles \u2013 Justin",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w109/ref_04.png",
@@ -1965,7 +1965,7 @@
     },
     {
       "id": "w110",
-      "name": "Madrona Ranch – Abreu",
+      "name": "Madrona Ranch \u2013 Abreu",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w110/ref_01.png",
@@ -1983,7 +1983,7 @@
     },
     {
       "id": "w111",
-      "name": "Papillon – Orin Swift",
+      "name": "Papillon \u2013 Orin Swift",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w111/ref_03.png",
@@ -2001,7 +2001,7 @@
     },
     {
       "id": "w112",
-      "name": "Syrah – Donnachadh Estate",
+      "name": "Syrah \u2013 Donnachadh Estate",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w112/ref_01.png",
@@ -2019,7 +2019,7 @@
     },
     {
       "id": "w113",
-      "name": "Merlot – Freemark Abbey",
+      "name": "Merlot \u2013 Freemark Abbey",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w113/ref_06.png",
@@ -2037,7 +2037,7 @@
     },
     {
       "id": "w114",
-      "name": "Merlot – Grgich Hills",
+      "name": "Merlot \u2013 Grgich Hills",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w114/ref_01.png",
@@ -2055,7 +2055,7 @@
     },
     {
       "id": "w115",
-      "name": "Pinot Noir – Chehalem",
+      "name": "Pinot Noir \u2013 Chehalem",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w115/ref_07.jpg",
@@ -2073,7 +2073,7 @@
     },
     {
       "id": "w116",
-      "name": "Cabernet Sauvignon – Silver Oak",
+      "name": "Cabernet Sauvignon \u2013 Silver Oak",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w116/ref_09.png",
@@ -2091,7 +2091,7 @@
     },
     {
       "id": "w117",
-      "name": "Grüner Veltliner – Ebner-Ebenauer",
+      "name": "Gr\u00fcner Veltliner \u2013 Ebner-Ebenauer",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w117/ref_06.png",
@@ -2109,7 +2109,7 @@
     },
     {
       "id": "w118",
-      "name": "Corton-Charlemagne Grand Cru – Louis Latour",
+      "name": "Corton-Charlemagne Grand Cru \u2013 Louis Latour",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w118/ref_06.png",
@@ -2127,7 +2127,7 @@
     },
     {
       "id": "w119",
-      "name": "Meursault \"Le Limozin\" – Xavier Monnot",
+      "name": "Meursault \"Le Limozin\" \u2013 Xavier Monnot",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w119/ref_01.png",
@@ -2145,7 +2145,7 @@
     },
     {
       "id": "w120",
-      "name": "Pouilly-Fuissé – Louis Latour",
+      "name": "Pouilly-Fuiss\u00e9 \u2013 Louis Latour",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w120/ref_09.png",
@@ -2163,7 +2163,7 @@
     },
     {
       "id": "w121",
-      "name": "Y Ygrec – Château d’Yquem",
+      "name": "Y Ygrec \u2013 Ch\u00e2teau d\u2019Yquem",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w121/ref_03.webp",
@@ -2181,7 +2181,7 @@
     },
     {
       "id": "w122",
-      "name": "Les Carmes de Rieussec – Château Rieussec",
+      "name": "Les Carmes de Rieussec \u2013 Ch\u00e2teau Rieussec",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w122.jpg",
@@ -2199,7 +2199,7 @@
     },
     {
       "id": "w123",
-      "name": "Chablis 1er Cru \"Fourchaume\" – Malandes",
+      "name": "Chablis 1er Cru \"Fourchaume\" \u2013 Malandes",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w123/ref_03.png",
@@ -2217,7 +2217,7 @@
     },
     {
       "id": "w124",
-      "name": "Chablis 1er Cru \"Les Fourchaumes\" – l’Enclos",
+      "name": "Chablis 1er Cru \"Les Fourchaumes\" \u2013 l\u2019Enclos",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w124/ref_02.png",
@@ -2235,7 +2235,7 @@
     },
     {
       "id": "w125",
-      "name": "Chablis – William Fèvre",
+      "name": "Chablis \u2013 William F\u00e8vre",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w125/ref_01.png",
@@ -2253,7 +2253,7 @@
     },
     {
       "id": "w126",
-      "name": "Sancerre \"Chavignol\" – Yves Martin",
+      "name": "Sancerre \"Chavignol\" \u2013 Yves Martin",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w126/ref_02.png",
@@ -2271,7 +2271,7 @@
     },
     {
       "id": "w127",
-      "name": "Sancerre \"Côte des Monts Damnés\" – Hubert Brochard",
+      "name": "Sancerre \"C\u00f4te des Monts Damn\u00e9s\" \u2013 Hubert Brochard",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w127.png",
@@ -2289,7 +2289,7 @@
     },
     {
       "id": "w128",
-      "name": "Sancerre \"La Chatellenie\" – Joseph Mellot",
+      "name": "Sancerre \"La Chatellenie\" \u2013 Joseph Mellot",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w128/ref_04.jpg",
@@ -2307,7 +2307,7 @@
     },
     {
       "id": "w129",
-      "name": "Sancerre \"Le Mont\" – Foucher Lebrun",
+      "name": "Sancerre \"Le Mont\" \u2013 Foucher Lebrun",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w129/ref_08.png",
@@ -2325,7 +2325,7 @@
     },
     {
       "id": "w130",
-      "name": "Riesling \"Forster Kirchenstück\" GG – Von Winning",
+      "name": "Riesling \"Forster Kirchenst\u00fcck\" GG \u2013 Von Winning",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w130/ref_02.png",
@@ -2343,7 +2343,7 @@
     },
     {
       "id": "w131",
-      "name": "Riesling – Dönnhoff",
+      "name": "Riesling \u2013 D\u00f6nnhoff",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w131/ref_01.jpg",
@@ -2361,7 +2361,7 @@
     },
     {
       "id": "w132",
-      "name": "Assyrtiko \"Santorini\" – Sigalas",
+      "name": "Assyrtiko \"Santorini\" \u2013 Sigalas",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w132/ref_01.png",
@@ -2379,7 +2379,7 @@
     },
     {
       "id": "w133",
-      "name": "Gavi del Comune di Gavi – Villa Sparina",
+      "name": "Gavi del Comune di Gavi \u2013 Villa Sparina",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w133/ref_06.png",
@@ -2397,7 +2397,7 @@
     },
     {
       "id": "w134",
-      "name": "Pecorino \"Cortalto\" – Cerulli Spinozzi",
+      "name": "Pecorino \"Cortalto\" \u2013 Cerulli Spinozzi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w134/ref_03.jpg",
@@ -2415,7 +2415,7 @@
     },
     {
       "id": "w135",
-      "name": "Pinot Grigio \"Porer\" – Alois Lageder",
+      "name": "Pinot Grigio \"Porer\" \u2013 Alois Lageder",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w135/ref_07.png",
@@ -2433,7 +2433,7 @@
     },
     {
       "id": "w136",
-      "name": "Pinot Grigio – Elena Walch",
+      "name": "Pinot Grigio \u2013 Elena Walch",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w136/ref_06.png",
@@ -2451,7 +2451,7 @@
     },
     {
       "id": "w137",
-      "name": "Roero Arneis \"Reysù\" – Paolo Manzone",
+      "name": "Roero Arneis \"Reys\u00f9\" \u2013 Paolo Manzone",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w137/ref_01.jpg",
@@ -2469,7 +2469,7 @@
     },
     {
       "id": "w138",
-      "name": "Trebbiano d’Abruzzo – Tiberio",
+      "name": "Trebbiano d\u2019Abruzzo \u2013 Tiberio",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w138/ref_06.png",
@@ -2487,7 +2487,7 @@
     },
     {
       "id": "w139",
-      "name": "Vermentino \"Prelius\" – Volpaia",
+      "name": "Vermentino \"Prelius\" \u2013 Volpaia",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w139/ref_03.png",
@@ -2505,7 +2505,7 @@
     },
     {
       "id": "w140",
-      "name": "Grillo Riserva \"Kheire\" – Gorghi Tondi",
+      "name": "Grillo Riserva \"Kheire\" \u2013 Gorghi Tondi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w140/ref_02.png",
@@ -2523,7 +2523,7 @@
     },
     {
       "id": "w141",
-      "name": "SP68 Bianco – Arianna Occhipinti",
+      "name": "SP68 Bianco \u2013 Arianna Occhipinti",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w141/ref_01.png",
@@ -2541,7 +2541,7 @@
     },
     {
       "id": "w142",
-      "name": "Trebbiano d’Abruzzo – Emidio Pepe",
+      "name": "Trebbiano d\u2019Abruzzo \u2013 Emidio Pepe",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w142/ref_07.png",
@@ -2577,7 +2577,7 @@
     },
     {
       "id": "w144",
-      "name": "Altitudes Blanc – Ixsir",
+      "name": "Altitudes Blanc \u2013 Ixsir",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w144/ref_06.png",
@@ -2595,7 +2595,7 @@
     },
     {
       "id": "w145",
-      "name": "Sauvignon Blanc \"Te Muna\" – Craggy Range",
+      "name": "Sauvignon Blanc \"Te Muna\" \u2013 Craggy Range",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w145/ref_02.png",
@@ -2613,7 +2613,7 @@
     },
     {
       "id": "w146",
-      "name": "Encruzado – João Cabral Almeida",
+      "name": "Encruzado \u2013 Jo\u00e3o Cabral Almeida",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w146/ref_02.jpg",
@@ -2631,7 +2631,7 @@
     },
     {
       "id": "w147",
-      "name": "Kalmoesfontein White Blend – A.A. Badenhorst",
+      "name": "Kalmoesfontein White Blend \u2013 A.A. Badenhorst",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w147/ref_08.jpg",
@@ -2649,7 +2649,7 @@
     },
     {
       "id": "w148",
-      "name": "Albariño – Eidos",
+      "name": "Albari\u00f1o \u2013 Eidos",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w148/ref_05.jpg",
@@ -2667,7 +2667,7 @@
     },
     {
       "id": "w149",
-      "name": "Albariño – Mar de Frades",
+      "name": "Albari\u00f1o \u2013 Mar de Frades",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w149/ref_09.png",
@@ -2685,7 +2685,7 @@
     },
     {
       "id": "w150",
-      "name": "O Rosal – Terras Gauda",
+      "name": "O Rosal \u2013 Terras Gauda",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w150/ref_10.png",
@@ -2703,7 +2703,7 @@
     },
     {
       "id": "w151",
-      "name": "Chardonnay \"MFN\" – Booker",
+      "name": "Chardonnay \"MFN\" \u2013 Booker",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w151/ref_03.png",
@@ -2721,7 +2721,7 @@
     },
     {
       "id": "w152",
-      "name": "Chardonnay \"Mannequin\" – Orin Swift",
+      "name": "Chardonnay \"Mannequin\" \u2013 Orin Swift",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w152/ref_03.png",
@@ -2739,7 +2739,7 @@
     },
     {
       "id": "w153",
-      "name": "Chardonnay – Cakebread Cellars",
+      "name": "Chardonnay \u2013 Cakebread Cellars",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w153/ref_03.png",
@@ -2757,7 +2757,7 @@
     },
     {
       "id": "w154",
-      "name": "Chardonnay – Château Montelena",
+      "name": "Chardonnay \u2013 Ch\u00e2teau Montelena",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w154/ref_07.png",
@@ -2775,7 +2775,7 @@
     },
     {
       "id": "w155",
-      "name": "Chardonnay – Darioush",
+      "name": "Chardonnay \u2013 Darioush",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w155/ref_01.png",
@@ -2793,7 +2793,7 @@
     },
     {
       "id": "w156",
-      "name": "Chardonnay – Grgich Hills",
+      "name": "Chardonnay \u2013 Grgich Hills",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w156/ref_08.png",
@@ -2811,7 +2811,7 @@
     },
     {
       "id": "w157",
-      "name": "Chardonnay – Schug",
+      "name": "Chardonnay \u2013 Schug",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w157/ref_05.png",
@@ -2829,7 +2829,7 @@
     },
     {
       "id": "w158",
-      "name": "Sauvignon Blanc \"Double Diamond\" – Schrader",
+      "name": "Sauvignon Blanc \"Double Diamond\" \u2013 Schrader",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w158/ref_02.png",
@@ -2847,7 +2847,7 @@
     },
     {
       "id": "w159",
-      "name": "Sauvignon Blanc – Arnot-Roberts",
+      "name": "Sauvignon Blanc \u2013 Arnot-Roberts",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w159/ref_04.png",
@@ -2865,7 +2865,7 @@
     },
     {
       "id": "w160",
-      "name": "Sauvignon Blanc – Sinegal Estate",
+      "name": "Sauvignon Blanc \u2013 Sinegal Estate",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w160/ref_04.png",
@@ -2883,7 +2883,7 @@
     },
     {
       "id": "w161",
-      "name": "Viognier – Penner-Ash",
+      "name": "Viognier \u2013 Penner-Ash",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w161/ref_01.png",
@@ -2901,7 +2901,7 @@
     },
     {
       "id": "w162",
-      "name": "Pinot Gris \"Daisy\" – Antiquum Farm",
+      "name": "Pinot Gris \"Daisy\" \u2013 Antiquum Farm",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w162/ref_04.png",
@@ -2937,7 +2937,7 @@
     },
     {
       "id": "w164",
-      "name": "Dom Pérignon",
+      "name": "Dom P\u00e9rignon",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w164/ref_07.png",
@@ -2973,7 +2973,7 @@
     },
     {
       "id": "w166",
-      "name": "J. Lassalle \"Préférence\" 1er Cru",
+      "name": "J. Lassalle \"Pr\u00e9f\u00e9rence\" 1er Cru",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w166/ref_01.png",
@@ -2991,7 +2991,7 @@
     },
     {
       "id": "w167",
-      "name": "Krug \"Grande Cuvée\" 170ème Édition",
+      "name": "Krug \"Grande Cuv\u00e9e\" 170\u00e8me \u00c9dition",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w167/ref_03.jpg",
@@ -3009,7 +3009,7 @@
     },
     {
       "id": "w168",
-      "name": "Laurent-Perrier \"La Cuvée\" Brut",
+      "name": "Laurent-Perrier \"La Cuv\u00e9e\" Brut",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w168/ref_04.png",
@@ -3045,7 +3045,7 @@
     },
     {
       "id": "w170",
-      "name": "Michel Mailliard \"Cuvée Grégory\" 1er Cru Brut",
+      "name": "Michel Mailliard \"Cuv\u00e9e Gr\u00e9gory\" 1er Cru Brut",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w170/ref_05.png",
@@ -3063,7 +3063,7 @@
     },
     {
       "id": "w171",
-      "name": "Moussé Fils \"Les Fortes Terres\"",
+      "name": "Mouss\u00e9 Fils \"Les Fortes Terres\"",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w171/ref_01.png",
@@ -3081,7 +3081,7 @@
     },
     {
       "id": "w172",
-      "name": "Moët & Chandon \"Impérial\" Brut",
+      "name": "Mo\u00ebt & Chandon \"Imp\u00e9rial\" Brut",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w172/ref_03.png",
@@ -3099,7 +3099,7 @@
     },
     {
       "id": "w173",
-      "name": "Perrier-Jouët \"Belle Époque\"",
+      "name": "Perrier-Jou\u00ebt \"Belle \u00c9poque\"",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w173/ref_04.png",
@@ -3117,7 +3117,7 @@
     },
     {
       "id": "w174",
-      "name": "Perrier-Jouët Blanc de Blancs",
+      "name": "Perrier-Jou\u00ebt Blanc de Blancs",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w174/ref_10.png",
@@ -3135,7 +3135,7 @@
     },
     {
       "id": "w175",
-      "name": "Perrier-Jouët Grand Brut",
+      "name": "Perrier-Jou\u00ebt Grand Brut",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w175/ref_01.png",
@@ -3153,7 +3153,7 @@
     },
     {
       "id": "w176",
-      "name": "Pierre Péters Cuvée de Réserve BdB",
+      "name": "Pierre P\u00e9ters Cuv\u00e9e de R\u00e9serve BdB",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w176/ref_07.jpg",
@@ -3243,7 +3243,7 @@
     },
     {
       "id": "w181",
-      "name": "Billecart-Salmon Brut Rosé",
+      "name": "Billecart-Salmon Brut Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w181/ref_06.png",
@@ -3261,7 +3261,7 @@
     },
     {
       "id": "w182",
-      "name": "Brice \"Heritage\" Brut Rosé",
+      "name": "Brice \"Heritage\" Brut Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w182/ref_10.jpg",
@@ -3279,7 +3279,7 @@
     },
     {
       "id": "w183",
-      "name": "Charles Heidsieck Réserve Brut Rosé",
+      "name": "Charles Heidsieck R\u00e9serve Brut Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w183/ref_06.png",
@@ -3297,7 +3297,7 @@
     },
     {
       "id": "w184",
-      "name": "G.H. Mumm \"Grand Cordon\" Brut Rosé",
+      "name": "G.H. Mumm \"Grand Cordon\" Brut Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w184/ref_02.png",
@@ -3315,7 +3315,7 @@
     },
     {
       "id": "w185",
-      "name": "Gaston Chiquet Rosé 1er Cru",
+      "name": "Gaston Chiquet Ros\u00e9 1er Cru",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w185/ref_01.png",
@@ -3333,7 +3333,7 @@
     },
     {
       "id": "w186",
-      "name": "Henriot Brut Rosé",
+      "name": "Henriot Brut Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w186/ref_04.png",
@@ -3351,7 +3351,7 @@
     },
     {
       "id": "w187",
-      "name": "Laurent-Perrier \"Cuvée Rosé\"",
+      "name": "Laurent-Perrier \"Cuv\u00e9e Ros\u00e9\"",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w187/ref_10.png",
@@ -3369,7 +3369,7 @@
     },
     {
       "id": "w188",
-      "name": "Louis Roederer \"Cristal\" Rosé",
+      "name": "Louis Roederer \"Cristal\" Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w188/ref_01.jpg",
@@ -3387,7 +3387,7 @@
     },
     {
       "id": "w189",
-      "name": "Perrier-Jouët \"Blason\" Rosé",
+      "name": "Perrier-Jou\u00ebt \"Blason\" Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w189/ref_01.png",
@@ -3405,7 +3405,7 @@
     },
     {
       "id": "w190",
-      "name": "Pommery \"Cuvée Louise\" Rosé",
+      "name": "Pommery \"Cuv\u00e9e Louise\" Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w190.png",
@@ -3423,7 +3423,7 @@
     },
     {
       "id": "w191",
-      "name": "Dosnon \"Récolte Brute\" Extra Brut",
+      "name": "Dosnon \"R\u00e9colte Brute\" Extra Brut",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w191/ref_01.png",
@@ -3459,7 +3459,7 @@
     },
     {
       "id": "w193",
-      "name": "Prosecco \"Rustico\" – Nino Franco",
+      "name": "Prosecco \"Rustico\" \u2013 Nino Franco",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w193/ref_06.png",
@@ -3477,7 +3477,7 @@
     },
     {
       "id": "w194",
-      "name": "Ferrari Trento Trentodoc Brut Rosé",
+      "name": "Ferrari Trento Trentodoc Brut Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w194/ref_02.jpg",
@@ -3495,7 +3495,7 @@
     },
     {
       "id": "w195",
-      "name": "Metodo Classico Brut Rosé – Terrazze dell’Etna",
+      "name": "Metodo Classico Brut Ros\u00e9 \u2013 Terrazze dell\u2019Etna",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w195/ref_05.jpg",
@@ -3513,7 +3513,7 @@
     },
     {
       "id": "w196",
-      "name": "Moscato d’Asti \"Bricco Quaglia\" – La Spinetta",
+      "name": "Moscato d\u2019Asti \"Bricco Quaglia\" \u2013 La Spinetta",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w196/ref_03.webp",
@@ -3531,7 +3531,7 @@
     },
     {
       "id": "w197",
-      "name": "Mersel \"Leb Nat\" Pet-Nat Rosé",
+      "name": "Mersel \"Leb Nat\" Pet-Nat Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w197/ref_04.png",
@@ -3549,7 +3549,7 @@
     },
     {
       "id": "w198",
-      "name": "Château Romassan Rosé",
+      "name": "Ch\u00e2teau Romassan Ros\u00e9",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w198/ref_06.jpg",
@@ -3567,7 +3567,7 @@
     },
     {
       "id": "w199",
-      "name": "Chinon Rosé – Charles Joguet",
+      "name": "Chinon Ros\u00e9 \u2013 Charles Joguet",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w199/ref_04.png",
@@ -3585,7 +3585,7 @@
     },
     {
       "id": "w200",
-      "name": "Whispering Angel – Château d'Esclans",
+      "name": "Whispering Angel \u2013 Ch\u00e2teau d'Esclans",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w200/ref_08.png",
@@ -3603,7 +3603,7 @@
     },
     {
       "id": "w201",
-      "name": "“Clos Beylesse” Rosé – Domaine de l'Abbaye (1.5L)",
+      "name": "\u201cClos Beylesse\u201d Ros\u00e9 \u2013 Domaine de l'Abbaye (1.5L)",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w201.jpg",
@@ -3621,7 +3621,7 @@
     },
     {
       "id": "w202",
-      "name": "“Fantastique” Rosé – Château Sainte Marguerite",
+      "name": "\u201cFantastique\u201d Ros\u00e9 \u2013 Ch\u00e2teau Sainte Marguerite",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w202/ref_02.jpg",
@@ -3639,7 +3639,7 @@
     },
     {
       "id": "w203",
-      "name": "“Prestige” Rosé – Minuty",
+      "name": "\u201cPrestige\u201d Ros\u00e9 \u2013 Minuty",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w203/ref_06.jpg",
@@ -3657,7 +3657,7 @@
     },
     {
       "id": "w204",
-      "name": "“Clos du Temple” Rosé – Gérard Bertrand",
+      "name": "\u201cClos du Temple\u201d Ros\u00e9 \u2013 G\u00e9rard Bertrand",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w204/ref_05.png",
@@ -3675,7 +3675,7 @@
     },
     {
       "id": "w205",
-      "name": "“Garrus” Rosé – Château d'Esclans",
+      "name": "\u201cGarrus\u201d Ros\u00e9 \u2013 Ch\u00e2teau d'Esclans",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w205/ref_05.png",
@@ -3693,7 +3693,7 @@
     },
     {
       "id": "w206",
-      "name": "“Grand Reserve” Rosé – Ixsir",
+      "name": "\u201cGrand Reserve\u201d Ros\u00e9 \u2013 Ixsir",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w206.jpg",
@@ -3711,7 +3711,7 @@
     },
     {
       "id": "w207",
-      "name": "Wine Creek Ranch Rosé – Quivira",
+      "name": "Wine Creek Ranch Ros\u00e9 \u2013 Quivira",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w207/ref_01.png",
@@ -3729,7 +3729,7 @@
     },
     {
       "id": "w208",
-      "name": "“Orange Tacsum” – La Mariota (Orange Wine)",
+      "name": "\u201cOrange Tacsum\u201d \u2013 La Mariota (Orange Wine)",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w208/ref_04.png",
@@ -3747,7 +3747,7 @@
     },
     {
       "id": "w209",
-      "name": "Commandaria – Tsiakkas",
+      "name": "Commandaria \u2013 Tsiakkas",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w209/ref_01.jpg",
@@ -3765,7 +3765,7 @@
     },
     {
       "id": "w210",
-      "name": "Recioto della Valpolicella – Dal Forno Romano",
+      "name": "Recioto della Valpolicella \u2013 Dal Forno Romano",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w210/ref_01.jpg",
@@ -3783,7 +3783,7 @@
     },
     {
       "id": "w211",
-      "name": "Recioto di Soave \"I Capitelli\" – Anselmi",
+      "name": "Recioto di Soave \"I Capitelli\" \u2013 Anselmi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w211/ref_05.png",
@@ -3801,7 +3801,7 @@
     },
     {
       "id": "w212",
-      "name": "Vin Santo \"Il Decano\" – Montepaldi",
+      "name": "Vin Santo \"Il Decano\" \u2013 Montepaldi",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/verified-photographic/w212.jpg",
@@ -3819,7 +3819,7 @@
     },
     {
       "id": "w213",
-      "name": "Tawny Port \"Otima\" – Warre’s",
+      "name": "Tawny Port \"Otima\" \u2013 Warre\u2019s",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w213/ref_06.webp",
@@ -3837,7 +3837,7 @@
     },
     {
       "id": "w214",
-      "name": "Tawny Port – Quinta do Noval",
+      "name": "Tawny Port \u2013 Quinta do Noval",
       "kind": "photograph",
       "review": "visual-catalog-match",
       "source": "bottle_references/w214/ref_01.png",
@@ -3862,5 +3862,6 @@
   ],
   "physical_scale_verified": false,
   "note": "Representative catalog photographs. Visible release years are not user vintage assignments.",
-  "edge_trim": "alpha eroded 3px then feathered 0.8px to remove cut-out fringe"
+  "edge_trim": "alpha eroded 3px then feathered 0.8px to remove cut-out fringe",
+  "hosted_note": "214 transparent real bottle photographs; w105 exact identity pending, photo-pending.svg used instead of legacy pixel art."
 }

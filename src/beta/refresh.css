@@ -1,0 +1,40 @@
+/* Beta adapters keep its established features inside the refreshed companion shell. */
+.wl-cat-list { display:grid; }
+.wl-cat-card { background:var(--bg-card); color:var(--ink); text-align:left; cursor:pointer; font-family:inherit; }
+.wl-cat-copy { display:flex; flex-direction:column; }
+.wl-cat-tools { display:grid; }
+.wl-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.wl-cat-description { margin-bottom:16px; }
+.beta-inventory { margin:36px 0; border-top:1px solid var(--line); padding-top:22px; }
+.beta-inventory>summary { font-size:13px; cursor:pointer; color:var(--muted); }
+.beta-inventory[open]>summary { margin-bottom:24px; }
+.beta-depth { margin:24px 0 38px; border:1px solid var(--line); border-radius:18px; background:var(--bg-card); padding:24px; }
+.beta-depth>summary { cursor:pointer; display:grid; gap:8px; }
+.beta-depth>summary strong { font-size:28px; font-weight:400; letter-spacing:-.7px; }
+.beta-depth>summary>span:last-child { font-size:12px; color:var(--muted); }
+.beta-depth[open]>summary { border-bottom:1px solid var(--line); padding-bottom:22px; }
+#beta-research-slot,.wine-research { scroll-margin-top:130px; }
+.wine-research { margin-top:24px; }
+.research-heading h2 { font-family:inherit; font-weight:400; letter-spacing:-1px; }
+.research-heading { flex-wrap:wrap; }
+.research-heading>p { max-width:390px; }
+.notes-heading h2,#notes-body>h2 { font-family:inherit; font-weight:400; letter-spacing:-1px; }
+#wine-notes-dialog { background:var(--bg-card); border-color:var(--line); border-radius:18px; }
+.notes-sections h3 { color:var(--accent); }
+.wl-atlas-actions { flex-wrap:wrap; }
+.wl-account-button { max-width:220px; white-space:normal; }
+@media(max-width:560px) {
+  .wl-account-button { max-width:160px; font-size:10px; text-align:right; }
+  .beta-depth { padding:16px; }
+  .research-heading>p { max-width:100%; }
+  .depth-toolbar { flex-wrap:wrap; }
+  .depth-toolbar>label { min-width:0; width:100%; flex-wrap:wrap; gap:6px; }
+  .depth-toolbar select { max-width:100%; width:100%; }
+  .depth-heading { flex-wrap:wrap; gap:10px; }
+  .depth-heading h1 { font-size:42px; letter-spacing:-2px; }
+  .wine-research .research-input-row { min-width:0; }
+}
+
+/* Clearer bottle photography; source pixels, proportions and labels are unchanged. */
+.wl-cat-stage:after { display:block; width:90px; height:12px; bottom:18px; background:radial-gradient(ellipse,#34232c30,transparent 72%); filter:blur(3px); pointer-events:none; }
+.wl-cat-bottle,.wl-bottle-stage img,.notes-heading img { filter:contrast(1.10); }

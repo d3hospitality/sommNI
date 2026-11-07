@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · bottle contrast review</title><style>
+*{box-sizing:border-box}body{margin:0;background:#faf8f3;color:#28282b;font:16px/1.5 system-ui}main{max-width:1240px;margin:auto;padding:42px}h1{font-size:42px;letter-spacing:-1.4px;margin:8px 0}small{color:#742d40;font-weight:700;letter-spacing:2px}p{max-width:800px;color:#625c5a}.samples{display:grid;grid-template-columns:1fr 1fr;gap:24px}.sample{background:white;border:1px solid #e5ded5;border-radius:18px;padding:22px}.sample h2{font-size:17px;margin:0 0 14px}.pair{display:flex;justify-content:center;gap:12px}.pair figure{margin:0;min-width:0}.pair canvas{width:100%;height:auto;max-width:244px;background:#080c09;border-radius:12px}.pair figcaption{font-size:12px;color:#645a57}.status{padding:14px 20px;background:#eaf0e5;border-radius:12px;margin:24px 0}pre{white-space:pre-wrap;font-size:12px}a{color:#742d40}@media(max-width:720px){main{padding:24px}.samples{grid-template-columns:1fr}h1{font-size:32px}}
+.tools{position:sticky;top:0;z-index:2;padding:16px 0;background:#faf8f3f5;backdrop-filter:blur(12px);display:flex;gap:10px;flex-wrap:wrap}.search{flex:1;min-width:220px}.search span{display:block;font-size:12px;font-weight:600;margin-bottom:5px}input,button,select{font:inherit;color:inherit;border:1px solid #d5c9c0;background:#fff;border-radius:10px;padding:11px 14px;min-height:44px}input{width:100%}button{cursor:pointer}button:disabled{cursor:default;opacity:.4}button[aria-pressed=true]{background:#742d40;color:#fff;border-color:#742d40}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #a97183;outline-offset:3px}.tools button,.tools select{align-self:flex-end}.card-top{display:flex;align-items:start;gap:16px;justify-content:space-between;margin-bottom:16px}.card-top h2{margin:0 0 5px}.card-top p{font-size:12px;margin:0}.star{white-space:nowrap;font-size:13px}.counts{font-size:14px;margin:10px 0 20px}.pager{display:flex;align-items:center;justify-content:center;gap:20px;margin:24px 0}.render-error,.empty{padding:24px;background:#f4eee8;border-radius:12px}.pair figcaption{padding:8px 0}.storage-note{font-size:12px}.loading{color:#766960;font-size:13px;padding:60px 12px;text-align:center}.sample{scroll-margin-top:130px}
+</style><main><small>sommNI / DISPLAY REFINEMENT</small><h1>Find your favorite bottles.</h1><p>Browse the photographic catalog, compare the previous beta with sharper label detail and restrained highlights, and star your favorites. These previews use the actual 16-level image data; black represents unlit pixels on G2.</p><div class="tools"><label class="search"><span>Find a bottle</span><input id="search" type="search" placeholder="Wine, producer, grape or country…" autocomplete="off"></label><select id="style" aria-label="Wine style"><option value="">All styles</option></select><button id="favorites" aria-pressed="false">★ Favorites · 0</button></div><p class="storage-note" id="storage-note">Your review favorites are saved in this browser.</p><p class="counts" id="count" role="status">Loading bottles…</p><div class="samples" id="samples"></div><nav class="pager" aria-label="Bottle pages"><button id="previous" disabled>← Previous</button><span id="page"></span><button id="next" disabled>Next →</button></nav><div class="status" id="status">Checking the photographic catalog…</div><p>Proportions follow the source photographs. Physical bottle heights remain unverified. Actual optical contrast depends on your surroundings and must still be checked on G2 hardware.</p><details><summary>Renderer verification</summary><pre id="result">Running…</pre></details><a href="./">Return to sommNI</a></main><script type="module">
+import * as after from './src/bottle-raster.ts';
+import * as before from './tests/fixtures/bottle-raster.v362.ts';
+import {planWineScene, MAP_W, MAP_H} from './src/wine-scene.ts';
+import {allCatalogWines} from './src/identity.ts';
+const check=(ok,message)=>{if(!ok)throw new Error(message)};
+const result={checks:[],rendered:0,pendingIdentity:0,failures:[]};
+function paint(canvas,gray){const ctx=canvas.getContext('2d');const output=ctx.createImageData(canvas.width,canvas.height);for(let i=0;i<gray.length;i++){output.data[i*4]=gray[i]*.57;output.data[i*4+1]=gray[i]*.85;output.data[i*4+2]=gray[i]*.55;output.data[i*4+3]=255}ctx.putImageData(output,0,0)}
+const favoriteKey='winelens.bottle-review.favorites.v1';
+let favorites=new Set();
+try {const saved=JSON.parse(localStorage.getItem(favoriteKey)||'[]');if(Array.isArray(saved))favorites=new Set(saved.filter(id=>typeof id==='string'));}catch{document.querySelector('#storage-note').textContent='Favorites are available for this visit; browser storage is unavailable.';}
+function saveFavorites(){try{localStorage.setItem(favoriteKey,JSON.stringify([...favorites]));}catch{document.querySelector('#storage-note').textContent='Favorites are available for this visit; browser storage is unavailable.';}}
+const normalize=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const catalog=new Map(allCatalogWines().map(w=>[w.legacyId,w]));
+let assets=[],page=0,onlyFavorites=false,generation=0;
+const pageSize=12;
+function favoriteLabel(){document.querySelector('#favorites').textContent='★ Favorites · '+assets.filter(a=>favorites.has(a.id)).length;}
+async function renderGallery(){
+ const revision=++generation,words=normalize(document.querySelector('#search').value).trim().split(/\s+/).filter(Boolean),style=document.querySelector('#style').value;
+ const matches=assets.filter(a=>{const w=catalog.get(a.id);return (!onlyFavorites||favorites.has(a.id))&&(!style||w?.type===style)&&words.every(word=>normalize([a.name,w?.country,w?.wine.grape,w?.wine.region].join(' ')).includes(word));});
+ const pages=Math.max(1,Math.ceil(matches.length/pageSize));page=Math.max(0,Math.min(page,pages-1));
+ const start=page*pageSize,visible=matches.slice(start,start+pageSize),root=document.querySelector('#samples');root.replaceChildren();
+ document.querySelector('#count').textContent=matches.length?`${start+1}–${start+visible.length} of ${matches.length} bottles${onlyFavorites?' · your favorites':''}`:onlyFavorites?'No favorites here yet. Star a bottle in All bottles.':'No bottles found. Try another name or style.';
+ document.querySelector('#page').textContent=`${page+1} / ${pages}`;document.querySelector('#previous').disabled=page===0;document.querySelector('#next').disabled=page>=pages-1;
+ document.querySelector('#favorites').setAttribute('aria-pressed',String(onlyFavorites));favoriteLabel();
+ if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent=onlyFavorites?'Your shortlist starts with a star.':'Try a producer, grape or country.';root.append(empty);return;}
+ const jobs=visible.map(asset=>{
+  const card=document.createElement('article');card.className='sample';card.dataset.bottle=asset.id;
+  const top=document.createElement('div');top.className='card-top';const copy=document.createElement('div'),h=document.createElement('h2'),meta=document.createElement('p');h.textContent=asset.name;const w=catalog.get(asset.id);meta.textContent=[w?.type,w?.country,w?.wine.grape].filter(Boolean).join(' · ');copy.append(h,meta);
+  const star=document.createElement('button');star.className='star';star.setAttribute('aria-label','Favorite '+asset.name);
+  function syncStar(){star.textContent=favorites.has(asset.id)?'★ Saved':'☆ Save';star.setAttribute('aria-pressed',String(favorites.has(asset.id)));}syncStar();
+  star.addEventListener('click',()=>{favorites.has(asset.id)?favorites.delete(asset.id):favorites.add(asset.id);saveFavorites();syncStar();favoriteLabel();if(onlyFavorites)void renderGallery();});top.append(copy,star);card.append(top);
+  const pair=document.createElement('div');pair.className='pair';pair.setAttribute('aria-busy','true');const loading=document.createElement('p');loading.className='loading';loading.textContent='Preparing both views…';pair.append(loading);card.append(pair);root.append(card);return {asset,pair};
+ });
+ for(const {asset,pair} of jobs){
+  if(revision!==generation)return;
+  try{
+   const figures=[];
+   for(const [label,renderer] of [['Before · beta 3.6.2',before],['After · label detail',after]]){
+    const preview=await renderer.stageCanvas('./bottles/'+asset.file,244,244);if(revision!==generation)return;
+    const data=preview.getContext('2d').getImageData(0,0,244,244).data;paint(preview,renderer.toGreenLevels(data,244));preview.setAttribute('role','img');preview.setAttribute('aria-label',asset.name+' — '+label);
+    const figure=document.createElement('figure'),caption=document.createElement('figcaption');caption.textContent=label;figure.append(preview,caption);figures.push(figure);
+   }pair.replaceChildren(...figures);
+  }catch{if(revision!==generation)return;pair.textContent='This photograph could not load. Try again by returning to this page.';pair.classList.add('render-error');}
+  pair.setAttribute('aria-busy','false');
+ }
+}
+document.querySelector('#search').addEventListener('input',()=>{page=0;void renderGallery();window.scrollTo({top:0});});
+document.querySelector('#style').addEventListener('change',()=>{page=0;void renderGallery();window.scrollTo({top:0});});
+document.querySelector('#favorites').addEventListener('click',()=>{onlyFavorites=!onlyFavorites;page=0;void renderGallery();window.scrollTo({top:0});});
+for(const [id,delta] of [['previous',-1],['next',1]])document.querySelector('#'+id).addEventListener('click',()=>{page+=delta;void renderGallery();window.scrollTo({top:0});});
+try {
+ const flat=new Uint8ClampedArray(16*4);for(let i=0;i<16;i++)flat.set([110,110,110,255],i*4);
+ check(new Set(after.toGreenLevels(flat,4)).size===1,'flat tones contain spatial noise');result.checks.push('Flat source tones remain uniform; no ordered dithering');
+ const tones=new Uint8ClampedArray([0,0,0,255,40,40,40,255,128,128,128,255,255,255,255,255,255,255,255,0]);
+ const mapped=after.toGreenLevels(tones);
+ check(mapped[0]===0 && mapped[4]===0,'Black or transparency became lit');
+ check(mapped[0]<mapped[1]&&mapped[1]<mapped[2]&&mapped[2]<mapped[3]&&mapped[3]===204,'Tone range failed');result.checks.push('Black and transparency stay unlit; monotonic tones reserve full brightness for text');
+ const manifest=await(await fetch('./bottles/manifest.json')).json(); result.pendingIdentity=manifest.issues.length;
+ assets=manifest.assets;
+ for(const type of [...new Set(assets.map(a=>catalog.get(a.id)?.type).filter(Boolean))]){const option=document.createElement('option');option.value=type;option.textContent=type;document.querySelector('#style').append(option);}
+ void renderGallery();
+ for(const asset of manifest.assets){
+  const source='./bottles/'+asset.file;
+  try{
+   const canvas=await after.bottleCanvas(source,100,240),ctx=canvas.getContext('2d'),rgba=ctx.getImageData(0,0,100,240).data;
+   const gray=after.toGreenLevels(rgba,100);let count=0,minY=240,maxY=-1;
+   for(let i=0;i<gray.length;i++){const x=i%100,y=Math.floor(i/100),v=gray[i];
+    check(v%17===0,'Invalid gray level');
+    if(rgba[i*4+3]<8)check(v===0,'Glow outside the source silhouette');
+    if(v){count++;minY=Math.min(y,minY);maxY=Math.max(y,maxY);check(x>=3&&x<=96&&y>=3&&y<=236,'Clipped margin')}
+   }
+   check(count>=100&&maxY-minY>=175,'Bottle blank or too small');
+   const bounds=after.alphaBounds(rgba,100,240);const ratio=bounds.height/bounds.width;
+   check(Math.abs(ratio/asset.subject_ratio_h_over_w-1)<.09,'Bottle proportions changed');
+   const staged=await after.stageCanvas(source,100,240),stagePixels=staged.getContext('2d').getImageData(0,0,100,240).data;
+   const subject=await after.bottleCanvas(source,100,216),subjectBounds=after.alphaBounds(subject.getContext('2d').getImageData(0,0,100,216).data,100,216);
+   const aligned=document.createElement('canvas');aligned.width=100;aligned.height=240;aligned.getContext('2d').drawImage(subject,0,Math.round(240*.92)-subjectBounds.y-subjectBounds.height);
+   const subjectPixels=aligned.getContext('2d').getImageData(0,0,100,240).data;let floorPixels=0;
+   for(let i=0;i<24000;i++)if(subjectPixels[i*4+3]===0&&stagePixels[i*4+3]>0){check(Math.floor(i/100)>=200,'Stage rises behind the bottle');floorPixels++;}
+   check(floorPixels>20,'Bottom stage is missing');
+   result.rendered++;
+  }catch(error){result.failures.push({id:asset.id,error:String(error)})}
+ }
+ check(result.rendered+result.pendingIdentity===215,'Catalog accounting mismatch');
+ const scene=planWineScene({}, {country:{},region:null,imageUrl:'./bottles/w0.png'});
+ const tiles=await scene.render();check(tiles.length===2&&tiles.every(t=>t.length===MAP_W*MAP_H/2),'Scene tile sizing');
+ const portrait=await after.stageCanvas('./bottles/w0.png',MAP_W,MAP_H);
+ const expected=after.toGreenLevels(portrait.getContext('2d').getImageData(0,0,MAP_W,MAP_H).data,MAP_W);
+ check([...tiles[0],...tiles[1]].every((v,i)=>v===expected[i]),'Scene differs from the bottom-only stage renderer');
+ result.checks.push('Wine scene tiles match the bottom-only stage renderer');
+ result.checks.push('All loaded photographs: 16-level output, unclipped margins, source proportions, no upper glow, bottom stage present');
+ check(!result.failures.length,'Catalog rendering failures');
+ document.querySelector('#status').textContent=result.rendered+' bottles passed · '+result.pendingIdentity+' catalog identities pending images · clean 16-level output';
+}catch(error){result.error=String(error);document.querySelector('#status').textContent='Verification needs attention: '+error}
+document.querySelector('#result').textContent=JSON.stringify(result,null,2);document.documentElement.dataset.complete='true';
+</script></html>

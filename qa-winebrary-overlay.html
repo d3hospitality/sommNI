@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>Winebrary bottle + country check</title><style>body{background:#101410;color:#e5eadc;font:15px system-ui;margin:30px}canvas{width:400px;image-rendering:pixelated;border:1px solid #444}pre{white-space:pre-wrap}</style><button id="run">Run targeted checks</button><pre id="result">Mock G2 only. No account writes.</pre><canvas id="preview" width="200" height="252"></canvas>
+<script type="module">
+import * as G from './src/winebrary-glasses';import * as A from './src/atlas-app';import * as I from './src/image-utils';import {allCatalogWines,catalogPhoto} from './src/identity';import {planWineScene,MAP_W,MAP_H} from './src/wine-scene';import {stageCanvas,toGreenLevels} from './src/bottle-raster';
+const delay=ms=>new Promise(r=>setTimeout(r,ms)),result=document.querySelector('#result');
+document.querySelector('#run').onclick=async()=>{const checks=[];const check=(ok,label)=>{if(!ok)throw Error(label);checks.push('PASS '+label);result.textContent=checks.join('\n')};try{
+ let page,updates=[],inflight=0,max=0;const bridge={rebuildPageContainer:async p=>{page=p;return true},updateImageRawData:async d=>{inflight++;max=Math.max(max,inflight);await delay(5);updates.push(d);inflight--;return 'success'},getLocalStorage:async()=>'',setLocalStorage:async()=>true};
+ const base=new URL('./',location.href).href;G.connectWinebraryGlasses(bridge,base);G.setWinebraryDeviceConnected(true);A.connectAtlasGlasses(bridge,base);
+ const matches=allCatalogWines().filter(w=>w.country==='Italy'&&w.wine.region==='Tuscany, IT').slice(0,2);
+ const wines=matches.map((w,i)=>({id:'overlay-qa-'+i,wine_id:w.id,wine_name:w.wine.name,region:w.wine.region,notes:'Test notes',metadata:{country:'Italy',color:'Red'}}));G.setLibrarySource(()=>({userId:'overlay-qa',loading:false,error:'',items:wines}));
+ const renderer=await A.loadAtlasRenderer(),country=renderer.data.countries.find(c=>c.code==='ITA'),region=renderer.data.regions.find(r=>r.country==='ITA'&&/Tuscany|Toscana/i.test(r.name));const source=catalogPhoto(matches[0].id,base);
+ const plain=(await planWineScene(renderer,{country,region,imageUrl:null}).render()).reduce((a,b)=>new Uint8Array([...a,...b]),new Uint8Array());
+ const composed=(await planWineScene(renderer,{country,region,imageUrl:source}).render()).reduce((a,b)=>new Uint8Array([...a,...b]),new Uint8Array());
+ const portrait=await stageCanvas(source,MAP_W,MAP_H),rgba=portrait.getContext('2d').getImageData(0,0,MAP_W,MAP_H).data,bottle=toGreenLevels(rgba,MAP_W);
+ check(composed.some((v,i)=>rgba[i*4+3]===0&&v>0&&v===plain[i]),'Country map remains visible outside transparent bottle');
+ check(composed.every((v,i)=>rgba[i*4+3]!==255||v===bottle[i]),'Opaque bottle masks map, including its black glass');
+ check(composed.every(v=>v%17===0),'Composite respects G2 grayscale levels');
+ const ctx=document.querySelector('#preview').getContext('2d'),image=ctx.createImageData(MAP_W,MAP_H);composed.forEach((v,i)=>{image.data[i*4]=v*.3;image.data[i*4+1]=v;image.data[i*4+2]=v*.25;image.data[i*4+3]=255});ctx.putImageData(image,0,0);
+ await G.openLibraryOnGlasses();const click=async i=>{await delay(400);G.handleLibraryGlassesEvent({listEvent:{eventType:0,currentSelectItemIndex:i}});await delay(1000);await I.imageIdle()};
+ await click(1);await click(0);await click(0);check(page.listObject?.[0].containerName==='library-list','Reached actual Winebrary wine list');check(page.imageObject.length===2,'Reuses two existing image containers');
+ const first=updates.filter(u=>u.containerName==='scene-top').at(-1);updates=[];G.handleLibraryGlassesEvent({listEvent:{eventType:2,currentSelectItemIndex:1}});await delay(1200);await I.imageIdle();check(updates.length===2,'Scrolling sends the selected bottle to G2');check(JSON.stringify(first.imageData)!==JSON.stringify(updates[0].imageData),'Second wine produces different bottle pixels');
+ updates=[];G.handleLibraryGlassesEvent({listEvent:{eventType:1,currentSelectItemIndex:0}});G.handleLibraryGlassesEvent({listEvent:{eventType:2,currentSelectItemIndex:1}});await delay(1000);await I.imageIdle();check(updates.length===2,'Rapid scrolling coalesces into one selected bottle');
+ updates=[];G.handleLibraryGlassesEvent({listEvent:{eventType:1,currentSelectItemIndex:0}});G.handleLibraryGlassesEvent({listEvent:{eventType:3,currentSelectItemIndex:0}});await delay(1000);await I.imageIdle();check(page.listObject?.[0].containerName==='library-regions','Back restores region list');check(updates.length===2,'Back cancels pending bottle, only region tiles send');check(max===1,'Bridge image sends remain serialized');
+ await G.clearPrivateGlasses();result.textContent+='\nALL CHECKS PASSED';
+ }catch(e){result.textContent+='\nFAIL '+e.message;console.error(e)}};
+</script>

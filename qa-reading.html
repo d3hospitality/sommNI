@@ -1,0 +1,37 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>sommNI · quiet notes</title><style>body{font-family:system-ui;background:#fffcf7;padding:24px;margin:auto;max-width:900px}pre{white-space:pre-wrap}button{padding:12px}</style><h1>Notes at your pace.</h1><p>Text, stories and sources. Scroll whenever you want.</p><button id="open">Open tasting notes</button><pre id="result">Running…</pre><div id="test-host"></div><div id="export-host"></div><div id="history-host"></div><script type="module">
+import {mountReadingDocument,openReadingRoom} from './src/reading/phone.ts';
+import {mountWineNotesExport} from './src/research/notes.ts';
+import {openWineNotes} from './src/wine-notes.ts';
+import {initHistoryPanel} from './src/history/phone.ts';
+import {buildTastingNotesPage} from './src/pages.ts';
+import {buildLibraryWinePage} from './src/winebrary-glasses.ts';
+import {connectHistoryGlasses,setHistoryConnected,openHistoryOnGlasses} from './src/history/glasses.ts';
+import {registerEventHandlers} from './src/events.ts';
+import {allCatalogWines,lookupWineById} from './src/identity.ts';
+import {rebuildGlassesPage,imageIdle,configureHomeMotion} from './src/image-utils.ts';
+import {wineHistoryCards} from './src/history/content.ts';
+const checks=[],check=(value,label)=>{if(!value)throw Error(label);checks.push(label);},wait=ms=>new Promise(r=>setTimeout(r,ms));
+const wine=lookupWineById('w5'),host=document.querySelector('#test-host'),exports=document.querySelector('#export-host');
+const doc={title:wine.wine.name,sections:[{label:'Behind the wine',text:wine.wine.anecdote,source:{title:'Producer reference',url:'https://example.com/reference'}}]};
+const quiet=e=>!e.querySelector('audio,[data-read-toggle],[data-practice],[data-speak],[data-audio]')&&!/Read with me|Tap: mic|voice practice|read aloud|Make tasting audio/i.test(e.textContent);
+try{
+ mountReadingDocument(host,doc);check(quiet(host),'ordinary text has no audio or microphone controls');check(host.querySelector('.read-passage').tagName==='P','passage is selectable text, not a voice trigger');check(host.textContent.includes(wine.wine.anecdote),'complete maker story retained');check(host.querySelector('.read-source').href==='https://example.com/reference','source links retained');
+ mountWineNotesExport(exports,{wine_name:wine.wine.name,notes:'Personal observations.'});check(quiet(exports)&&exports.querySelector('[data-notes]'),'saved wines offer text download without audio');
+ initHistoryPanel(document.querySelector('#history-host'),wine.id);check(quiet(document.querySelector('#history-host')),'history contains no microphone practice entry');
+ openWineNotes(wine.id);let dialog=document.querySelector('#wine-notes-dialog');check(quiet(dialog),'catalog notes have no voice actions');check(dialog.querySelectorAll('.read-passages section').length===5,'all five tasting sections retained');check(dialog.textContent.includes(wine.wine.anecdote),'catalog notes retain maker anecdote');dialog.close();
+ openReadingRoom(doc);dialog=document.querySelector('#reading-room');check(quiet(dialog)&&dialog.querySelector('.read-source'),'expanded story remains text with sources');dialog.close();
+ let event,audioCalls=0;const pages=[];configureHomeMotion(false);
+ const bridge={onEvenHubEvent:cb=>{event=cb;return()=>{}},rebuildPageContainer:async p=>{pages.push(p);return true},textContainerUpgrade:async()=>true,updateImageRawData:async()=> 'success',audioControl:async()=>{audioCalls++;return true},getLocalStorage:async()=>'',setLocalStorage:async()=>true};
+ const stop=registerEventHandlers(bridge,location.origin+'/sommNI/');
+ const tap=async()=>{event({textEvent:{eventType:0}});event({sysEvent:{}});await wait(30);await imageIdle();};
+ for(const w of allCatalogWines()){
+  const p=buildTastingNotesPage(w.wine,w.id);check(!p.textObject.some(x=>/Tap: mic|read aloud/i.test(x.content)),'catalog '+w.legacyId+' has no voice hint');
+  const l=buildLibraryWinePage({wine_id:w.id,wine_name:w.wine.name,notes:'My own note.',metadata:{}},'Atlas');check(!l.textObject.some(x=>/Tap: mic/i.test(x.content)),'library '+w.legacyId+' has no voice hint');
+ }
+ await rebuildGlassesPage(bridge,buildTastingNotesPage(wine.wine,wine.id));await tap();check(audioCalls===0,'catalog note taps never open microphone');
+ connectHistoryGlasses(bridge);setHistoryConnected(true);await openHistoryOnGlasses(wine.id,'time',0);await wait(400);let count=pages.length;await tap();check(audioCalls===0&&pages.length===count,'history taps keep the text and microphone stays off');
+ event({sysEvent:{eventType:3}});await wait(450);await imageIdle();check(pages.at(-1).listObject?.[0]?.itemContainer.itemName.length===wineHistoryCards(wine.id).length,'double tap still returns to chapters');
+ stop();document.querySelector('#result').textContent=JSON.stringify({passed:true,checks:checks.length,wines:allCatalogWines().length,audioControlCalls:audioCalls,summary:checks.filter(x=>!/^catalog w|^library w/.test(x))},null,2);
+}catch(error){document.querySelector('#result').textContent=JSON.stringify({passed:false,error:String(error),stack:error.stack,checks:checks.length},null,2)}
+document.querySelector('#open').onclick=()=>openWineNotes(wine.id);document.documentElement.dataset.complete='true';
+</script></html>

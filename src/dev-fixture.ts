@@ -24,5 +24,5 @@ export function installLibraryFixture(base: string) {
   ];
   for (let i = 1; i <= 22; i++) items.push(wine(`g${i}`, `Cellar test bottle ${String(i).padStart(2, '0')}`, { vintage: 2000 + i, metadata: { vintage_state: 'year' } }));
   setLibrarySource(() => ({ userId: 'fixture-user', loading: false, error: '', items }));
-  console.log('[wineLENS] DEV fixture: glasses Winebrary uses 28 local sample wines');
+  console.log('[sommNI] DEV fixture: glasses Winebrary uses 28 local sample wines');
 }

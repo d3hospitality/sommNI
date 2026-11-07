@@ -1,0 +1,118 @@
+/* Home is a working collection surface: a compact welcome, then the live atlas. */
+#tab-home .lens-home{padding:24px;margin:0;background:none}
+#tab-home .lens-home-center{grid-template-columns:1.2fr .8fr;gap:24px}
+#tab-home .sommni-hero-title{font-size:clamp(38px,4.8vw,60px);margin:12px 0;letter-spacing:-.04em}
+#tab-home .sommni-hero-title small{font-size:13px;letter-spacing:7px;margin-top:10px}
+#tab-home .sommni-hero-intro{font-size:15px;line-height:1.6;font-weight:400;margin:12px 0 18px}
+#tab-home .sommni-showcase{padding:12px 0 0}
+#tab-home .home-origin-stage{height:160px;min-height:0}
+#tab-home .sommni-hero-bottle{max-height:155px;height:155px}
+#tab-home .sommni-showcase-caption strong{font-size:18px}
+#tab-home .sommni-showcase-label{font-size:8px}
+#tab-home .wl-launch-grid{margin:12px 0 24px;gap:10px}
+#tab-home .wl-launch{padding:14px 12px;gap:10px}
+#tab-home .wl-launch strong{font-size:12px}
+#tab-home .wl-launch small{font-size:10px}
+#tab-home h2{font-size:clamp(21px,2.5vw,28px);line-height:1.22;letter-spacing:-.02em}
+#tab-home .wl-section-title{margin-top:28px;margin-bottom:14px}
+#tab-home .si-banner{margin:24px 0;padding:18px 22px;border-left-width:2px}
+#tab-home .si-banner h2{font-size:clamp(23px,2.6vw,30px)!important;line-height:1.2!important;margin:8px 0 12px!important;letter-spacing:-.3px!important}
+#tab-home .si-banner h2 br{display:none}
+#tab-home .si-banner p{font-size:12px;line-height:1.7}
+#tab-home .si-button{font-size:11px!important;padding:10px 12px!important}
+#tab-home .si-rule{display:none}
+#tab-home .wl-discovery-grid{display:block}
+#tab-home .wl-g2-card{padding:20px;display:grid;grid-template-columns:1fr 1fr;column-gap:24px}
+#tab-home .wl-g2-card h3{font-size:22px}
+#tab-home .wl-glasses-mini{grid-column:2;grid-row:1/5;align-self:center;margin:0}
+#tab-home .wl-notes-primer{padding-block:24px;margin-block:24px}
+.home-atlas{border-block:1px solid var(--line);padding:24px 0;scroll-margin-top:90px}
+#dot-dialog.atlas-inline{position:relative;inset:auto;display:block;width:100%;max-width:none;max-height:none;overflow:visible;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;scroll-margin-top:90px}
+#dot-dialog.atlas-inline .depth-dialog-top{padding-bottom:0}
+#dot-dialog.atlas-inline #dot-title{font-size:24px;margin:6px 0}
+#dot-dialog .orbit-stage{border-color:var(--line);border-radius:8px}
+#dot-dialog .orbit-map{height:clamp(240px,29vw,350px)}
+#dot-dialog .orbit-details h3{font-size:24px;line-height:1.25}
+#dot-dialog .orbit-details select{font-size:12px;min-height:44px}
+#dot-dialog .orbit-path{font-size:18px;margin:14px 14px 8px}
+#dot-dialog .orbit-stats{padding:12px 0;margin:14px 0}
+#dot-dialog .orbit-stats strong{font-size:23px}
+#dot-dialog .orbit-details details{margin:12px 0;padding-bottom:10px}
+#dot-dialog .orbit-wines{max-height:440px;overflow:auto;overscroll-behavior:contain}
+#dot-dialog .wine-photo-row[aria-current=true]{background:#e4b84d0b;box-shadow:inset 2px 0 var(--gold)}
+#dot-dialog .orbit-stage-bottle{pointer-events:auto;touch-action:pan-y;border:0;background:transparent;padding:0;cursor:pointer;transform:translateX(var(--swipe-x,0));transition:transform .12s ease}
+#dot-dialog .orbit-stage-bottle[hidden]{display:none}
+#dot-dialog .orbit-stage-bottle img{pointer-events:none;user-select:none;object-fit:contain}
+#dot-dialog .orbit-stage-bottle:focus-visible{outline:1px solid var(--gold);outline-offset:6px;border-radius:8px}
+#dot-dialog .orbit-bottle-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:center;padding:0 12px}
+#dot-dialog .orbit-bottle-nav[hidden],#dot-dialog #orbit-bottle-help[hidden]{display:none}
+#dot-dialog .orbit-bottle-nav>button{width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--gold);font-size:19px;cursor:pointer}
+#dot-dialog .orbit-bottle-nav>button:disabled{opacity:.25;cursor:default}
+#dot-dialog #orbit-selected-wine{font-size:13px;line-height:1.4;font-weight:500;text-align:center;margin:0 0 4px;overflow-wrap:anywhere}
+#dot-dialog #orbit-bottle-count{display:block;text-align:center;font-size:10px;color:var(--muted)}
+#dot-dialog #orbit-bottle-help{font-size:10px;text-align:center;color:var(--gold);margin:12px 0 6px}
+#dot-dialog #orbit-help{font-size:10px;margin-bottom:12px}
+#dot-dialog #dot-status{font-size:10px;margin-bottom:14px}
+#dot-dialog .atlas-legend{font-size:10px;gap:8px;margin:12px 0}
+#dot-dialog .dot-credits{padding-top:12px;margin-top:16px}
+.home-atlas-footer{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin-top:10px}
+.home-atlas-footer .st-status{font-size:10px;margin:0}
+@media(min-width:761px){#dot-dialog.atlas-inline .orbit-stage{top:100px}#dot-dialog.atlas-inline .orbit-layout{grid-template-columns:minmax(0,1fr) minmax(260px,.9fr)}}
+@media(max-width:760px){#tab-home .lens-home{padding:18px}#tab-home .lens-home-center{grid-template-columns:1fr}#tab-home .sommni-showcase{display:none}#tab-home .sommni-hero-title{font-size:46px}#tab-home .wl-launch{padding:12px 9px}#tab-home .wl-launch-icon{display:none}#tab-home .wl-launch small{font-size:9px}#tab-home .wl-g2-card{display:block}#tab-home .wl-glasses-mini{margin:16px 0}#dot-dialog.atlas-inline .orbit-layout{gap:16px}#dot-dialog .orbit-map{height:260px}#dot-dialog .orbit-search-row{gap:6px}#dot-dialog .orbit-search-row>button{flex:1;font-size:11px}#dot-dialog .orbit-wines{max-height:340px}.home-atlas{padding:20px 0}#dot-dialog .orbit-boundary-note{line-height:1.5!important}}
+@media(prefers-reduced-motion:reduce){#dot-dialog .orbit-stage-bottle{transition:none}}
+
+#dot-dialog [hidden]{display:none!important}
+@media(max-width:760px){
+ #tab-home .wl-launch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ #tab-home .wl-launch{display:flex;min-width:0;min-height:46px;justify-content:center;text-align:center;padding:10px 5px}
+ #tab-home .wl-launch small,#tab-home .wl-launch>svg{display:none}
+ #tab-home .wl-launch strong{font-family:inherit;font-size:11px}
+ #dot-dialog.atlas-inline .orbit-layout{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+ #dot-dialog.atlas-inline .orbit-details{display:contents}
+ #dot-dialog.atlas-inline .orbit-details>.wl-kicker{display:none}
+ #dot-dialog.atlas-inline .orbit-details>label{order:0;min-width:0;font-size:10px}
+ #dot-dialog.atlas-inline #orbit-appellation-label{grid-column:1/-1}
+ #dot-dialog.atlas-inline .orbit-stage{order:1;grid-column:1/-1;margin-top:8px}
+ #dot-dialog.atlas-inline #orbit-info{order:2;grid-column:1/-1}
+ #dot-dialog.atlas-inline .orbit-boundary-note{order:3;grid-column:1/-1}
+}
+
+#dot-dialog .orbit-stage[data-bottle=true] #dot-explorer{opacity:.72}
+
+/* Large bottle over the globe, with a separate swipe target and clear map area. */
+#dot-dialog .orbit-map{height:clamp(280px,32vw,390px)}
+#dot-dialog .orbit-stage[data-bottle=true] #dot-explorer{opacity:1}
+#dot-dialog .orbit-bottle-dock{display:flex;align-items:center;gap:10px;margin:0 14px;padding:12px 0;border-top:1px solid var(--line)}
+#dot-dialog .orbit-bottle-dock:has(.orbit-bottle-nav[hidden]){display:none}
+#dot-dialog .orbit-map{position:relative;isolation:isolate}
+#dot-dialog .orbit-stage-bottle{position:absolute;z-index:2;inset:12% auto 10% 24%;width:24%;height:78%;min-width:58px;max-width:130px;filter:drop-shadow(8px 8px 9px #0009);transform:translateX(var(--swipe-x,0))}
+#dot-dialog .orbit-stage-bottle img{width:100%!important;height:100%!important;max-height:none!important;object-fit:contain}
+#dot-dialog .orbit-stage-bottle::after{content:'↔';position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);font:15px/1 sans-serif;color:#fff9;text-shadow:0 1px 4px #000}
+#dot-dialog .orbit-stage[data-bottle=true] #dot-explorer{opacity:.82}
+#dot-dialog .orbit-bottle-nav{flex:1;padding:0;grid-template-columns:36px minmax(0,1fr) 36px;gap:6px}
+#dot-dialog .orbit-bottle-nav>button{width:36px;height:40px;border-radius:6px}
+#dot-dialog #orbit-selected-wine{font-size:12px}
+#dot-dialog #orbit-bottle-help{margin:0 0 10px;font-size:10px}
+#dot-dialog #orbit-help{color:var(--text);margin:8px 10px 12px}
+#dot-dialog .orbit-tools{margin-bottom:12px}
+#dot-dialog #orbit-spin{order:-1;min-width:106px;border-color:var(--gold);color:var(--gold);background:transparent}
+#dot-dialog #orbit-spin[aria-pressed=true]{background:var(--gold);color:#14140e}
+#dot-dialog .atlas-legend{font-size:9px;margin:8px 10px}
+#dot-dialog .orbit-path{font-size:15px;margin:10px}
+#dot-dialog #dot-status{display:none}
+#tab-home .sommni-hero-title{font-size:clamp(30px,4vw,44px);margin:6px 0}
+#tab-home .sommni-hero-intro{font-size:13px;margin:8px 0 14px}
+#tab-home .sommni-showcase,#tab-home .sommni-eyebrow{display:none}
+#tab-home .lens-home-center{display:block}
+#tab-home .lens-home{padding:16px 0}
+#tab-home .sommni-scan{font-size:11px}
+#tab-home .wl-launch-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0 18px}
+#tab-home .wl-launch{padding:10px 7px;min-height:44px;justify-content:center;text-align:center}
+#tab-home .wl-launch strong{font-size:11px}
+#tab-home .wl-launch small,#tab-home .wl-launch-icon,#tab-home .wl-launch>svg{display:none}
+.home-secondary{margin:24px 0;border-top:1px solid var(--line);padding-top:14px}.home-secondary>summary{font-size:12px;color:var(--muted);cursor:pointer}
+@media(max-width:480px){#dot-dialog .orbit-map{height:290px}#tab-home .sommni-hero-title{font-size:34px}#dot-dialog .orbit-search{padding:10px}#dot-dialog .orbit-search-row input{font-size:14px}#dot-dialog .orbit-search-row>button{font-size:11px}}
+#tab-home .lens-home{min-height:0;display:block}#tab-home .lens-home-center{padding:0}#tab-home .sommni-hero-copy{padding:4px 0 10px;display:grid;grid-template-columns:1fr auto;column-gap:24px;align-items:center}#tab-home .sommni-title-line{grid-column:1;grid-row:1}#tab-home .sommni-hero-intro{grid-column:1;grid-row:2}#tab-home .wl-hero-actions{grid-column:2;grid-row:1;margin:0}#tab-home .sommni-scan{grid-column:2;grid-row:2;text-align:right;margin:4px 0}#tab-home .sommni-hero-title small{font-size:10px;letter-spacing:5px;margin-top:5px}@media(max-width:600px){#tab-home .sommni-hero-copy{display:block;padding:0}#tab-home .wl-hero-actions{margin-top:10px}#tab-home .sommni-scan{text-align:left;margin-top:8px}}
+
+/* The map is a feathered monocle; controls and bottle remain crisp outside its mask. */
+#dot-dialog .orbit-stage{background:transparent;border-color:transparent}

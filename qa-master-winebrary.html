@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · Offline bottles & master Winebrary</title>
+<style>body{font:16px/1.55 Arial;background:#10150f;color:#e4e8db;max-width:980px;margin:40px auto;padding:20px}h1{font-size:38px;line-height:1.1}small{color:#adba8c;letter-spacing:3px}button,a{padding:12px 18px;border-radius:7px;border:1px solid #87956f;background:#bec7a5;color:#10150f;cursor:pointer;margin:4px}a{display:inline-block;text-decoration:none}section{padding:20px;background:#1b2319;border:1px solid #3c4a36;border-radius:16px;margin:20px 0}.images{display:flex;justify-content:center;gap:60px}.images img{height:320px;object-fit:contain;max-width:40%}#sprite{image-rendering:pixelated}pre{white-space:pre-wrap;color:#c0d3aa}p{color:#bdc7b5}</style>
+<small>ソムニ / SOMMNI</small><h1>Saved here. Shared for review.</h1><p>Persistent bottle photos and G2 sprites, with a retryable upload to the private master Winebrary.</p>
+<section><div class="images"><img id="photo" src="./.qa-bottle/cutout.png" alt="Vasse Felix Cabernet Sauvignon bottle"><img id="sprite" alt="Persistent G2 bottle sprite" hidden></div><h2>Vasse Felix · Cabernet Sauvignon · 2019</h2><p>A real catalog bottle used to verify the pipeline. The photo shows 2019; exact provenance remains subject to editorial review. Private notes are deliberately excluded.</p></section>
+<button id="inspect">Inspect catalog cache</button><button id="offline">Check offline storage and upload retry</button><button id="reload">Read saved artwork after reload</button><button id="send">Send this catalog bottle to the master queue</button><a href="./#winebrary">Open Winebrary →</a><p id="status" role="status">Ready.</p><pre id="result"></pre>
+<script type="module">
+import {setArtworkOwner,artworkStore,localWineArtwork,bottlePhoto,clearArtworkOwner,blobData,bottleCacheKey} from './src/artwork-store.ts';
+import {stageCanvas} from './src/bottle-raster.ts';
+import {finishWineArtwork,flushWineContributions,retryWineContributions,contributionPayload} from './src/wine-contributions.ts';
+const scope='qa-master-catalog-v1',wine={id:'qa-vasse-felix-2019',wine_name:'Cabernet Sauvignon',producer:'Vasse Felix',vintage:2019,region:'Margaret River',notes:'PRIVATE_NOTES_MUST_STAY_LOCAL',rating:5,image_url:'./.qa-bottle/cutout.png',metadata:{vintage_state:'year',country:'Australia',grape:'Cabernet Sauvignon',image_source:'photograph',bottle_provenance:{pipeline:'photographic-v2',asset_id:'w1',vintage_binding:'2019 visible on the reference photograph; editorial review required',private_input:'PRIVATE_PROVENANCE_MUST_STAY_LOCAL'}}};
+setArtworkOwner(scope);const result=document.querySelector('#result'),status=document.querySelector('#status');
+function show(value){result.textContent=JSON.stringify(value,null,2)}
+async function run(fn){document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn()}catch(e){status.textContent=e.message;show({passed:false,error:e.message})}finally{document.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+async function display(payload){document.querySelector('#photo').src=payload.artwork.photo;const img=document.querySelector('#sprite');img.src=payload.artwork.sprite;img.hidden=false}
+const check=(condition,message,checks)=>{if(!condition)throw Error(message);checks.push(message)};
+document.querySelector('#inspect').onclick=()=>run(async()=>{
+ const current=(await artworkStore('getAll')).filter(r=>r.scope==='catalog');show({photos:current.filter(r=>r.kind==='photo').length,sprites:current.filter(r=>r.kind==='sprite').length});status.textContent='Catalog cache entries';
+});
+document.querySelector('#offline').onclick=()=>run(async()=>{
+ status.textContent='Checking local saves, private notes and a failed upload…';const checks=[];setArtworkOwner(scope);
+ check(await bottleCacheKey('./bottles/w0.png')===await bottleCacheKey('./bottles/w0.png?v=photographic-v2#detail'),'catalog URLs with or without a version share one current cache entry',checks);
+ const local=await localWineArtwork(wine,scope),payload=await contributionPayload(local);await display(payload);
+ check(!JSON.stringify(payload).includes('PRIVATE_'),'personal notes, rating and private provenance excluded',checks);check(!('rating' in payload),'personal rating excluded',checks);
+ const before=await stageCanvas(local.image_url,100,240),network=window.fetch;
+ try{
+  window.fetch=(input,init)=>typeof input==='string'&&input.startsWith('data:')?network(input,init):Promise.reject(Error('Simulated offline connection'));
+  const restored=await localWineArtwork(wine,scope,true);check(restored.image_url.startsWith('data:image/'),'bottle photograph restores from IndexedDB without a network',checks);
+  const cached=await stageCanvas(restored.image_url,100,240);check(cached.toDataURL()===before.toDataURL(),'G2 stage sprite restores unchanged while offline',checks);
+  const retryScope=scope+':offline-retry';setArtworkOwner(retryScope);await finishWineArtwork(local,retryScope,true);await flushWineContributions();
+  const pending=(await artworkStore('getAll')).find(r=>r.scope===retryScope&&r.kind==='submission');check(pending?.state==='pending'&&pending.attempts>0&&pending.receipt.length===64,'failed upload retains a persistent retryable receipt',checks);
+  await clearArtworkOwner(retryScope);
+ }finally{window.fetch=network;await clearArtworkOwner(scope+':offline-retry');setArtworkOwner(scope)}
+ setArtworkOwner('qa-other-owner');const foreign=await localWineArtwork(wine,'qa-other-owner',true);check(!foreign.image_url.startsWith('data:'),'another account cannot recover these pixels',checks);setArtworkOwner(scope);
+ status.textContent='Offline checks passed. No network submission was made by this check.';show({passed:true,checks});
+});
+document.querySelector('#reload').onclick=()=>run(async()=>{
+ setArtworkOwner(scope);const network=window.fetch;window.fetch=async()=>{throw Error('Offline')};try{const local=await localWineArtwork(wine,scope,true);if(!local.image_url.startsWith('data:'))throw Error('No local photo');const sprite=await stageCanvas(local.image_url,100,240);document.querySelector('#photo').src=local.image_url;document.querySelector('#sprite').src=sprite.toDataURL();document.querySelector('#sprite').hidden=false;status.textContent='Photo and sprite survived a page reload and loaded with network access blocked.';show({passed:true,reloadedOffline:true});}finally{window.fetch=network}
+});
+document.querySelector('#send').onclick=()=>run(async()=>{
+ setArtworkOwner(scope);status.textContent='Uploading the catalog bottle and G2 sprite to Supabase…';await finishWineArtwork(wine,scope,true);await flushWineContributions();await retryWineContributions();
+ const rows=(await artworkStore('getAll')).filter(r=>r.kind==='submission'&&r.scope===scope);if(!rows.length||rows.some(r=>r.state!=='sent'))throw Error(rows.find(r=>r.error)?.error||'Upload is still pending');
+ const payload=await contributionPayload(await localWineArtwork(wine,scope));await display(payload);status.textContent='Received by the master Winebrary for review. Personal notes stayed on this device.';show({passed:true,received:true,submissions:rows.map(r=>({name:r.name,state:r.state,master_wine_id:r.remote_id})),privateNotesShared:false});
+});
+</script></html>

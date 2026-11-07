@@ -1,0 +1,12 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
+import {SOMMNI_PROJECT_URL,SOMMNI_PUBLISHABLE_KEY} from '../src/account-project.ts';
+const dir='../../outputs/sommNI-auto-bottles';
+const source=await readFile('src/research/bottles.ts','utf8');const jwt=source.match(/const edgeAnonJwt='([^']+)'/)[1];
+const call=async(body)=>{const r=await fetch(`${SOMMNI_PROJECT_URL}/functions/v1/sommni-bottle-cutout`,{method:'POST',headers:{'Content-Type':'application/json',apikey:SOMMNI_PUBLISHABLE_KEY,Authorization:`Bearer ${jwt}`},body:JSON.stringify(body),signal:AbortSignal.timeout(120000)});const data=await r.json();if(!r.ok)throw Error(data.error);return data;};
+const {assets}=await call({action:'assets'});const bytes=Buffer.from(await (await fetch(assets.model.url)).arrayBuffer());const hash=Buffer.from(await crypto.subtle.digest('SHA-256',bytes)).toString('hex');if(hash!==assets.model.sha)throw Error('Wrong model');await writeFile(dir+'/u2netp.onnx',bytes);
+const result=spawnSync('python3',['scripts/verify-auto-bottle-mask.py'],{encoding:'utf8'});if(result.status)throw Error(result.stderr);console.log(result.stdout.trim());
+const photo='data:image/png;base64,'+(await readFile(dir+'/normalized.png')).toString('base64'),mask=(await readFile(dir+'/mask.bin')).toString('base64');
+const cutout=await call({photo,mask});await writeFile(dir+'/cutout.json',JSON.stringify(cutout));await writeFile(dir+'/transparent-bottle.png',Buffer.from(cutout.draft.url.split(',')[1],'base64'));
+const reused=await call({action:'lookup',photo});if(!reused.cached||reused.draft.url!==cutout.draft.url)throw Error('Cache reuse failed');
+console.log(JSON.stringify({transparent:true,cached:reused.cached,provenance:cutout.draft.provenance}));

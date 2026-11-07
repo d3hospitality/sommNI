@@ -1,0 +1,55 @@
+{
+  "source": "Unedited native Even Hub simulator framebuffers. Home refreshed for 3.7.5; Italy remains first.",
+  "first": "01-italy-atlas-576x288.png",
+  "screenshots": [
+    {
+      "file": "01-italy-atlas-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "ef0049bace3356f70c8da8ed5f7c72fa21e11331e4133b5f56d47d41fcd1d9fc"
+    },
+    {
+      "file": "02-tuscany-region-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "d09cb452720ea40c155773964ef44b737f3d28ba43102f2232cd780f6f66e5af"
+    },
+    {
+      "file": "03-atlas-bottle-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "783b16a139bc029e13cc62569bec179e06bccd1b8e0d4ca06d954efc684a167e"
+    },
+    {
+      "file": "04-tasting-notes-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "b13ce93f9934612aec7b9b849bca59a89c71b064705884c0033d6343ca803f69"
+    },
+    {
+      "file": "05-behind-the-wine-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "ff59de9944ea014a7482ea47b53fb8ff34b113fa737c43b9f35537790365b21d"
+    },
+    {
+      "file": "06-sommni-home-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "6ab57ac8750fd4f168a0420859bb02c4cc8f9a34271074f64a3ab1d662973d0f"
+    },
+    {
+      "file": "07-study-today-576x288.png",
+      "width": 576,
+      "height": 288,
+      "mode": "RGBA",
+      "sha256": "34759bbcc4ac0e4537c601d468e4a3ec3212133dabf0d8b8b3835603a712e3e5"
+    }
+  ]
+}

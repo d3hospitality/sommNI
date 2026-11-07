@@ -1,0 +1,46 @@
+/* Wine and Winebrary use the same full-width row and expanded-detail styles. */
+#beta-catalog .wl-section-heading h2{font-family:inherit}
+#beta-catalog .wl-view-toolbar{gap:12px;margin:8px 0 14px}
+#beta-catalog .wl-view-switch button{padding:6px 10px;font-size:10px;line-height:1.4;min-height:30px}
+#beta-catalog .wl-view-toolbar label{font-size:10px}
+#beta-catalog .wl-view-toolbar select{padding:6px 8px;max-width:160px;font-size:10px;min-height:32px}
+#beta-catalog #cat-count{font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+/* Compact, aligned style controls; counts stay separate from the labels. */
+#beta-catalog .cat-filters{margin:10px 0 6px;min-width:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+#beta-catalog .cat-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+#beta-catalog .cat-filter-heading{font-size:9px;font-weight:500;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted)}
+#beta-catalog .cat-filter-shortcuts{display:flex;gap:6px}
+#beta-catalog .cat-filter-options{display:flex;flex-wrap:wrap;gap:8px}
+#beta-catalog .cat-filter-options>.cat-filter-pill{flex:1 1 110px;min-width:0}
+#beta-catalog .cat-filter-pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:5px 9px;border:1px solid #ffffff15;border-radius:20px;background:#ffffff04;color:var(--muted);font-family:inherit;font-size:10px;font-weight:400;line-height:1.4;letter-spacing:.1px;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;box-sizing:border-box}
+#beta-catalog .cat-filter-pill:hover{border-color:#d8b85b70;color:var(--text);background:#d8b85b0a}
+#beta-catalog .cat-filter-pill[aria-pressed=true]{border-color:var(--gold);background:#d8b85b18;color:#f0d58b;box-shadow:inset 0 0 0 1px #d8b85b18}
+#beta-catalog .cat-filter-pill:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#beta-catalog .cat-filter-label{min-width:0}
+#beta-catalog .cat-filter-count{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 3px;margin-left:auto;border-radius:10px;background:#ffffff08;color:var(--muted);font-size:9px;font-variant-numeric:tabular-nums;box-sizing:border-box}
+#beta-catalog .cat-filter-pill[aria-pressed=true] .cat-filter-count{background:#d8b85b26;color:#f0d58b}
+#beta-catalog .cat-filter-dot{width:6px;height:6px;flex:0 0 6px;border-radius:50%;background:#aaa399;box-shadow:0 0 0 3px #ffffff04}
+#beta-catalog .cat-filter-dot[data-style=Red]{background:#bc6578}#beta-catalog .cat-filter-dot[data-style=White]{background:#e9dfaa}#beta-catalog .cat-filter-dot[data-style=Sparkling]{background:#d3bb72}#beta-catalog .cat-filter-dot[data-style=Rose]{background:#d79298}#beta-catalog .cat-filter-dot[data-style=Orange]{background:#ce9152}#beta-catalog .cat-filter-dot[data-style=Dessert]{background:#a891cb}#beta-catalog .cat-filter-dot[data-style=Sake]{background:#9bbdb5}
+#beta-catalog .cat-filter-star{font-size:12px;color:var(--gold);line-height:1}
+@media(max-width:600px){#beta-catalog .cat-filter-options{gap:8px}#beta-catalog .cat-filter-options .cat-filter-pill{flex-basis:calc((100% - 16px)/3);width:auto;min-height:32px;padding:5px 8px;gap:5px;font-size:10px}#beta-catalog .cat-filter-shortcuts .cat-filter-pill{min-height:32px;font-size:10px}#beta-catalog .cat-filter-unclassified{border-color:transparent;background:transparent}#beta-catalog .cat-filter-unclassified .cat-filter-count{margin-left:3px}}
+@media(prefers-reduced-motion:reduce){#beta-catalog .cat-filter-pill{transition:none}}
+#beta-catalog .cat-list-hint{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:30px;color:var(--muted);font-size:11px}
+#beta-catalog #cat-reset{flex:none;font-size:11px;margin:0;min-height:30px;padding:0}
+#beta-catalog .cat-bottle-group{margin:0 0 18px;min-width:0}
+#beta-catalog .cat-group-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:10px 2px}
+#beta-catalog .cat-group-title h3{line-height:1.4;font-family:inherit;font-size:14px;font-weight:500;color:var(--gold);margin:0;overflow-wrap:anywhere}
+#beta-catalog .cat-group-title>span{flex:none;font-size:10px;color:var(--muted)}
+#beta-catalog .wl-compact-list{margin-bottom:0}
+#beta-catalog .cat-source{display:block;color:var(--muted);font-size:10px;line-height:1.5;margin:10px 0}
+#beta-catalog .wl-catalog-row[open]>.bottle-row-summary{background:var(--bg-card-hover)}
+#beta-catalog .cat-map-panel{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:12px 0}
+#beta-catalog .cat-map-panel>summary{padding:12px;font-size:11px;color:var(--gold);cursor:pointer}
+#beta-catalog .cat-map-panel>summary span{color:var(--muted);margin-left:10px}
+#beta-catalog #catalog-context:not([hidden]){border:0;border-top:1px solid var(--line);border-radius:0;display:grid;grid-template-columns:160px minmax(0,1fr)}
+#beta-catalog .wine-context-scene{height:220px}
+#beta-catalog .wine-context-copy{border:0}
+#beta-catalog .wine-context-copy h3{font-family:inherit;font-size:16px;font-weight:500;line-height:1.4}
+#beta-catalog .wl-row-note{max-width:75ch}
+@media(max-width:600px){#beta-catalog .wl-view-toolbar{gap:8px}#beta-catalog #cat-count{flex-basis:100%;margin:0}#beta-catalog .wl-view-toolbar select{max-width:135px}#beta-catalog #catalog-context:not([hidden]){grid-template-columns:100px minmax(0,1fr)}#beta-catalog .wine-context-scene{height:165px}#beta-catalog .wine-context-copy{padding:12px}#beta-catalog .wl-section-heading{gap:10px}#beta-catalog #cat-add{font-size:11px;padding:10px}}
+
+@media(max-width:359px){#beta-catalog .cat-filter-options .cat-filter-pill{flex-basis:calc((100% - 8px)/2)}}

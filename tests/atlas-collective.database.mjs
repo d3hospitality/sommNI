@@ -1,0 +1,45 @@
+import {PGlite} from '@electric-sql/pglite';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const db=new PGlite();
+await db.exec(`
+create role anon;create role authenticated;create role service_role;
+create schema sommni_private;create schema sommni_atlas_api;
+create table sommni_private.atlas_countries(code text primary key,name text);
+insert into sommni_private.atlas_countries values('ITA','Italy'),('USA','United States');
+create table sommni_private.atlas_regions(id text primary key,country text,name text);
+insert into sommni_private.atlas_regions values('IT-52','ITA','Tuscany (Toscana)'),('IT-21','ITA','Piedmont'),('IT-82','ITA','Sicily'),('USA-3521','USA','California');
+create table public.sommni_wines(id uuid primary key,catalog_id text,wine_name text,producer text,country text);
+create table public.sommni_vintages(id uuid primary key,wine_id uuid,vintage_key text,status text,merged_into uuid);
+create table public.wines(id text primary key,country text,region text,metadata jsonb default '{}');
+create table public.wl_community_wines(id uuid default gen_random_uuid(),canonical_vintage_id uuid,status text,created_at timestamptz,updated_at timestamptz);
+create table sommni_private.atlas_origins(wine_id uuid,country_code text,region_id text);
+create function sommni_private.normal_name(value text) returns text language sql immutable as $$select trim(regexp_replace(lower(coalesce(value,'')),'[^a-z0-9]+',' ','g'))$$;
+create function sommni_private.atlas_country(value text) returns text language sql stable as $$select code from sommni_private.atlas_countries where code=upper(value) or lower(name)=lower(value) limit 1$$;
+`);
+const migration=fs.readFileSync('supabase/migrations/20261022225033_atlas_collective_checkin.sql','utf8').split('-- Both UTC hours')[0];
+await db.exec(migration);
+const uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+const add=async(n,name,country,region,status='pending')=>{
+ await db.query('insert into sommni_wines values($1,$2,$3,$4,$5)',[uuid(n),status==='existing'?'seed-'+n:null,name,'Producer',country]);
+ await db.query('insert into sommni_vintages values($1,$2,$3,$4,null)',[uuid(n+100),uuid(n),'2022',status]);
+ await db.query('insert into wines values($1,$2,$3,$4)',[status==='existing'?'seed-'+n:'community-'+uuid(n),country,region,{}]);
+};
+await add(1,'Seed wine','Italy','Tuscany','existing');
+await add(2,'Shared wine','Italy','Toscana');
+await add(3,'American wine','USA','California');
+for(const n of [1,2,2,2,3])await db.query("insert into wl_community_wines(canonical_vintage_id,status,created_at) values($1,'pending',now()-interval '1 minute')",[uuid(n+100)]);
+const state=async()=> (await db.query('select sommni_atlas_api.atlas_snapshot() s')).rows[0].s;
+let s=await state();assert.equal(s.total,3);assert.equal(s.recent.length,2,'Repeated saves/photos and original seeds do not create new +1 events');assert.equal(s.weekly.find(x=>x.code==='ITA').bottles,1);assert.equal(s.countries.find(x=>x.id==='ITA').wines,2);assert.equal(s.regions.find(x=>x.id==='IT-52').wines,2);
+await db.query("update sommni_vintages set merged_into=$1 where id=$2",[uuid(102),uuid(103)]);s=await state();assert.equal(s.total,2);assert.equal(s.recent.length,1,'Merged identities are not counted twice');
+await db.query("update wines set metadata='{"+'"hidden":true'+"}' where id=$1",['community-'+uuid(2)]);s=await state();assert.equal(s.total,1);assert.equal(s.recent.length,0,'Hidden master wine excluded');
+assert.equal((await db.query("select sommni_private.atlas_resolve_region('ITA','Tuscany, Brunello di Montalcino DOCG') r")).rows[0].r,'IT-52');
+assert.equal((await db.query("select sommni_private.atlas_resolve_region('ITA','California') r")).rows[0].r,null,'No cross-country region guessing');
+await db.exec('select sommni_private.atlas_daily_checkin();select sommni_private.atlas_daily_checkin();');
+assert.equal((await db.query('select count(*)::int n from sommni_private.atlas_checkins')).rows[0].n,1,'Nightly retry is idempotent');
+for(const [cutoff,hours] of [['2026-03-09T01:00:00Z',23],['2026-11-02T02:00:00Z',25]]){const r=(await db.query('select sommni_private.atlas_recap($1::timestamptz) r',[cutoff])).rows[0].r;assert.equal((Date.parse(r.period_end)-Date.parse(r.period_start))/3600000,hours,'Check-in respects Eastern daylight changes');}
+await db.exec('grant usage on schema sommni_atlas_api to anon;grant execute on function sommni_atlas_api.atlas_snapshot() to anon;set role anon;');
+assert.equal((await state()).total,1,'Read-only public snapshot works');
+await assert.rejects(db.query('select * from sommni_private.atlas_checkins'),/permission denied/);
+await assert.rejects(db.query('select sommni_private.atlas_daily_checkin()'),/permission denied/);
+await db.close();console.log('Collective atlas: duplicates, seed baseline, merges, hidden records, geography, DST, idempotency and permissions passed.');

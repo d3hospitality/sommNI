@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// wineLENS — one study session shared by the phone and G2 (PRD S-01, S-02, S-07)
+// sommNI — one study session shared by the phone and G2 (PRD S-01, S-02, S-07)
 //
 // Both adapters render the same session object, so they always show the same
 // card version, the same result and the same next due date. A presentation is:

@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import {mkdtemp,readFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+const dir=await mkdtemp(tmpdir()+'/sommni-sake-');
+await build({stdin:{contents:`export * from './src/sake';export {winebraryCoverage} from './src/atlas/coverage';export {review} from './supabase/functions/winelens-research/domain';`,resolveDir:process.cwd()},bundle:true,platform:'node',format:'esm',outfile:dir+'/sake.mjs',plugins:[{name:'catalog-fixture',setup(b){b.onResolve({filter:/identity$/},()=>({path:'identity',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:'export const lookupWineById=()=>null;'}))}}]});
+const {prefectureKey,winebraryCoverage,review}=await import(dir+'/sake.mjs');
+const regions=JSON.parse(await readFile('src/data/japan-prefecture-regions.json','utf8'));
+assert.equal(regions.length,47);assert.equal(new Set(regions.map(r=>r.id)).size,47);
+assert.equal(prefectureKey('Niigata Prefecture'),prefectureKey('Niigata-ken'));assert.notEqual(prefectureKey('Niigata'),prefectureKey('Nagano'));
+const item={id:'sake',wine_name:'Fixture Junmai Nigori',producer:'Fixture brewery',vintage_state:'non_vintage',country:'Japan',region:'Niigata',color:'Sake',sake_classification:'Junmai',sake_style:'Nigori',rice_variety:'Gohyakumangoku'};
+const validated=review(item);assert.equal(validated.grape,'');assert.equal(validated.rice_variety,'Gohyakumangoku');assert.equal(validated.vintage,null);assert.throws(()=>review({...item,rice_variety:'x'.repeat(201)}));
+const boundaries=JSON.parse(await readFile('public/atlas/boundaries.json','utf8'));
+const data={countries:[{code:'JPN',name:'Japan'}],regions};
+const coverage=winebraryCoverage(data,boundaries,[{...item,metadata:{country:'Japan',color:'Sake'}},{...item,metadata:{country:'Japan',color:'Sake'}}]);
+assert.equal(coverage.countryCounts.get('JPN'),1,'Duplicates count once');assert.equal(coverage.regions.size,1);const region=[...coverage.regions][0];assert.match(boundaries.regions.find(r=>r.id===region).name,/Niigata/);
+const unknown=winebraryCoverage(data,boundaries,[{...item,region:'Unknown',metadata:{country:'Japan'}}]);assert.equal(unknown.regions.size,0,'Unknown origin cannot light a prefecture');
+console.log('PASS: all 47 prefectures, Niigata normalization and coverage, no invented region glow, deduplication, sake review fields and limits.');

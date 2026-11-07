@@ -53,6 +53,23 @@ function writeChunk(type: string, data: Uint8Array): Uint8Array {
   return chunk;
 }
 
+/** Small animated Home frames benefit from real DEFLATE rather than stored
+ * blocks. Keep the same 8-bit grayscale PNG format for the G2 decoder.
+ * Older WebViews fall back to the existing encoder without losing the image. */
+export async function encodeCompactGrayscalePng(width:number,height:number,data:Uint8Array):Promise<Uint8Array>{
+  if(typeof CompressionStream==='undefined')return encodeGrayscalePng(width,height,data);
+  try{
+    const scanlines=new Uint8Array((width+1)*height);
+    for(let y=0;y<height;y++)scanlines.set(data.subarray(y*width,(y+1)*width),y*(width+1)+1);
+    const stream=new Blob([scanlines]).stream().pipeThrough(new CompressionStream('deflate'));
+    const compressed=new Uint8Array(await new Response(stream).arrayBuffer());
+    const ihdr=new Uint8Array(13),view=new DataView(ihdr.buffer);view.setUint32(0,width);view.setUint32(4,height);ihdr[8]=8;
+    const chunks=[new Uint8Array([137,80,78,71,13,10,26,10]),writeChunk('IHDR',ihdr),writeChunk('IDAT',compressed),writeChunk('IEND',new Uint8Array())];
+    const result=new Uint8Array(chunks.reduce((sum,chunk)=>sum+chunk.length,0));let offset=0;
+    for(const chunk of chunks){result.set(chunk,offset);offset+=chunk.length;}return result;
+  }catch{return encodeGrayscalePng(width,height,data);}
+}
+
 export function encodeGrayscalePng(width: number, height: number, data: Uint8Array): Uint8Array {
   const ihdr = new Uint8Array(13);
   const view = new DataView(ihdr.buffer);

@@ -1,0 +1,13 @@
+import {build} from 'esbuild';
+import assert from 'node:assert/strict';
+const bundle=await build({entryPoints:['src/atlas/coverage.ts','src/community/atlas-activity-ui.ts'],bundle:true,format:'esm',platform:'node',write:false,outdir:'/tmp/sommni-test',plugins:[{name:'catalog-fixture',setup(b){b.onResolve({filter:/identity$/},()=>({path:'identity',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`export const allCatalogWines=()=>globalThis.catalog;export const lookupWineById=id=>globalThis.catalog.find(w=>w.id===id)||null;`,loader:'js'}));}}]});
+const load=async file=>import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles.find(f=>f.path.endsWith(file)).text).toString('base64'));
+const {collectiveCoverage,atlasGlow}=await load('coverage.js');const {weeklyHeadline,activityMarkup}=await load('atlas-activity-ui.js');
+globalThis.catalog=[{id:'one',country:'Italy',wine:{name:'Shared bottle',region:'Toscana'}},{id:'two',country:'USA',wine:{name:'Shared American bottle',region:'California'}}];
+const data={countries:[{code:'ITA',name:'Italy'},{code:'USA',name:'United States'}],regions:[]};
+const boundaries={countries:{},regions:[{id:'IT-52',country:'ITA',name:'Tuscany (Toscana)'},{id:'IT-null',country:'ITA',name:null},{id:'USA-3521',country:'USA',name:'California'}]};
+const result=collectiveCoverage(data,boundaries,null);assert.equal(result.countries.size,2);assert.equal(result.regionCounts.get('IT-52'),1,'Toscana lights Tuscany even with unnamed boundaries present');
+const state={total:2,target:100000,countries:[{id:'ITA',wines:1,unplaced:0},{id:'USA',wines:1,unplaced:0}],regions:[{id:'IT-52',name:'Tuscany',country:'ITA',wines:1}],weekly:[{code:'ITA',name:'Italy',bottles:2},{code:'USA',name:'United States',bottles:2}],recent:[],checkin:null};
+assert.match(weeklyHeadline(state.weekly),/are tied/);assert.match(weeklyHeadline([]),/new week/);assert.match(weeklyHeadline([state.weekly[0]]),/Italy leads/);assert.equal(atlasGlow(0),0);assert.equal(atlasGlow(100000),1);assert(atlasGlow(10)>atlasGlow(1));
+state.recent=[{id:'x',wine_name:'<script>bad</script>',producer:'P',vintage:'unknown',country:'Italy'}];assert(!activityMarkup(state).includes('<script>'));assert(activityMarkup(state).includes('&lt;script&gt;'));
+console.log('Collective coverage, null boundaries, region aliases, truthful leaders/ties, glow and escaped activity passed.');

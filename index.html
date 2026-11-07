@@ -3,159 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>wineLENS — A clearer view of wine</title>
-  <meta name="theme-color" content="#FBF7EF">
+  <title>ソムニ sommNI — Your personal sommelier</title>
+  <meta name="theme-color" content="#0b0b0c">
   <meta name="description" content="Your wines, vintages and tasting notes. A clearer view of wine, from your Winebrary to Even G2 glasses.">
   <link rel="stylesheet" href="/src/style.css" />
-<link rel="icon" type="image/svg+xml" href="./brand/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png"><link rel="apple-touch-icon" href="./brand/app-icon-180.png"><link rel="manifest" href="./brand/manifest.webmanifest"><meta property="og:image" content="https://d3hospitality.github.io/sommNI/brand/social-card.png"><meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/svg+xml" href="./brand/sommni-origin.svg"><link rel="apple-touch-icon" href="./brand/app-icon-180.png"><link rel="manifest" href="./brand/manifest.webmanifest"><meta property="og:image" content="https://d3hospitality.github.io/sommNI/brand/social-card.png"><meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to content</a>
-  <div id="app">
-    <!-- Status Bar -->
-    <div class="status-bar">
-      <span id="status-dot" class="dot disconnected"></span>
-      <span id="status-text">Open in Even Hub to connect glasses</span>
-      <span id="battery-text"></span>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div id="app">
+  <aside class="wl-sidebar">
+    <a class="wl-wordmark" href="#home" data-open-tab="home" aria-label="sommNI home"><span class="origin-japanese" lang="ja">ソムニ</span><span class="origin-wordmark">sommNI</span></a>
+    <p class="wl-sidebar-caption">Seven Second Sommelier</p>
+    <nav class="tab-bar" aria-label="Main navigation"><button class="tab active" data-tab="home" aria-controls="tab-home"  aria-current=page><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg><span>Home</span></button><button class="tab" data-tab="cellar" aria-controls="tab-cellar" ><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v5l-3 4v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-8l-3-4V3M7 14h10"/></svg><span>Wines</span></button><button class="tab" data-tab="winebrary" aria-controls="tab-winebrary" ><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h5v16H4ZM10 5h5v16h-5ZM17 4l4 1-1 16-4-1Z"/></svg><span>Winebrary</span></button><button class="tab" data-tab="history" aria-controls="tab-history"><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 4h6l2 2 2-2h6v16h-6l-2 2-2-2H4ZM12 6v16"/></svg><span>Wine History</span></button><button class="tab" data-tab="study" aria-controls="tab-study" ><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 8 9-5 9 5-9 5ZM6 10v7q6 5 12 0v-7M21 8v8"/></svg><span>Study</span></button><button class="tab" data-tab="pairings" aria-controls="tab-pairings" ><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v6M4 3v6q0 3 3 3t3-3V3M7 12v9M18 3q-4 4-4 9h4M18 3v18"/></svg><span>Pairings</span></button><button class="tab" data-tab="courses" aria-controls="tab-courses" ><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18M5 16a7 7 0 0 1 14 0M12 6v3M10 6h4M4 21h16"/></svg><span>Dinner</span></button><button class="tab" data-tab="settings" aria-controls="tab-settings" ><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6M16 14v6"/></svg><span>Settings</span></button></nav>
+    <div class="wl-sidebar-bottom">
+      <div class="wl-sidebar-note"><span class="wl-kicker">A D3 HOSPITALITY PROJECT</span><p>Made for the table.<br>Built for discovery.</p></div>
+      <div class="status-bar" role="status"><span id="status-dot" class="dot disconnected"></span><span id="status-text">Browser mode</span><span id="battery-text"></span></div>
     </div>
-
+  </aside>
+  <div class="wl-workspace">
     <header class="header">
-      <a class="wl-wordmark" href="./" aria-label="wineLENS home"><img src="./brand/lockup.svg" alt="wineLENS" width="207" height="44"></a>
-      <p class="tagline">A clearer view of wine.</p>
-      <button id="wl-account" class="wl-outline">Link account ↗</button>
+      <div class="wl-context"><span class="wl-context-brand">D3 HOSPITALITY / SOMMNI</span><span aria-hidden="true">/</span><span id="wl-page-name">Overview</span></div>
+      <div class="wl-header-actions"><button class="wl-outline wl-quick-add" data-wl-add><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add a wine</span></button><button id="wl-account" class="wl-account-button">Free beta · device library</button></div>
     </header>
-
-    <!-- Tab Navigation -->
-    <nav class="tab-bar">
-      <button class="tab active" data-tab="home">Home</button>
-      <button class="tab" data-tab="cellar">Wines</button>
-      <button class="tab" data-tab="winebrary">Winebrary</button>
-      <button class="tab" data-tab="study">Study</button>
-      <button class="tab" data-tab="pairings">Pairings</button>
-      <button class="tab" data-tab="courses">Dinner</button>
-      <button class="tab" data-tab="settings">Settings</button>
-    </nav>
-
     <p id="save-alert" class="save-alert" role="alert" hidden></p>
-    <main id="main-content">
-    <!-- TAB: Home -->
-    <section id="tab-home" class="tab-panel active">
-      <div class="wl-hero">
-        <div class="wl-hero-copy"><p class="wl-kicker">GOOD TASTE. SHARPER FOCUS.</p><h1>WINE.<br>IN.<br><span>FOCUS.</span></h1><p class="wl-hero-intro">A bottle worth knowing.<br>A vintage worth remembering.</p><div class="wl-hero-actions"><button class="wl-primary" data-open-tab="cellar">Explore 215 wines ↗</button><button class="wl-text-button" data-open-tab="winebrary">Meet your Winebrary →</button></div><p class="wl-hero-foot">READ THE NOTES / KEEP YOUR WINES / SEE THEM ON G2</p></div>
-        <div class="wl-hero-art"><div class="wl-orbit" aria-hidden="true"></div><span class="wl-art-index">01 / A CLOSER LOOK</span><img src="./photography/red.png" alt="Terrazas de los Andes Grand Malbec 2017 bottle photograph"><div class="wl-art-caption"><span>TERRAZAS DE LOS ANDES</span><strong>Grand Malbec <span>2017</span></strong><p>Real bottle. Real character.</p></div></div>
-      </div>
-      <div class="wl-editorial-strip"><p>A library of good taste.</p><span>Add a bottle in seconds.<br>Let wineLENS draft the notes.</span><div class="wl-strip-actions"><button class="wl-outline" data-wl-add>＋ Add a wine</button><button class="wl-text-button" data-wl-scan>Scan a label ✦</button><button class="wl-text-button" data-wl-list>Upload a wine list ✦</button></div></div>
-      <div class="wl-home-grid">
-      <div class="card">
-        <div class="card-header">Glasses Status</div>
-        <div id="home-glasses-status" class="card-body">
-          <span class="muted">Open in Even Hub to connect your glasses.</span>
-        </div>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="home-wines">215</div>
-          <div class="stat-label">Catalog wines</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="home-library">—</div>
-          <div class="stat-label">In your Winebrary</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="home-favorites">—</div>
-          <div class="stat-label">Favorites</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="home-pairings">—</div>
-          <div class="stat-label">Pairings</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header">Browse by style</div>
-        <div id="home-types" class="card-body"></div>
-      </div>
-      </div>
-      <article id="finder-card" class="wl-finder-card" aria-labelledby="finder-title">
-        <div>
-          <p class="wl-kicker">Find My Wine</p>
-          <h3 id="finder-title">Ask like a sommelier.</h3>
-          <p class="wl-muted">The moment, the food, how it should feel. Five quick questions, then picks from the catalog and your Winebrary, each with the reason.</p>
-          <div class="wl-atlas-actions"><button class="wl-primary" type="button" data-wl-finder>Find my wine</button><span class="wl-muted small">Also on your glasses: Find My Wine.</span></div>
-        </div>
-        <ol class="wl-finder-questions" aria-hidden="true"><li>What’s the moment?</li><li>What are you eating?</li><li>Any colour in mind?</li><li>How should it feel?</li><li>Which flavours call you?</li></ol>
-      </article>
-      <article id="atlas-card" class="wl-atlas" aria-labelledby="atlas-title">
-        <canvas id="atlas-mini" width="360" height="360" aria-hidden="true"></canvas>
-        <div class="wl-atlas-copy">
-          <p class="wl-kicker">Wine Atlas</p>
-          <h3 id="atlas-title">Turn the globe to a wine country.</h3>
-          <p class="wl-muted">Scroll countries, then zoom into regions drawn from mapped winery locations (winerymap, 2024). Clusters show where wineries are, not appellation boundaries.</p>
-          <div class="wl-atlas-actions"><button class="wl-primary" id="atlas-open-glasses" type="button">Open on glasses</button><a class="wl-text-button" id="atlas-open-phone" href="atlas.html">Explore on phone →</a></div>
-          <p class="st-status" id="atlas-status" aria-live="polite"></p>
-        </div>
-      </article>
-      <div class="wl-glasses-banner"><div><p class="wl-kicker">WINE KNOWLEDGE. AT A GLANCE.</p><h2>Keep your eyes<br>on the conversation.</h2><p>Your bottle, vintage and tasting notes.<br>Ready for your Even G2 display.</p></div><div class="wl-glasses-mini"><span>wineLENS / WINEBRARY</span><strong>Grand Malbec</strong><p>2017 · Mendoza</p><p>Black fruit. Fresh lift.<br>A long, generous finish.</p><small>Illustrative display preview</small></div></div>
-    </section>
-
-    <section id="tab-winebrary" class="tab-panel"><div id="winebrary-content"></div></section>
-
-    <!-- TAB: Cellar -->
-    <section id="tab-cellar" class="tab-panel">
-      <div id="cellar-content"></div>
-    </section>
-
-    <!-- TAB: Course Builder -->
-    <section id="tab-courses" class="tab-panel">
-      <div id="courses-content"></div>
-    </section>
-
-    <!-- TAB: Pairings -->
-    <section id="tab-pairings" class="tab-panel">
-      <div id="pairings-content"></div>
-    </section>
-
-    <!-- TAB: Study -->
-    <section id="tab-study" class="tab-panel">
-      <div id="study-content"></div>
-    </section>
-
-    <!-- TAB: Settings -->
-    <section id="tab-settings" class="tab-panel">
-      <div class="card">
-        <div class="card-header">About</div>
-        <div class="card-body">
-          <div class="setting-row">
-            <span>Version</span>
-            <span id="settings-version" class="muted">—</span>
+    <main id="main-content" tabindex="-1">
+      <section id="tab-home" class="tab-panel active" aria-label="Home">
+        <section class="lens-home" aria-label="sommNI home">
+          <div class="lens-home-center">
+            <div class="sommni-hero-copy">
+              <p class="wl-kicker sommni-eyebrow"><span></span> INVISIBLE WINE INTELLIGENCE</p>
+              <div class="sommni-title-line"><h1 class="sommni-hero-title">somm<span>NI</span><small lang="ja">ソムニ</small></h1><button id="home-region-globe" type="button" aria-label="Open Atlas · our wine regions" title="Explore our wine regions"><canvas width="144" height="144" aria-hidden="true"></canvas></button></div>
+              <p class="sommni-hero-intro">Your wines. Their places. Something good to eat.</p>
+              <div class="wl-hero-actions"><button class="wl-primary" data-wl-add>Add a wine <span aria-hidden="true">↗</span></button><button class="wl-outline" data-open-sommelier>Find my wine</button></div><button class="sommni-guide-launch" data-setup-guide type="button"><span aria-hidden="true"></span><span class="guide-long">Take a guided lap ↗</span><span class="guide-short">Guide</span></button>
+              <button class="wl-text-button sommni-scan" data-beta-scan>Have a label? Scan a bottle ↗</button>
+            </div>
+            <div class="sommni-showcase">
+              <div class="sommni-showcase-label"><span>FROM THE WINEBRARY</span><span>GROWING TOGETHER</span></div>
+              <div class="home-origin-stage"><canvas id="home-logo" width="400" height="288" aria-hidden="true"></canvas><img class="sommni-hero-bottle" src="./photography/red.png" alt="Terrazas de los Andes Grand Malbec 2017 bottle" width="306" height="1024" fetchpriority="high"></div>
+              <div class="sommni-showcase-caption"><div><span class="wl-kicker">MENDOZA, ARGENTINA · 2017</span><strong>Grand Malbec</strong><small>Terrazas de los Andes</small></div><button class="wl-text-button" data-open-tab="cellar" aria-label="Explore the wine catalog">Explore wines ↗</button></div>
+            </div>
           </div>
-          <div class="setting-row">
-            <span>Catalog wines</span>
-            <span class="muted">215</span>
-          </div>
-          <div class="setting-row">
-            <span>Account</span>
-            <button class="wl-text-button" data-open-account>Plan, tokens &amp; devices ↗</button>
-          </div>
-          <div class="setting-row">
-            <span>Device</span>
-            <span id="settings-device" class="muted">—</span>
-          </div>
+        </section>
+        <div class="wl-launch-grid" aria-label="Quick actions">
+          <button class="wl-launch" id="home-open-atlas"><span class="wl-launch-icon sage"><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 6.4L21 12l-6.4 2.6L12 21l-2.6-6.4L3 12l6.4-2.6Z"/></svg></span><span><strong>Atlas</strong><small>Countries · regions · origins</small></span><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="wl-launch" id="home-open-grapes"><span class="wl-launch-icon butter"><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 8 9-5 9 5-9 5ZM6 10v7q6 5 12 0v-7M21 8v8"/></svg></span><span><strong>Grapes</strong><small>Browse styles & varieties</small></span><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="wl-launch" data-open-tab="history"><span class="wl-launch-icon rose"><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6l2 2 2-2h6v16h-6l-2 2-2-2H4ZM12 6v16"/></svg></span><span><strong>Wine History</strong><small>People. Places. Origins.</small></span><svg class="wl-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="wl-launch" data-open-tab="pairings"><span><strong>Pairings</strong></span></button>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-header">Favorites</div>
-        <div id="settings-favorites" class="card-body wine-list">
-          <span class="muted">No favorites yet</span>
+        <section id="atlas-card" class="home-atlas" aria-label="Wine Atlas"><div id="atlas-explorer-host"><p role="status">Loading your wine atlas…</p></div><div class="home-atlas-footer"><button class="wl-text-button" id="atlas-open-glasses" type="button">Open on glasses</button><p id="atlas-status" class="st-status" aria-live="polite"></p></div></section>
+        <div class="wl-section-title"><div><p class="wl-kicker">01 / YOUR COLLECTION</p><h2>Your Winebrary</h2></div><button class="wl-text-button" data-open-tab="winebrary">Open Winebrary →</button></div>
+        <div class="wl-overview-grid">
+          <div class="wl-stat-panel"><div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="home-library">—</div><div class="stat-label">Saved wines</div></div>
+            <div class="stat-card"><div class="stat-value" id="home-favorites">—</div><div class="stat-label">Favorites</div></div>
+            <div class="stat-card"><div class="stat-value" id="home-pairings">—</div><div class="stat-label">Pairings</div></div>
+          </div><p id="home-library-hint">Device wines stay saved locally. Link a free account for recovery and sync.</p></div>
+          <div class="wl-style-panel"><details class="grape-folder"><summary>Wine by Grape</summary><p class="wl-muted">A growing, community-built wine list · A collective effort, one discovery at a time. Blends can appear under more than one grape.</p><div id="home-types"></div></details><details class="grape-folder"><summary>Sake · 日本酒</summary><p class="wl-muted">Discover breweries, rice varieties and prefectures. Help grow this part of our collective collection.</p><button class="type-badge" id="home-sake">Explore sake →</button></details></div>
         </div>
-      </div>
-      <details class="card wl-dev-log">
-        <summary class="card-header">Developer log</summary>
-        <div id="log" class="card-body log-container"></div>
-      </details>
-    </section>
+        <details class="home-secondary"><summary>Using sommNI with your glasses</summary><div class="wl-discovery-grid">
+
+          <article class="wl-g2-card"><div class="wl-g2-heading"><p class="wl-kicker">EVEN REALITIES G2</p><span id="home-glasses-status">Not connected</span></div><h3>Your wines, on G2.</h3><div class="wl-glasses-mini"><span>sommNI <b>WINEBRARY</b></span><strong>Grand Malbec</strong><p>2017 · Mendoza</p><div class="wl-hud-rule"></div><p>Black fruit · Violet · Cocoa<br>Full body. A generous finish.</p><small>Illustrative glasses preview</small></div><p class="wl-muted">Open sommNI inside Even Hub to see your wines and notes on G2.</p><button class="wl-text-button" data-open-tab="winebrary">Open your Winebrary →</button></article>
+        </div>
+        </details>
+        <details class="home-task" id="home-find-task"><summary>Find my wine</summary><section id="wine-sommelier" aria-label="Find my wine"></section></details><details class="home-secondary"><summary>Suggest a wine or correction</summary><section id="community-wines" aria-label="Suggest a wine"></section></details>
+        <details class="home-task" id="home-add-task"><summary>Add a wine or wine list</summary><section id="beta-research-slot" aria-label="Research a wine"></section></details>
+        <details class="beta-depth"><summary><span class="wl-kicker">GO A LITTLE DEEPER</span><strong>A sense of place.</strong><span>Explore a bottle and your next wine moment ↓</span></summary><section id="depth-experience" aria-label="A closer look at wine"></section></details>
+        <details class="home-secondary"><summary>About this collective Winebrary</summary><section class="wl-notes-primer" aria-label="About this beta"><div><p class="wl-kicker">YOUR SOMMNI BETA</p><h2>Your wines. Kept together.</h2><p>This beta is free. Save wines on this device, or link your D3 account to sync your Winebrary, bottle photos and study progress. Linking automatically backs up your device wines into your account. Public wine details join our shared catalog; your personal notes stay private.</p></div><ol><li><span>01</span><div><strong>Find your bottle</strong><p>Explore our growing catalog or research a label.</p></div></li><li><span>02</span><div><strong>Check the details</strong><p>Review the wine, producer, vintage and reference notes.</p></div></li><li><span>03</span><div><strong>Bring it to the table</strong><p>Save your wine, explore its origins, and send notes to G2.</p></div></li></ol><p class="wl-primer-foot">AI research needs a connection and available provider capacity. Reference descriptions are separate from your own tasting observations.</p></section></details>
+      </section>
+      <section id="tab-history" class="tab-panel" aria-label="Wine History"><div id="history-home"></div></section>
+      <section id="tab-winebrary" class="tab-panel" aria-label="Winebrary"><div id="winebrary-content"></div></section>
+      <section id="tab-cellar" class="tab-panel" aria-label="Wines"><div id="beta-catalog"></div><details class="beta-inventory"><summary>Manage restaurant inventory</summary><div id="cellar-content"></div></details></section>
+      <section id="tab-courses" class="tab-panel" aria-label="Dinner"><div class="wl-page-heading"><div><p class="wl-kicker">SET THE TABLE</p><h1>A wine for every course.</h1><p class="wl-muted">Build your menu, one pairing at a time.</p></div></div><div id="courses-content"></div></section>
+      <section id="tab-pairings" class="tab-panel" aria-label="Pairings"><div class="wl-page-heading"><div><p class="wl-kicker">BETTER TOGETHER</p><h1>Keep the good combinations.</h1><p class="wl-muted">Save wines that belong together for your next occasion.</p></div></div><div id="pairings-content"></div></section>
+      <section id="tab-study" class="tab-panel" aria-label="Study"><details class="intel-reference"><summary>Reference recall · spaced review</summary><div id="study-content"></div></details></section>
+      <section id="tab-settings" class="tab-panel" aria-label="Settings"><div class="wl-page-heading"><div><p class="wl-kicker">YOUR SETUP</p><h1>Make yourself at home.</h1></div></div><div class="wl-settings-grid"><div class="card"><div class="card-header">Language</div><div class="card-body" id="language-settings"></div></div><div class="card"><div class="card-header">Glasses Home</div><div class="card-body"><label class="setting-row"><span>Head-responsive glass</span><input id="glasses-home-motion" type="checkbox" checked></label><p class="wl-muted small">A small dithered glass swivels with your head on G2 Home. The liquid stays in the glass. Updates pause while you are still. Turn off for a still glass; reduced motion is respected.</p><button id="home-motion-center" class="wl-text-button" type="button">Center on my head position</button><p id="home-motion-status" role="status">Open on G2 to use head motion.</p></div></div><div class="card"><div class="card-header">Account & connection</div><div class="card-body"><button class="wl-text-button" type="button" data-setup-guide>Restart guided setup ↗</button><div class="setting-row"><span>Account</span><button class="wl-text-button" data-beta-account>Link account / library ↗</button></div><div class="setting-row"><span>Contributions</span><button type="button" class="wl-text-button" data-contributor-profile>My Profile & Points ↗</button></div><div class="setting-row"><span>Glasses</span><span id="settings-device" class="muted">Open inside Even Hub to connect</span></div><div class="setting-row"><span>Version</span><span id="settings-version" class="muted">—</span></div><p class="wl-muted small">Use your device library without signing in, or link your D3 account to sync wines and study progress. Open inside Even Hub for G2. Export a backup before clearing app data.</p></div></div><div class="card"><div class="card-header">Favorites</div><div id="settings-favorites" class="card-body wine-list"><span class="muted">No favorites yet</span></div></div></div><details class="card wl-dev-log"><summary class="card-header">Connection diagnostics</summary><div id="log" class="card-body log-container"></div></details></section>
     </main>
-    <footer class="wl-footer"><span>wineLENS</span><span>A clearer view of wine.</span><span>BY D3 HOSPITALITY</span></footer>
+    <footer class="wl-footer"><span>sommNI</span><span>Seven Second Sommelier</span><span>BY D3 HOSPITALITY</span></footer>
   </div>
-  <script type="module" src="/src/Main.ts"></script>
+</div>
+<script type="module" src="/src/Main.ts"></script>
 </body>
 </html>

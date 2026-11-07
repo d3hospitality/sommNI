@@ -5,12 +5,12 @@ const fontkit=require('fontkit'), sharp=require('sharp');
 const root=path.resolve(__dirname,'..'), out=path.join(root,'public/brand');
 const identity=require('./identity.json'), c=identity.colors;
 fs.mkdirSync(out,{recursive:true});
-const svg=(w,h,body,title='wineLENS')=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img"><title>${title}</title>${body}</svg>`;
+const svg=(w,h,body,title='sommNI')=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img"><title>${title}</title>${body}</svg>`;
 function mark(color,small=false){const p=small?identity.micro:identity.mark;return `<g fill="none" stroke="${color}" stroke-width="${p.stroke}" stroke-linecap="round" stroke-linejoin="round"><path d="${p.frame}"/><path d="${p.glass}"/></g><path fill="${color}" d="${p.wine}"/>`;}
 const regular=fontkit.openSync(path.join(__dirname,'fonts/space-grotesk-400.ttf'));
 const bold=fontkit.openSync(path.join(__dirname,'fonts/space-grotesk-700.ttf'));
 let cursor=0;const outlines=[];
-for(const [font,text] of [[regular,'wine'],[bold,'LENS']]){
+for(const [font,text] of [[regular,'somm'],[bold,'NI']]){
  const run=font.layout(text), scale=100/font.unitsPerEm;
  for(let i=0;i<run.glyphs.length;i++){
   const pos=run.positions[i];outlines.push(run.glyphs[i].path.transform(scale,0,0,-scale,cursor+pos.xOffset*scale,100-pos.yOffset*scale));
@@ -24,8 +24,19 @@ const paths=outlines.map(p=>p.toSVG());
 if(paths.some(p=>/NaN|undefined/.test(p)))throw Error('Invalid font outlines');
 const word=(color)=>`<g fill="${color}" transform="translate(${-x} ${-y})">${paths.map(d=>`<path d="${d}"/>`).join('')}</g>`;
 fs.writeFileSync(path.join(__dirname,'wordmark.json'),JSON.stringify({x,y,width,height,paths})+'\n');
+const japaneseFile=fs.readdirSync('/System/Library/Fonts').find(f=>f.normalize('NFC')==='ヒラギノ角ゴシック W5.ttc');
+if(!japaneseFile)throw Error('Japanese outline font unavailable');
+const collection=fontkit.openSync(path.join('/System/Library/Fonts',japaneseFile));
+const japaneseFont=collection.fonts?.[0]||collection, run=japaneseFont.layout('ソムニ');
+let jcursor=0;const jout=[];
+for(let i=0;i<run.glyphs.length;i++){const pos=run.positions[i],scale=100/japaneseFont.unitsPerEm;jout.push(run.glyphs[i].path.transform(scale,0,0,-scale,jcursor+pos.xOffset*scale,100-pos.yOffset*scale));jcursor+=pos.xAdvance*scale;}
+const jboxes=jout.map(p=>p.bbox),jx=Math.min(...jboxes.map(b=>b.minX)),jy=Math.min(...jboxes.map(b=>b.minY));
+const japanese={x:jx,y:jy,width:Math.max(...jboxes.map(b=>b.maxX))-jx,height:Math.max(...jboxes.map(b=>b.maxY))-jy,paths:jout.map(p=>p.toSVG())};
+fs.writeFileSync(path.join(__dirname,'japanese.json'),JSON.stringify(japanese)+'\n');
+const jp=(color)=>`<g fill="${color}" transform="translate(${-jx} ${-jy})">${japanese.paths.map(d=>`<path d="${d}"/>`).join('')}</g>`;
+const lockup=(color)=>`<g transform="translate(154 10) scale(.80)">${word(color)}</g><g transform="translate(154 93) scale(.24)">${jp(color)}</g>`;
 const assets={
- 'symbol.svg':svg(128,128,mark(c.oxblood),'wineLENS Focus Pour'),
+ 'symbol.svg':svg(128,128,mark(c.oxblood),'sommNI Focus Pour'),
  'symbol-ink.svg':svg(128,128,mark(c.ink)),
  'symbol-reverse.svg':svg(128,128,mark(c.ivory)),
  'symbol-mono.svg':svg(128,128,mark('#000000')),
@@ -35,12 +46,12 @@ const assets={
  'favicon.svg':svg(40,40,`<rect width="40" height="40" rx="10" fill="${c.ivory}"/><g transform="translate(4 4)">${mark(c.oxblood,true)}</g>`),
  'wordmark.svg':svg(width,height,word(c.ink)),
  'wordmark-reverse.svg':svg(width,height,word(c.ivory)),
- 'lockup.svg':svg(154+width*0.95,128,mark(c.oxblood)+`<g transform="translate(154 ${(128-height*.95)/2}) scale(.95)">${word(c.ink)}</g>`),
- 'lockup-reverse.svg':svg(154+width*.95,128,mark(c.ivory)+`<g transform="translate(154 ${(128-height*.95)/2}) scale(.95)">${word(c.ivory)}</g>`),
+ 'lockup.svg':svg(154+width*0.95,128,mark(c.oxblood)+lockup(c.ink)),
+ 'lockup-reverse.svg':svg(154+width*.95,128,mark(c.ivory)+lockup(c.ivory)),
  'app-icon.svg':svg(1024,1024,`<rect width="1024" height="1024" rx="224" fill="${c.oxblood}"/><g transform="translate(192 192) scale(5)">${mark(c.ivory)}</g>`),
  'maskable.svg':svg(1024,1024,`<rect width="1024" height="1024" fill="${c.oxblood}"/><g transform="translate(192 192) scale(5)">${mark(c.ivory)}</g>`),
  'oauth-logo.svg':svg(120,120,`<rect width="120" height="120" fill="${c.ivory}"/><g transform="translate(12 12) scale(.75)">${mark(c.oxblood)}</g>`),
- 'social-card.svg':svg(1200,630,`<rect width="1200" height="630" fill="${c.ivory}"/><rect x="865" width="335" height="630" fill="${c.blush}"/><path d="M56 502H809" stroke="#D9CCC1"/><g transform="translate(916 196) scale(1.85)">${mark(c.oxblood)}</g><g transform="translate(66 86) scale(1.4)">${word(c.ink)}</g><text x="63" y="310" font-family="sans-serif" font-size="64" fill="${c.oxblood}">Wine. In. Focus.</text><text x="66" y="373" font-family="sans-serif" font-size="26" fill="${c.ink}">Discover. Collect. Remember.</text><text x="66" y="555" font-family="sans-serif" font-size="18" letter-spacing="3" fill="${c.ink}">MADE FOR EVEN G2 · BY D3 HOSPITALITY</text>`)
+ 'social-card.svg':svg(1200,630,`<rect width="1200" height="630" fill="${c.ivory}"/><rect x="865" width="335" height="630" fill="${c.blush}"/><path d="M56 502H809" stroke="#D9CCC1"/><g transform="translate(916 196) scale(1.85)">${mark(c.oxblood)}</g><g transform="translate(66 86) scale(1.4)">${word(c.ink)}</g><text x="63" y="310" font-family="sans-serif" font-size="64" fill="${c.oxblood}">ソムニ</text><text x="66" y="373" font-family="sans-serif" font-size="26" fill="${c.ink}">A little curiosity. A world of wine.</text><text x="66" y="555" font-family="sans-serif" font-size="18" letter-spacing="3" fill="${c.ink}">MADE FOR EVEN G2 · BY D3 HOSPITALITY</text>`)
 };
 (async()=>{
  for(const [name,value] of Object.entries(assets))fs.writeFileSync(path.join(out,name),value+'\n');

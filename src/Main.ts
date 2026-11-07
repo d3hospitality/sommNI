@@ -1,3 +1,24 @@
+import { initPhoneShell } from './phone-shell';
+import { initSetupGuide } from './setup-guide';
+import { initHomeGlobe } from './home-globe';
+import { connectLabelGlasses } from './research/label-glasses';
+import { initGlassesContext } from './wine-context';
+import { initInitiative } from './community/home';
+import { initSharedCatalog } from './shared-catalog';
+import { renderBetaCatalog } from './beta/catalog';
+import {connectPairingGlasses} from './pairing-glasses';
+import { connectAddWineGlasses, pauseAddWineGlasses, resumeAddWineGlasses } from './research/glasses-add';
+import { initOfflineBottleImages } from './artwork-store';
+import { initWineContributions } from './wine-contributions';
+import { connectIntelligenceGlasses } from './intelligence/glasses';
+import { initIntelligence } from './intelligence/home';
+import { initWineNotes } from './wine-notes';
+import { syncCatalogAnecdotes } from './catalog-anecdotes';
+import { initResearchPanel } from './research/phone';
+import { connectHistoryGlasses, setHistoryConnected } from './history/glasses';
+import { initHistoryHome } from './history/home';
+import { initDepthExperience } from './depth-experience';
+import './depth-experience.css';
 // ═══════════════════════════════════════════════════════════════════
 // sommNI — Seven Second Sommelier
 // Sprite-enhanced wine experience for Even Realities G2
@@ -7,34 +28,62 @@ import { waitForEvenAppBridge, DeviceConnectType } from '@evenrealities/even_hub
 import { initWinebrary } from './winebrary';
 import { connectWinebraryGlasses, setWinebraryDeviceConnected } from './winebrary-glasses';
 import { buildHomePage, rebuildHomePage } from './pages';
-import { pushLogoToGlasses } from './image-utils';
+import { pushHomeToGlasses, suspendImages, resumeHomePour, registerHomeLayout } from './image-utils';
 import { registerEventHandlers } from './events';
 import { initSync, migrateLegacyWineIds, inEvenHubHost } from './sync';
-import { loadCatalogView } from './catalog-view';
 import { useAccount, useStorage, eventCount } from './study/store';
 import { connectStudyGlasses } from './study/glasses';
-import { connectAtlasGlasses } from './atlas-app';
+import { connectAtlasGlasses, pauseAtlasGlasses } from './atlas-app';
 import { initAtlasCard } from './atlas-phone';
 import { setStatus, setBattery, log } from './ui';
 import { TOTAL_WINES } from './constants';
 import { initDashboard, refreshAll, setDeviceInfo, setVersionInfo, setGlassesStatus } from './dashboard';
 
+import './app-shell.css';
+import './beta/refresh.css';
+import { initBetaRefresh } from './beta/refresh';
+import './sommni-origin.css';
+import './wine-context.css';
+import './home-atlas.css';
+import './phone-shell.css';
+import './balanced-actions.css';
+
 async function main(): Promise<void> {
-  const hostBridge = inEvenHubHost() ? await waitForEvenAppBridge() : null;
-  if (hostBridge) await useStorage(initSync(hostBridge));
   // Guest study log first; the Winebrary session (if any) switches it to the account.
   await useAccount(null);
   await runMigration();
-  await loadCatalogView();
   initDashboard();
+  initPhoneShell();
+  initGlassesContext();
+  initWineNotes();
+  void syncCatalogAnecdotes();
+  initDepthExperience();
+  initHistoryHome();
+  initResearchPanel();
   initAtlasCard();
+  initHomeGlobe();
   initWinebrary();
+  initSetupGuide();
+  initOfflineBottleImages();
+  initWineContributions();
+  initBetaRefresh();
+  initInitiative();
+  await initIntelligence();
   await refreshAll();
+  window.addEventListener('sommni-catalog-updated',()=>{void refreshAll();void renderBetaCatalog();});
+  void initSharedCatalog();
+
+  if (!inEvenHubHost()) {
+    setStatus("disconnected", "Browser mode");
+    setGlassesStatus(false);
+    setVersionInfo("3.7.39 · Beta");
+  } else {
+    setStatus("connecting", "Waiting for bridge...");
+  }
 
   log("Initializing...");
-  setStatus("connecting", "Waiting for bridge...");
 
-  const bridge = hostBridge || await waitForEvenAppBridge();
+  const bridge = await waitForEvenAppBridge();
   log("Bridge ready", "success");
 
   const user = await bridge.getUserInfo();
@@ -47,6 +96,7 @@ async function main(): Promise<void> {
     if (device.status?.isConnected()) {
       setStatus("connected");
       setWinebraryDeviceConnected(true);
+      setHistoryConnected(true);
       setBattery(device.status.batteryLevel);
       setGlassesStatus(true, device.status.batteryLevel);
     }
@@ -57,14 +107,20 @@ async function main(): Promise<void> {
 
   const unsubscribeDevice = bridge.onDeviceStatusChanged((status) => {
     if (status.connectType === DeviceConnectType.Connected) {
+      suspendImages(false);void resumeHomePour();void resumeAddWineGlasses().catch(console.warn);
       setStatus("connected");
       setWinebraryDeviceConnected(true);
+      setHistoryConnected(true);
       setBattery(status.batteryLevel);
       setGlassesStatus(true, status.batteryLevel);
       log("Connected — battery " + status.batteryLevel + "%", "success");
     } else if (status.connectType === DeviceConnectType.Disconnected) {
+      suspendImages(true);
+      void pauseAtlasGlasses().catch(error=>console.warn('[Atlas] disconnect cleanup',error));
+      void pauseAddWineGlasses().catch(console.warn);
       setStatus("disconnected");
       setWinebraryDeviceConnected(false);
+      setHistoryConnected(false);
       setGlassesStatus(false);
       log("Disconnected", "error");
     } else if (status.connectType === DeviceConnectType.Connecting) {
@@ -84,12 +140,17 @@ async function main(): Promise<void> {
       return;
     }
   }
+  registerHomeLayout();
   log("Home page created", "success");
 
   // Use full GitHub Pages URL for remote assets (ehpk doesn't bundle bottles)
   const baseUrl = new URL('./', location.href).href;
   connectWinebraryGlasses(bridge, baseUrl);
+  connectAddWineGlasses(bridge);
+  connectLabelGlasses(bridge);
+  connectPairingGlasses(bridge);
   connectStudyGlasses(bridge, baseUrl);
+  connectIntelligenceGlasses(bridge, baseUrl);
   connectAtlasGlasses(bridge, baseUrl);
   // Inside Even Hub, companion data and study progress live in the host's storage.
   log(`Storage: ${inEvenHubHost() ? 'Even Hub' : 'browser'} · ${eventCount()} study reviews on this device`);
@@ -97,35 +158,36 @@ async function main(): Promise<void> {
     await useStorage(initSync(bridge));
     log(`Study log reloaded from Even Hub storage: ${eventCount()} reviews`);
     await runMigration();
-    await loadCatalogView();
     await refreshAll();
   }
   if (import.meta.env.DEV && new URLSearchParams(location.search).get('g2-fixture') === 'library') {
     (await import('./dev-fixture')).installLibraryFixture(baseUrl);
   }
-  try {
-    await new Promise(r => setTimeout(r, 500));
-    await pushLogoToGlasses(bridge, baseUrl);
-    log("Logo pushed", "success");
-  } catch (err) {
-    log("Logo not loaded: " + err, "error");
-  }
-
   // Initialize sync bridge (shared localStorage with phone dashboard)
   initSync(bridge);
   log("Sync bridge ready", "success");
 
   // Register event handlers
-  registerEventHandlers(bridge, baseUrl, unsubscribeDevice);
+  registerEventHandlers(bridge, baseUrl, () => { setHistoryConnected(false); unsubscribeDevice(); });
+  connectHistoryGlasses(bridge);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "2.0.0");
-  setVersionInfo("3.0.0 · wineLENS");
-  log(`wineLENS v3.0.0 — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  await bridge.setLocalStorage("sommni_version", "3.7.39");
+  setVersionInfo("3.7.39 · Beta");
+  log(`sommNI v3.7.39 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();
   log("Dashboard loaded", "success");
+  try {
+    await new Promise(r => setTimeout(r, 500));
+    await pushHomeToGlasses(bridge);
+    log("Logo pushed", "success");
+  } catch (err) {
+    log("Logo not loaded: " + err, "error");
+  }
+
+
 }
 
 /** One-time conversion of stored positional wine IDs (w0…) to canonical IDs. */

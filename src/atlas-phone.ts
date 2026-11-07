@@ -1,32 +1,23 @@
-// Discover › Wine Atlas card on the phone companion.
-// A small globe (painted lazily, once the card is on screen), an "Open on glasses" action
-// that hands the G2 display to the Atlas, and a live line showing where the glasses are.
-import { paintFrame } from './atlas/renderer';
-import { atlasStatus, loadAtlasRenderer, openAtlasOnGlasses, type AtlasStatus } from './atlas-app';
+import { atlasStatus, openAtlasOnGlasses, type AtlasStatus } from './atlas-app';
 import { inEvenHubHost } from './sync';
-
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
-
+const $ = <T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
 function statusLine(s: AtlasStatus): string {
   if (s.error) return s.error;
-  if (!s.active) return inEvenHubHost() ? 'On the glasses: pick a style, scroll its countries, tap for regions and wines.' : 'Glasses open inside the Even app with G2 connected.';
-  if (s.mode === 'types') return `On your glasses: choosing a style · ${s.style}`;
+  if (!s.active) return inEvenHubHost() ? 'Regions with wines come first. Scroll up to Search by voice.' : 'Glasses open inside the Even app with G2 connected.';
   const place = s.region ? `${s.country} › ${s.region}` : s.country;
-  return `On your glasses: ${s.style} · ${place}${s.mode === 'detail' ? ' (wines here)' : ''}`;
+  return `On your glasses: ${place}${s.mode === 'detail' ? ' (wines & history)' : ''}`;
 }
 
 export function initAtlasCard(): void {
+  $('home-open-atlas')?.addEventListener('click',()=>window.dispatchEvent(new Event('winelens-open-browser-atlas')));
   const card = $('atlas-card');
   if (!card) return;
   const button = $<HTMLButtonElement>('atlas-open-glasses');
-  const phoneLink = $<HTMLAnchorElement>('atlas-open-phone');
   const status = $('atlas-status');
-  const canvas = $<HTMLCanvasElement>('atlas-mini');
   const host = inEvenHubHost();
   // Plain browsers never claim a glasses connection; inside the Even app the standalone
   // preview would compete for the display, so the phone view stays in this page.
   if (button) { button.disabled = !host; if (!host) button.title = 'Available inside the Even app with G2 connected'; }
-  if (phoneLink) phoneLink.hidden = host;
   const update = () => { if (status) status.textContent = statusLine(atlasStatus()); };
   window.addEventListener('winelens-atlas-change', update);
   update();
@@ -39,17 +30,4 @@ export function initAtlasCard(): void {
     finally { button.disabled = !host; }
   });
 
-  if (!canvas) return;
-  const paint = async () => {
-    try {
-      const renderer = await loadAtlasRenderer();
-      const france = renderer.data.countries.find(c => c.code === 'FRA') ?? renderer.data.countries[0];
-      paintFrame(canvas, renderer.render({ country: france, center: [8, 30], radius: 90 }, 360), 'atelier');
-      canvas.classList.add('ready');
-    } catch { canvas.hidden = true; }
-  };
-  if ('IntersectionObserver' in window) {
-    const seen = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) { seen.disconnect(); void paint(); } });
-    seen.observe(canvas);
-  } else void paint();
 }

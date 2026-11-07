@@ -1,0 +1,14 @@
+import {build} from 'esbuild';
+import assert from 'node:assert/strict';
+const result=await build({entryPoints:['src/food-pairings.ts'],bundle:true,write:false,format:'esm',platform:'node',loader:{'.css':'empty'}});
+const {foodPairings,foodPairingsHtml}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
+assert.equal(foodPairings({}),null);
+assert.match(foodPairings({grape:'Pinot Noir',color:'Red'}).matches[0].food,/chicken/);
+assert.match(foodPairings({grape:'Sangiovese',color:'Red'}).matches[0].food,/ragù/);
+assert.match(foodPairings({grape:'Riesling',style:'Off-dry'}).matches[0].why,/sweetness/);
+assert.match(foodPairings({grape:'Riesling',style:'Dry',color:'White'}).matches[0].food,/fish/);
+assert.match(foodPairings({grape:'Chardonnay',color:'Sparkling'}).basis,/sparkling/);
+assert.equal(foodPairings({color:'Sake'}).matches.length,3);
+assert(!foodPairingsHtml({grape:'<script>x</script>',color:'Red'}).includes('<script>'));
+assert.match(foodPairingsHtml({color:'Red'}),/Starting points based on/);
+console.log('PASS: style-specific pairings, dry vs off-dry, unknown wine omission, escaping and explicit suggestion basis.');

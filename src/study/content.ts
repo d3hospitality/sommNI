@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-// wineLENS — reference claims and study cards (PRD R-01…R-05, S-03, S-05)
+// sommNI — reference claims and study cards (PRD R-01…R-05, S-03, S-05)
 //
 // A scored card exists only when every claim it cites is approved and its
 // source is available. Everything else about a wine is shown as unverified

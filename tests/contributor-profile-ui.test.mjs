@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';import {mkdtemp} from 'node:fs/promises';import {tmpdir} from 'node:os';
+const {parseHTML}=await import('linkedom');
+const {window}=parseHTML('<html><head></head><body></body></html>');Object.assign(globalThis,{window,document:window.document});
+window.HTMLElement.prototype.showModal=function(){this.open=true};window.HTMLElement.prototype.close=function(){this.open=false;this.dispatchEvent(new window.Event('close'))};
+globalThis.FormData=class extends Map{constructor(f){super();for(const i of f.querySelectorAll('input,textarea')){if(i.type==='checkbox'&&!i.checked)continue;this.set(i.name,i.type==='checkbox'?'on':i.value)}}};
+let profile={handle:'Test Explorer',bio:'Wine and food',based_in:'Miami',leaderboard_visible:false},saved,callback,unsubscribed=false;
+const client={auth:{getSession:async()=>({data:{session:{user:{id:'test-user'}}}}),onAuthStateChange:fn=>{callback=fn;return {data:{subscription:{unsubscribe(){unsubscribed=true}}}}}},rpc:async(name,args)=>{if(name==='sommni_save_profile'){saved=args;profile={...profile,...args,handle:args.name,leaderboard_visible:args.visible};return {data:{}}}if(name==='sommni_community_state')return {data:{profile}};return {data:{points:10,verified_wines:1,pending_wines:2,leaderboard:[{handle:'<script>unsafe</script>',bio:'<img src=x onerror=bad()>',based_in:'Rome',points:10,wines:1,reviews:0}]}}}};
+const dir=await mkdtemp(tmpdir()+'/sommni-profile-');await build({entryPoints:['src/community/initiative-ui.ts'],bundle:true,format:'esm',platform:'node',outfile:dir+'/ui.mjs'});
+const {openInitiativeBoard}=await import(dir+'/ui.mjs');await openInitiativeBoard(client,()=>{});
+const $=s=>document.querySelector(s);assert.equal($('script'),null);assert.equal($('img'),null);assert.equal($('[name=bio]').value,'Wine and food');assert.match($('.si-score-row').textContent,/Awaiting review/);
+$('[name=bio]').value='Italian wines and Japanese sake.';$('[name=based_in]').value='Miami, FL';$('[name=visible]').checked=true;
+$('[data-profile]').dispatchEvent(new window.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,20));
+assert.equal(saved.bio,'Italian wines and Japanese sake.');assert.equal(saved.based_in,'Miami, FL');assert.equal(saved.visible,true);assert.match($('.si-status').textContent,/saved/);
+$('dialog').close();assert(unsubscribed);console.log('PASS: profile fields save, public opt-in explicit, stats shown, bio/name HTML escaped, auth listener cleaned up.');

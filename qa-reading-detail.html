@@ -1,0 +1,77 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · reading & label QA</title><style>body{margin:0;background:#fbf7ef;color:#273528;font:16px/1.6 system-ui}main{max-width:1100px;margin:auto;padding:32px}button,select{font:inherit;padding:12px;border:1px solid #c9bfaf;border-radius:8px;color:inherit;background:transparent;cursor:pointer}#result{font:13px/1.5 monospace;white-space:pre-wrap;max-height:200px;overflow:auto;background:#e9eee2;padding:20px}a{color:#75394b}</style><main><p>sommNI / READING REFINEMENT</p><h1>Read the wine. Remember its story.</h1><p>Native scrolling, sharper detail with restrained highlights, and a country globe that follows your selection.</p><label>Explore a wine <select id="wine"></select></label> <button id="notes">Open complete tasting notes</button><section id="history"></section><h2>Regression results</h2><pre id="result">Running…</pre></main><script type="module">
+import {allCatalogWines,lookupWineById} from './src/identity.ts';
+import * as P from './src/pages.ts';
+import {buildLibraryWinePage,libraryReading} from './src/winebrary-glasses.ts';
+import {COUNTRIES} from './src/constants.ts';
+import {validateGlassesPage} from './src/glasses-page.ts';
+import {readingText} from './src/reading/document.ts';
+import {wineHistoryCards,storyCards,storyParagraphs} from './src/history/content.ts';
+import {buildStoryPage,connectHistoryGlasses,setHistoryConnected,openHistoryOnGlasses,handleHistoryGlassesEvent,historyStatus} from './src/history/glasses.ts';
+import {initHistoryPanel} from './src/history/phone.ts';
+import {openWineNotes} from './src/wine-notes.ts';
+import {imageIdle,rebuildGlassesPage,handleContinuousReadingScroll,currentImageEpoch,configureHomeMotion} from './src/image-utils.ts';
+import {connectAtlasGlasses,loadAtlasRenderer,pushCatalogGlobe} from './src/atlas-app.ts';
+import {registerEventHandlers} from './src/events.ts';
+const wines=allCatalogWines(),select=document.querySelector('#wine');
+for(const w of wines){const o=document.createElement('option');o.value=w.id;o.textContent=w.wine.name;select.append(o);}select.value=lookupWineById('w5').id;
+const panel=initHistoryPanel(document.querySelector('#history'),select.value);select.onchange=()=>panel.setWine(select.value);document.querySelector('#notes').onclick=()=>openWineNotes(select.value);
+const checks=[],check=(ok,label)=>{if(!ok)throw Error(label);checks.push(label);},bytes=s=>new TextEncoder().encode(s).length,normal=s=>s.replace(/\s+/g,' ').trim(),wait=ms=>new Promise(r=>setTimeout(r,ms));
+try{
+ let maxNotes=0,maxChapter=0,upgrades=0;
+ for(const w of wines){
+  const page=P.buildTastingNotesPage(w.wine,w.id);validateGlassesPage(page);const full=readingText(page,5);
+  check(normal(full).includes(normal(w.wine.anecdote)),w.legacyId+' full anecdote in notes');
+  check(['LOOK\n','NOSE\n','PALATE\n','FINISH\n','BEHIND THE WINE\n'].every(label=>full.includes(label)),w.legacyId+' separated headings');
+  check(bytes(full)<=1999,w.legacyId+' complete notes fit native buffer');maxNotes=Math.max(maxNotes,bytes(full));if(bytes(full)>999)upgrades++;
+  check(page.textObject.find(t=>t.containerName==='notes').height>=150,w.legacyId+' reading has more vertical space');
+  const chapters=wineHistoryCards(w.id);check(chapters.length>0,w.legacyId+' documented context exists');
+  check(new Set(chapters.map(c=>c.source+'|'+c.cue)).size===chapters.length,w.legacyId+' chapters de-duplicated');
+  check(!storyCards(w.id,'time').some(c=>c.id.startsWith('time-')),w.legacyId+' no unrelated general chronology');
+  for(const [i,c] of chapters.entries()){const p=buildStoryPage(c,'time',i,chapters.length);validateGlassesPage(p);const text=readingText(p,2);check(normal(text).includes(normal(c.detail)),w.legacyId+' entire history chapter');check(bytes(text)<=1999,'chapter byte budget');maxChapter=Math.max(maxChapter,bytes(text));}
+ }
+ const shown=[],updates=[],images=[];let handler,flight=0,peak=0;
+ const op=async task=>{peak=Math.max(peak,++flight);try{await wait(3);return task();}finally{flight--;}};
+ const bridge={onEvenHubEvent:cb=>{handler=cb;return()=>{}},rebuildPageContainer:p=>op(()=>{validateGlassesPage(p);shown.push(p);return true}),textContainerUpgrade:p=>op(()=>{check(bytes(p.content)<=1999,'upgrade byte limit');updates.push(p);return true}),updateImageRawData:p=>op(()=>{images.push(p);return 'success'}),getLocalStorage:async()=>'',setLocalStorage:async()=>true,shutDownPageContainer:async()=>true};
+ for(const w of wines){
+  const page=P.buildTastingNotesPage(w.wine,w.id),text=readingText(page,5);
+  if(bytes(text)>999){await rebuildGlassesPage(bridge,page);check(updates.at(-1).content===text,w.legacyId+' complete upgrade accepted');validateGlassesPage(page);}
+  const saved={wine_id:w.id,wine_name:w.wine.name,notes:'My own tasting note.',metadata:{},vintage_state:'unknown'};
+  const libraryPage=buildLibraryWinePage(saved,'Atlas');validateGlassesPage(libraryPage);
+  check(normal(readingText(libraryPage,5)).includes(normal(w.wine.anecdote)),w.legacyId+' saved catalog wine keeps its anecdote');
+  check(readingText(libraryPage,5).includes('My own tasting note.'),w.legacyId+' personal note retained');
+ }
+ const long=libraryReading({wine_id:wines[0].id,wine_name:'Long personal notes',notes:'味'.repeat(2000)});
+ check(bytes(long)<=1999&&long.endsWith('Continued in Winebrary on your phone.'),'oversize personal note keeps explicit continuation');
+ let refused=false;try{await rebuildGlassesPage({...bridge,textContainerUpgrade:async()=>false},P.buildTastingNotesPage(wines.find(w=>bytes(readingText(P.buildTastingNotesPage(w.wine,w.id),5))>999).wine,wines.find(w=>bytes(readingText(P.buildTastingNotesPage(w.wine,w.id),5))>999).id));}catch{refused=true;}
+ check(refused,'refused full-text upgrade surfaces failure instead of claiming complete notes');
+
+ const shortUpdates=[];const shortHost={...bridge,textContainerUpgrade:p=>op(()=>{if(bytes(p.content)>999)return false;shortUpdates.push(p.content);return true;})};
+ const longest=wines.reduce((a,w)=>bytes(readingText(P.buildTastingNotesPage(w.wine,w.id),5))>bytes(readingText(P.buildTastingNotesPage(a.wine,a.id),5))?w:a);
+ await rebuildGlassesPage(shortHost,P.buildTastingNotesPage(longest.wine,longest.id));check(shortUpdates.length===1,'999-byte host accepts first continuous reading window');
+ for(let i=0;i<150;i++){check(handleContinuousReadingScroll(2),'fallback consumes scroll');await imageIdle();}
+ check(shortUpdates.some(t=>t.includes('BEHIND THE WINE')),'continuous fallback reaches maker anecdote');
+ check(shortUpdates.at(-1).includes('unconfirmed.'),'continuous fallback reaches the end without truncating');
+ for(let i=0;i<150;i++){handleContinuousReadingScroll(1);await imageIdle();}
+ check(shortUpdates.at(-1)===shortUpdates[0],'continuous fallback scrolls back to the beginning');
+ await rebuildGlassesPage(bridge,P.rebuildHomePage());check(!handleContinuousReadingScroll(2),'new page cannot receive stale reading scroll');
+ const stop=registerEventHandlers(bridge,location.origin+'/sommNI/');configureHomeMotion(false);connectAtlasGlasses(bridge,location.origin+'/sommNI/');
+ const send=async e=>{handler(e);await wait(650);await imageIdle();},last=()=>shown.at(-1);
+ await send({listEvent:{currentSelectItemIndex:P.TYPE_START_INDEX}});await send({listEvent:{currentSelectItemIndex:0}});
+ check(last().textObject.some(t=>t.containerName==='countries'&&t.isEventCapture===1),'country navigation captures text gestures');
+ const firstImage=JSON.stringify(images.filter(i=>i.containerName==='globe-top').at(-1).imageData);
+ await send({textEvent:{eventType:2}});check(updates.filter(t=>t.containerName==='countries').at(-1).content.includes('> '+COUNTRIES.Red[1]),'scroll moves explicit country cursor');
+ check(updates.filter(t=>t.containerName==='info').at(-1).content.startsWith(COUNTRIES.Red[1]),'country caption follows cursor');
+ check(firstImage!==JSON.stringify(images.filter(i=>i.containerName==='globe-top').at(-1).imageData),'globe pixels change for the selected country');
+ handler({textEvent:{eventType:2}});handler({textEvent:{eventType:2}});handler({textEvent:{eventType:2}});await wait(850);await imageIdle();
+ check(updates.filter(t=>t.containerName==='countries').at(-1).content.includes('> '+COUNTRIES.Red[4]),'rapid scrolling keeps latest cursor');
+ await send({sysEvent:{}});check(last().listObject?.[0].containerName==='grapes','single tap opens country under explicit cursor');
+ await send({sysEvent:{eventType:3}});check(last().textObject.some(t=>t.containerName==='countries'&&t.content.includes('> '+COUNTRIES.Red[4])),'back restores the country selection');
+ await send({sysEvent:{eventType:3}});await send({sysEvent:{eventType:3}});
+ connectHistoryGlasses(bridge);setHistoryConnected(true);await openHistoryOnGlasses(lookupWineById('w0').id,'time',0);
+ const count=shown.length;await wait(400);handleHistoryGlassesEvent({textEvent:{eventType:2}});await imageIdle();check(shown.length===count,'history swipe leaves complete native container intact');
+ handleHistoryGlassesEvent({sysEvent:{eventType:3}});await wait(450);check(last().listObject?.[0].itemContainer.itemName.length===wineHistoryCards('w0').length,'back opens wine-specific chapter list');
+ check(!last().listObject[0].itemContainer.itemName.some(s=>s.includes('Wine through time')),'no repeated generic history menu');
+ check(peak===1,'bridge calls serialized through navigation and text upgrades');stop();
+ document.querySelector('#result').textContent=JSON.stringify({passed:checks.length,wines:wines.length,maxNotesBytes:maxNotes,maxChapterBytes:maxChapter,notesUsingUpgrade:upgrades,checks:checks.slice(-18)},null,2);
+}catch(error){document.querySelector('#result').textContent=JSON.stringify({error:String(error),stack:error.stack,passed:checks.length},null,2)}document.documentElement.dataset.complete='true';
+</script></html>
