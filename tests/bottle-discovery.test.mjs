@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-const png=await readFile('.qa-bottle/cutout.png');
+const png=await readFile('public/bottles/w1.png');
 import { publicAddress, publicUrl, sourceFetch, productImages, createBottleDiscovery } from '../supabase/functions/winelens-beta/bottle-discovery.ts';
 const resolve=async()=>['93.184.216.34'];
 for(const ip of ['127.0.0.1','10.0.0.1','169.254.169.254','172.16.0.1','192.168.1.1','100.64.0.1','::1','::ffff:127.0.0.1','fc00::1'])assert.equal(publicAddress(ip),false,ip);
@@ -25,3 +25,10 @@ const provider=async(url,options)=>{
 const discover=createBottleDiscovery(k=>k==='OPENAI_API_KEY'?'fixture':undefined,provider,resolve);
 const result=await discover({wine_name:'Estate Cabernet',producer:'Fixture Estate',vintage:2021});assert.equal(vision,2);assert.match(result.provenance.source_image,/right.png/);assert.match(result.provenance.vintage_binding,/representative.*2020/);assert.match(result.photo,/^data:image\/png/);
 console.log('PASS: private hosts, redirect checks, byte caps, observed image URLs, mismatched label rejection, representative-vintage disclosure, server-only API key.');
+
+for(const [status,code,pattern] of [[429,'insufficient_quota',/API credit/],[429,'rate_limit_exceeded',/busy/]]){
+ const failing=createBottleDiscovery(()=> 'fixture',async()=>Response.json({error:{code}},{status}),resolve);
+ await assert.rejects(()=>failing({wine_name:'Fixture'}),e=>e.status===503&&pattern.test(e.message));
+}
+const timeout=createBottleDiscovery(()=> 'fixture',async()=>{throw new DOMException('timed out','TimeoutError')},resolve);
+await assert.rejects(()=>timeout({wine_name:'Fixture'}),e=>e.status===504&&/timed out/.test(e.message));

@@ -42,3 +42,10 @@ console.log('PASS: focused wine sections and empty/script-only menu fallback.');
 const longMenu='## Red Wines\n'+Array.from({length:250},(_,i)=>`- Estate Wine ${i}\nNapa Valley 2022`).join('\n');
 const sections=menuTextChunks(longMenu);assert(sections.length>1);assert(sections.every(s=>s.startsWith('## Red Wines')));for(let i=0;i<250;i++)assert(sections.some(s=>s.includes(`- Estate Wine ${i}\nNapa Valley 2022`)),'label/year stay together');
 console.log('PASS: long menu section splitting preserves all entries and section context.');
+
+const {menuPlace}=await import('../supabase/functions/winelens-beta/menu-places.ts');
+assert.deepEqual(menuPlace('', 'Tuscany'),{country:'Italy',region:'Tuscany'});
+assert.deepEqual(menuPlace('California', ''),{country:'United States',region:'California'});
+assert.deepEqual(menuPlace('', 'Napa Valley'),{country:'United States',region:'Napa Valley'});
+assert.deepEqual(menuPlace('', 'An unknown valley'),{country:'',region:'An unknown valley'});
+assert.equal(menuPlace('France','Tuscany').country,'France','explicit country never silently overwritten by inferred region');

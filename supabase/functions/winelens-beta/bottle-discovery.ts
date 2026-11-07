@@ -10,10 +10,10 @@ export async function publicUrl(raw:string,resolve:Resolver){
  const ips=await resolve(u.hostname);if(!ips.length||ips.some(ip=>!publicAddress(ip)))throw Error('Unsupported source');return u;
 }
 /** Limit decoded bytes, check every redirect, and never forward API keys to source sites. */
-export async function sourceFetch(raw:string,fetcher:typeof fetch,resolve:Resolver,limit:number,types:string[]){
+export async function sourceFetch(raw:string,fetcher:typeof fetch,resolve:Resolver,limit:number,types:string[],signal?:AbortSignal){
  let url=raw;
  for(let i=0;i<4;i++){
-  const u=await publicUrl(url,resolve),response=await fetcher(u,{redirect:'manual',signal:AbortSignal.timeout(12000),headers:{Accept:types.join(', '),'User-Agent':'sommNI bottle reference lookup/1.0'}});
+  const u=await publicUrl(url,resolve),response=await fetcher(u,{redirect:'manual',signal:signal?AbortSignal.any([signal,AbortSignal.timeout(12000)]):AbortSignal.timeout(12000),headers:{Accept:types.join(', '),'User-Agent':'sommNI bottle reference lookup/1.0'}});
   if([301,302,303,307,308].includes(response.status)){await response.body?.cancel();url=new URL(response.headers.get('location')||'',u).href;continue;}
   const type=(response.headers.get('content-type')||'').split(';')[0].toLowerCase();
   if(!response.ok||!types.includes(type)||Number(response.headers.get('content-length'))>limit){await response.body?.cancel();throw Error('Source unavailable');}
@@ -52,21 +52,23 @@ export function imageDimensions(b:Uint8Array):{width:number;height:number}|null{
 }
 const base64=(bytes:Uint8Array)=>{let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(s);};
 export function createBottleDiscovery(env:(key:string)=>string|undefined,fetcher:typeof fetch,resolve:Resolver){
- async function ai(instructions:string,image?:string){
+ async function ai(instructions:string,image?:string,signal?:AbortSignal){
   const key=env('OPENAI_API_KEY');if(!key)throw new Fault(503,'Automatic bottle search is not configured. Add a full-bottle photo instead.');
   const model=env('SOMMNI_BOTTLE_MODEL')||env('SOMMNI_RESEARCH_MODEL')||env('SOMMNI_TEXT_MODEL')||'gpt-4.1-mini';
-  const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(60000),body:JSON.stringify({model,...(model.startsWith('gpt-6')?{reasoning:{effort:'low'}}:{}),store:false,instructions,input:[{role:'user',content:[{type:'input_text',text:image?'Check this photograph and return JSON.':instructions},...(image?[{type:'input_image',image_url:image,detail:'high'}]:[])]}],max_output_tokens:1200,...(image?{text:{format:{type:'json_object'}}}:{tools:[{type:'web_search'}],tool_choice:'required',include:['web_search_call.action.sources']})})});
-  if(!response.ok){const e=await response.json().catch(()=>({}));console.error('Bottle provider error',JSON.stringify({model,status:response.status,code:e.error?.code,message:String(e.error?.message||'').replace(/sk-[\w-]+/g,'[redacted]').slice(0,400)}));throw new Fault(502,'Bottle search could not finish. Your wine is saved; retry its artwork later.');}const result=await response.json();if(result.status!=='completed')throw new Fault(502,'Bottle search was incomplete.');const parts=(result.output||[]).filter((o:any)=>o.type==='message').flatMap((o:any)=>o.content||[]).filter((p:any)=>p.type==='output_text');
+  const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(image?18000:45000)]):AbortSignal.timeout(45000),body:JSON.stringify({model,...(model.startsWith('gpt-6')?{reasoning:{effort:'low'}}:{}),store:false,instructions,input:[{role:'user',content:[{type:'input_text',text:image?'Check this photograph and return JSON.':instructions},...(image?[{type:'input_image',image_url:image,detail:'high'}]:[])]}],max_output_tokens:1200,...(image?{text:{format:{type:'json_object'}}}:{tools:[{type:'web_search'}],tool_choice:'required',include:['web_search_call.action.sources']})})});
+  if(!response.ok){const e=await response.json().catch(()=>({}));console.error('Bottle provider error',JSON.stringify({model,status:response.status,code:e.error?.code,message:String(e.error?.message||'').replace(/sk-[\w-]+/g,'[redacted]').slice(0,400)}));if(e.error?.code==='insufficient_quota'||e.error?.code==='billing_hard_limit_reached')throw new Fault(503,'The image provider has no available API credit. Existing labels still work; upload a photo or retry after service credit is restored.');if(response.status===429)throw new Fault(503,'The image provider is busy. Your wine is kept; retry its label shortly.');throw new Fault(502,'Bottle search could not finish. Your wine is kept; retry its artwork later.');}const result=await response.json();if(result.status!=='completed')throw new Fault(502,'Bottle search was incomplete.');const parts=(result.output||[]).filter((o:any)=>o.type==='message').flatMap((o:any)=>o.content||[]).filter((p:any)=>p.type==='output_text');
   if(!image){const sources=(result.output||[]).filter((o:any)=>o.type==='web_search_call').flatMap((o:any)=>o.action?.sources||[]).filter((s:any)=>typeof s.url==='string');parts.push({type:'output_text',text:'',annotations:sources.map((s:any)=>({type:'url_citation',url:s.url}))});}
   return parts;
  }
  return async(body:any)=>{
   const identity={wine_name:text(body.wine_name,200,true),producer:text(body.producer??'',160),vintage:body.vintage==null?null:text(String(body.vintage),8)};
-  const found=await ai(bottleSearchPrompt(identity));
+  const signal=AbortSignal.timeout(110000);
+  try{
+  const found=await ai(bottleSearchPrompt(identity),undefined,signal);
   const pages=[...new Set<string>(found.flatMap((p:any)=>(p.annotations||[]).filter((a:any)=>a.type==='url_citation').map((a:any)=>a.url)))].slice(0,6);
   // Resolve product pages in parallel; a blocked merchant must not stop the search.
   const sources=await Promise.allSettled(pages.map(async page=>{
-   const source=await sourceFetch(page,fetcher,resolve,1500000,['text/html','application/xhtml+xml']);
+   const source=await sourceFetch(page,fetcher,resolve,1500000,['text/html','application/xhtml+xml'],signal);
    return productImages(new TextDecoder().decode(source.bytes),source.url).map(url=>({url,page:source.url}));
   }));
   const groups=sources.flatMap(r=>r.status==='fulfilled'?[r.value]:[]),seen=new Set<string>();
@@ -76,21 +78,23 @@ export function createBottleDiscovery(env:(key:string)=>string|undefined,fetcher
   const accepted:{photo:string;provenance:Record<string,string>;height:number;digest:string;exact:boolean}[]=[],digests=new Set<string>();
   let checked=0;
   for(let offset=0;offset<Math.min(images.length,12)&&accepted.length<3;offset+=3){
+   signal.throwIfAborted();
    const batch=await Promise.allSettled(images.slice(offset,offset+3).map(async source=>{
-    const image=await sourceFetch(source.url,fetcher,resolve,2097152,['image/png','image/jpeg','image/webp']);
+    const image=await sourceFetch(source.url,fetcher,resolve,2097152,['image/png','image/jpeg','image/webp'],signal);
     const dimensions=imageDimensions(image.bytes);if(!dimensions||dimensions.height<240||dimensions.width<50||dimensions.width*dimensions.height>16000000)return null;
     const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(image.bytes)))].map(n=>n.toString(16).padStart(2,'0')).join('');
     if(digests.has(digest))return null;digests.add(digest);checked++;
     const photo=`data:${image.type};base64,${base64(image.bytes)}`;
-    const parts=await ai(bottleVerificationPrompt(identity,source.page),photo);const verdict=JSON.parse(parts.map((p:any)=>p.text).join(''));
+    const parts=await ai(bottleVerificationPrompt(identity,source.page),photo,signal);const verdict=JSON.parse(parts.map((p:any)=>p.text).join(''));
     if(verdict.match!==true||verdict.full_bottle!==true||verdict.producer_match!==true||verdict.cuvee_match!==true||verdict.bottle_only!==true)return null;
     const year=typeof verdict.visible_vintage==='string'&&/^\d{4}$/.test(verdict.visible_vintage)?verdict.visible_vintage:null;
     return {photo,height:dimensions.height,digest,exact:!!year&&year===identity.vintage,provenance:{pipeline:'web-product-photo-vision-v2',source_dimensions:`${dimensions.width}x${dimensions.height}`,source_page:source.page,source_image:image.url,verified_at:new Date().toISOString(),identity_check:String(verdict.reason||'Producer and cuvée visually matched').slice(0,200),vintage_binding:year&&year===identity.vintage?`label vintage ${year} visually matched`:`representative photograph; ${year?'label shows '+year:'exact vintage unverified'}`}};
    }));
-   for(const item of batch)if(item.status==='fulfilled'&&item.value)accepted.push(item.value);
+   for(const item of batch){if(item.status==='fulfilled'&&item.value)accepted.push(item.value);else if(item.status==='rejected'&&item.reason instanceof Fault&&item.reason.status===503)throw item.reason;}
   }
   if(!accepted.length){console.info('Bottle discovery exhausted',JSON.stringify({pages:pages.length,checked}));throw new Fault(422,'No confidently matching full-bottle photograph found. Try a more specific producer and cuvée, or upload a full-bottle photo.');}
   const candidates=accepted.sort((a,b)=>Number(b.exact)-Number(a.exact)||b.height-a.height).slice(0,3).map(({photo,provenance,digest})=>({id:digest,photo,provenance}));
   return {...candidates[0],candidates,search_provider:'OpenAI web search',checked};
+  }catch(error){if(signal.aborted||(error as Error)?.name==='TimeoutError')throw new Fault(504,'Bottle photo search timed out. Your wine is kept. Retry or upload a full-bottle photo.');throw error;}
  };
 }

@@ -5,7 +5,7 @@ import { bottleIdentity } from '../research/bottles';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY } from '../account-config';
 import { localStore, localWines, updateLocalWine } from './store';
 export async function betaProvider(body:Record<string,unknown>,signal?:AbortSignal) {
- const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:await bottleAccessHeaders(),body:JSON.stringify(body),signal});
+ let response:Response;try{response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:await bottleAccessHeaders(),body:JSON.stringify(body),signal});}catch(error){if(signal?.aborted)throw error;throw Error('Could not reach the wine service. Your saved wines and downloaded labels are still available. Retry when connected; this error does not confirm an API credit problem.');}
  const result=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(result.error||'The beta service is unavailable. Your saved wines are still on this device.'),{code:result.code});announceBottleAllowance(result.allowance);return result;
 }
 export async function betaResearch(body:any,signal?:AbortSignal):Promise<any>{

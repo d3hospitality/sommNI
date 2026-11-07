@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';import {mkdtemp} from 'node:fs/promises';import {tmpdir} from 'node:os';
 const {parseHTML}=await import('linkedom');
-const {window}=parseHTML('<html><body><main></main></body></html>');Object.assign(globalThis,{window,document:window.document});
+const {window}=parseHTML('<html><body><main></main></body></html>');Object.assign(globalThis,{window,document:window.document,CustomEvent:window.CustomEvent});
 Object.defineProperty(window.HTMLInputElement.prototype,'checked',{configurable:true,get(){return this.hasAttribute('checked')},set(value){value?this.setAttribute('checked',''):this.removeAttribute('checked')}});
 let resolveRequest,request;
 globalThis.menuUIFixture={owner:'guest:one',provider:(body,signal)=>{request={body,signal};return new Promise(resolve=>resolveRequest=resolve)}};
@@ -26,3 +26,11 @@ assert.equal($('[data-keep="1"]').checked,true,'different vintages stay availabl
 $('[data-menu-all]').checked=true;$('[data-menu-all]').onchange();assert.equal($('[data-keep="0"]').checked,false,'check all excludes saved exact matches');
 $('[data-query="0"]').value='Estate Cabernet 2020';$('[data-query="0"]').dispatchEvent(new window.Event('input',{bubbles:true}));assert.equal($('[data-keep="0"]').disabled,false);assert.equal($('[data-keep="0"]').checked,false,'corrected entries need approval');
 console.log('PASS: duplicate highlighting, excluded exact matches, distinct vintages, uncertain vintage review and edited identity.');
+reset();savedWines.length=0;const grouped=submit();resolveRequest({entries:[{query:'Maker A 2020',country:'Italy',region:'Tuscany',needs_review:false},{query:'Maker B 2021',country:'Italy',region:'Piedmont',needs_review:false},{query:'Maker C 2022',country:'France',region:'Bordeaux',needs_review:false},{query:'Maker D',country:'',region:'',needs_review:true}]});await grouped;
+const country=host.querySelector('[data-place-country="Italy"]:not([data-place-region])');country.click();assert.equal($('[data-keep="0"]').checked,false);assert.equal($('[data-keep="1"]').checked,false);assert.equal($('[data-keep="2"]').checked,true);
+host.querySelector('[data-place-country="Italy"][data-place-region="Tuscany"]').click();assert.equal($('[data-keep="0"]').checked,true);assert.equal($('[data-keep="1"]').checked,false);assert.equal(country.dataset.partial,'true');
+$('[data-menu-toggle="1"]').click();assert.equal($('[data-keep="1"]').checked,true);assert.equal($('[data-menu-toggle="1"]').getAttribute('aria-pressed'),'true');
+$('[data-menu-toggle="1"]').closest('.menu-entry').click();assert.equal($('[data-keep="1"]').checked,false,'whole card background toggles');
+$('[data-query="0"]').click();assert.equal($('[data-keep="0"]').checked,true,'editing does not toggle selection');assert.equal($('[data-keep="0"]').hasAttribute('hidden'),true,'no visible checkmark');
+$('[data-menu-research]').onclick();assert.deepEqual(started,['Maker A 2020','Maker C 2022']);
+console.log('PASS: country/region inclusion, whole-row selection, editable fields, uncertain origin and selected-only research.');

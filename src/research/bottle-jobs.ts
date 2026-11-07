@@ -1,19 +1,24 @@
 import type { LibraryWine } from '../winebrary';
-import { artworkOwner, artworkStore } from '../artwork-store';
+import { artworkOwner, artworkStore, recalledBottle,rememberProcessedBottle,processedBottleKey } from '../artwork-store';
 import { catalogBottleCandidates, catalogBottleDraft, createBottleCutout, inlineBottle, bottleIdentity, type BottleDraft } from './bottles';
 import { betaProvider } from '../beta/client';
 import { researchAction } from './client';
 import { finishWineArtwork } from '../wine-contributions';
-export type BottleCandidate={id:string;photo:string;provenance:Record<string,unknown>};
+export type BottleCandidate={id:string;photo:string;processed?:boolean;provenance:Record<string,unknown>};
 const searches=new Map<string,Promise<BottleCandidate[]>>();
-export function findBottleCandidates(wine:any,scope:string,refresh=false,signal?:AbortSignal):Promise<BottleCandidate[]>{
+export async function findBottleCandidates(wine:any,scope:string,refresh=false,signal?:AbortSignal):Promise<BottleCandidate[]>{
+ const current=()=>{signal?.throwIfAborted();if(artworkOwner()!==scope)throw Error('Account changed. Start again.');};current();
+ if(!refresh){const cached=await recalledBottle(wine,scope);current();if(cached?.data)return [{id:'local-processed',photo:cached.data,processed:true,provenance:cached.provenance}];
+ const identity=await processedBottleKey(wine);const receipt=await artworkStore('get',scope+':master:'+identity);current();
+ if(receipt&&navigator.onLine){try{const result=await betaProvider({action:'contribution_status',receipt:receipt.receipt,artwork:true},signal);current();if(result.draft?.url){const data=await inlineBottle(result.draft);current();await rememberProcessedBottle(wine,scope,data,result.draft.provenance);return [{id:'master-processed',photo:data,processed:true,provenance:result.draft.provenance||{}}];}}catch(error){current();}}
+ }
  const identityKey=scope+':'+JSON.stringify(bottleIdentity(wine));
  if(artworkOwner()!==scope)return Promise.reject(Error('Account changed. Start again.'));
  if(refresh)searches.delete(identityKey);
  let pending=searches.get(identityKey);if(!pending){pending=betaProvider({action:'bottle_candidates',...bottleIdentity(wine),vintage_state:wine.vintage_state??wine.metadata?.vintage_state},signal?AbortSignal.any([signal,AbortSignal.timeout(170000)]):AbortSignal.timeout(170000)).then(result=>{if(artworkOwner()!==scope)throw Error('Account changed.');const candidates=(result.candidates?.length?result.candidates:result.photo?[result]:[]).filter((c:BottleCandidate)=>typeof c.photo==='string'&&c.photo.startsWith('data:image/')).slice(0,3);if(!candidates.length)throw Error('No bottle photos found. Try again or upload your own.');return candidates;});searches.set(identityKey,pending);const owned=pending;signal?.addEventListener('abort',()=>{if(searches.get(identityKey)===owned)searches.delete(identityKey);},{once:true});void pending.catch(()=>{if(searches.get(identityKey)===pending)searches.delete(identityKey);});if(searches.size>8)searches.delete(searches.keys().next().value!);}
  return pending;
 }
-export async function clipBottleCandidate(candidate:BottleCandidate){const draft=await createBottleCutout(candidate.photo,true);return {...draft,provenance:{...draft.provenance,...candidate.provenance,pipeline:'web-photo-to-transparent-v2'}};}
+export async function clipBottleCandidate(candidate:BottleCandidate){if(candidate.processed)return {url:candidate.photo,path:candidate.photo,source:'photograph' as const,provenance:candidate.provenance};const draft=await createBottleCutout(candidate.photo,true);return {...draft,provenance:{...draft.provenance,...candidate.provenance,pipeline:'web-photo-to-transparent-v2'}};}
 type Job={id:string;kind:'bottle-job';scope:string;wineId:string;state:'pending'|'working'|'ready'|'attention';attempts:number;nextTry:number;message:string};
 let load: (()=>Promise<LibraryWine[]>)|undefined, running:Promise<void>|undefined, started=false;
 const key=(scope:string,id:string)=>`${scope}:bottle-job:${id}`;
@@ -25,10 +30,10 @@ export function prepareBottleArtwork(wine:Parameters<typeof bottleIdentity>[0],s
  const identityKey=scope+':'+JSON.stringify(bottleIdentity(wine));
  const existing=preparations.get(identityKey);if(existing&&existing.expires>Date.now())return existing.promise;
  const promise=(async()=>{
-  current();const candidates=catalogBottleCandidates(wine);
+  current();const local=await recalledBottle(wine,scope);current();if(local?.data)return {url:local.data,path:local.data,source:'photograph' as const,provenance:local.provenance};const candidates=catalogBottleCandidates(wine);
   if(candidates.length===1)return catalogBottleDraft(candidates[0]);
   const photos=await findBottleCandidates(wine,scope,false,signal);current();
-  const draft=await clipBottleCandidate(photos[0]);current();return draft;
+  const draft=await clipBottleCandidate(photos[0]);current();const data=await inlineBottle(draft);current();await rememberProcessedBottle(wine,scope,data,draft.provenance);return {...draft,url:data};
  })();
  preparations.set(identityKey,{expires:Date.now()+300000,promise});
  signal?.addEventListener('abort',()=>{if(preparations.get(identityKey)?.promise===promise)preparations.delete(identityKey);},{once:true});

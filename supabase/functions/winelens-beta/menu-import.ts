@@ -1,3 +1,4 @@
+import {menuPlace} from './menu-places.ts';
 import { menuHtmlText, menuTextChunks } from './menu-html.ts';
 import { Fault } from '../winelens-research/domain.ts';
 import { sourceFetch, imageDimensions } from './bottle-discovery.ts';
@@ -23,12 +24,12 @@ export function normalizeMenu(result:any){
   if(!wine_name||!source_text)continue;
   const year=clean(item.vintage,20),printedYear=year==='NV'?/\bN[.\s/-]?V\b/i.test(source_text):(source_text.match(/\b(?:1[89]|20)\d{2}\b/g)||[]).includes(year),vintage=/^(?:1[89]\d{2}|20\d{2}|NV)$/.test(year)&&printedYear?year:'';
   const key=[producer,wine_name,vintage].map(norm).join('|');if(seen.has(key)){duplicates++;continue;}seen.add(key);
-  entries.push({wine_name,producer,vintage,query:[producer&&!(' '+norm(wine_name)+' ').includes(' '+norm(producer)+' ')?producer:'',wine_name,vintage&&!(' '+norm(wine_name)+' ').includes(' '+norm(vintage)+' ')?vintage:''].filter(Boolean).join(' '),section:clean(item.section,90),page:Number.isInteger(item.page)&&item.page>0?item.page:null,source_text,needs_review:item.needs_review!==false||!!year&&!vintage,reason:year&&!vintage?'Year not printed clearly in full. Confirm the vintage.':clean(item.reason,200)});
+  entries.push({wine_name,producer,vintage,query:[producer&&!(' '+norm(wine_name)+' ').includes(' '+norm(producer)+' ')?producer:'',wine_name,vintage&&!(' '+norm(wine_name)+' ').includes(' '+norm(vintage)+' ')?vintage:''].filter(Boolean).join(' '),...menuPlace(clean(item.country,100),clean(item.region,150)),section:clean(item.section,90),page:Number.isInteger(item.page)&&item.page>0?item.page:null,source_text,needs_review:item.needs_review!==false||!!year&&!vintage,reason:year&&!vintage?'Year not printed clearly in full. Confirm the vintage.':clean(item.reason,200)});
  }
  return {entries,duplicates,truncated:result.truncated||result.entries.length>400,warnings:(Array.isArray(result.warnings)?result.warnings:[]).slice(0,8).map((w:unknown)=>clean(w,300)).filter(Boolean)};
 }
 const string={type:'string'};
-const schema={type:'object',additionalProperties:false,required:['entries','warnings','truncated'],properties:{entries:{type:'array',items:{type:'object',additionalProperties:false,required:['wine_name','producer','vintage','section','page','source_text','needs_review','reason'],properties:{wine_name:string,producer:string,vintage:string,section:string,page:{type:'integer'},source_text:string,needs_review:{type:'boolean'},reason:string}}},warnings:{type:'array',items:string},truncated:{type:'boolean'}}};
+const schema={type:'object',additionalProperties:false,required:['entries','warnings','truncated'],properties:{entries:{type:'array',items:{type:'object',additionalProperties:false,required:['wine_name','producer','vintage','country','region','section','page','source_text','needs_review','reason'],properties:{wine_name:string,producer:string,vintage:string,country:string,region:string,section:string,page:{type:'integer'},source_text:string,needs_review:{type:'boolean'},reason:string}}},warnings:{type:'array',items:string},truncated:{type:'boolean'}}};
 function encode(bytes:Uint8Array){let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(binary);}
 export async function importMenu(body:any,deps:{env:(k:string)=>string|undefined;fetch:typeof fetch;resolveHost:(host:string)=>Promise<string[]>}){
  const apiKey=deps.env('OPENAI_API_KEY');if(!apiKey)throw new Fault(503,'Menu reading is not configured yet. You can still enter wine names.');

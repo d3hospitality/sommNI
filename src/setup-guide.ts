@@ -11,7 +11,7 @@ export function readGuideState(raw:string|null):{step:number;done:boolean}|null{
 export function initSetupGuide(isAccountLinked:()=>boolean=()=>false){
  if(document.getElementById('sommni-setup-guide'))return;
  let stored:ReturnType<typeof readGuideState>=null;try{stored=readGuideState(localStorage.getItem(KEY));}catch{}
- let step=stored?.step??0,active=false,intro=false,target:HTMLElement|null=null,frame=0,priorFocus:HTMLElement|null=null;
+ let step=stored?.step??0,active=false,intro=false,automatic=false,target:HTMLElement|null=null,frame=0,priorFocus:HTMLElement|null=null;
  const card=document.createElement('section');card.id='sommni-setup-guide';card.hidden=true;card.setAttribute('role','region');card.setAttribute('aria-label','Guided setup');
  const halo=document.createElement('div');halo.className='setup-halo';halo.hidden=true;halo.setAttribute('aria-hidden','true');
  const orb=document.createElement('div');orb.className='setup-orb';orb.hidden=true;orb.setAttribute('aria-hidden','true');
@@ -63,14 +63,14 @@ export function initSetupGuide(isAccountLinked:()=>boolean=()=>false){
   });
   if(focus)card.querySelector<HTMLButtonElement>('[data-guide-start], [data-guide-next]')?.focus({preventScroll:true});schedule();
  }
- function start(welcome=false){priorFocus=document.activeElement as HTMLElement;active=true;intro=welcome;step=0;render();reveal();}
+ function start(welcome=false){automatic=welcome;priorFocus=document.activeElement as HTMLElement;active=true;intro=welcome;step=0;render();reveal();}
  document.querySelectorAll('[data-setup-guide]').forEach(b=>b.addEventListener('click',()=>start()));
  document.addEventListener('keydown',e=>{if(active&&e.key==='Escape'&&!document.querySelector('dialog[open]:not(.atlas-inline)')){e.preventDefault();close();}});
  document.addEventListener('change',e=>{if(active&&!intro&&step===1&&(e.target as HTMLElement)?.id==='orbit-country'){step=2;persist();render();reveal();}});
- window.addEventListener('winelens-library-changed',()=>{if(active&&!intro&&step===0){render(false);schedule();}});
- window.addEventListener('sommni-account-linked',()=>{if(active&&!intro&&step===0){step=1;persist();render();reveal();}});
+ window.addEventListener('winelens-library-changed',()=>{if(automatic&&isAccountLinked()){close(true);return;}if(active&&!intro&&step===0){render(false);schedule();}});
+ window.addEventListener('sommni-account-linked',()=>{if(automatic&&isAccountLinked()){close(true);return;}if(active&&!intro&&step===0){step=1;persist();render();reveal();}});
  document.addEventListener('click',e=>{if(active&&(e.target as HTMLElement).closest('.tab:not([data-tab="home"])'))close();});
  addEventListener('resize',schedule);document.addEventListener('scroll',schedule,true);window.visualViewport?.addEventListener('resize',schedule);window.visualViewport?.addEventListener('scroll',schedule);
  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open']});
- if(!stored&&(!location.hash||location.hash==='#home'))start(true);
+ if(!stored&&isAccountLinked())persist(true);else if(!stored&&(!location.hash||location.hash==='#home'))start(true);
 }

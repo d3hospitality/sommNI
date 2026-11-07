@@ -1,3 +1,4 @@
+import {feedbackSound} from '../sound-feedback';
 import {getBottleAllowance,type BottleAllowance} from '../bottle-allowance';
 import {bottlePhotoUpload, bindBottlePhotoUpload} from './photo-upload';
 import {revealHomeTask} from '../home-task';
@@ -118,7 +119,7 @@ export function initResearchPanel() {
    if(token!==revision)return;bottleMessage+=' '+artworkMessage;
    host.innerHTML=`<p class="wl-kicker">SAVED TO YOUR WINEBRARY${isGuestLibrary()?' · ON THIS DEVICE':''}</p>${result.item.image_url?`<img class="research-saved-bottle" src="${escape(result.item.image_url)}" alt="Saved bottle photograph">`:''}<h3>${escape(result.item.wine_name)}</h3><p>Reference notes now belong to this wine in your library.${escape(bottleMessage)}</p><button id="research-open-library" class="wl-primary" type="button">Open my Winebrary →</button><div id="research-saved-notes"></div>`;
    get('research-open-library').onclick=()=>document.querySelector<HTMLButtonElement>('.tab[data-tab="winebrary"]')?.click();
-   mountWineNotesExport(get('research-saved-notes'),result.item);highlightArrival(host,true);window.dispatchEvent(new CustomEvent('winelens-research-saved',{detail:{id:result.item.id}}));feedback(result.duplicate?'This exact wine and vintage is already in your Winebrary. Your notes were preserved; any selected replacement photo has been applied.':'Wine saved. Open Winebrary to view it or show it on G2.');
+   feedbackSound('saved');mountWineNotesExport(get('research-saved-notes'),result.item);highlightArrival(host,true);window.dispatchEvent(new CustomEvent('winelens-research-saved',{detail:{id:result.item.id}}));feedback(result.duplicate?'This exact wine and vintage is already in your Winebrary. Your notes were preserved; any selected replacement photo has been applied.':'Wine saved. Open Winebrary to view it or show it on G2.');
   });});
   highlightArrival(host,true);
  }

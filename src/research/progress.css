@@ -11,3 +11,11 @@
 @media(max-width:760px){.phone-shell-ready #wine-research .batch-footer{bottom:calc(67px + var(--phone-bottom-inset,6px));gap:8px}.batch-progress{padding:10px 12px}}
 
 .batch-search-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.batch-search-controls button{font-size:11px!important;min-height:40px;padding:8px 10px!important}
+
+#wine-research .batch-row{border:1px solid var(--line,#393b30);border-radius:12px;padding:12px;margin:9px 0;cursor:pointer;transition:background .16s,border-color .16s}
+#wine-research .batch-row[data-selected=true]{background:#ddc9760c;border-color:#ddc97670}
+#wine-research .batch-row[data-selected=false]{opacity:1;background:#88888808;border-color:#ffffff12;color:var(--muted,#aaa)}
+#wine-research .batch-row[data-selected=false] .batch-photo{filter:grayscale(1);opacity:.45}
+#wine-research .batch-row input[hidden]{display:none!important}
+#wine-research [data-row-toggle]{display:block;width:100%;padding:0!important;text-align:left;font:inherit;color:inherit;border:0;background:transparent;cursor:pointer}
+#wine-research [data-row-toggle]:focus-visible{outline:2px solid var(--gold,#ddc976);outline-offset:5px;border-radius:4px}

@@ -1,10 +1,10 @@
 import {bottleAccessHeaders} from './bottle-allowance';
 import type { LibraryWine } from './winebrary';
-import { artworkStore, artworkHash, artworkOwner, localWineArtwork, bottlePhoto } from './artwork-store';
+import { artworkStore, artworkHash, processedBottleKey, artworkOwner, localWineArtwork, bottlePhoto } from './artwork-store';
 import { stageCanvas, toGreenLevels } from './bottle-raster';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY } from './account-config';
 export const shareWineControl=(_id:string,_checked=true)=>`<p class="wl-muted small">Every bottle helps build the collective wine globe. Its identity, vintage, region and bottle artwork are sent to sommNI’s master database in Supabase, including wines in your personal Winebrary. Reviewed wines join shared releases. Personal notes and ratings stay private.</p>`;
-export type WineSubmission={id:string;scope:string;kind:'submission';receipt:string;name:string;state:'pending'|'sent';payload:any;error?:string;attempts:number;nextTry:number;remote_id?:string};
+export type WineSubmission={id:string;scope:string;kind:'submission';receipt:string;name:string;identity?:string;state:'pending'|'sent';payload:any;error?:string;attempts:number;nextTry:number;remote_id?:string};
 const vintage=(w:LibraryWine)=>w.vintage?String(w.vintage):w.metadata?.vintage_state==='non_vintage'?'NV':'unknown';
 export async function contributionPayload(wine:LibraryWine){
  const reference=wine.metadata?.research_sources?.sources?.find(s=>{try{const u=new URL(s.url);return u.protocol==='https:'&&!u.username&&!u.password}catch{return false}})?.url||'';
@@ -31,7 +31,7 @@ export function flushWineContributions(){
    try{
     const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:await bottleAccessHeaders(row.scope),body:JSON.stringify({...row.payload,receipt:row.receipt}),signal:AbortSignal.timeout(30000)});
     const result=await response.json().catch(()=>({}));if(!response.ok||!result.received)throw Error(result.error||'The master Winebrary has not confirmed this upload.');
-    await artworkStore('put',{...row,state:'sent',remote_id:result.id,payload:undefined,error:undefined});
+    await artworkStore('put',{...row,state:'sent',remote_id:result.id,payload:undefined,error:undefined});if(row.identity)await artworkStore('put',{id:row.scope+':master:'+row.identity,kind:'master-receipt',scope:row.scope,receipt:row.receipt,remote_id:result.id});
    }catch(error){await artworkStore('put',{...row,attempts:row.attempts+1,nextTry:Date.now()+Math.min(3600000,30000*2**Math.min(row.attempts,7)),error:(error as Error).message});}
   }
   window.dispatchEvent(new Event('sommni-contribution-status'));
@@ -42,7 +42,7 @@ export async function queueWineSubmission(wine:LibraryWine,scope:string,withArtw
  const payload=await contributionPayload(withArtwork?wine:{...wine,image_url:undefined}).catch(()=>contributionPayload({...wine,image_url:undefined}));
  const fingerprint=await artworkHash(JSON.stringify(payload)),id=`${scope}:submission:${fingerprint}`;
  const previous=await artworkStore<WineSubmission|undefined>('get',id);
- if(!previous){const receipt=[...crypto.getRandomValues(new Uint8Array(32))].map(n=>n.toString(16).padStart(2,'0')).join('');await artworkStore('put',{id,scope,kind:'submission',receipt,name:wine.wine_name,state:'pending',payload,attempts:0,nextTry:0});}
+ if(!previous){const receipt=[...crypto.getRandomValues(new Uint8Array(32))].map(n=>n.toString(16).padStart(2,'0')).join('');await artworkStore('put',{id,scope,kind:'submission',receipt,name:wine.wine_name,identity:await processedBottleKey(wine),state:'pending',payload,attempts:0,nextTry:0});}
  void flushWineContributions().catch(()=>{});
  return previous?.state==='sent'?'Saved in the shared master Winebrary.':'Saved on this device. Master Winebrary upload queued; it retries when connected.';
 }

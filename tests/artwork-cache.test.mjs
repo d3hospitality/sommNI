@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';import {mkdtemp} from 'node:fs/promises';import {tmpdir} from 'node:os';
+const rows=new Map();globalThis.indexedDB={open(){const req={result:{transaction(){const tx={objectStore(){return Object.fromEntries(['get','put','getAll','delete'].map(action=>[action,value=>{const r={};queueMicrotask(()=>{r.result=action==='get'?rows.get(value):action==='getAll'?[...rows.values()]:action==='put'?rows.set(value.id,value):rows.delete(value);r.onsuccess?.();tx.oncomplete?.()});return r}]))}};return tx}}};queueMicrotask(()=>req.onsuccess());return req}};
+globalThis.location={href:'https://app.example/sommNI/'};
+globalThis.FileReader=class{readAsDataURL(blob){blob.arrayBuffer().then(b=>{this.result='data:'+blob.type+';base64,'+Buffer.from(b).toString('base64');this.onload()})}};
+let downloads=0;globalThis.fetch=async()=>{downloads++;return new Response(new Blob(['png'],{type:'image/png'}))};
+const dir=await mkdtemp(tmpdir()+'/sommni-cache-');await build({entryPoints:['src/artwork-store.ts'],bundle:true,format:'esm',platform:'node',define:{'import.meta.env.BASE_URL':'"/sommNI/"'},outfile:dir+'/cache.mjs'});const a=await import(dir+'/cache.mjs');
+a.setArtworkOwner('a');const prefix='https://mcmtasetompygfktzhpr.supabase.co/storage/v1/object/sign/winelens-bottles/a/photo.png';
+assert.equal(await a.bottleCacheKey(prefix+'?token=old'),await a.bottleCacheKey(prefix+'?token=new'));
+assert.equal(await a.bottleCacheKey(prefix.replace('/a/','/b/')),null);
+await a.bottlePhoto(prefix+'?token=old');await a.bottlePhoto(prefix+'?token=new');assert.equal(downloads,1,'renewed URL reuses offline blob');
+const wine={id:'wine',wine_name:'Estate Cabernet',producer:'Estate',vintage:2020,metadata:{},image_url:prefix+'?token=new'};
+const local=await a.localWineArtwork(wine,'a');assert.match(local.image_url,/^data:image/);assert.equal(downloads,1);
+assert.equal((await a.recalledBottle({...wine,wine_name:' ESTATE   CABERNET '},'a')).data,local.image_url);
+assert.equal(await a.recalledBottle({...wine,vintage:2021},'a'),undefined,'vintages never alias');
+a.setArtworkOwner('b');assert.equal(await a.recalledBottle(wine,'a'),null);await a.rememberProcessedBottle(wine,'a','data:image/png;base64,bad');assert.equal(await a.recalledBottle(wine,'b'),undefined);
+a.setArtworkOwner('a');assert.equal((await a.recalledBottle(wine,'a')).data,local.image_url);
+console.log('PASS: renewed signed URLs reuse cached blobs; local labels persist by exact normalized wine/producer/vintage; account isolation.');

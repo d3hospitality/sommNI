@@ -28,3 +28,19 @@
 #wine-research .menu-match[data-match=existing],#wine-research .menu-match[data-match=possible]{color:var(--gold,#e1c66b)}
 #wine-research .menu-entry.is-duplicate{background:#e1c66b08;border-left:2px solid var(--gold,#e1c66b);padding-left:8px}
 @media(max-width:480px){#wine-research .menu-columns,#wine-research .menu-entry{grid-template-columns:28px minmax(0,1fr)}#wine-research .menu-columns span:last-child{display:none}#wine-research .menu-match{grid-column:2;margin:0 0 4px}}
+
+#wine-research .menu-entry{grid-template-columns:minmax(0,1fr) 100px;border:1px solid var(--line,#393b30);padding:12px;border-radius:12px;margin:8px 0;cursor:pointer}
+#wine-research .menu-entry input[hidden]{display:none!important}
+#wine-research .menu-entry[data-selected=true]{background:#ddc9760c;border-color:#ddc97670}
+#wine-research .menu-entry[data-selected=false]{background:#88888808;color:var(--muted,#aaa);border-color:#ffffff12}
+#wine-research .menu-entry[data-selected=false] textarea{color:var(--muted,#aaa)}
+#wine-research .wine-selection-toggle{display:block;width:100%;text-align:left;background:none;border:0;padding:0 0 8px;color:var(--gold,#ddc976);font-size:11px;cursor:pointer}
+#wine-research .wine-selection-toggle[aria-pressed=false]{color:var(--muted,#aaa)}
+#wine-research .menu-columns{display:none}
+.menu-places{margin:12px 0}.menu-place-group{display:grid;gap:6px;margin:10px 0}.menu-place-group>div{display:flex;flex-wrap:wrap;gap:6px;padding-left:12px}
+#wine-research .place-pill{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid #ffffff20;background:#88888808;border-radius:9px;color:var(--muted,#aaa);font-size:12px;min-height:40px;padding:9px 12px;flex:1;cursor:pointer}
+#wine-research .place-pill[aria-pressed=true],#wine-research .place-pill[data-partial=true]{color:var(--gold,#ddc976);border-color:#ddc97670;background:#ddc9760c}
+#wine-research .place-pill small{font-size:10px;white-space:nowrap}
+@media(max-width:480px){#wine-research .menu-entry{grid-template-columns:minmax(0,1fr)}#wine-research .menu-match{grid-column:1;margin:0}}
+
+.menu-place-group>details{margin:0!important}.menu-place-group>details>summary{font-size:11px;cursor:pointer;padding:8px;color:var(--muted,#aaa)}.menu-place-group>details>div{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0}.menu-place-group{grid-template-columns:minmax(0,1fr) minmax(100px,1fr);align-items:start}.menu-place-group>details[open]{grid-column:1/-1}

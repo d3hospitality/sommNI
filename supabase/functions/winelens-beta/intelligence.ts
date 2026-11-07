@@ -182,7 +182,9 @@ export function createIntelligence({db,env,fetch:fetcher,reserve}:Deps){
    const row=await db.from('wl_community_receipts').select('wine_id').eq('token_hash',await hash(receipt)).maybeSingle();
    if(row.error||!row.data)throw new Fault(404,'No submission matches this receipt.');
    const wine=await db.from('wl_community_wines').select('status,release_version,wine_name,producer,vintage').eq('id',row.data.wine_id).single();
-   if(wine.error)throw new Fault(503,'Status is temporarily unavailable.');return wine.data;
+   if(wine.error)throw new Fault(503,'Status is temporarily unavailable.');
+   if(body.artwork===true&&wine.data.status!=='declined'){const asset=await db.from('wl_community_artwork').select('photo_path,provenance').eq('wine_id',row.data.wine_id).order('created_at',{ascending:false}).limit(1);if(asset.error)throw new Fault(503,'Saved label is temporarily unavailable.');if(asset.data?.[0]){const signed=await db.storage.from('sommni-master-bottles').createSignedUrl(asset.data[0].photo_path,1800);if(signed.error)throw new Fault(503,'Could not reopen the saved label.');return {...wine.data,draft:{url:signed.data.signedUrl,source:'photograph',provenance:asset.data[0].provenance}};}}
+   return wine.data;
   }
   throw new Fault(400,'Unknown intelligence action.');
  };

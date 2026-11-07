@@ -1,3 +1,4 @@
+import {initSoundFeedback} from './sound-feedback';
 import { initPhoneGestures } from './phone-gestures';
 import { initPhoneShell } from './phone-shell';
 import { initSetupGuide } from './setup-guide';
@@ -58,6 +59,7 @@ async function main(): Promise<void> {
   initDashboard();
   initPhoneGestures();
   initPhoneShell();
+  initSoundFeedback();
   initGlassesContext();
   initWineNotes();
   void syncCatalogAnecdotes();
@@ -80,7 +82,7 @@ async function main(): Promise<void> {
   if (!inEvenHubHost()) {
     setStatus("disconnected", "Browser mode");
     setGlassesStatus(false);
-    setVersionInfo("3.7.44 · Beta");
+    setVersionInfo("3.7.45 · Beta");
   } else {
     setStatus("connecting", "Waiting for bridge...");
   }
@@ -176,9 +178,9 @@ async function main(): Promise<void> {
   connectHistoryGlasses(bridge);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "3.7.44");
-  setVersionInfo("3.7.44 · Beta");
-  log(`sommNI v3.7.44 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  await bridge.setLocalStorage("sommni_version", "3.7.45");
+  setVersionInfo("3.7.45 · Beta");
+  log(`sommNI v3.7.45 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();

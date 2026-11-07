@@ -7,7 +7,7 @@ async function verified(asset:{url:string;sha:string}){
  const cache=(typeof caches==='undefined'?null:await caches.open('sommni-bottle-model-v1').catch(()=>null)),key=new URL(`./__bottle-model/${asset.sha}`,location.href).href;
  const cached=await cache?.match(key);let bytes:Uint8Array;
  if(cached)bytes=new Uint8Array(await cached.arrayBuffer());else{
-  const response=await fetch(asset.url,{signal:AbortSignal.timeout(60000)});if(!response.ok)throw new Error('Bottle model could not be loaded. Please retry.');
+  let response:Response;try{response=await fetch(asset.url,{signal:AbortSignal.timeout(60000)});}catch{throw Error('The bottle outline model could not download. Reconnect and retry; it is saved locally after the first successful download.');}if(!response.ok)throw new Error('Bottle model could not be loaded. Please retry.');
   bytes=new Uint8Array(await response.arrayBuffer());
  }
  const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(bytes)))].map(n=>n.toString(16).padStart(2,'0')).join('');

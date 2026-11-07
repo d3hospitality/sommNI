@@ -12,7 +12,7 @@ globalThis.fixture={owner:()=>owner,store:async(action,value)=>{if(action==='get
  submit:async()=>{submissions++},
 };
 const mocks={
- '../artwork-store':`export const artworkOwner=()=>fixture.owner();export const artworkStore=(a,v)=>fixture.store(a,v)`,
+ '../artwork-store':`export const artworkOwner=()=>fixture.owner();export const artworkStore=(a,v)=>fixture.store(a,v);export const recalledBottle=async()=>null;export const rememberProcessedBottle=async()=>{};export const processedBottleKey=async w=>w.wine_name`,
  './bottles':`export const catalogBottleCandidates=w=>fixture.candidates(w);export const catalogBottleDraft=()=>fixture.catalog();export const createBottleCutout=p=>fixture.cutout(p);export const inlineBottle=async d=>d.url;export const bottleIdentity=w=>({wine_name:w.wine_name,producer:w.producer,vintage:w.vintage})`,
  '../beta/client':`export const betaProvider=()=>fixture.lookup()`,
  './client':`export const researchAction=b=>fixture.attach(b)`,
@@ -28,7 +28,7 @@ blocked=true;await jobs.queueBottleArtwork(add('uncertain'),'a');await jobs.runB
 owner='b';assert.equal((await jobs.bottleJobStatuses()).size,0);assert.equal(submissions,2);
 owner='a';blocked=false;
 const shared=add('shared');let finishLookup;lookupWait=new Promise(resolve=>{finishLookup=resolve});
-const preview=jobs.prepareBottleArtwork(shared,'a'),beforeLookups=lookups,beforeCuts=cutouts;
+const preview=jobs.prepareBottleArtwork(shared,'a');await new Promise(r=>setImmediate(r));const beforeLookups=lookups,beforeCuts=cutouts;
 assert.equal(jobs.prepareBottleArtwork({...shared},'a'),preview);
 await jobs.queueBottleArtwork(shared,'a');const pendingJob=jobs.runBottleJobs();
 assert.equal(shared.image_url,undefined);assert.equal(lookups,beforeLookups);
