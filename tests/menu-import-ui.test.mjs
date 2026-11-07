@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';import {mkdtemp} from 'node:fs/promises';import {tmpdir} from 'node:os';
 const {parseHTML}=await import('linkedom');
-const {window}=parseHTML('<html><body><main></main></body></html>');Object.assign(globalThis,{window,document:window.document,CustomEvent:window.CustomEvent});
+const {window}=parseHTML('<html><body><details open><main></main></details></body></html>');Object.assign(globalThis,{window,document:window.document,CustomEvent:window.CustomEvent});
 Object.defineProperty(window.HTMLInputElement.prototype,'checked',{configurable:true,get(){return this.hasAttribute('checked')},set(value){value?this.setAttribute('checked',''):this.removeAttribute('checked')}});
 let resolveRequest,request;
 globalThis.menuUIFixture={owner:'guest:one',provider:(body,signal)=>{request={body,signal};return new Promise(resolve=>resolveRequest=resolve)}};
