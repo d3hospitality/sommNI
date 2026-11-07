@@ -27,3 +27,9 @@ const skipBatch=new WineBatch({current:()=>true,changed:()=>{},research:async q=
 skipBatch.start(['First','Second']);await tick();await tick();const skipSave=skipBatch.saveSelected();skipBatch.select(1,false);finishFirst();await skipSave;
 assert.deepEqual(savedDuringSkip,['First']);assert.deepEqual(skipBatch.saveProgress,{total:2,completed:2,saved:1,failed:0,skipped:1});skipBatch.dispose();
 console.log('PASS: unchecked pending save is counted as skipped, never as saved; progress still completes.');
+const queue=[],active=[];
+const controlled=new WineBatch({current:()=>true,changed:()=>{},research:(q,signal)=>{const d=deferred();active.push({q,signal,...d});return d.promise;},artwork:async()=>({url:'photo'}),save:async row=>{queue.push(row.query);return 'Saved';}});
+controlled.start(['One','Two','Three','Four']);controlled.pause();active[0].resolve(draft('One'));await tick();assert.equal(active.length,2,'pause holds new work');assert.equal(controlled.rows[0].state,'ready','in-flight result remains reviewable');
+controlled.stop();assert.equal(active[1].signal.aborted,true);active[1].resolve(draft('Stale'));await tick();assert.equal(controlled.rows[1].state,'queued','late stopped result ignored');
+controlled.resume();assert.equal(active.length,4);assert.equal(controlled.rows[0].draft.result.wine_name,'One');active[2].resolve(draft('Two'));active[3].resolve(draft('Three'));await tick();assert.equal(active.length,5);active[4].reject(Object.assign(Error('Daily limit reached'),{code:'DAILY_BOTTLE_LIMIT'}));await tick();assert.equal(controlled.paused,true);await controlled.saveSelected();assert.deepEqual(queue,['One','Two','Three']);controlled.dispose();
+console.log('PASS: pause holds queue, stop aborts active research, resume ignores stale results, quota pauses, completed results remain saveable.');

@@ -1,11 +1,12 @@
+import {bottleAccessHeaders,announceBottleAllowance,checkBottleAllowance} from '../bottle-allowance';
 import {artworkOwner} from '../artwork-store';
 import {isGuestLibrary,cloudCollection} from '../cloud-library';
 import { bottleIdentity } from '../research/bottles';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY } from '../account-config';
 import { localStore, localWines, updateLocalWine } from './store';
 export async function betaProvider(body:Record<string,unknown>,signal?:AbortSignal) {
- const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:{'Content-Type':'application/json',apikey:ACCOUNT_PUBLIC_KEY},body:JSON.stringify(body),signal});
- const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'The beta service is unavailable. Your saved wines are still on this device.');return result;
+ const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:await bottleAccessHeaders(),body:JSON.stringify(body),signal});
+ const result=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(new Error(result.error||'The beta service is unavailable. Your saved wines are still on this device.'),{code:result.code});announceBottleAllowance(result.allowance);return result;
 }
 export async function betaResearch(body:any,signal?:AbortSignal):Promise<any>{
  signal?.throwIfAborted();const owner=artworkOwner();const current=()=>{signal?.throwIfAborted();if(artworkOwner()!==owner)throw Error('Account changed. Please retry in the current library.');};
@@ -25,6 +26,7 @@ export async function betaResearch(body:any,signal?:AbortSignal):Promise<any>{
   current();if(!draft){const existing=isGuestLibrary()?await localStore('wines','get',body.draft_id):null;if(existing)return {item:existing};throw new Error('Draft not found on this device.');}
   const r=body.review;
   if(['wine_name','producer','vintage','vintage_state'].some(key=>String(r[key]??'').trim().toLowerCase()!==String(draft.result[key]??'').trim().toLowerCase()))throw new Error('Research the corrected wine before saving.');
+  await checkBottleAllowance(r,signal);current();
   const norm=(value:unknown)=>String(value??'').normalize('NFKC').toLowerCase().replace(/\s+/g,' ').trim();
   if(!isGuestLibrary()){
    const result=await cloudCollection('/api/collection','POST',{...r,metadata:{vintage_state:r.vintage_state,country:r.country,grape:r.grape,color:r.color,sake_classification:r.sake_classification,sake_style:r.sake_style,rice_variety:r.rice_variety,tasting_notes:r.tasting_notes,research_sources:draft.evidence,research_report:draft.report,research_query:draft.query}});
@@ -36,7 +38,7 @@ export async function betaResearch(body:any,signal?:AbortSignal):Promise<any>{
   await localStore('wines','put',item);current();await localStore('drafts','put',{...draft,confirmed_at:new Date().toISOString()});return {item};
  }
  if(body.action==='research'){
-  if(!body.photo&&!body.refresh){const query=String(body.query||'').normalize('NFKC').toLowerCase().replace(/\s+/g,' ').trim();const prior=(await localStore<any[]>('drafts','getAll')).find(d=>!d.photo&&String(d.query||'').normalize('NFKC').toLowerCase().replace(/\s+/g,' ').trim()===query&&Date.now()-Date.parse(d.created_at)<7*86400000);if(prior){current();return {draft:prior,cached:true}};}
+  if(!body.photo&&!body.refresh){const query=String(body.query||'').normalize('NFKC').toLowerCase().replace(/\s+/g,' ').trim();const prior=(await localStore<any[]>('drafts','getAll')).find(d=>!d.photo&&String(d.query||'').normalize('NFKC').toLowerCase().replace(/\s+/g,' ').trim()===query&&Date.now()-Date.parse(d.created_at)<7*86400000);if(prior){const allowance=await checkBottleAllowance(prior.result,signal);current();return {draft:prior,cached:true,allowance}};}
   const result=await betaProvider(body,signal);signal?.throwIfAborted();const draft={...result.draft,photo:body.photo,image_path:body.photo?'device-photo':null,created_at:new Date().toISOString()};current();await localStore('drafts','put',draft);return {draft,cached:result.cached};
  }
  if(body.action==='ask'){const wines=body.use_library?(isGuestLibrary()?await localWines():(await cloudCollection('/api/collection')).items).slice(0,50).map(({wine_name,producer,vintage,region}:any)=>({wine_name,producer,vintage,region})):[];return betaProvider({...body,library:wines});}

@@ -1,3 +1,4 @@
+import {quotaSubject,withBottleAllowance} from '../_shared/bottle-allowance.ts';
 import { publicContent } from '../_shared/public-content.ts';
 import { sharedCatalog } from './shared-catalog.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
@@ -10,10 +11,9 @@ const env=(key:string)=>Deno.env.get(key);
 const db=createClient(env('SUPABASE_URL')!,env('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
 const publicService=(requestReserve:(weight:number)=>Promise<boolean>)=>createBetaService({env,fetch,reserve:requestReserve,resolveHost:async host=>(await Promise.allSettled([Deno.resolveDns(host,'A'),Deno.resolveDns(host,'AAAA')])).flatMap(r=>r.status==='fulfilled'?r.value:[]),cacheResearch:(key,build)=>cachedResearch(db,key,build)});
 const intelligenceActions=new Set(['daily','daily_archive','daily_saved','translate','sommelier','contribute','contribution_status']);
-// This intentionally public beta endpoint has no account/library database access. Community writes and shared AI caches use isolated private tables.
-// No shared daily allowance. Independent short request windows contain runaway traffic.
+// Public reads stay anonymous. Costly bottle work shares a server-enforced daily allowance.
 Deno.serve(async(req:Request)=>{
- const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey,content-type','Access-Control-Allow-Methods':'POST,OPTIONS'};
+ const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'POST,OPTIONS'};
  const respond=(body:unknown,status=200)=>new Response(JSON.stringify(publicContent(body)),{status,headers});
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')return respond({error:'POST required.'},405);
@@ -34,6 +34,8 @@ Deno.serve(async(req:Request)=>{
    return respond({anecdotes:data});
   }
   const reserve=createRequestReserve(db,req,env('SUPABASE_SERVICE_ROLE_KEY')!,body.action);
-  return respond(intelligenceActions.has(body.action)?await createIntelligence({db,env,fetch,reserve})(body):await publicService(reserve)(body));
- }catch(error){return respond({error:error instanceof Fault?error.message:'The beta service is temporarily unavailable.'},error instanceof Fault?error.status:503);}
+  const capped=new Set(['research','bottle_lookup','bottle_candidates','bottle_allow','bottle_allowance']);
+  const work=()=>intelligenceActions.has(body.action)?createIntelligence({db,env,fetch,reserve})(body):publicService(reserve)(body);
+  return respond(capped.has(body.action)?await withBottleAllowance(db,await quotaSubject(db,req,env('SUPABASE_SERVICE_ROLE_KEY')!),body,work):await work());
+ }catch(error){return respond({code:error instanceof Fault&&error.status===429&&error.message.startsWith('Daily limit reached')?'DAILY_BOTTLE_LIMIT':undefined,error:error instanceof Fault?error.message:'The beta service is temporarily unavailable.'},error instanceof Fault?error.status:503);}
 });

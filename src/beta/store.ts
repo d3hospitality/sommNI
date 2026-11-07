@@ -52,6 +52,7 @@ export async function localCollection(path:string,method:string,body:any={}) {
   const item={...previous,id:previous?.id||crypto.randomUUID(),wine_name:body.wine_name??previous?.wine_name,producer:body.producer??previous?.producer??null,region:body.region??previous?.region??null,vintage:body.vintage_state==='year'?Number(body.vintage):body.vintage_state?null:previous?.vintage??null,notes:body.notes??previous?.notes??'',wine_id:body.wine_id??previous?.wine_id,metadata,updated_at:new Date().toISOString(),image_url:body.image_path??previous?.image_url??(found?.legacyId ? bottleImageUrl('./',found.legacyId) : undefined)};
   if(!item.wine_name?.trim())throw new Error('Enter a wine name.');
   if(item.image_url&&!item.image_url.startsWith('data:')){try{item.image_url=await blobData(await bottlePhoto(item.image_url));}catch{/* Keep the reference and let the artwork status explain offline availability. */}}
+  if(!previous)await (await import('../bottle-allowance')).checkBottleAllowance(item);
   await localStore('wines','put',item);return {item};
  }
  if(path==='/api/bottle-image')return {draft:{path:body.data_url,url:body.data_url,source:'photograph'}};

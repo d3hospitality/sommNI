@@ -9,3 +9,5 @@
 .wine-progress progress::-moz-progress-bar{background:var(--gold,#ddc976);border-radius:9px}
 .wine-progress p,.batch-progress>[data-status]{font-size:11px!important;line-height:1.5;margin:7px 0 0!important;color:var(--muted,#aaa)}
 @media(max-width:760px){.phone-shell-ready #wine-research .batch-footer{bottom:calc(67px + var(--phone-bottom-inset,6px));gap:8px}.batch-progress{padding:10px 12px}}
+
+.batch-search-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.batch-search-controls button{font-size:11px!important;min-height:40px;padding:8px 10px!important}

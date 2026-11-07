@@ -1,3 +1,4 @@
+import {withBottleAllowance} from '../_shared/bottle-allowance.ts';
 import { publicContent } from '../_shared/public-content.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 import { createResearchService } from './service.ts';
@@ -35,6 +36,6 @@ Deno.serve(async(req:Request)=>{
   const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
   let body;try{body=JSON.parse(new TextDecoder().decode(bytes));}catch{throw new Fault(400,'Invalid request.');}
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Fault(400,'Invalid request.');
-  return respond(await service(data.user.id,body));
- }catch(error){return respond({error:error instanceof Fault?error.message:'The wine service is temporarily unavailable.'},error instanceof Fault?error.status:503);}
+  return respond(await withBottleAllowance(db,'user:'+data.user.id,body,()=>service(data.user.id,body)));
+ }catch(error){return respond({code:error instanceof Fault&&error.status===429&&error.message.startsWith('Daily limit reached')?'DAILY_BOTTLE_LIMIT':undefined,error:error instanceof Fault?error.message:'The wine service is temporarily unavailable.'},error instanceof Fault?error.status:503);}
 });

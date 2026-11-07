@@ -6,11 +6,11 @@ import { researchAction } from './client';
 import { finishWineArtwork } from '../wine-contributions';
 export type BottleCandidate={id:string;photo:string;provenance:Record<string,unknown>};
 const searches=new Map<string,Promise<BottleCandidate[]>>();
-export function findBottleCandidates(wine:any,scope:string,refresh=false):Promise<BottleCandidate[]>{
+export function findBottleCandidates(wine:any,scope:string,refresh=false,signal?:AbortSignal):Promise<BottleCandidate[]>{
  const identityKey=scope+':'+JSON.stringify(bottleIdentity(wine));
  if(artworkOwner()!==scope)return Promise.reject(Error('Account changed. Start again.'));
  if(refresh)searches.delete(identityKey);
- let pending=searches.get(identityKey);if(!pending){pending=betaProvider({action:'bottle_candidates',...bottleIdentity(wine)},AbortSignal.timeout(170000)).then(result=>{if(artworkOwner()!==scope)throw Error('Account changed.');const candidates=(result.candidates?.length?result.candidates:result.photo?[result]:[]).filter((c:BottleCandidate)=>typeof c.photo==='string'&&c.photo.startsWith('data:image/')).slice(0,3);if(!candidates.length)throw Error('No bottle photos found. Try again or upload your own.');return candidates;});searches.set(identityKey,pending);void pending.catch(()=>{if(searches.get(identityKey)===pending)searches.delete(identityKey);});if(searches.size>8)searches.delete(searches.keys().next().value!);}
+ let pending=searches.get(identityKey);if(!pending){pending=betaProvider({action:'bottle_candidates',...bottleIdentity(wine),vintage_state:wine.vintage_state??wine.metadata?.vintage_state},signal?AbortSignal.any([signal,AbortSignal.timeout(170000)]):AbortSignal.timeout(170000)).then(result=>{if(artworkOwner()!==scope)throw Error('Account changed.');const candidates=(result.candidates?.length?result.candidates:result.photo?[result]:[]).filter((c:BottleCandidate)=>typeof c.photo==='string'&&c.photo.startsWith('data:image/')).slice(0,3);if(!candidates.length)throw Error('No bottle photos found. Try again or upload your own.');return candidates;});searches.set(identityKey,pending);const owned=pending;signal?.addEventListener('abort',()=>{if(searches.get(identityKey)===owned)searches.delete(identityKey);},{once:true});void pending.catch(()=>{if(searches.get(identityKey)===pending)searches.delete(identityKey);});if(searches.size>8)searches.delete(searches.keys().next().value!);}
  return pending;
 }
 export async function clipBottleCandidate(candidate:BottleCandidate){const draft=await createBottleCutout(candidate.photo,true);return {...draft,provenance:{...draft.provenance,...candidate.provenance,pipeline:'web-photo-to-transparent-v2'}};}
@@ -19,18 +19,19 @@ let load: (()=>Promise<LibraryWine[]>)|undefined, running:Promise<void>|undefine
 const key=(scope:string,id:string)=>`${scope}:bottle-job:${id}`;
 // Preview and saved-library jobs share the same lookup/cutout; saving never starts it twice.
 const preparations=new Map<string,{expires:number;promise:Promise<BottleDraft>}>();
-export function prepareBottleArtwork(wine:Parameters<typeof bottleIdentity>[0],scope:string):Promise<BottleDraft>{
- const current=()=>{if(artworkOwner()!==scope)throw Error('Account changed. Start this bottle search again.');};
+export function prepareBottleArtwork(wine:Parameters<typeof bottleIdentity>[0],scope:string,signal?:AbortSignal):Promise<BottleDraft>{
+ const current=()=>{signal?.throwIfAborted();if(artworkOwner()!==scope)throw Error('Account changed. Start this bottle search again.');};
  if(artworkOwner()!==scope)return Promise.reject(Error('Account changed. Start this bottle search again.'));
  const identityKey=scope+':'+JSON.stringify(bottleIdentity(wine));
  const existing=preparations.get(identityKey);if(existing&&existing.expires>Date.now())return existing.promise;
  const promise=(async()=>{
   current();const candidates=catalogBottleCandidates(wine);
   if(candidates.length===1)return catalogBottleDraft(candidates[0]);
-  const photos=await findBottleCandidates(wine,scope);current();
+  const photos=await findBottleCandidates(wine,scope,false,signal);current();
   const draft=await clipBottleCandidate(photos[0]);current();return draft;
  })();
  preparations.set(identityKey,{expires:Date.now()+300000,promise});
+ signal?.addEventListener('abort',()=>{if(preparations.get(identityKey)?.promise===promise)preparations.delete(identityKey);},{once:true});
  void promise.catch(()=>{if(preparations.get(identityKey)?.promise===promise)preparations.delete(identityKey);});
  if(preparations.size>8)preparations.delete(preparations.keys().next().value!);
  return promise;

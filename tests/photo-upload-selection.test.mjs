@@ -21,6 +21,7 @@ const requests=[];let bottleCalls=0;globalThis.__choiceCount=0;
 const png='data:image/png;base64,uploaded-photo';
 globalThis.__uploadFixture={photo:png,research:async body=>{requests.push(body);if(body.action==='status')return {research:true};if(body.action==='confirm')return {duplicate:true,item:{id:'existing',...draft.result,image_url:'old-photo.png',metadata:{}}};if(body.action==='attach_bottle')return {item:{id:'existing',...draft.result,image_url:body.photo,metadata:{}}};throw Error('Unexpected action');}};
 const mock={
+ 'bottle-allowance':`export const getBottleAllowance=async()=>({remaining:10,limit:10,unlimited:false})`,
  'batch-phone':'export const mountBatchResearch=()=>()=>{}',
  'cloud-library':'export const isGuestLibrary=()=>true',
  'bottle-jobs':`export const findBottleCandidates=async()=>[1,2,3].map(i=>({id:String(i),photo:'data:image/png;base64,option'+i,provenance:{vintage_binding:'label shows '+(2018+i)}}));export const clipBottleCandidate=async p=>{globalThis.__choiceCount++;return {url:p.photo,provenance:p.provenance}};export const prepareBottleArtwork=()=>new Promise(()=>{})`,

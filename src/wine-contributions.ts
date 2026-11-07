@@ -1,8 +1,9 @@
+import {bottleAccessHeaders} from './bottle-allowance';
 import type { LibraryWine } from './winebrary';
 import { artworkStore, artworkHash, artworkOwner, localWineArtwork, bottlePhoto } from './artwork-store';
 import { stageCanvas, toGreenLevels } from './bottle-raster';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY } from './account-config';
-export const shareWineControl=(_id:string,_checked=true)=>`<p class="wl-muted small">Wine details and bottle artwork are sent to sommNI’s master Winebrary for the shared catalog. Your personal notes and rating stay private. Missing bottle artwork is looked up automatically.</p>`;
+export const shareWineControl=(_id:string,_checked=true)=>`<p class="wl-muted small">Every bottle helps build the collective wine globe. Its identity, vintage, region and bottle artwork are sent to sommNI’s master database in Supabase, including wines in your personal Winebrary. Reviewed wines join shared releases. Personal notes and ratings stay private.</p>`;
 export type WineSubmission={id:string;scope:string;kind:'submission';receipt:string;name:string;state:'pending'|'sent';payload:any;error?:string;attempts:number;nextTry:number;remote_id?:string};
 const vintage=(w:LibraryWine)=>w.vintage?String(w.vintage):w.metadata?.vintage_state==='non_vintage'?'NV':'unknown';
 export async function contributionPayload(wine:LibraryWine){
@@ -28,7 +29,7 @@ export function flushWineContributions(){
   const rows=(await artworkStore<WineSubmission[]>('getAll')).filter(r=>r.kind==='submission'&&r.state==='pending'&&r.nextTry<=Date.now());
   for(const row of rows){
    try{
-    const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:{'Content-Type':'application/json',apikey:ACCOUNT_PUBLIC_KEY},body:JSON.stringify({...row.payload,receipt:row.receipt}),signal:AbortSignal.timeout(30000)});
+    const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-beta`,{method:'POST',headers:await bottleAccessHeaders(row.scope),body:JSON.stringify({...row.payload,receipt:row.receipt}),signal:AbortSignal.timeout(30000)});
     const result=await response.json().catch(()=>({}));if(!response.ok||!result.received)throw Error(result.error||'The master Winebrary has not confirmed this upload.');
     await artworkStore('put',{...row,state:'sent',remote_id:result.id,payload:undefined,error:undefined});
    }catch(error){await artworkStore('put',{...row,attempts:row.attempts+1,nextTry:Date.now()+Math.min(3600000,30000*2**Math.min(row.attempts,7)),error:(error as Error).message});}
