@@ -19,13 +19,19 @@
     "test:accounts": "node tests/accounts.database.mjs && node --experimental-strip-types --no-warnings tests/accounts.policy.mjs && node tests/accounts.api.mjs && node tests/accounts.installer.mjs",
     "test:accounts:edge": "npx --yes deno@2.9.6 test --allow-env --node-modules-dir=none tests/accounts.edge.ts",
     "test:accounts:browser": "node tests/accounts.browser.cjs",
-    "test:beta": "node scripts/test-beta.mjs"
+    "test:beta": "node scripts/test-beta.mjs",
+    "dev:site": "vite --config vite.site.config.ts --host 127.0.0.1 --port 5187",
+    "build:site": "vite build --config vite.site.config.ts",
+    "typecheck:site": "tsc --noEmit -p tsconfig.site.json"
   },
   "dependencies": {
     "@evenrealities/even_hub_sdk": "^0.0.9",
     "@supabase/supabase-js": "2.117.2",
     "onnxruntime-web": "1.17.3",
-    "openai": "^6.22.0"
+    "openai": "^6.22.0",
+    "stripe": "22.6.2",
+    "three": "0.180.0",
+    "unpdf": "1.8.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
@@ -34,6 +40,7 @@
     "linkedom": "0.18.12",
     "playwright": "1.62.1",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "@types/three": "0.180.0"
   }
 }

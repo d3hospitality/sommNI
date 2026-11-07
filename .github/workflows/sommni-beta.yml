@@ -16,6 +16,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run typecheck:site
       - run: npm run test:beta
       - run: npm run build
+      - name: Build the website using the Vercel command
+        run: npm run build:site
+      - name: Check website API dependencies
+        run: node tests/site-api-imports.test.cjs
       - run: npm run pack:beta
