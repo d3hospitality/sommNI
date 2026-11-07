@@ -1,0 +1,1 @@
+A calmer Wine History: compact chapter rows, consistent reading text and spacing, and a shorter Read on glasses action. Mobile navigation stays at the bottom with a compact safe-area inset. Bottle label notifications now have a dismiss button; searches and saved results remain available in Winebrary.

@@ -1,14 +1,14 @@
 import { getLocale, translateTexts } from '../intelligence/client';
-import { wineHistoryCards, storyParagraphs, storyWines, STORY_SOURCES } from './content';
+import { wineHistoryCards, storyParagraphs, storyWines } from './content';
 import { buildStoryPage, historyStatus, openHistoryOnGlasses } from './glasses';
 import './phone.css';
 const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function initHistoryPanel(host:HTMLElement,initialWineId:string) {
   let wineId=initialWineId,index=0,revision=0;
   host.className='wine-history';
-  host.innerHTML=`<div class="history-heading"><div><p class="wl-kicker">PEOPLE / PLACE / ORIGINS</p><h2>Behind the wine.</h2><p id="history-wine"></p></div><p>The people who made it. The place that shaped it. Sourced stories, with room to read.</p></div>
+  host.innerHTML=`<div class="history-heading"><div><p class="wl-kicker">PEOPLE / PLACE / ORIGINS</p><h2>Behind the wine</h2><p id="history-wine"></p></div></div>
     <div class="history-layout"><nav id="history-timeline" aria-label="Jump to a chapter"></nav><article id="history-detail"></article></div>
-    <div class="history-glasses"><div><p class="wl-kicker">TAKE THE STORY WITH YOU</p><h3>Scroll at your pace.</h3><p>Each chapter reads continuously on G2. Double tap returns to its chapter list.</p><button type="button" id="history-send" class="wl-primary" disabled>Read on glasses ↗</button><p id="history-status" role="status" class="depth-caption"></p></div><div><canvas id="history-hud" width="576" height="288" aria-label="Beginning of the selected glasses chapter"></canvas><p class="depth-caption">Preview of the opening lines. Device font approximated. Scroll to read; double tap to go back.</p></div></div>`;
+    <div class="history-glasses"><div><p class="wl-kicker">TAKE THE STORY WITH YOU</p><h3>Continue on glasses</h3><p>Each chapter reads continuously on G2. Double tap returns to its chapter list.</p><button type="button" id="history-send" class="wl-primary" disabled>Read on glasses ↗</button><p id="history-status" role="status" class="depth-caption"></p></div><div><canvas id="history-hud" width="576" height="288" aria-label="Beginning of the selected glasses chapter"></canvas><p class="depth-caption">Preview of the opening lines. Device font approximated. Scroll to read; double tap to go back.</p></div></div>`;
   const get=<T extends HTMLElement>(id:string)=>host.querySelector<T>(`#${id}`)!;
   function status() { const state=historyStatus();get<HTMLButtonElement>('history-send').disabled=!state.ready||state.busy;get('history-status').textContent=state.message; }
   function preview() {
@@ -23,13 +23,14 @@ export function initHistoryPanel(host:HTMLElement,initialWineId:string) {
       }ctx.restore();
     }
     host.querySelectorAll('[data-story-index]').forEach((b,i)=>b.setAttribute('aria-current',i===index?'location':'false'));
-    get('history-send').textContent='Read on glasses: '+card.title+' ↗';
+    get('history-send').textContent='Read on glasses ↗';
+    get('history-send').setAttribute('aria-label','Read on glasses: '+card.title);
   }
   function render() {
     const token=++revision,cards=wineHistoryCards(wineId),wine=storyWines().find(w=>w.id===wineId||w.legacyId===wineId);
     get('history-wine').textContent=wine?.wine.name??'';
-    get('history-timeline').innerHTML=cards.map((c,i)=>`<button type="button" data-story-index="${i}"><span>${escape(c.date==='The wine in context'?c.scope:c.date)}</span><strong>${escape(c.title)}</strong></button>`).join('');
-    get('history-detail').innerHTML=cards.map((card,i)=>{const source=STORY_SOURCES[card.source];return `<section class="history-chapter" id="wine-chapter-${i}"><p class="wl-kicker">${escape(card.scope)}</p>${card.date!=='The wine in context'?`<p class="history-date">${escape(card.date)}</p>`:''}<h3>${escape(card.title)}</h3>${storyParagraphs(card).map((p,n)=>`<p${n===0?' class="history-cue"':''}>${escape(p)}</p>`).join('')}${card.practice?`<aside class="history-recall"><span class="wl-kicker">A CONVERSATION STARTER</span><p>${escape(card.practice)}</p></aside>`:''}</section>`;}).join('');
+    get('history-timeline').innerHTML=cards.map((c,i)=>`<button type="button" data-story-index="${i}" title="${escape(c.title)}"><span>${escape(c.date==='The wine in context'?c.scope:c.date)}</span><strong>${escape(c.title)}</strong></button>`).join('');
+    get('history-detail').innerHTML=cards.map((card,i)=>{return `<section class="history-chapter" id="wine-chapter-${i}"><div class="history-chapter-meta"><p class="wl-kicker">${escape(card.scope)}</p>${card.date!=='The wine in context'?`<p class="history-date">${escape(card.date)}</p>`:''}</div><h3>${escape(card.title)}</h3>${storyParagraphs(card).map((p,n)=>`<p${n===0?' class="history-cue"':''}>${escape(p)}</p>`).join('')}${card.practice?`<aside class="history-recall"><span class="wl-kicker">A CONVERSATION STARTER</span><p>${escape(card.practice)}</p></aside>`:''}</section>`;}).join('');
     preview();status();
     if(getLocale()!=='en'){
       const nodes=[...get('history-detail').querySelectorAll<HTMLElement>('h3,p')];

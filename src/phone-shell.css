@@ -12,11 +12,11 @@
 #dot-dialog #dot-country:empty{display:none}#dot-dialog .orbit-path{display:none}#dot-dialog .atlas-legend{font-size:10px}
 #dot-dialog .orbit-wine-group>summary{min-height:44px;align-items:center}
 @media(max-width:760px){
- body.phone-shell-ready{padding-bottom:calc(72px + env(safe-area-inset-bottom));scroll-padding-bottom:90px}
+ body.phone-shell-ready{--phone-bottom-inset:clamp(6px,env(safe-area-inset-bottom,0px),24px);padding-bottom:calc(61px + var(--phone-bottom-inset));scroll-padding-bottom:calc(77px + var(--phone-bottom-inset))}
  .phone-shell-ready .wl-sidebar{padding:0;height:0;border:0;overflow:visible;background:none;position:static;display:block;backdrop-filter:none;-webkit-backdrop-filter:none}
  .phone-shell-ready .wl-sidebar>.wl-wordmark,.phone-shell-ready .wl-sidebar>.wl-sidebar-sub,.phone-shell-ready .wl-sidebar>.wl-sidebar-footer,.phone-shell-ready .wl-sidebar>.status{display:none}
  .phone-shell-ready .wl-sidebar>*:not(.tab-bar){display:none}
- .phone-shell-ready .tab-bar{position:fixed;z-index:9000;inset:auto 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px 8px max(6px,env(safe-area-inset-bottom));margin:0;border-top:1px solid #ffffff20;background:#0d0e0df5;backdrop-filter:blur(20px);width:100%;box-sizing:border-box}
+ .phone-shell-ready .tab-bar{position:fixed;z-index:9000;inset:auto 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px 8px var(--phone-bottom-inset);height:auto;min-height:0;max-height:none;align-content:start;grid-auto-rows:54px;margin:0;border-top:1px solid #ffffff20;background:#0d0e0df5;backdrop-filter:blur(20px);width:100%;box-sizing:border-box}
  .phone-shell-ready .tab-bar>.tab:not([data-tab=home]):not([data-tab=cellar]):not([data-tab=winebrary]){display:none}
  .phone-shell-ready .tab-bar>.tab,.phone-shell-ready #phone-more{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:54px;padding:5px 2px;margin:0;border:0;border-radius:8px;background:transparent;color:var(--muted);font-family:inherit;font-size:11px;line-height:1.2;text-align:center;white-space:nowrap;box-shadow:none}
  .phone-shell-ready .tab-bar>.active,.phone-shell-ready #phone-more.active{color:var(--gold);background:#e1c66b10}

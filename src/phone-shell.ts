@@ -3,6 +3,8 @@ const PRIMARY=new Set(['home','cellar','winebrary']);
 /** Mobile navigation delegates to the existing routes; account and glasses state stay owned there. */
 export function initPhoneShell(){
  const nav=document.querySelector<HTMLElement>('.tab-bar');if(!nav||document.getElementById('phone-more'))return;
+ // Keep the fixed mobile dock out of ancestors that can create a containing block.
+ const navHome=document.createComment('desktop navigation');nav.before(navHome);
  const mobile=matchMedia('(max-width:760px)');
  const status=document.querySelector<HTMLElement>('.wl-sidebar .status-bar'),header=document.querySelector<HTMLElement>('.header'),statusHome=document.createComment('glasses status');status?.before(statusHome);
  const more=document.createElement('button');more.id='phone-more';more.type='button';more.setAttribute('aria-haspopup','dialog');more.setAttribute('aria-expanded','false');more.innerHTML='<span aria-hidden="true" class="phone-more-icon">···</span><span>More</span>';
@@ -22,7 +24,7 @@ export function initPhoneShell(){
   more.setAttribute('aria-label',secondary?`More · ${tabs.find(t=>t.dataset.tab===active)?.textContent?.trim()}`:'More');
   routes.querySelectorAll<HTMLButtonElement>('button').forEach(b=>{if(b.dataset.route===active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  }
- function resize(){if(status&&header){if(mobile.matches)header.prepend(status);else statusHome.after(status);}more.hidden=!mobile.matches;if(!mobile.matches&&sheet.open)sheet.close();sync();}
+ function resize(){if(mobile.matches)document.body.append(nav!);else navHome.after(nav!);if(status&&header){if(mobile.matches)header.prepend(status);else statusHome.after(status);}more.hidden=!mobile.matches;if(!mobile.matches&&sheet.open)sheet.close();sync();}
  more.addEventListener('click',()=>{sync();sheet.showModal();more.setAttribute('aria-expanded','true');});
  sheet.querySelector('header button')!.addEventListener('click',()=>sheet.close());
  sheet.addEventListener('close',()=>more.setAttribute('aria-expanded','false'));

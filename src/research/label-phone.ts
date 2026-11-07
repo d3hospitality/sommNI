@@ -9,11 +9,16 @@ import './label-review.css';
 
 export function initLabelReview(anchor:HTMLElement){
  const panel=document.createElement('section');panel.className='label-review';panel.id='wl-label-review';panel.hidden=true;panel.setAttribute('aria-label','Bottle label review');anchor.before(panel);
- const nib=document.createElement('button');nib.type='button';nib.className='label-nib';nib.hidden=true;document.querySelector('#app')?.prepend(nib);
+ const notice=document.createElement('div');notice.className='label-nib';notice.hidden=true;
+ const nib=document.createElement('button');nib.type='button';nib.className='label-nib-open';
+ const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='label-nib-dismiss';dismiss.textContent='×';dismiss.setAttribute('aria-label','Dismiss bottle label notification');
+ notice.append(nib,dismiss);document.querySelector('.wl-workspace')?.prepend(notice);
+ let dismissedSession:ReturnType<typeof labelSession>=null;
+ dismiss.onclick=()=>{dismissedSession=labelSession();notice.hidden=true;};
  nib.onclick=()=>{document.querySelector<HTMLButtonElement>('.tab[data-tab="winebrary"]')?.click();panel.scrollIntoView({block:'start',behavior:'smooth'});};
  let previousPhoto='';
  const render=()=>{
-  const s=labelSession(),r=s?.current;panel.hidden=!r;nib.hidden=!r;if(!s||!r){previousPhoto='';return;}
+  const s=labelSession(),r=s?.current;panel.hidden=!r;notice.hidden=!r||s===dismissedSession;if(!s||!r){previousPhoto='';return;}
   nib.textContent='Bottle labels · '+labelProgress();nib.setAttribute('aria-label','Open bottle label review: '+labelProgress());
   const focus=panel.contains(document.activeElement)?(document.activeElement as HTMLElement).id:null;
   const photo=r.preview||r.options[r.choice]?.photo;

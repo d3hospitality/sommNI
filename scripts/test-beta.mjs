@@ -4,7 +4,7 @@ import {spawnSync} from 'node:child_process';
 import {mkdtemp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-const tests=['phone-shell.test.mjs','setup-guide.test.mjs','guide-placement.test.mjs','wheel-motion.test.mjs','atlas-bottle-swipe.test.mjs','lens-mask.test.mjs','home-globe.test.mjs','photo-input.test.mjs','photo-upload-selection.test.mjs','bottle-studio.test.mjs','research.batch.mjs','menu-import.test.mjs','menu-import-ui.test.mjs','menu-batch-integration.test.mjs','contributor-profiles.database.mjs','contributor-profile-ui.test.mjs','friday-catalog.test.mjs','add-wine-session.test.mjs','add-wine-glasses.test.mjs','atlas-voice.test.mjs','scroll-bottle-preview.test.mjs'];
+const tests=['phone-shell.test.mjs','label-notice.test.mjs','setup-guide.test.mjs','guide-placement.test.mjs','wheel-motion.test.mjs','atlas-bottle-swipe.test.mjs','lens-mask.test.mjs','home-globe.test.mjs','photo-input.test.mjs','photo-upload-selection.test.mjs','bottle-studio.test.mjs','research.batch.mjs','menu-import.test.mjs','menu-import-ui.test.mjs','menu-batch-integration.test.mjs','contributor-profiles.database.mjs','contributor-profile-ui.test.mjs','friday-catalog.test.mjs','add-wine-session.test.mjs','add-wine-glasses.test.mjs','atlas-voice.test.mjs','scroll-bottle-preview.test.mjs'];
 const bundle=new Set(['wheel-motion.test.mjs','atlas-bottle-swipe.test.mjs','menu-import.test.mjs','atlas-voice.test.mjs','add-wine-session.test.mjs']);
 const temp=await mkdtemp(join(tmpdir(),'sommni-beta-checks-'));
 const failed=[];
