@@ -34,7 +34,7 @@ export class OrbitGlobe {
  constructor(private geography:GlobeRenderer,private boundaries:Boundaries){
   const count=26000,golden=Math.PI*(3-Math.sqrt(5));for(let i=0;i<count;i++){const lat=Math.asin(1-2*(i+.5)/count)/DEG,lon=wrapLongitude(i*golden/DEG),id=geography.countryAt(lon,lat);if(id)this.land.push({lon,lat,id});}
  }
- draw(canvas:HTMLCanvasElement,camera:Camera,country:Country,region:BoundaryRegion|null,hover:BoundaryRegion|null=null,coverage?:AtlasCoverage){
+ draw(canvas:HTMLCanvasElement,camera:Camera,country:Country,region:BoundaryRegion|null,hover:BoundaryRegion|null=null,coverage?:AtlasCoverage,focus?:{name:string;center:Point;points:Point[]}|null){
   const size=720,R=280*camera.zoom;if(canvas.width!==size)canvas.width=canvas.height=size;
   const ctx=canvas.getContext('2d')!;ctx.clearRect(0,0,size,size);
   const project=(p:Point)=>globePoint(p[0],p[1],camera.center,R,size);
@@ -67,9 +67,10 @@ export class OrbitGlobe {
   trace(this.boundaries.countries[country.code]??[],'#e3b48c',1.5);
   if(camera.zoom>1.25)for(const r of this.boundaries.regions)if(r.country===country.code&&r!==region)trace(r.polygons,r===hover?'#f6dec0':'#95b19b70',r===hover?2:0.8);
   if(region)trace(region.polygons,'#ffdf9f',2.6,!coverage||coverage.regions.has(region.id));
+  if(focus){const anchor=project(focus.center);if(anchor.depth>.001){const glow=ctx.createRadialGradient(anchor.x,anchor.y,2,anchor.x,anchor.y,32);glow.addColorStop(0,'#ffe8aabb');glow.addColorStop(1,'#e4bc6000');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(anchor.x,anchor.y,32,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ffe7a8';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(anchor.x,anchor.y,8,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#ffe8aa';for(const point of focus.points.slice(0,160)){const p=project(point);if(p.depth>.001){ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();}}}
   ctx.strokeStyle='#78a48c55';ctx.lineWidth=1;ctx.beginPath();ctx.arc(360,360,R,0,2*Math.PI);ctx.stroke();ctx.restore();
   maskCanvasLens(ctx,size,size,Math.min(R,size/2-12));
-  canvas.dataset.longitude=camera.center[0].toFixed(3);canvas.dataset.latitude=camera.center[1].toFixed(3);canvas.dataset.zoom=camera.zoom.toFixed(3);canvas.dataset.country=country.code;canvas.dataset.boundary=region?.id??'';canvas.dataset.view='globe';canvas.dataset.unlockedCountries=String(coverage?.countries.size??0);canvas.dataset.unlockedRegions=String(coverage?.regions.size??0);
+  canvas.dataset.longitude=camera.center[0].toFixed(3);canvas.dataset.latitude=camera.center[1].toFixed(3);canvas.dataset.zoom=camera.zoom.toFixed(3);canvas.dataset.country=country.code;canvas.dataset.boundary=region?.id??'';canvas.dataset.view='globe';canvas.dataset.wineRegion=focus?.name??'';canvas.dataset.unlockedCountries=String(coverage?.countries.size??0);canvas.dataset.unlockedRegions=String(coverage?.regions.size??0);
   canvas.setAttribute('aria-label',`Interactive 3D globe. ${country.name}${region?', '+region.name:''}. Drag to rotate; select a country, then a region. Arrow keys rotate, plus and minus zoom.`);
  }
 }

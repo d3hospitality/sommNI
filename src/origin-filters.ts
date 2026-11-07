@@ -1,6 +1,6 @@
-/** Display aliases only: preserve original origin metadata and never infer missing geography. */
-export function countryLabel(value:string|null|undefined){const name=(value||'').trim();return /^(us|usa|u\.s\.a\.?|united states of america)$/i.test(name)?'United States':/^(italia|italy)$/i.test(name)?'Italy':name||'Origin to confirm';}
-export function regionLabel(value:string|null|undefined,country:string){const name=(value||'').trim();if(!name)return 'Region to confirm';if(countryLabel(country)==='Italy'&&/\b(tuscany|toscana)\b/i.test(name))return 'Tuscany';return name.replace(/,\s*(IT|FR|US|USA|JP)$/i,'').trim();}
+import {canonicalCountry,wineOrigin} from './wine-origin';
+export function countryLabel(value:string|null|undefined){return canonicalCountry(value)||'Origin to confirm';}
+export function regionLabel(value:string|null|undefined,country:string){const place=wineOrigin(country,value);return place.region||place.subdivision||'Region to confirm';}
 const esc=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export interface BottleOrigin {country:string;region:string}
 export function originFilterOptions(origins:BottleOrigin[],country:string){return {countries:[...new Set(origins.map(o=>o.country))].sort((a,b)=>a.localeCompare(b)),regions:country?[...new Set(origins.filter(o=>o.country===country).map(o=>o.region))].sort((a,b)=>a.localeCompare(b)):[]};}

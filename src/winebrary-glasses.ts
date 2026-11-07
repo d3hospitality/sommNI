@@ -1,3 +1,4 @@
+import {wineOrigin} from './wine-origin';
 import { foodPairingsText } from './food-pairings';
 import { cursorRows, moveCursor } from './glasses-cursor';
 import { openLabelGlasses } from './research/label-glasses';
@@ -85,8 +86,8 @@ export function wineTypeOf(wine: LibraryWine): string {
 }
 /** The wine's own fields: "Place, CC" or metadata.country. */
 export function fallbackPlace(wine: LibraryWine): WinePlace {
-  const [place = '', suffix = ''] = (wine.region ?? '').split(',').map(p => p.trim());
-  return { type: wineTypeOf(wine), country: wine.metadata?.country?.trim() || suffix || UNKNOWN_COUNTRY, region: place || UNKNOWN_REGION, mapped: false };
+  const origin=wineOrigin(wine.metadata?.country,wine.region,wine.metadata?.state);
+  return {type:wineTypeOf(wine),country:origin.country||UNKNOWN_COUNTRY,region:origin.region||origin.subdivision||UNKNOWN_REGION,mapped:false};
 }
 const placeOf = (wine: LibraryWine) => places.get(wine.id) ?? fallbackPlace(wine);
 async function refreshPlaces(list: LibraryWine[]): Promise<void> {
@@ -212,6 +213,7 @@ function listScreen(name: string, labels: string[], header: string, map: ListMap
   const rows = Math.min(labels.length, LIST_H / LIST_ROW_PITCH);
   const w = map ? SCENE_X - 6 : 572;
   const caption = map ? captionContainer(map.plan, map.caption) : null;
+  if(caption&&['library-list','library-vintages','library-all'].includes(name)){caption.xPosition=CAPTION_MIN_X;caption.width=576-CAPTION_MIN_X-2;}
   const headerW = caption ? (caption.xPosition ?? SCENE_X) - 24 : w - 14;
   const title = new TextContainerProperty({
     xPosition: 16, yPosition: 4, width: headerW, height: 34,
@@ -566,7 +568,7 @@ function cancelListPreview(clearMap = true) {
 }
 async function bottleMap(map: ListMap | null, wine: LibraryWine | null | undefined): Promise<ListMap | null> {
   if (!map || !wine || !sceneBuilder) return map;
-  try { const plan=await sceneBuilder({...wine,image_url:libraryPhoto(wine)||undefined}); return plan?{...map,plan}:map; }
+  try { const plan=await sceneBuilder({...wine,image_url:libraryPhoto(wine)||undefined});const place=placeOf(wine),origin=wineOrigin(place.country,wine.region,wine.metadata?.state);return plan?{...map,plan,caption:captionText(origin.subdivision||place.country,place.region)}:map; }
   catch { return map; }
 }
 function updateListBottle(index: number) {
@@ -585,7 +587,8 @@ function updateListBottle(index: number) {
     const base=(place?await mapFor(place.country,place.region):null)||(current.kind==='all'?allWineMap():null);
     const preview=await bottleMap(base,wine);
     if(!preview||!fresh())return;
-    const tiles=await preview.plan.render();
+    await queueBridgeControl(async()=>{if(fresh())await bridge!.textContainerUpgrade(new TextContainerUpgrade({containerID:9,containerName:'map-caption',content:clipLabel(preview.caption,charsPerLine(576-CAPTION_MIN_X-18)),contentOffset:0,contentLength:0}));});
+    if(!fresh())return;const tiles=await preview.plan.render();
     for(let i=0;i<LIST_MAP_TILES.length;i++){
       if(!fresh())return;
       await pushGrayImage(bridge!,LIST_MAP_TILES[i][0],LIST_MAP_TILES[i][1],TILE_W,TILE_H,tiles[i],epoch);

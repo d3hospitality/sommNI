@@ -1,3 +1,4 @@
+import type {BoundaryRegion} from './atlas/globe-model';
 import { maskGrayLens } from './atlas/lens-mask';
 // ═══════════════════════════════════════════════════════════════════
 // Wine map panel for G2 (right half of the screen), seen through a circular, feathered lens mask:
@@ -29,7 +30,7 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 // well below the bottle and the text (which reach full brightness); the region is still the
 // brightest thing on the map, the country next, neighbours faintest.
 const LAND = 6, NEIGHBOUR_BORDER = 24, COUNTRY_FILL = 16, COUNTRY_BORDER = 64, GLOW_MIN = 28, GLOW_MAX = 105, DOT = 136, LEADER = 85;
-export interface SceneInput { country: Country; region: Region | null; imageUrl: string | null }
+export interface SceneInput { country: Country; region: Region | null; imageUrl: string | null;context?:BoundaryRegion|null }
 /** Where the highlight landed (panel coordinates) and how to draw the tiles. */
 export interface ScenePlan { anchorX: number; anchorY: number; render(): Promise<Uint8Array[]> }
 
@@ -42,18 +43,13 @@ function projector(center: [number, number], scale: number) {
     return { x: MAP_W / 2 + scale * Math.cos(p) * Math.sin(d), y: MAP_H / 2 - scale * (cosC * Math.sin(p) - sinC * Math.cos(p) * Math.cos(d)), visible: z > 0 };
   };
 }
-const arcDeg = (a: [number, number], b: [number, number]) => {
-  const [l1, p1, l2, p2] = [a[0] * DEG, a[1] * DEG, b[0] * DEG, b[1] * DEG];
-  return Math.acos(Math.min(1, Math.sin(p1) * Math.sin(p2) + Math.cos(p1) * Math.cos(p2) * Math.cos(l2 - l1))) / DEG;
-};
-
 /** Frame the country with the region in view, then nudge so the region sits in the free area. */
-function camera(country: Country, region: Region | null) {
-  const target = region?.center ?? country.center;
-  const sep = region ? arcDeg(country.center, region.center) : 0;
-  const angular = Math.min(18, Math.max(5, region ? Math.max(sep * 1.5, region.radius * 4) : 9));
+export function wineSceneCamera(country: Country, region: Region | null,context?:BoundaryRegion|null) {
+  const target = region?.center ?? context?.center ?? country.center;
+  const contextRadius=context?Math.max((context.bounds[2]-context.bounds[0])*Math.cos(target[1]*DEG),context.bounds[3]-context.bounds[1])*.58:0;
+  const angular = context||region?Math.min(12,Math.max(3,contextRadius,region?region.radius*2:0)):9;
   const scale = (Math.min(MAP_W, MAP_H) / 2 - 10) / Math.sin(angular * DEG);
-  let center: [number, number] = region ? [(country.center[0] + target[0]) / 2, (country.center[1] + target[1]) / 2] : [...target];
+  let center:[number,number]=context?[target[0]*.85+context.center[0]*.15,target[1]*.85+context.center[1]*.15]:[...target];
   const box = { x0: 44, x1: MAP_W - 44, y0: 44, y1: MAP_H - 44 };
   for (let i = 0; i < 3; i++) {
     const p = projector(center, scale)(target[0], target[1]);
@@ -85,8 +81,8 @@ function countryIds(renderer: GlobeRenderer, center: [number, number], scale: nu
 
 /** Plan first (cheap: camera + anchor, so the caption can be placed with the text), render later. */
 export function planWineScene(renderer: GlobeRenderer, input: SceneInput): ScenePlan {
-  const { country, region, imageUrl } = input;
-  const cam = camera(country, region);
+  const { country, region, imageUrl,context } = input;
+  const cam = wineSceneCamera(country, region,context);
   const render = async (): Promise<Uint8Array[]> => {
     const ids = countryIds(renderer, cam.center, cam.scale);
     const project = projector(cam.center, cam.scale);
@@ -104,6 +100,8 @@ export function planWineScene(renderer: GlobeRenderer, input: SceneInput): Scene
       }
       value[i] = ownBorder ? COUNTRY_BORDER : border ? NEIGHBOUR_BORDER : own ? COUNTRY_FILL : LAND;
     }
+    // State/province outlines stay in the existing map tiles; no extra BLE images.
+    if(context)for(const polygon of context.polygons)for(const ring of polygon){for(let i=1;i<ring.length;i++){const a=project(...ring[i-1]),b=project(...ring[i]);if(!a.visible||!b.visible)continue;const steps=Math.ceil(Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y)));if(steps>MAP_W*3)continue;for(let j=0;j<=steps;j++){const t=steps?j/steps:0,x=Math.round(a.x+(b.x-a.x)*t),y=Math.round(a.y+(b.y-a.y)*t);if(x>=0&&x<MAP_W&&y>=0&&y<MAP_H)value[y*MAP_W+x]=Math.max(value[y*MAP_W+x],85);}}}
     const glow = new Float32Array(MAP_W * MAP_H);
     const add = (cx: number, cy: number, R: number, weight: number, power: number) => {
       for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {

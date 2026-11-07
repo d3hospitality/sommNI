@@ -77,6 +77,7 @@ for(let i=1;i<sorted.length;i++){
  await libraryMove(2);
  assert.equal(F.context.id,sorted[i].id,'each swipe selects the next wine, never a divider');
  assert.equal(F.images.at(-1).data[0],sorted[i].id);
+ assert.match(F.texts.filter(t=>t.containerName==='map-caption').at(-1).content,new RegExp(sorted[i].region.toUpperCase()+'.*'+sorted[i].metadata.country),'origin caption follows every wine without rebuilding');
  const text=F.texts.filter(t=>t.containerName==='library-all').at(-1).content;
  assert.equal(text.split('\n').filter(l=>l.startsWith('>')).length,1,'highlight always visible');
  assert.ok(text.split('\n').length<=7);assert.doesNotMatch(text,/More/);

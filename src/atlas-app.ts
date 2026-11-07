@@ -1,3 +1,5 @@
+import {locateWine,resolveWineFocus} from './atlas/wine-focus';
+import {loadBoundaries} from './atlas/coverage';
 import japanPrefectures from './data/japan-prefecture-regions.json';
 import { prefectureKey } from './sake';
 import { announceWineContext, catalogContext, libraryContext, libraryPhoto } from './wine-context';
@@ -60,8 +62,8 @@ async function placeScene(countryName: string, regionName: string | null): Promi
   const renderer = await loadAtlasRenderer();
   const country = renderer.data.countries.find(c => c.name === countryName) ?? countryByAnyName(renderer, countryName);
   if (!country) return null;
-  const region = regionName ? renderer.data.regions.find(r => (r.name === regionName || (country.code==='JPN'&&prefectureKey(r.name)===prefectureKey(regionName))) && r.country === country.code) ?? null : null;
-  return planWineScene(renderer, { country, region, imageUrl: null });
+  const focus=resolveWineFocus(renderer.data,await loadBoundaries().catch(()=>({countries:{},regions:[]})),{country:country.name,region:regionName});
+  return planWineScene(renderer,{country,region:focus?.cluster??null,context:focus?.boundary??null,imageUrl:null});
 }
 
 /** Type › country › region for Winebrary wines, using the Atlas's places (country names from the map). */
@@ -89,7 +91,8 @@ async function libraryWineScene(wine: LibraryWine): Promise<ScenePlan | null> {
   const renderer = await loadAtlasRenderer();
   const placed = placeLibraryWine(renderer, linkTable(), wine);
   if (!placed.country) return null;
-  return planWineScene(renderer, { country: placed.country, region: placed.regions[0] ?? null, imageUrl: libraryPhoto(wine) });
+  const twin=lookupWineById(wine.wine_id),focus=resolveWineFocus(renderer.data,await loadBoundaries().catch(()=>({countries:{},regions:[]})),{country:wine.metadata?.country||twin?.country,region:wine.region||twin?.wine.region,state:wine.metadata?.state});
+  return planWineScene(renderer,{country:placed.country,region:focus?.cluster??placed.regions[0]??null,context:focus?.boundary??null,imageUrl:libraryPhoto(wine)});
 }
 
 /** Catalog browsing shares the Winebrary bottle-over-origin renderer. */
@@ -173,26 +176,9 @@ function countryByAnyName(renderer: GlobeRenderer, raw: string | null | undefine
 
 /** Where a Winebrary wine sits: its catalog twin if saved from the catalog, else its own region/country text. */
 function placeLibraryWine(renderer: GlobeRenderer, links: Map<string, RegionLink>, wine: LibraryWine): { country: Country | null; regions: Region[]; place: string } {
-  const twin = wine.wine_id ? lookupWineById(wine.wine_id) : null;
-  if (twin) {
-    const country = atlasCountryFor(renderer, twin.country);
-    const regions = country ? (links.get(twin.wine.region)?.clusters ?? (country?.code==='JPN'?renderer.data.regions.filter(r=>r.country==='JPN'&&prefectureKey(r.name)===prefectureKey(twin.wine.region)).map(r=>r.name):[])).map(n => renderer.data.regions.find(r => r.name === n && r.country === country.code)).filter((r): r is Region => !!r) : [];
-    return { country, regions, place: twin.wine.region.split(',')[0].trim() };
-  }
-  const [place = '', suffix] = (wine.region ?? '').split(',').map(p => p.trim());
-  const country = countryByAnyName(renderer, wine.metadata?.country) ?? countryByAnyName(renderer, suffix);
-  // A catalog region with the same place name (e.g. "Burgundy" → Burgundy, FR) gives the country …
-  const link = place ? [...links.values()].find(l => norm(l.region.split(',')[0]) === norm(place)) : undefined;
-  const linkCountry = !country && link ? countryByAnyName(renderer, link.region.split(',')[1]?.trim()) : null;
-  const known = country ?? linkCountry;
-  if (!place) return { country: known, regions: [], place };
-  // … and its clusters; otherwise a cluster with exactly this name (in the wine's country, or unambiguous).
-  const candidates = link?.clusters.length ? link.clusters.map(n => renderer.data.regions.filter(r => r.name === n)).flat() : renderer.data.regions.filter(r => (norm(r.name) === norm(place)||(known?.code==='JPN'&&r.country==='JPN'&&prefectureKey(r.name)===prefectureKey(place))));
-  const inCountry = known ? candidates.filter(r => r.country === known.code) : candidates;
-  if (!known && new Set(candidates.map(r => r.country)).size > 1) return { country: null, regions: [], place };
-  const regions = inCountry.length ? [inCountry[0]] : [];
-  const resolved = known ?? (regions[0] ? renderer.data.countries.find(c => c.code === regions[0].country) ?? null : null);
-  return { country: resolved, regions, place };
+  const twin=lookupWineById(wine.wine_id),origin={country:wine.metadata?.country||twin?.country,region:wine.region||twin?.wine.region,state:wine.metadata?.state};
+  const found=locateWine(renderer.data,origin);
+  return {country:found.country,regions:found.cluster?[found.cluster]:[],place:found.origin.region||found.origin.subdivision};
 }
 
 export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[] = []): CatalogAtlas {

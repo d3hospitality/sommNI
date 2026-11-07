@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
+import {wineOrigin} from '../src/wine-origin.ts';
+import {regionLabel,originFilterOptions} from '../src/origin-filters.ts';
+import {resolveWineFocus,blendWineCamera} from '../src/atlas/wine-focus.ts';
+import {wineSceneCamera} from '../src/wine-scene.ts';
+const data=JSON.parse(await readFile('public/atlas/atlas-data.json','utf8')),boundaries=JSON.parse(await readFile('public/atlas/boundaries.json','utf8'));
+const labels=['Napa Valley','Napa Valley, California','Napa Valley, CA, USA','California, Napa Valley','Napa Valley, Napa Valley, California'];
+for(const raw of labels){const o=wineOrigin('USA',raw);assert.equal(o.region,'Napa Valley');assert.equal(o.subdivision,'California');assert.deepEqual(o.path,['United States','California','Napa Valley']);}
+assert.equal(originFilterOptions(labels.map(region=>({country:'United States',region:regionLabel(region,'USA')})),'United States').regions.length,1);
+assert.equal(wineOrigin('', 'Napa Valley, CA').country,'United States');
+assert.equal(wineOrigin('USA','California').region,'','state-only bottle must not invent a wine region');
+assert.equal(wineOrigin('USA','Napa County, California').region,'Napa County','county and AVA remain distinct');
+assert.equal(wineOrigin('USA','Sonoma Valley, California').region,'Sonoma Valley');
+assert.equal(wineOrigin('Italy','Toscana, IT').region,'Tuscany');
+assert.match(wineOrigin('Italy','Tuscany, Brunello di Montalcino DOCG').region,/Brunello/,'specific appellation retained');
+const napa=resolveWineFocus(data,boundaries,{country:'USA',region:'Napa Valley, California'});
+assert.equal(napa.country.code,'USA');assert.equal(napa.cluster.name,'Napa Valley');assert.equal(napa.boundary.name,'California');assert(napa.camera.zoom>5);assert(napa.camera.center[0]<-118);
+assert.deepEqual(resolveWineFocus(data,boundaries,{country:'USA',region:'Napa Valley'}).camera,napa.camera);
+const oregon=resolveWineFocus(data,boundaries,{country:'United States',region:'Willamette Valley, Oregon'});assert.equal(oregon.boundary.name,'Oregon');assert(oregon.camera.center[1]>napa.camera.center[1]+4);
+const unknown=resolveWineFocus(data,boundaries,{country:'United States',region:'Unverified Valley'});assert.equal(unknown.cluster,null);assert.equal(unknown.boundary,null);assert.equal(unknown.precision,'country');
+const wrong=resolveWineFocus(data,boundaries,{country:'France',region:'Napa Valley'});assert.equal(wrong.cluster,null);assert.equal(wrong.country.code,'FRA');
+assert.equal(resolveWineFocus(data,boundaries,{country:'Unknown',region:'Unverified Valley'}),null);
+const state=resolveWineFocus(data,boundaries,{country:'USA',region:'California'});assert.equal(state.cluster,null);assert.equal(state.boundary.name,'California');
+assert(Math.abs(blendWineCamera(napa.camera,oregon.camera,0).center[0]-napa.camera.center[0])<1e-9);const end=blendWineCamera(napa.camera,oregon.camera,1);assert(Math.abs(end.center[0]-oregon.camera.center[0])<1e-9);assert.equal(end.zoom,oregon.camera.zoom);
+assert(Math.abs(blendWineCamera({center:[179,0],zoom:1},{center:[-179,0],zoom:2},.5).center[0])>178,'dateline follows short path');
+const g2=wineSceneCamera(napa.country,napa.cluster,napa.boundary);assert(g2.center[0]<-118,'G2 frames California instead of US midpoint');assert(g2.anchorX>=40&&g2.anchorX<=160);assert(g2.anchorY>=35&&g2.anchorY<=220);
+console.log('PASS: canonical country/state/region grouping, county/appellation preservation, state-aware Napa/Oregon focus, unknown-place fallback, short camera flights and G2 regional framing.');

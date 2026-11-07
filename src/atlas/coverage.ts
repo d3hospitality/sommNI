@@ -1,3 +1,4 @@
+import {wineOrigin} from '../wine-origin';
 import { regionLabel } from '../origin-filters';
 import type { CollectiveSnapshot } from '../community/atlas-activity-ui';
 import { prefectureKey } from '../sake';
@@ -20,8 +21,8 @@ export function winebraryCoverage(data:AtlasData,boundaries:Boundaries,items:Lib
  const result:AtlasCoverage={countries:new Set(),regions:new Set(),countryCounts:new Map(),regionCounts:new Map(),unmapped:0};
  const bump=(map:Map<string,number>,key:string)=>map.set(key,(map.get(key)??0)+1);
  for(const wine of new Map(items.map(w=>[w.id,w])).values()){
-  const twin=lookupWineById(wine.wine_id),label=twin?.wine.region??wine.region??'',place=label.split(',')[0].trim();
-  const raw=(twin?.country??wine.metadata?.country??label.split(',').slice(-1)[0]??'').trim();
+  const twin=lookupWineById(wine.wine_id),label=wine.region??twin?.wine.region??'',origin=wineOrigin(wine.metadata?.country||twin?.country,label,wine.metadata?.state),place=origin.places[0]||origin.subdivision;
+  const raw=origin.country;
   const country=data.countries.find(c=>c.code===(codes[raw.toUpperCase()]??raw.toUpperCase())||norm(c.name)===norm(raw));
   if(!country){result.unmapped++;continue;}
   result.countries.add(country.code);bump(result.countryCounts,country.code);

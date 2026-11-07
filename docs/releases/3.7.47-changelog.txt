@@ -1,0 +1,1 @@
+Winebrary groups equivalent regions consistently: Napa Valley keeps California as state context. Browse bottles to shift and zoom Atlas toward their wine region, with a regional glow and country/state context. Glasses scrolling updates the bottle, regional map and location caption together. Original wine records and distinct appellations are preserved.
