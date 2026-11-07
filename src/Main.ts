@@ -1,5 +1,6 @@
 import { initPhoneShell } from './phone-shell';
 import { initSetupGuide } from './setup-guide';
+import { isGuestLibrary } from './cloud-library';
 import { initHomeGlobe } from './home-globe';
 import { connectLabelGlasses } from './research/label-glasses';
 import { initGlassesContext } from './wine-context';
@@ -63,7 +64,7 @@ async function main(): Promise<void> {
   initAtlasCard();
   initHomeGlobe();
   initWinebrary();
-  initSetupGuide();
+  initSetupGuide(()=>!isGuestLibrary());
   initOfflineBottleImages();
   initWineContributions();
   initBetaRefresh();
@@ -76,7 +77,7 @@ async function main(): Promise<void> {
   if (!inEvenHubHost()) {
     setStatus("disconnected", "Browser mode");
     setGlassesStatus(false);
-    setVersionInfo("3.7.39 · Beta");
+    setVersionInfo("3.7.40 · Beta");
   } else {
     setStatus("connecting", "Waiting for bridge...");
   }
@@ -172,9 +173,9 @@ async function main(): Promise<void> {
   connectHistoryGlasses(bridge);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "3.7.39");
-  setVersionInfo("3.7.39 · Beta");
-  log(`sommNI v3.7.39 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  await bridge.setLocalStorage("sommni_version", "3.7.40");
+  setVersionInfo("3.7.40 · Beta");
+  log(`sommNI v3.7.40 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();

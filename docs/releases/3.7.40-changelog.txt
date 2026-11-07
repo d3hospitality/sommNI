@@ -1,0 +1,1 @@
+Fix guided setup for already-linked accounts. Every step now has clear Next step and Back controls, including Back to the introduction. Account restoration updates the guide without requiring another pairing. Skip guide remains available. Adds gold buttons, focus outlines, dithered signal and soft target glow with balanced full-width action rows.
