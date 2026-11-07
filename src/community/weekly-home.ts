@@ -1,0 +1,11 @@
+export interface WeeklyProgress {wines:number;bottles:number;week_start:string;updated_at:string;leaders:{name:string;wines:number}[]}
+const esc=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+export function weeklyHomeMarkup(data:WeeklyProgress){
+ const top=data.leaders[0],tied=top&&data.leaders.filter(x=>x.wines===top.wines).length>1;
+ return `<div class="home-weekly-top"><h2>This Week, Together</h2><button class="wl-text-button" data-board>Contributors ↗</button></div><p class="weekly-main"><strong>+${data.wines.toLocaleString()}</strong><span>${data.wines===1?'wine added':'wines added'} to the collective</span></p><p>${top?`${esc(top.name)}${tied?' shares the lead':' leads this week'} · ${top.wines} ${top.wines===1?'wine':'wines'}.`:'A fresh week for new discoveries.'}</p><p class="weekly-foot">Published additions · Week starts Monday, Eastern time.</p><p class="weekly-status" role="status"></p>`;
+}
+export function mountWeeklyHome(host:HTMLElement,client:{rpc:(name:string)=>PromiseLike<any>},onBoard:()=>void){
+ host.className='home-weekly';host.setAttribute('aria-label','This week in the collective Winebrary');host.innerHTML='<p role="status">Loading this week’s contributions…</p>';let busy=false,shown=false,last=0;
+ const refresh=async(force=false)=>{if(busy||document.hidden||(!force&&Date.now()-last<60000))return;busy=true;try{const {data,error}=await client.rpc('sommni_weekly_progress');if(error)throw error;host.innerHTML=weeklyHomeMarkup(data);host.querySelector('[data-board]')!.addEventListener('click',onBoard);shown=true;last=Date.now();}catch{if(shown)host.querySelector('.weekly-status')!.textContent='Showing the last update. Reconnect to refresh.';else{host.innerHTML='<div class="home-weekly-top"><h2>This Week, Together</h2><button class="wl-text-button" data-retry>Retry</button></div><p>Weekly contributions are unavailable right now.</p>';host.querySelector('[data-retry]')!.addEventListener('click',()=>void refresh(true));}}finally{busy=false}};
+ void refresh();window.addEventListener('focus',()=>void refresh());document.addEventListener('visibilitychange',()=>void refresh());window.addEventListener('sommni-atlas-snapshot',()=>void refresh());window.addEventListener('sommni-contributed',()=>void refresh(true));
+}

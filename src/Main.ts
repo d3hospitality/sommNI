@@ -20,8 +20,7 @@ import { syncCatalogAnecdotes } from './catalog-anecdotes';
 import { initResearchPanel } from './research/phone';
 import { connectHistoryGlasses, setHistoryConnected } from './history/glasses';
 import { initHistoryHome } from './history/home';
-import { initDepthExperience } from './depth-experience';
-import './depth-experience.css';
+import { initHomeAtlas } from './home-atlas';
 // ═══════════════════════════════════════════════════════════════════
 // sommNI — Seven Second Sommelier
 // Sprite-enhanced wine experience for Even Realities G2
@@ -63,7 +62,7 @@ async function main(): Promise<void> {
   initGlassesContext();
   initWineNotes();
   void syncCatalogAnecdotes();
-  initDepthExperience();
+  initHomeAtlas();
   initHistoryHome();
   initResearchPanel();
   initAtlasCard();
@@ -82,7 +81,7 @@ async function main(): Promise<void> {
   if (!inEvenHubHost()) {
     setStatus("disconnected", "Browser mode");
     setGlassesStatus(false);
-    setVersionInfo("3.7.47 · Beta");
+    setVersionInfo("3.7.48 · Beta");
   } else {
     setStatus("connecting", "Waiting for bridge...");
   }
@@ -178,9 +177,9 @@ async function main(): Promise<void> {
   connectHistoryGlasses(bridge);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "3.7.47");
-  setVersionInfo("3.7.47 · Beta");
-  log(`sommNI v3.7.47 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  await bridge.setLocalStorage("sommni_version", "3.7.48");
+  setVersionInfo("3.7.48 · Beta");
+  log(`sommNI v3.7.48 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();
