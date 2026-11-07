@@ -66,17 +66,19 @@ const PANEL_TAG_X = PANEL_X + 3;                            // 3px right of logo
 const PANEL_TAG_W = PANEL_W;                                // same width
 
 // ══════════════════════════════════════════════════════════════════
-// HOME — 3 containers
+// HOME — 4 containers
+//   1 = sommNI · Home heading
 //   2 = compact text cursor menu (left)
-//   3 = Aperture with a centered ソムニ / retro sommNI backdrop (128×144)
+//   3 = moving glass with a centered ソムニ / retro sommNI backdrop
 //   6 = exit hint
 // ══════════════════════════════════════════════════════════════════
 
+export const homeMenuRows=(index=0)=>cursorRows(HOME_LIST_ITEMS,index,264,8).split('\n').map(row=>'  '+row).join('\n');
 function homeContainers() {
   const typeList = new TextContainerProperty({
-    xPosition: 12, yPosition: 30, width: 280, height: 224,
+    xPosition: 12, yPosition: 48, width: 280, height: 224,
     containerID: 2, containerName: 'home-list',
-    content: cursorRows(HOME_LIST_ITEMS, 0, 280, 8), isEventCapture: 1,
+    content: homeMenuRows(), isEventCapture: 1,
   });
 
   const logoTop = new ImageContainerProperty({
@@ -91,14 +93,15 @@ function homeContainers() {
     isEventCapture: 0,
   });
 
-  return { typeList, logoTop, tagLine2 };
+  const title=new TextContainerProperty({xPosition:12,yPosition:8,width:280,height:30,containerID:1,containerName:'home-title',content:'sommNI · Home',isEventCapture:0});
+  return { title, typeList, logoTop, tagLine2 };
 }
 
 export function buildHomePage(): CreateStartUpPageContainer {
   const c = homeContainers();
   return new CreateStartUpPageContainer({
-    containerTotalNum: 3,
-    textObject: [c.typeList, c.tagLine2],
+    containerTotalNum: 4,
+    textObject: [c.title, c.typeList, c.tagLine2],
     imageObject: [c.logoTop],
   });
 }
@@ -106,8 +109,8 @@ export function buildHomePage(): CreateStartUpPageContainer {
 export function rebuildHomePage(): RebuildPageContainer {
   const c = homeContainers();
   return new RebuildPageContainer({
-    containerTotalNum: 3,
-    textObject: [c.typeList, c.tagLine2],
+    containerTotalNum: 4,
+    textObject: [c.title, c.typeList, c.tagLine2],
     imageObject: [c.logoTop],
   });
 }
@@ -467,7 +470,7 @@ export function buildCourseOverviewPage(courses: CourseSlot[]): RebuildPageConta
 // ══════════════════════════════════════════════════════════════════
 // PAIRINGS — list of saved pairings
 //   2 = pairing name list + Back
-//   3,4 = logo sprite (right panel)
+//   3 = the same animated sommNI glass as Home
 //   5 = header text
 // ══════════════════════════════════════════════════════════════════
 
@@ -488,29 +491,11 @@ export function buildPairingsListPage(pairings: Pairing[], page = 0): RebuildPag
     isEventCapture: 1,
   });
 
-  const spriteTop = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_TOP_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 3, containerName: "logo-top",
-  });
-
-  const spriteBottom = new ImageContainerProperty({
-    xPosition: PANEL_X, yPosition: PANEL_BOT_Y, width: PANEL_W, height: PANEL_HALF_H,
-    containerID: 4, containerName: "logo-bottom",
-  });
-
-  const header = new TextContainerProperty({
-    xPosition: PANEL_TAG_X, yPosition: PANEL_TAG_Y, width: 574 - PANEL_TAG_X, height: FINDER_STEP_H,
-    containerID: 5, containerName: "header",
-    content: `Wine Pairings\n${pairings.length} saved`,
-    isEventCapture: 0,
-  });
-
-  return new RebuildPageContainer({
-    containerTotalNum: 4,
-    listObject: [pairingList],
-    textObject: [header],
-    imageObject: [spriteTop, spriteBottom],
-  });
+  const artwork=homeContainers().logoTop;
+  const title=new TextContainerProperty({xPosition:12,yPosition:8,width:280,height:30,containerID:1,containerName:'pairings-title',content:'sommNI · Pairings',isEventCapture:0});
+  pairingList.xPosition=24;pairingList.yPosition=48;pairingList.width=268;pairingList.height=200;
+  const header=new TextContainerProperty({xPosition:330,yPosition:220,width:240,height:64,containerID:5,containerName:'header',content:`${pairings.length} saved pairings\nDouble tap: back`,isEventCapture:0});
+  return new RebuildPageContainer({containerTotalNum:4,listObject:[pairingList],textObject:[title,header],imageObject:[artwork]});
 }
 
 // ══════════════════════════════════════════════════════════════════

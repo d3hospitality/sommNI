@@ -13,7 +13,7 @@ const stubs={
  'research/glasses-add':`export const handleAddWineGlasses=()=>false;export const openAddWineGlasses=async()=>{};export const pauseAddWineGlasses=async()=>{};export const resumeAddWineGlasses=async()=>{};`,
  'pairing-glasses':`export const handlePairingGlasses=()=>false;export const openPairingGlasses=async()=>{};`,
  'intelligence/glasses':`export const handleIntelligenceGlasses=()=>false;export const openDailyGlasses=async()=>{};export const openSommelierGlasses=async()=>{};export const pauseIntelligenceGlasses=()=>{};export const resumeIntelligenceGlasses=async()=>{};`,
- 'history/glasses':`export const handleHistoryGlassesEvent=()=>false;export const openHistoryOnGlasses=async()=>{};`,
+ 'history/glasses':`export const handleHistoryGlassesEvent=()=>false;export const openHistoryOnGlasses=async()=>{};export const pauseHistoryGlasses=()=>{};export const resumeHistoryGlasses=async()=>{};`,
  'study/glasses':`export const handleStudyGlassesEvent=()=>false;export const openStudyOnGlasses=async()=>{};`,
  'study/store':`export const flushStudyWrites=async()=>{};`,
  'sync':`export const getPairings=async()=>[];export const flushCompanionWrites=async()=>{};`,

@@ -1,5 +1,5 @@
 import { EvenAppBridge, EvenHubEvent, CreateStartUpPageContainer, RebuildPageContainer, TextContainerProperty, TextContainerUpgrade, ImageContainerProperty, ImageRawDataUpdate, ImageRawDataUpdateResult, OsEventTypeList } from '@evenrealities/even_hub_sdk';
-import { encodeGrayscalePng } from '../pngEncoder';
+import { encodeCompactGrayscalePng } from '../pngEncoder';
 import { GlobeRenderer } from './renderer';
 import { AtlasNavigator } from './navigator';
 import { AtlasTransport } from './transport';
@@ -23,6 +23,9 @@ export function buildAtlasPage(nav:AtlasNavigator) {
 }
 export class AtlasGlasses {
   private active=false;
+  private generation=0;
+  private glowTimer:ReturnType<typeof setTimeout>|undefined;
+  private stopGlow(){this.generation++;clearTimeout(this.glowTimer);this.glowTimer=undefined;}
   private transport:AtlasTransport;
   private photos=new Map<string,Uint8Array>();
   // undefined = map view; null = wine with no photograph (clear the previous wine).
@@ -30,7 +33,7 @@ export class AtlasGlasses {
     this.transport=new AtlasTransport(onError);
   }
   async open(startup=false) {
-    this.active=false;this.transport.invalidate();await this.transport.idle();
+    this.active=false;this.stopGlow();this.transport.invalidate();await this.transport.idle();
     const page=buildAtlasPage(this.navigator);
     validateGlassesPage(page);
     if(startup) {
@@ -39,19 +42,24 @@ export class AtlasGlasses {
     }else if(!await this.bridge.rebuildPageContainer(page))throw new Error('Atlas page refused');
     this.active=true;this.refresh();
   }
-  async close(){this.active=false;this.transport.invalidate();await this.transport.idle();}
+  async close(){this.active=false;this.stopGlow();this.transport.invalidate();await this.transport.idle();}
   refresh(){
     if(!this.active)return;
+    this.stopGlow();const generation=this.generation;
     const texts=atlasTexts(this.navigator),view=this.navigator.view,source=this.bottleSource?.();
+    const frames=new Map<number,Uint8Array>();
+    const sendFrame=(phase=0)=>{
+    if(!this.active||generation!==this.generation)return;
+    const strength=[1,.7,.4,.7][phase%4];
     const steps:(()=>Promise<unknown>)[]=[];
-    for(const [id,name,content] of [[1,'atlas-title',texts.title],[2,'atlas-rows',texts.rows],[5,'atlas-hint',texts.hint]] as const) {
+    if(phase===0)for(const [id,name,content] of [[1,'atlas-title',texts.title],[2,'atlas-rows',texts.rows],[5,'atlas-hint',texts.hint]] as const) {
       steps.push(async()=>{const ok=await this.bridge.textContainerUpgrade(new TextContainerUpgrade({containerID:id,containerName:name,content,contentOffset:0,contentLength:0}));if(!ok)throw new Error('Atlas text update refused');});
     }
     let gray:Uint8Array;
     // Text leads; the image follows a settled cursor. Superseded frames never send.
     steps.push(async()=>{await new Promise(r=>setTimeout(r,180));});
     steps.push(async()=>{
-      if(source===undefined){gray=this.renderer.render(view,ATLAS_SIZE).gray;return;}
+      if(source===undefined){gray=frames.get(strength)??this.renderer.render(view,ATLAS_SIZE,strength).gray;frames.set(strength,gray);return;}
       gray=new Uint8Array(ATLAS_SIZE*ATLAS_SIZE);
       if(!source)return;
       const cached=this.photos.get(source);
@@ -65,10 +73,17 @@ export class AtlasGlasses {
     });
     for(let half=0;half<2;half++)steps.push(async()=>{
       const pixels=gray.subarray(half*244*122,(half+1)*244*122);
-      const result=await this.bridge.updateImageRawData(new ImageRawDataUpdate({containerID:3+half,containerName:half?'atlas-bottom':'atlas-top',imageData:Array.from(encodeGrayscalePng(244,122,pixels))}));
+      const encoded=await encodeCompactGrayscalePng(244,122,pixels);
+      if(!this.active||generation!==this.generation)return;
+      const result=await this.bridge.updateImageRawData(new ImageRawDataUpdate({containerID:3+half,containerName:half?'atlas-bottom':'atlas-top',imageData:Array.from(encoded)}));
       if(!ImageRawDataUpdateResult.isSuccess(result))throw new Error('Atlas image transfer failed');
     });
+    steps.push(async()=>{
+      const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(this.active&&generation===this.generation&&source===undefined&&view.region&&!reduced)this.glowTimer=setTimeout(()=>sendFrame(phase+1),1800);
+    });
     this.transport.enqueue(steps);
+    };sendFrame();
   }
   handle(event:EvenHubEvent):boolean {
     if(!this.active)return false;

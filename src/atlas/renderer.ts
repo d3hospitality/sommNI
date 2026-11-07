@@ -1,3 +1,5 @@
+import type {BoundaryRegion} from './globe-model';
+import {regionBoundary,regionGlowMask,applyRegionGlow} from './region-glow';
 import { maskGrayLens, lensPixel } from './lens-mask';
 /** Offline, orthographic 3D globe. Inverse projection avoids antimeridian seams
  * and clips the hidden hemisphere before rasterization. No WebGL dependency. */
@@ -14,6 +16,8 @@ export function project(lon: number, lat: number, center: [number,number], radiu
   return { x:size/2+radius*Math.cos(p)*Math.sin(d), y:size/2-radius*(Math.cos(c)*Math.sin(p)-Math.sin(c)*Math.cos(p)*Math.cos(d)), visible:z>0 };
 }
 export class GlobeRenderer {
+  private boundaries:BoundaryRegion[]=[];
+  setBoundaries(regions:BoundaryRegion[]){this.boundaries=regions;}
   private constructor(public data: AtlasData, private ids: Uint8Array, private width: number, private height: number) {}
   static async load(baseUrl: string) {
     const [response, image] = await Promise.all([
@@ -33,7 +37,7 @@ export class GlobeRenderer {
     const y=Math.max(0,Math.min(this.height-1,Math.round((90-lat)/180*(this.height-1))));
     return this.ids[y*this.width+x];
   }
-  render(view: View, size=244): Frame {
+  render(view: View, size=244, glow=1): Frame {
     const center=view.center ?? view.region?.center ?? view.country.center;
     const angular=view.radius ?? (view.region ? Math.max(.15,view.region.radius) : 90);
     const scale=(size/2-10)/Math.sin(Math.min(90,angular)*DEG);
@@ -82,6 +86,18 @@ export class GlobeRenderer {
       // At global scale microstates may be below one pixel: retain a visible locator.
       const p=project(view.country.center[0],view.country.center[1],center,scale,size);
       if(p.visible){const x=Math.round(p.x),y=Math.round(p.y);for(let t=-2;t<=2;t++){mark(x+t,y-3,170);mark(x+t,y+3,170);mark(x-3,y+t,170);mark(x+3,y+t,170);}}
+    }
+    if(view.region){
+      const boundary=regionBoundary(view.region,this.boundaries);
+      if(boundary)applyRegionGlow(gray,regionGlowMask(boundary,size,(lon,lat)=>project(lon,lat,center,scale,size)),size,glow);
+      else if(view.region.points.length){
+        // Without a known outline, breathe a small locator over the real cluster.
+        const p=project(...view.region.center,center,scale,size),cx=Math.round(p.x),cy=Math.round(p.y);
+        if(p.visible)for(let dy=-10;dy<=10;dy++)for(let dx=-10;dx<=10;dx++){
+          const x=cx+dx,y=cy+dy,d=Math.hypot(dx,dy);if(d>10||x<0||x>=size||y<0||y>=size||(x+y)%3)continue;
+          const i=y*size+x;gray[i]=Math.max(gray[i],Math.round((34+100*glow)*(1-d/11)/17)*17);
+        }
+      }
     }
     maskGrayLens(gray,size,size,size/2-10);
     return {size,gray,selected};

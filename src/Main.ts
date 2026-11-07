@@ -18,7 +18,7 @@ import { initIntelligence } from './intelligence/home';
 import { initWineNotes } from './wine-notes';
 import { syncCatalogAnecdotes } from './catalog-anecdotes';
 import { initResearchPanel } from './research/phone';
-import { connectHistoryGlasses, setHistoryConnected } from './history/glasses';
+import { connectHistoryGlasses, setHistoryConnected, resumeHistoryGlasses } from './history/glasses';
 import { initHistoryHome } from './history/home';
 import { initHomeAtlas } from './home-atlas';
 // ═══════════════════════════════════════════════════════════════════
@@ -81,7 +81,7 @@ async function main(): Promise<void> {
   if (!inEvenHubHost()) {
     setStatus("disconnected", "Browser mode");
     setGlassesStatus(false);
-    setVersionInfo("3.7.51 · Beta");
+    setVersionInfo("3.7.52 · Beta");
   } else {
     setStatus("connecting", "Waiting for bridge...");
   }
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
       suspendImages(false);void resumeHomePour();void resumeAddWineGlasses().catch(console.warn);
       setStatus("connected");
       setWinebraryDeviceConnected(true);
-      setHistoryConnected(true);
+      setHistoryConnected(true);void resumeHistoryGlasses().catch(console.warn);
       setBattery(status.batteryLevel);
       setGlassesStatus(true, status.batteryLevel);
       log("Connected — battery " + status.batteryLevel + "%", "success");
@@ -177,9 +177,9 @@ async function main(): Promise<void> {
   connectHistoryGlasses(bridge);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "3.7.51");
-  setVersionInfo("3.7.51 · Beta");
-  log(`sommNI v3.7.51 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  await bridge.setLocalStorage("sommni_version", "3.7.52");
+  setVersionInfo("3.7.52 · Beta");
+  log(`sommNI v3.7.52 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();

@@ -7,7 +7,7 @@ import { handleLabelGlasses, pauseLabelGlasses, resumeLabelGlasses } from './res
 import {openPairingGlasses,handlePairingGlasses} from './pairing-glasses';
 import { handleAddWineGlasses, pauseAddWineGlasses, resumeAddWineGlasses } from './research/glasses-add';
 import { openDailyGlasses, openSommelierGlasses, handleIntelligenceGlasses, pauseIntelligenceGlasses, resumeIntelligenceGlasses } from './intelligence/glasses';
-import { handleHistoryGlassesEvent, openHistoryOnGlasses } from './history/glasses';
+import { handleHistoryGlassesEvent, openHistoryOnGlasses, pauseHistoryGlasses, resumeHistoryGlasses } from './history/glasses';
 // ═══════════════════════════════════════════════════════════════════
 // sommNI TG — Event Handlers v3
 // Nav: Home → Countries → Grapes → Wines → Tasting Notes
@@ -34,7 +34,7 @@ import {
   buildFinderBodyPage, buildFinderWorldPage, buildFinderResultsPage,
   buildPairingsListPage, buildPairingDetailPage,
   wineListPage, pairingsListPage,
-  grapeListLabels, HOME_LIST_ITEMS, LIBRARY_INDEX, FINDER_INDEX, STUDY_INDEX, PAIRINGS_INDEX,
+  grapeListLabels, homeMenuRows, HOME_LIST_ITEMS, LIBRARY_INDEX, FINDER_INDEX, STUDY_INDEX, PAIRINGS_INDEX,
   ATLAS_INDEX, HISTORY_INDEX, TYPE_START_INDEX, countryInfoText, countryRows,
 } from './pages';
 import {
@@ -117,7 +117,7 @@ export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string, on
     }
     if (type === 5) {
       background = true; cancelBrowsePreview();
-      pauseIntelligenceGlasses();
+      pauseIntelligenceGlasses();pauseHistoryGlasses();
       suspendDisplay(true); suspendImages(true);
       enqueue(async () => { pauseLabelGlasses(); await pauseAddWineGlasses(); await pauseAtlasGlasses(); await imageIdle(); await flush(); });
       return;
@@ -126,7 +126,7 @@ export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string, on
       enqueue(async () => {
         if (ended) return;
         suspendDisplay(false); suspendImages(false);
-        try { await resumeLabelGlasses(); await resumeAddWineGlasses(); await resumeAtlasGlasses(); await resumeIntelligenceGlasses(); if(displayOwner()==='catalog'&&currentPage==='home')await resumeHomePour();if(displayOwner()==='catalog'&&(currentPage==='wines'||currentPage==='grapes'))previewBrowse(bridge); } finally { background = false; }
+        try { await resumeLabelGlasses(); await resumeAddWineGlasses(); await resumeAtlasGlasses(); await resumeIntelligenceGlasses(); await resumeHistoryGlasses(); if(displayOwner()==='catalog'&&(currentPage==='home'||currentPage==='pairings-list'))await resumeHomePour();if(displayOwner()==='catalog'&&(currentPage==='wines'||currentPage==='grapes'))previewBrowse(bridge); } finally { background = false; }
       });
       return;
     }
@@ -243,6 +243,7 @@ async function goBack(bridge: EvenAppBridge, baseUrl: string): Promise<void> {
     else if (currentPage === "pairings-list" && pairingsPage > 0) {
       pairingsPage--;
       await rebuild(bridge, buildPairingsListPage(pairingsCache, pairingsPage));
+      await pushLogoToGlasses(bridge,baseUrl);
       lastNavigationTime = Date.now();
     }
     else if (currentPage === "notes" && currentType && currentCountry && currentGrape) {
@@ -588,6 +589,7 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       if (row?.kind === "more") {
         await rebuild(bridge, buildPairingsListPage(pairingsCache, pairingsPage + 1));
         pairingsPage++; lastNavigationTime = Date.now();
+        await pushLogoToGlasses(bridge,baseUrl);
         return;
       }
       if (row?.kind === "item") {
@@ -661,7 +663,7 @@ async function handleEvent(bridge: EvenAppBridge, event: EvenHubEvent, baseUrl: 
     if (navigating) return;
     if (gesture === 1 || gesture === 2) {
       homeCursor=moveCursor(homeCursor,HOME_LIST_ITEMS.length,gesture,event.listEvent?event.listEvent.currentSelectItemIndex??0:undefined);
-      const content=cursorRows(HOME_LIST_ITEMS,homeCursor,280,8);
+      const content=homeMenuRows(homeCursor);
       await queueBridgeControl(async()=>{
         if(currentPage==='home' && displayOwner()==='catalog')await bridge.textContainerUpgrade(new TextContainerUpgrade({containerID:2,containerName:'home-list',content,contentOffset:0,contentLength:0}));
       });

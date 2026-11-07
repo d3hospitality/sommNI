@@ -26,3 +26,13 @@ const french=catalog('pauillac-public');scope.countries.push({code:'FRA',name:'F
 nav.setScope(scope,true);nav.choosePhoneTarget({countryCode:'FRA',catalogId:'pauillac-public'});assert.equal(nav.wines[nav.wineIndex],french);assert.equal(nav.mode,'detail');nav.back();assert.equal(nav.mode,'regions');
 // Source group comes before the virtual wine-region row in the production atlas.
 scope.data.regions.reverse();nav.setScope(scope,true);nav.choosePhoneTarget({countryCode:'FRA',catalogId:'pauillac-public'});assert.equal(nav.region.id,'pauillac');assert.equal(nav.wines[nav.wineIndex],french);console.log('PASS Bordeaux parent/appellation handoff regardless of region row ordering.');
+nav.chooseCountry('USA');nav.select();
+assert.match(nav.rows,/Search by Voice/);assert.match(nav.rows,/3w · All Wines/);
+nav.scroll(-1);assert.match(nav.rows,/> 3w · All Wines/);nav.select();
+assert.equal(nav.mode,'detail');assert.equal(nav.region,undefined);assert.equal(nav.wines.length,3);assert.equal(nav.view.country.code,'USA');assert.equal(nav.view.region,undefined);assert.match(nav.rows,/About United States/);
+for(let i=0;i<3;i++){nav.select();assert.equal(nav.pending,nav.wines[i]);nav.scroll(1);}
+nav.back();assert.equal(nav.mode,'regions');assert.match(nav.rows,/> 3w · All Wines/);
+// A region may appear in multiple administrative groups, but the country shortcut counts it once.
+scope.data.regions.push({id:'duplicate-group',name:'Other Napa Group',country:'USA',count:1});scope.entries.set('duplicate-group',entries.get('napa'));
+nav.setScope(scope,true);assert.match(nav.rows,/3w · All Wines/);nav.select();assert.equal(nav.wines.length,3);nav.back();nav.scroll(-1);assert.match(nav.rows,/> Search by Voice/);
+console.log('PASS country-wide All Wines, deduplication across region groups, scroll/select every wine, Voice capitalization and Back cursor restoration.');

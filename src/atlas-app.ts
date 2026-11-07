@@ -5,7 +5,7 @@ import japanPrefectures from './data/japan-prefecture-regions.json';
 import { prefectureKey } from './sake';
 import { announceWineContext, catalogContext, libraryContext, libraryPhoto } from './wine-context';
 import { placeSearchScore } from './atlas/place-search';
-import { wineRegionRows, wineRegionFor, wineRegionById } from './atlas/wine-regions';
+import { wineRegionRows, wineRegionFor, wineRegionById, wineRegionContexts } from './atlas/wine-regions';
 import { AtlasVoiceCapture, type CaptureState } from './atlas/voice-capture';
 import { betaProvider } from './beta/client';
 import { getLocale } from './intelligence/client';
@@ -107,7 +107,7 @@ export async function catalogBrowseScene(wineId: string | null, country: string)
 export function loadAtlasRenderer(): Promise<GlobeRenderer> {
   if (!rendererPromise) {
     const root = baseUrl || new URL('./', location.href).href;
-    rendererPromise = GlobeRenderer.load(new URL('atlas/', root).href).then(renderer=>{renderer.data.regions=[...renderer.data.regions.filter(r=>r.country!=='JPN'),...japanPrefectures as Region[]];const japan=renderer.data.countries.find(c=>c.code==='JPN');if(japan)japan.regionCount=47;return renderer;});
+    rendererPromise = GlobeRenderer.load(new URL('atlas/', root).href).then(async renderer=>{renderer.data.regions=[...renderer.data.regions.filter(r=>r.country!=='JPN'),...japanPrefectures as Region[]];const japan=renderer.data.countries.find(c=>c.code==='JPN');if(japan)japan.regionCount=47;try{const boundaries=await loadBoundaries();renderer.setBoundaries([...boundaries.regions,...wineRegionContexts(boundaries)]);}catch{ /* Existing winery locators remain available offline. */ }return renderer;});
     rendererPromise.catch(() => { rendererPromise = null; });
   }
   return rendererPromise;
@@ -263,7 +263,7 @@ export class CatalogAtlasNavigator extends AtlasNavigator {
     this.scope=scope;this.data=scope.data;this.countries=scope.countries;this.signedIn=signedIn;
     this.countryIndex=Math.max(0,this.countries.findIndex(c=>c.code===code));
     const index=this.regions.findIndex(r=>r.id===regionId);this.regionIndex=Math.max(0,index);
-    if(mode==='detail'&&index<0&&!(this.allAreaWines&&scope.entries.has(this.wineAreaId??''))){this.mode='regions';this.infoSelected=false;this.menuAction=null;}
+    if(mode==='detail'&&index<0&&!this.allAreaWines){this.mode='regions';this.infoSelected=false;this.menuAction=null;}
     this.wineIndex=Math.min(this.wineIndex,Math.max(0,this.wines.length-1));
   }
   chooseCountry(code:string):void {this.wineAreaId=null;this.allAreaWines=false;super.chooseCountry(code);this.query='';this.searchMessage='';this.showAllRegions=false;this.menuAction=null;this.infoSelected=false;this.wineIndex=0;}
@@ -290,9 +290,15 @@ export class CatalogAtlasNavigator extends AtlasNavigator {
       this.wineIndex=Math.max(0,this.wines.findIndex(matches));this.infoSelected=false;this.menuAction=null;
     }
   }
-  get region():Region|undefined{return this.allAreaWines&&this.wineAreaId?this.scope.data.regions.find(r=>r.id===this.wineAreaId):super.region;}
-  get view(){return this.mode==='regions'&&(this.menuAction||this.infoSelected)?{country:this.country,...(this.wineAreaId?{region:this.scope.data.regions.find(r=>r.id===this.wineAreaId)}:{})}:super.view;}
-  get wines():AtlasEntry[]{return this.region?this.scope.entries.get(this.region.id)??[]:[];}
+  get region():Region|undefined{return this.allAreaWines?(this.wineAreaId?this.scope.data.regions.find(r=>r.id===this.wineAreaId):undefined):super.region;}
+  get view(){if(this.mode==='detail'&&this.allAreaWines&&!this.wineAreaId)return {country:this.country};return this.mode==='regions'&&(this.menuAction||this.infoSelected)?{country:this.country,...(this.wineAreaId?{region:this.scope.data.regions.find(r=>r.id===this.wineAreaId)}:{})}:super.view;}
+  private get allWines():AtlasEntry[]{
+    if(this.wineAreaId)return this.scope.entries.get(this.wineAreaId)??[];
+    const unique=new Map<string,AtlasEntry>();
+    for(const region of this.scope.data.regions.filter(r=>r.country===this.country.code))for(const entry of this.scope.entries.get(region.id)??[])unique.set(entry.kind==='library'?'library:'+entry.wine.id:'catalog:'+entry.item.id,entry);
+    return [...unique.values()].sort((a,b)=>Number(b.kind==='library')-Number(a.kind==='library')||entryLabel(a).localeCompare(entryLabel(b)));
+  }
+  get wines():AtlasEntry[]{return this.allAreaWines?this.allWines:this.region?this.scope.entries.get(this.region.id)??[]:[];}
   private count(region:Region){return this.scope.entries.get(region.id)?.length??0;}
   get regions():Region[]{
     let list=super.regions;if(!this.scope)return list;
@@ -307,11 +313,11 @@ export class CatalogAtlasNavigator extends AtlasNavigator {
     return list.filter(r=>this.query?placeSearchScore(r.name,this.query,this.country.name)>0:this.showAllRegions||this.count(r)>0)
       .sort((a,b)=>Number(this.count(b)>0)-Number(this.count(a)>0)||(this.query?placeSearchScore(b.name,this.query,this.country.name)-placeSearchScore(a.name,this.query,this.country.name):0)||Number(!!wineRegionById(b.id))-Number(!!wineRegionById(a.id))||(this.scope.mineByRegion.get(b.id)??0)-(this.scope.mineByRegion.get(a.id)??0)||this.count(b)-this.count(a)||a.name.localeCompare(b.name));
   }
-  get title(){return this.mode==='countries'?'WINE ATLAS':(wineRegionById(this.wineAreaId??'')?.name??this.country.name)+(this.query?' · SEARCH':'');}
+  get title(){return this.mode==='countries'?'Wine Atlas':(wineRegionById(this.wineAreaId??'')?.name??this.country.name)+(this.query?' · SEARCH':'');}
   get labels():string[]{return this.mode==='countries'?this.countries.map(c=>c.name):this.regions.map(r=>`${this.count(r)}w · ${r.name}`);}
   private get menu():AtlasMenuItem[]{
-    const entries:AtlasMenuItem[]=[{kind:'search',label:'Search by voice'}];
-    if(this.mode==='regions'&&this.wineAreaId&&!this.query)entries.push({kind:'all',label:'View all wines · '+(this.scope.entries.get(this.wineAreaId)?.length??0)});
+    const entries:AtlasMenuItem[]=[{kind:'search',label:'Search by Voice'}];
+    if(this.mode==='regions'&&!this.query)entries.push({kind:'all',label:this.allWines.length+'w · All Wines'});
     if(this.mode==='countries')entries.push(...this.countries.filter(c=>!this.query||placeSearchScore(c.name,this.query,c.code)>0).map(c=>({kind:'country' as const,id:c.code,label:c.name})));
     else entries.push(...this.regions.map(r=>({kind:'region' as const,id:r.id,label:this.count(r)?`${this.count(r)}w · ${r.name}`:`/ ${r.name}`})));
     if(this.query)entries.push({kind:'clear',label:'Clear search'});
@@ -345,7 +351,7 @@ export class CatalogAtlasNavigator extends AtlasNavigator {
       const selected=this.menu[this.cursor];
       if(selected.kind==='search')return 'Tap: speak · Double tap: back';
       if(selected.kind==='scope')return 'Tap: switch region list';
-      if(selected.kind==='all')return 'Tap: all wines in this region';
+      if(selected.kind==='all')return this.wineAreaId?'Tap: all wines in this region':'Tap: all wines in this country';
       if(selected.kind==='clear')return 'Tap: clear search';
       if(selected.kind==='info')return 'Tap: place history';
       return this.mode==='regions'?`${this.regionIndex+1}/${this.regions.length} · Tap: ${wineRegionById(this.region?.id??'')?'appellations':'wines'}`:'Tap: regions · Voice above';
@@ -358,9 +364,9 @@ export class CatalogAtlasNavigator extends AtlasNavigator {
       const items=this.menu,index=this.cursor,start=Math.max(0,Math.min(index-2,items.length-6));
       return items.slice(start,start+6).map((item,i)=>`${start+i===index?'>':' '} ${item.label}`).join('\n');
     }
-    const region=this.region!,wines=this.wines,mine=this.scope.mineByRegion.get(region.id)??0,catalog=wines.length-mine;
+    const region=this.region,wines=this.wines,mine=wines.filter(w=>w.kind==='library').length,catalog=wines.length-mine;
     const header=mine&&catalog?`MINE ${mine} · CATALOG ${catalog}`:mine?`MY WINEBRARY · ${mine}`:`SOMMNI CATALOG · ${catalog}`;
-    const name=this.scope.unmapped.has(region.id)?`${region.name} · not mapped yet`:region.name;
+    const name=region?(this.scope.unmapped.has(region.id)?`${region.name} · not mapped yet`:region.name):this.country.name;
     if(!wines.length)return ['> About '+name,'','No wines here yet','History stays open. Tap to learn.'].join('\n');
     const start=Math.max(0,Math.min(this.wineIndex-1,wines.length-4));
     const list=wines.slice(start,start+4).map((wine,i)=>`${!this.infoSelected&&start+i===this.wineIndex?'>':' '} ${entryLabel(wine)}`);
@@ -404,7 +410,7 @@ let voiceTraffic:Promise<unknown>=Promise.resolve();
 function voiceSerial<T>(task:()=>Promise<T>):Promise<T>{const next=voiceTraffic.catch(()=>{}).then(task);voiceTraffic=next;return next;}
 export function buildAtlasVoicePage(state:CaptureState,country:string){
   const status=state==='opening'?'Opening microphone…':state==='listening'?'Listening · say a place name':'Finding your region…';
-  return new RebuildPageContainer({containerTotalNum:1,textObject:[new TextContainerProperty({containerID:1,containerName:'atlas-voice',xPosition:20,yPosition:18,width:536,height:252,isEventCapture:1,content:`SEARCH BY VOICE\n${country}\n\n${status}\n${state==='listening'?'Speak now · up to 6 seconds\nTap when finished':'Please wait'}\nDouble tap: cancel`})]});
+  return new RebuildPageContainer({containerTotalNum:1,textObject:[new TextContainerProperty({containerID:1,containerName:'atlas-voice',xPosition:20,yPosition:18,width:536,height:252,isEventCapture:1,content:`Search by Voice\n${country}\n\n${status}\n${state==='listening'?'Speak now · up to 6 seconds\nTap when finished':'Please wait'}\nDouble tap: cancel`})]});
 }
 async function cancelAtlasVoice(restore:boolean){
   const capture=voiceCapture;if(!capture)return;voiceCapture=null;

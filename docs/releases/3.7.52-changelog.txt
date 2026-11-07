@@ -1,0 +1,1 @@
+Glasses Atlas highlights hovered regions with a gentle glow. Search by Voice now includes a country-wide All Wines shortcut with a deduplicated count. Home adds a sommNI · Home heading and indented > cursor rows. Pairings shares the Home glass and head-motion artwork. Wine History restores after reconnect/backgrounding and guards against repeated Back events skipping screens.

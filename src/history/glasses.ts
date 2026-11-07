@@ -9,14 +9,16 @@ import { storyWines, storyCards, STORY_SOURCES, wineHistoryCards, storyParagraph
 type Screen = {kind:'home'} | {kind:'wines';page:number} | {kind:'topics';wineId:string} | {kind:'card';wineId:string;topic:StoryTopic;index:number;part?:number};
 let bridge: EvenAppBridge | null = null, connected = false, active = false, busy = false, revision = 0, lastNavigation = 0;
 let screen: Screen = {kind:'wines',page:0};
-let winePage=0;
+let pendingScreen:Screen|null=null;
+let winePage=0,restorePending=false;
+let historyWork:Promise<void>=Promise.resolve();
 let message = 'Open in Even Hub and connect G2 to read history on glasses.';
 const notify = () => window.dispatchEvent(new Event('winelens-history-status'));
 export function historyStatus() { return {ready:!!bridge && connected, busy, message}; }
 export function connectHistoryGlasses(value:EvenAppBridge) { bridge=value; notify(); }
 export function setHistoryConnected(value:boolean) {
   connected=value;
-  if(!value) { revision++; active=false; if(displayOwner()==='history') invalidateImages(); dropDisplay('history'); }
+  if(!value) pauseHistoryGlasses();
   message=value ? 'Choose an insight to read on glasses.' : 'Open in Even Hub and connect G2 to read history on glasses.';
   notify();
 }
@@ -28,7 +30,7 @@ export function storyPassages(card:StoryCard):string[] {
 export function buildStoryPage(card:StoryCard, topic:StoryTopic, index:number,total:number,part=0):RebuildPageContainer {
   const source=STORY_SOURCES[card.source];
   return readableText(new RebuildPageContainer({containerTotalNum:3,textObject:[
-    box(1,4,30,clipLabel(card.scope.toUpperCase(),55)),
+    box(1,4,30,clipLabel(card.scope,55)),
     box(2,42,200,' ',1),
     box(4,254,30,'Scroll: read · 2x: chapters'),
   ]}),2,storyPassages(card)[0]+'\n\nSource: '+source.publisher);
@@ -36,25 +38,34 @@ export function buildStoryPage(card:StoryCard, topic:StoryTopic, index:number,to
 export function storyWineMenu(page=0) { return pageList(storyWines().map(w=>w.wine.name),page); }
 export function buildStoryWineMenu(page=0) {
   const menu=storyWineMenu(page);
-  return menuPage(`WINE HISTORY · ${menu.page+1}/${menu.pageCount} · ${storyWines().length} wines`,menu.labels);
+  return menuPage(`Wine History · ${menu.page+1}/${menu.pageCount} · ${storyWines().length} wines`,menu.labels);
 }
 function menuPage(title:string,labels:string[]) {
   return new RebuildPageContainer({containerTotalNum:3,textObject:[box(1,4,30,title),box(3,254,30,'Tap: choose · Double tap: back')],listObject:[new ListContainerProperty({xPosition:24,yPosition:48,width:528,height:160,containerID:2,containerName:'story-menu',isEventCapture:1,itemContainer:new ListItemContainerProperty({itemCount:labels.length,itemWidth:0,isItemSelectBorderEn:1,itemName:labels})})]});
 }
-async function relinquish() { revision++; active=false; await imageIdle(); }
+async function relinquish() { revision++; active=false; restorePending=false;pendingScreen=null; invalidateImages(); await imageIdle(); }
+export function pauseHistoryGlasses(){
+ if(displayOwner()!=='history')return;
+ restorePending=active||busy||restorePending;revision++;active=false;invalidateImages();
+}
+export async function resumeHistoryGlasses(){
+ await historyWork;
+ if(!restorePending||!connected||displayOwner()!=='history')return;
+ restorePending=false;await run(()=>render(pendingScreen??screen));
+}
 function pageFor(next:Screen) {
-  if(next.kind==='home') return menuPage('WINE HISTORY',['Wine stories','Countries & regions']);
+  if(next.kind==='home') return menuPage('sommNI · Wine History',['Wine Stories','Countries & Regions']);
   if(next.kind==='wines') return buildStoryWineMenu(next.page);
-  if(next.kind==='topics') return menuPage('BEHIND THE WINE',wineHistoryCards(next.wineId).map(c=>clipLabel((/^\d/.test(c.date)?c.date+' · ':'')+c.title)));
+  if(next.kind==='topics') return menuPage('Behind the Wine',wineHistoryCards(next.wineId).map(c=>clipLabel((/^\d/.test(c.date)?c.date+' · ':'')+c.title)));
   const cards=storyCards(next.wineId,next.topic);
   if(!cards[next.index]) throw new Error('This insight is unavailable.');
   return buildStoryPage(cards[next.index],next.topic,next.index,cards.length,next.part??0);
 }
 async function render(next:Screen) {
   if(!bridge || !connected) throw new Error('Connect G2 in Even Hub first.');
-  const page=pageFor(next), token=revision;
+  const page=pageFor(next), token=revision;pendingScreen=next;
   await claimDisplay('history',relinquish);
-  if(token!==revision || !connected) {dropDisplay('history');return;}
+  if(token!==revision || !connected) {if(!restorePending)dropDisplay('history');return;}
   invalidateImages();
   let accepted=false;
   try { accepted=await rebuildGlassesPage(bridge,page); }
@@ -62,35 +73,36 @@ async function render(next:Screen) {
   if(token!==revision || !connected || displayOwner()!=='history') return;
   if(!accepted) { if(!active) dropDisplay('history'); throw new Error('Glasses did not accept the insight. Try again.'); }
   if(next.kind==='wines')winePage=next.page;
-  screen=next; active=true; lastNavigation=Date.now(); message='Story displayed on glasses. Double tap goes back.';
+  screen=next;pendingScreen=null; active=true; lastNavigation=Date.now(); message='Story displayed on glasses. Double tap goes back.';
 }
 async function home() {
   const token=revision;
   invalidateImages();
   if(!bridge || !await rebuildGlassesPage(bridge,rebuildHomePage())) throw new Error('Glasses did not accept Home. Try again.');
   if(token!==revision) return;
-  active=false; dropDisplay('history'); message='Returned to the glasses home menu.';
+  active=false; restorePending=false; dropDisplay('history'); message='Returned to the glasses home menu.';
   window.dispatchEvent(new Event('winelens-glasses-home'));
   try { await pushLogoToGlasses(bridge,new URL('./',location.href).href); } catch { /* Home remains usable without its logo. */ }
 }
 async function run(task:()=>Promise<void>) {
   if(busy) return;
   busy=true; notify();
-  try { await task(); } catch(error) { message=error instanceof Error ? error.message : String(error); }
-  finally { busy=false; notify(); }
+  historyWork=(async()=>{try { await task(); } catch(error) { message=error instanceof Error ? error.message : String(error); }
+  finally { busy=false; notify(); }})();
+  await historyWork;
 }
 export async function openHistoryOnGlasses(wineId?:string,topic:StoryTopic='region',index=0) {
   if(wineId)winePage=Math.max(0,Math.floor(storyWines().findIndex(w=>w.id===wineId||w.legacyId===wineId)/18));
   await run(()=>render(wineId ? {kind:'card',wineId,topic,index,part:0} : {kind:'home'}));
 }
 export function handleHistoryGlassesEvent(event:EvenHubEvent):boolean {
-  if(!active) return busy && displayOwner()==='history';
+  if(displayOwner()!=='history')return false;
+  if(!active) return busy||restorePending;
   const type=event.listEvent?.eventType ?? event.textEvent?.eventType ?? event.sysEvent?.eventType;
-  if(busy) return true;
+  if(busy||Date.now()-lastNavigation<350) return true;
   if(type===OsEventTypeList.DOUBLE_CLICK_EVENT) {
     void run(()=> screen.kind==='home' ? home() : screen.kind==='wines' ? (screen.page>0?render({kind:'wines',page:screen.page-1}):render({kind:'home'})) : render(screen.kind==='topics' ? {kind:'wines',page:winePage} : {kind:'topics',wineId:screen.wineId})); return true;
   }
-  if(Date.now()-lastNavigation<350) return true;
   const click=type===OsEventTypeList.CLICK_EVENT || (type===undefined && !!(event.listEvent || event.textEvent || event.sysEvent));
   if(screen.kind==='card') {
     // The firmware scrolls the entire chapter. Never replace it on every swipe.
