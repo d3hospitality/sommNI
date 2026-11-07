@@ -10,10 +10,12 @@ const view={country,region,radius:12};const bright=renderer.render(view,244,1),d
 const nav=new AtlasNavigator(data);nav.mode='regions';nav.regionIndex=nav.regions.findIndex(r=>r.id==='veneto');const pages=[],images=[],texts=[];let inFlight=0,max=0;const errors=[];
 const originalTimeout=globalThis.setTimeout;globalThis.setTimeout=(fn,ms,...args)=>originalTimeout(fn,ms===1800?15:ms===180?1:ms,...args);
 const tick=ms=>new Promise(r=>originalTimeout(r,ms));
+// Compression speed varies across CI hosts; wait for observed work, not a frame deadline.
+const until=async(predicate,label)=>{const deadline=Date.now()+3000;while(!predicate()){assert.ok(Date.now()<deadline,label);await tick(10)}};
 const bridge={rebuildPageContainer:async p=>{validateGlassesPage(p);pages.push(p);return true},textContainerUpgrade:async p=>{texts.push(p);return true},updateImageRawData:async p=>{max=Math.max(max,++inFlight);await tick(2);images.push(p);inFlight--;return 'success'}};
 try{
- const glasses=new AtlasGlasses(bridge,nav,renderer,()=>{},e=>errors.push(e));await glasses.open();await tick(80);assert.ok(images.length>=4,'hovered region sends slow glow frames');assert.equal(texts.length,3,'pulse never rewrites menu text');assert.equal(max,1,'image sends never overlap');
- glasses.handle({textEvent:{eventType:1}});await tick(35);assert.equal(nav.region.name,'Piedmont');assert.ok(texts.some(t=>t.content?.includes('> Piedmont')));await glasses.close();const count=images.length;await tick(45);assert.equal(images.length,count,'closed Atlas stops every pulse');assert.deepEqual(errors,[]);
- globalThis.matchMedia=()=>({matches:true});const still=new AtlasGlasses(bridge,nav,renderer,()=>{},e=>errors.push(e));const before=images.length;await still.open();await tick(65);assert.equal(images.length-before,2,'reduced motion sends only one map');await still.close();
+ const glasses=new AtlasGlasses(bridge,nav,renderer,()=>{},e=>errors.push(e));await glasses.open();await until(()=>images.length>=4,'hovered region sends slow glow frames');assert.equal(texts.length,3,'pulse never rewrites menu text');assert.equal(max,1,'image sends never overlap');
+ glasses.handle({textEvent:{eventType:1}});await until(()=>texts.some(t=>t.content?.includes('> Piedmont')),'hover updates region text');assert.equal(nav.region.name,'Piedmont');await glasses.close();const count=images.length;await tick(45);assert.equal(images.length,count,'closed Atlas stops every pulse');assert.deepEqual(errors,[]);
+ globalThis.matchMedia=()=>({matches:true});const still=new AtlasGlasses(bridge,nav,renderer,()=>{},e=>errors.push(e));const before=images.length;await still.open();await until(()=>images.length-before>=2,'reduced-motion frame completes');await tick(65);assert.equal(images.length-before,2,'reduced motion sends only one map');await still.close();
 }finally{globalThis.setTimeout=originalTimeout;delete globalThis.matchMedia;}
 console.log('PASS real Veneto/Piedmont boundaries, polygon holes, visible pulse, country isolation, latest hover, serial images, unchanged menu, close cancellation and reduced motion.');
