@@ -4,7 +4,7 @@ const tick=()=>new Promise(r=>setImmediate(r));
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject};};
 const draft=name=>({id:name,result:{wine_name:name,producer:'Producer',vintage_state:'year',vintage:2022}});
 assert.deepEqual(batchQueries('Machete 2022\n machete   2022\nMachete 2021'),['machete   2022','Machete 2021']);
-assert.throws(()=>batchQueries(Array.from({length:201},(_,i)=>'Wine '+i).join('\n')),/200/);
+assert.throws(()=>batchQueries(Array.from({length:401},(_,i)=>'Wine '+i).join('\n')),/400/);
 assert.throws(()=>batchQueries('  '),/one wine/);
 let owner=true;const requests=new Map(),photos=new Map(),saved=[],saves=new Map();let changes=0;
 const batch=new WineBatch({current:()=>owner,changed:()=>changes++,research:(q,signal)=>{const d=deferred();requests.set(q,{...d,signal});return d.promise;},artwork:w=>{const d=deferred();photos.set(w.wine_name,d);return d.promise;},save:(row,signal)=>{saved.push(row.query);const d=deferred();saves.set(row.query,{...d,signal});return d.promise;}});

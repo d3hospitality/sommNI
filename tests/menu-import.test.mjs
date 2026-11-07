@@ -1,3 +1,4 @@
+import {menuHtmlText,menuTextChunks} from '../supabase/functions/winelens-beta/menu-html.ts';
 import assert from 'node:assert/strict';
 import {importMenu,normalizeMenu,MENU_MAX_BYTES} from '../supabase/functions/winelens-beta/menu-import.ts';
 const entry={wine_name:'Château Test',producer:'Domaine A',vintage:'2022',section:'Wines',page:3,source_text:'Domaine A Château Test 2022',needs_review:false,reason:''};
@@ -25,3 +26,19 @@ const imageResult=await importMenu({url:'https://example.com/menu'},{...deps,fet
 assert.equal(imageResult.format,'Image');assert.equal(imageResult.entries[0].needs_review,true);assert.match(imageResult.warnings[0],/small preview/);
 const unsupportedYear=normalizeMenu({entries:[{...entry,source_text:'Estate Cabernet 18',vintage:'2018'},{...entry,vintage:'['}],warnings:[],truncated:false});assert.equal(unsupportedYear.entries[0].vintage,'');assert.equal(unsupportedYear.entries[0].needs_review,true);
 console.log('PASS: signature detection with missing content type, low-resolution review, and no invented full years.');
+
+const html='<html><head><script>STEAL DATA</script></head><body><nav>Buy gift cards</nav><h2>Wine List</h2><h3>Red</h3><table><tr><td>Estate &amp; Sons Cabernet</td><td>2022</td></tr></table><h3>Food</h3><p>Clams</p></body></html>';
+const htmlResult=await importMenu({url:'https://example.com/menu'},{...deps,fetch:async(url,options)=>{
+ if(String(url).includes('api.openai.com')){const sent=JSON.parse(options.body).input[0].content[1];assert.equal(sent.type,'input_text');assert.match(sent.text,/Estate & Sons Cabernet.*2022/);assert(!sent.text.includes('STEAL DATA'));assert(!sent.text.includes('Buy gift cards'));return Response.json({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(output)}]}]});}
+ return new Response(html,{headers:{'content-type':'text/html; charset=utf-8'}});
+}});
+assert.equal(htmlResult.format,'Web page');
+console.log('PASS: inert HTML text and entities, table columns, navigation/scripts excluded, web menu extraction.');
+
+const focused=menuHtmlText('<div id="dinner">Food and other menu text</div><section id="wine-list"><h2>Wines</h2><p>Estate Cabernet 2022 from Napa Valley</p></section><footer>Other text</footer>');assert.match(focused,/Cabernet/);assert(!focused.includes('Food'));assert(!focused.includes('Other text'));
+assert.throws(()=>menuHtmlText('<script>Only scripts</script>'),/no readable/);
+console.log('PASS: focused wine sections and empty/script-only menu fallback.');
+
+const longMenu='## Red Wines\n'+Array.from({length:250},(_,i)=>`- Estate Wine ${i}\nNapa Valley 2022`).join('\n');
+const sections=menuTextChunks(longMenu);assert(sections.length>1);assert(sections.every(s=>s.startsWith('## Red Wines')));for(let i=0;i<250;i++)assert(sections.some(s=>s.includes(`- Estate Wine ${i}\nNapa Valley 2022`)),'label/year stay together');
+console.log('PASS: long menu section splitting preserves all entries and section context.');

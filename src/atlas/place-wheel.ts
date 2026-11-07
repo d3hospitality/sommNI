@@ -10,14 +10,16 @@ export function attachPlaceWheel(select:HTMLSelectElement, title:string){
  select.hidden=true;select.insertAdjacentElement('afterend',trigger);
  const label=select.closest('label');if(label)label.htmlFor=trigger.id;
  const sheet=document.createElement('dialog');sheet.className='place-wheel-sheet';sheet.setAttribute('aria-labelledby',select.id+'-wheel-title');
- sheet.innerHTML=`<header><h2 id="${select.id}-wheel-title">${title}</h2><button type="button" data-cancel>Cancel</button></header><input type="search" aria-label="Search ${title.toLowerCase()}" placeholder="Find a ${title.toLowerCase()}…" autocomplete="off"><p class="place-wheel-hint">Flick to glide · tap to stop · confirm to explore</p><div class="place-wheel-window"><div class="place-wheel-band" aria-hidden="true"></div><div class="place-wheel-track" role="listbox" tabindex="0" aria-label="${title}"></div></div><p class="place-wheel-empty" role="status" hidden>No matching places</p><button type="button" class="place-wheel-done">Show ${title.toLowerCase()}</button>`;
+ sheet.innerHTML=`<header><h2 id="${select.id}-wheel-title">${title}</h2><button type="button" data-cancel>Cancel</button></header><input type="search" aria-label="Search ${title.toLowerCase()}" placeholder="Find a ${title.toLowerCase()}…" autocomplete="off"><p class="place-wheel-hint">Drag or flick · tap a name · confirm below</p><div class="place-wheel-window"><div class="place-wheel-band" aria-hidden="true"></div><div class="place-wheel-track" role="listbox" tabindex="0" aria-label="${title}"></div></div><div class="place-wheel-nudge"><button type="button" data-previous aria-label="Previous choice">↑ Previous</button><button type="button" data-next aria-label="Next choice">Next ↓</button></div><p class="place-wheel-empty" role="status" hidden>No matching places</p><button type="button" class="place-wheel-done">Show ${title.toLowerCase()}</button>`;
  document.body.append(sheet);
  const track=sheet.querySelector<HTMLElement>('.place-wheel-track')!,search=sheet.querySelector<HTMLInputElement>('input')!,done=sheet.querySelector<HTMLButtonElement>('.place-wheel-done')!,empty=sheet.querySelector<HTMLElement>('.place-wheel-empty')!;
  let items:HTMLOptionElement[]=[],active=-1,signature='';
+ const previous=sheet.querySelector<HTMLButtonElement>('[data-previous]')!,next=sheet.querySelector<HTMLButtonElement>('[data-next]')!;
  const motion=attachWheelMotion(track,()=>items.length,paint);
  const close=()=>{motion.stop();sheet.close();};
  function paint(index:number){
   const next=wheelIndex(index*ROW,items.length);if(next===active)return;active=next;
+  previous.disabled=active<=0;sheet.querySelector<HTMLButtonElement>('[data-next]')!.disabled=active>=items.length-1;
   [...track.children].forEach((row,i)=>{row.setAttribute('aria-selected',String(i===active));(row as HTMLElement).style.setProperty('--distance',String(Math.min(2,Math.abs(i-active))));});
   if(items.length)track.setAttribute('aria-activedescendant',select.id+'-choice-'+active);else track.removeAttribute('aria-activedescendant');
  }
@@ -39,6 +41,7 @@ export function attachPlaceWheel(select:HTMLSelectElement, title:string){
  }
  trigger.addEventListener('click',()=>{sync();search.value='';sheet.showModal();render();track.focus({preventScroll:true});});
  search.addEventListener('input',render);
+ previous.onclick=()=>jump(active-1);next.onclick=()=>jump(active+1);
  track.addEventListener('scroll',()=>paint(wheelIndex(track.scrollTop,items.length)),{passive:true});
  track.addEventListener('keydown',event=>{
   const current=wheelIndex(track.scrollTop,items.length);

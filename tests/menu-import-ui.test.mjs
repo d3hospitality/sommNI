@@ -7,8 +7,8 @@ let resolveRequest,request;
 globalThis.menuUIFixture={owner:'guest:one',provider:(body,signal)=>{request={body,signal};return new Promise(resolve=>resolveRequest=resolve)}};
 const dir=await mkdtemp(tmpdir()+'/sommni-menu-ui-');
 await build({entryPoints:['src/research/menu-import.ts'],bundle:true,platform:'node',format:'esm',outfile:dir+'/ui.mjs',plugins:[{name:'fixtures',setup(b){b.onResolve({filter:/(beta\/client|artwork-store|\.\/client)$/},args=>({path:args.path,namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},({path})=>({contents:path.includes('beta/client')?'export const betaProvider=(...args)=>globalThis.menuUIFixture.provider(...args);':path.includes('artwork-store')?'export const artworkOwner=()=>globalThis.menuUIFixture.owner;':`export const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));`,loader:'js'}));}}]});
-const {mountMenuImport}=await import(dir+'/ui.mjs');let started;
-const host=document.querySelector('main'),reset=mountMenuImport(host,queries=>started=queries),$=s=>host.querySelector(s);
+const {mountMenuImport}=await import(dir+'/ui.mjs');let started;const savedWines=[];
+const host=document.querySelector('main'),reset=mountMenuImport(host,queries=>started=queries,()=>savedWines),$=s=>host.querySelector(s);
 const submit=()=> $('[data-menu-form]').onsubmit({preventDefault(){}});
 $('[name=menu-link]').value='https://example.com/menu.pdf';const reading=submit();assert.equal(request.body.action,'import_menu');assert($('[data-read]').disabled);
 resolveRequest({entries:[{query:'Estate Cabernet 2022',section:'Red',page:2,source_text:'Estate Cabernet 2022',needs_review:false},{query:'<img src=x onerror=bad()>',section:'<script>bad</script>',page:2,source_text:'Unclear label',needs_review:true,reason:'Producer unclear'}],warnings:[],duplicates:1});await reading;
@@ -18,3 +18,11 @@ $('[data-menu-all]').checked=true;$('[data-menu-all]').onchange();assert.equal($
 reset();const pending=submit();$('[data-cancel]').onclick();assert.equal(request.signal.aborted,true);resolveRequest({entries:[{query:'Late'}]});await pending;assert.equal($('[data-menu-entries]').children.length,0);assert.match($('[data-menu-status]').textContent,/cancelled/);
 reset();const accountPending=submit();globalThis.menuUIFixture.owner='another';resolveRequest({entries:[{query:'Other account'}]});await accountPending;assert.equal($('[data-menu-entries]').children.length,0);
 console.log('PASS menu UI: explicit review, uncertainty unchecked, editable queries, check all, escaped source text, cancellation and account isolation.');
+
+globalThis.menuUIFixture.owner='guest:one';reset();savedWines.push({wine_name:'Cabernet',producer:'Estate',vintage:2022,metadata:{vintage_state:'year'}});
+const duplicateReading=submit();resolveRequest({entries:[{query:'Estate Cabernet 2022',source_text:'Estate Cabernet 2022',needs_review:false},{query:'Estate Cabernet 2021',source_text:'Estate Cabernet 2021',needs_review:false},{query:'Estate Cabernet',source_text:'Estate Cabernet',needs_review:false}]});await duplicateReading;
+assert.equal($('[data-keep="0"]').disabled,true);assert.equal($('[data-keep="0"]').checked,false);assert.match($('[data-duplicate]').textContent,/Already/);
+assert.equal($('[data-keep="1"]').checked,true,'different vintages stay available');assert.equal($('[data-keep="2"]').checked,false,'unknown vintage requires review');
+$('[data-menu-all]').checked=true;$('[data-menu-all]').onchange();assert.equal($('[data-keep="0"]').checked,false,'check all excludes saved exact matches');
+$('[data-query="0"]').value='Estate Cabernet 2020';$('[data-query="0"]').dispatchEvent(new window.Event('input',{bubbles:true}));assert.equal($('[data-keep="0"]').disabled,false);assert.equal($('[data-keep="0"]').checked,false,'corrected entries need approval');
+console.log('PASS: duplicate highlighting, excluded exact matches, distinct vintages, uncertain vintage review and edited identity.');

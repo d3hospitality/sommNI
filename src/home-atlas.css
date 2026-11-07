@@ -116,3 +116,7 @@
 
 /* The map is a feathered monocle; controls and bottle remain crisp outside its mask. */
 #dot-dialog .orbit-stage{background:transparent;border-color:transparent}
+
+/* Keep the image at 24% of the globe; give thumbs a wider transparent swipe target. */
+#dot-dialog .orbit-stage-bottle::before{content:"";position:absolute;inset:-8px -28px;pointer-events:auto}
+#orbit-selected-wine{touch-action:pan-y;user-select:none;cursor:ew-resize}

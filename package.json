@@ -1,7 +1,7 @@
 {
   "name": "sommni",
   "version": "1.0.0",
-  "description": "sommNI \u2014 Seven Second Sommelier for Even Realities G2 \u2014 Sprite Bottles, Voice Search, Find My Wine",
+  "description": "sommNI — Seven Second Sommelier for Even Realities G2 — Sprite Bottles, Voice Search, Find My Wine",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "gh-pages": "^6.3.0",
+    "htmlparser2": "10.1.0",
     "linkedom": "0.18.12",
     "playwright": "1.62.1",
     "typescript": "^5.7.0",

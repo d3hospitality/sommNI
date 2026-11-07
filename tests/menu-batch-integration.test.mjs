@@ -6,6 +6,7 @@ Object.defineProperty(window.HTMLInputElement.prototype,'checked',{configurable:
 globalThis.FormData=class extends Map{constructor(form){super();for(const input of form.querySelectorAll('textarea,input'))this.set(input.name,input.value)}};
 let queries=[],saves=0;globalThis.batchFixture={action:async body=>{if(body.action==='research'){queries.push(body.query);return {draft:{id:body.query,result:{wine_name:body.query,producer:'Estate',vintage:2022,vintage_state:'year'}}};}if(body.action==='confirm'){saves++;return {item:{id:body.draft_id,image_url:'photo'}}}},menu:async()=>({entries:[{query:'Menu Bottle 2022',source_text:'Menu Bottle 2022',needs_review:false,page:1,section:'Red'}]})};
 const modules={
+ '../winebrary-glasses':'export const readLibrary=()=>({items:[]});',
  '../beta/client':'export const betaProvider=(...args)=>globalThis.batchFixture.menu(...args);',
  '../artwork-store':'export const artworkOwner=()=>"guest:test";',
  './client':`export const researchAction=(...args)=>globalThis.batchFixture.action(...args);export const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));`,

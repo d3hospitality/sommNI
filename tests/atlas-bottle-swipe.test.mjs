@@ -7,7 +7,7 @@ class Bottle extends EventTarget{
 const b=new Bottle(),steps=[];attachBottleSwipe(b,delta=>steps.push(delta));let notes=0;b.addEventListener('click',()=>notes++);
 function fire(type,fields={}){const e=new Event(type,{cancelable:true});Object.assign(e,{pointerId:1,button:0,isPrimary:true,clientX:100,clientY:100,detail:1,...fields});b.dispatchEvent(e);return e;}
 function swipe(dx,dy=0,end='pointerup'){fire('pointerdown');fire('pointermove',{clientX:100+dx,clientY:100+dy});fire(end,{clientX:100+dx,clientY:100+dy});}
-swipe(-80);assert.deepEqual(steps,[1]);assert.equal(fire('click').defaultPrevented,true);assert.equal(notes,0);assert.equal(b.captures.size,0);assert.equal(b.props.size,0);
+swipe(-30);assert.deepEqual(steps,[1]);assert.equal(fire('click',{detail:0}).defaultPrevented,true);assert.equal(notes,0);assert.equal(b.captures.size,0);assert.equal(b.props.size,0);
 swipe(80);fire('click');assert.deepEqual(steps,[1,-1]);
 swipe(-20);fire('click');assert.equal(steps.length,2);assert.equal(notes,0,'a short drag is not a notes tap');
 swipe(20,100);fire('click');assert.equal(steps.length,2,'vertical scroll does not change wine');assert.equal(notes,0);

@@ -249,7 +249,7 @@ export function catalogAtlas(renderer: GlobeRenderer, libraryItems: LibraryWine[
     mineByRegion.set(area.id, wines.filter(w=>w.kind==='library').length);
   }
   const countries = renderer.data.countries
-    .slice()
+    .filter(c => (countryWines.get(c.code) ?? 0) > 0 || (mineByCountry.get(c.code) ?? 0) > 0)
     .sort((a, b) => ((mineByCountry.get(b.code) ?? 0) - (mineByCountry.get(a.code) ?? 0)) || ((countryWines.get(b.code) ?? 0) - (countryWines.get(a.code) ?? 0)) || a.name.localeCompare(b.name));
   return { data: { ...renderer.data, regions: [...regions.values()] }, countries, countryWines, entries, mineByRegion, mineByCountry, unmapped, unlinked: [...unlinked].sort() };
 }

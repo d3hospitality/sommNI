@@ -21,3 +21,10 @@
 #wine-research [data-menu-research]{margin-top:12px;width:100%}
 
 #wine-research .menu-reading-notes{margin:8px 0 14px;font-size:11px;color:var(--muted,#aaa)}
+
+#wine-research .menu-columns{display:grid;grid-template-columns:30px minmax(0,1fr) 105px;gap:10px;padding:10px 0;font-size:10px;color:var(--muted);border-bottom:1px solid var(--line)}
+#wine-research .menu-entry{grid-template-columns:30px minmax(0,1fr) 105px;gap:10px}
+#wine-research .menu-match{font-size:11px;line-height:1.5;margin:10px 0;color:var(--muted)}
+#wine-research .menu-match[data-match=existing],#wine-research .menu-match[data-match=possible]{color:var(--gold,#e1c66b)}
+#wine-research .menu-entry.is-duplicate{background:#e1c66b08;border-left:2px solid var(--gold,#e1c66b);padding-left:8px}
+@media(max-width:480px){#wine-research .menu-columns,#wine-research .menu-entry{grid-template-columns:28px minmax(0,1fr)}#wine-research .menu-columns span:last-child{display:none}#wine-research .menu-match{grid-column:2;margin:0 0 4px}}

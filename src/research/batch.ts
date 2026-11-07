@@ -13,7 +13,7 @@ export type BatchPorts = {
 export function batchQueries(text:string):string[]{
  const lines=[...new Map(text.split(/\r?\n/).map(s=>s.trim().replace(/^[-•]\s+/, '')).filter(Boolean).map(s=>[s.normalize('NFKC').toLowerCase().replace(/\s+/g,' '),s])).values()];
  if(!lines.length)throw Error('Add one wine per line, including the producer and year when you know them.');
- if(lines.length>200)throw Error('Add up to 200 wines at a time. Keep the remaining lines for your next batch.');
+ if(lines.length>400)throw Error('Add up to 400 wines at a time. Keep the remaining lines for your next batch.');
  if(lines.some(s=>s.length>400))throw Error('Keep each wine under 400 characters, one wine per line.');
  return lines;
 }
