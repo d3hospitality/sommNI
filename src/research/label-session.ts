@@ -13,6 +13,7 @@ export const labelSession=()=>session;
 export function subscribeLabels(listener:()=>void){listeners.add(listener);return()=>{listeners.delete(listener);};}
 export function clearLabels(){session?.dispose();session=null;changed();}
 window.addEventListener('sommni-library-account-changing',clearLabels);
+window.addEventListener('sommni-bottle-photo-saved',event=>session?.acceptSaved((event as CustomEvent).detail?.wine));
 export function startLabels(wines:LibraryWine[]){
  if(session?.busy)throw Error('A selected label is still saving. Finish it before starting a new batch.');
  const scope=artworkOwner();if(!scope)throw Error('Open your Winebrary first.');

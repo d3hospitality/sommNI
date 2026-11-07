@@ -7,7 +7,7 @@ const {window}=parseHTML('<html><body><div id="app"><main class="wl-workspace"><
 Object.assign(globalThis,{window,document:window.document,HTMLElement:window.HTMLElement,CustomEvent:window.CustomEvent});
 let navigated=0;document.querySelector('.tab').onclick=()=>navigated++;
 window.HTMLElement.prototype.scrollIntoView=function(){};
-const row={wine:{wine_name:'Test wine',vintage:2020},state:'ready',work:'idle',options:[],choice:0,message:'Ready'};
+const row={wine:{id:'test-wine',wine_name:'Test wine',vintage:2020},state:'ready',work:'idle',options:[],choice:0,message:'Ready'};
 const makeSession=()=>({current:row,rows:[row],settled:1,saved:0,busy:false});
 globalThis.labelFixture={session:makeSession(),listeners:[]};
 const mocks={
@@ -21,7 +21,7 @@ const dir=await mkdtemp(tmpdir()+'/sommni-notice-');
 await build({entryPoints:['src/research/label-phone.ts'],bundle:true,format:'esm',platform:'node',outfile:dir+'/test.mjs',loader:{'.css':'empty'},plugins:[{name:'fixture',setup(b){b.onResolve({filter:/.*/},a=>{const name=a.path.split('/').at(-1);if(name in mocks)return {path:name,namespace:'fixture'}});b.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:mocks[a.path],loader:'ts'}));}}]});
 const {initLabelReview}=await import(dir+'/test.mjs');initLabelReview(document.querySelector('#anchor'));
 const $=s=>document.querySelector(s),notify=()=>labelFixture.listeners.forEach(cb=>cb());
-assert.equal($('.label-nib').hidden,false);
+assert.equal($('.label-nib').hidden,false);let upload;window.addEventListener('sommni-upload-bottle-photo',e=>upload=e.detail.id);$('#label-upload').click();assert.equal(upload,'test-wine','review offers upload for the exact wine');
 $('.label-nib-dismiss').click();assert.equal($('.label-nib').hidden,true);assert.equal(navigated,0);
 assert.equal($('#wl-label-review').hidden,false,'dismiss leaves the review available');
 labelFixture.session.saved=1;notify();assert.equal($('.label-nib').hidden,true,'progress does not resurrect a dismissed notification');

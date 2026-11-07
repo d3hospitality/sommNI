@@ -1,3 +1,4 @@
+import {createLibraryPhotoState,missingPhotoTools,missingPhotoAction} from './winebrary-photos';
 import {wineOrigin} from './wine-origin';
 import {bottlePhotoUpload, bindBottlePhotoUpload} from './research/photo-upload';
 import {foodPairingsHtml} from './food-pairings';
@@ -48,6 +49,8 @@ let loading = false;
 let notice = '';
 let search = '';
 let libraryCountry='', libraryRegion='';
+let missingPhotosOnly=false;
+const libraryPhotos=createLibraryPhotoState(libraryPhoto);
 let generation = 0;
 let dialog: HTMLDialogElement;
 let root: HTMLElement;
@@ -123,12 +126,14 @@ async function refresh(quiet=false) {
   finally { if (epoch === generation) { loading = false; if(changed){render(); libraryChanged();} } }
 }
 function bottleCaption(w:LibraryWine){const p=w.metadata?.bottle_provenance;return p?.identity_check?`<p class="wl-muted small">AI-matched reference photograph · ${esc(p.vintage_binding||'Exact vintage unverified')}</p>`:'';}
-function bottleStatus(w:LibraryWine){const status=bottleStatuses.get(w.id);return !w.image_url?`<small role="status">${esc(status?.message||'Bottle photo will be matched automatically.')}</small>`:'';}
+function bottleStatus(w:LibraryWine){const status=bottleStatuses.get(w.id);return !w.image_url?`<small role="status">${esc(status?.message||'Find a matching label or upload your own bottle photo.')}</small>`:'';}
 function render() {
   const origins=items.map(w=>({country:countryLabel(wineOrigin(w.metadata?.country,w.region).country),region:regionLabel(w.region,w.metadata?.country||'')}));
   if(libraryCountry&&!origins.some(o=>o.country===libraryCountry)){libraryCountry='';libraryRegion='';}
   if(libraryRegion&&!origins.some(o=>o.country===libraryCountry&&o.region===libraryRegion))libraryRegion='';
-  const visible = items.map(w=>({...w,image_url:libraryPhoto(w)||undefined})).filter(w=>(!libraryCountry||countryLabel(wineOrigin(w.metadata?.country,w.region).country)===libraryCountry)&&(!libraryRegion||regionLabel(w.region,w.metadata?.country||'')===libraryRegion)).filter(w => `${w.wine_name} ${w.producer} ${w.vintage} ${w.region} ${w.metadata?.country} ${w.metadata?.grape} ${sakeSummary(w.metadata)}`.toLowerCase().includes(search.toLowerCase()));
+  const scoped = items.map(w=>({...w,image_url:libraryPhotos.photo(w)||undefined})).filter(w=>(!libraryCountry||countryLabel(wineOrigin(w.metadata?.country,w.region).country)===libraryCountry)&&(!libraryRegion||regionLabel(w.region,w.metadata?.country||'')===libraryRegion)).filter(w => `${w.wine_name} ${w.producer} ${w.vintage} ${w.region} ${w.metadata?.country} ${w.metadata?.grape} ${sakeSummary(w.metadata)}`.toLowerCase().includes(search.toLowerCase()));
+  const missing=scoped.filter(w=>!w.image_url);
+  const visible=missingPhotosOnly?missing:scoped;
   if(librarySort==='name')visible.sort((a,b)=>a.wine_name.localeCompare(b.wine_name));
   if(librarySort==='vintage')visible.sort((a,b)=>(b.vintage??0)-(a.vintage??0));
   if(librarySort==='country')visible.sort((a,b)=>countryLabel(a.metadata?.country).localeCompare(countryLabel(b.metadata?.country))||regionLabel(a.region,a.metadata?.country||'').localeCompare(regionLabel(b.region,b.metadata?.country||''))||a.wine_name.localeCompare(b.wine_name)||(b.vintage??0)-(a.vintage??0));
@@ -136,12 +141,21 @@ function render() {
     <div class="wl-library-toolbar"><p class="wl-muted">${userId ? `${items.length} saved ${items.length === 1 ? 'wine' : 'wines'} · ${isGuestLibrary() ? 'Saved on this device' : 'Synced to your account'}` : 'A home for every bottle, every vintage, every discovery.'}</p>${userId ? `<label class="wl-search-label"><span class="sr-only">Search your wines</span><input id="wl-search" type="search" value="${esc(search)}" placeholder="Search your wines…"></label><button id="wl-refresh" class="wl-text-button">Refresh</button><button id="wl-artwork" class="wl-text-button">Offline bottles & uploads</button>` : ''}</div>
     ${userId ? `<div class="wl-view-toolbar"><button id="wl-view-all" class="wl-text-button">View All</button><div class="wl-view-switch" role="group" aria-label="Library view"><button data-library-view="rows" aria-pressed="${libraryView==='rows'}">Rows</button><button data-library-view="cards" aria-pressed="${libraryView==='cards'}">Bottles</button></div><label>Sort<select id="wl-sort">${[['recent','Recently added'],['name','Wine name'],['vintage','Newest vintage'],['country','Country / region']].map(([value,label])=>`<option value="${value}" ${value===librarySort?'selected':''}>${label}</option>`).join('')}</select></label><span>${visible.length} shown</span></div>` : ''}
     ${userId&&items.length?originFilters('wl-origin',origins,libraryCountry,libraryRegion):''}
+    ${userId&&!loading?missingPhotoTools(missing.length,missingPhotosOnly):''}
     ${notice ? `<p role="status" class="wl-notice">${esc(notice)} <button id="wl-retry" class="wl-text-button">Retry</button></p>` : ''}
-    ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Save a wine you love. Add another year. Make it yours.</p><button id="wl-start" class="wl-primary">Open my Winebrary ↗</button></div>` : visible.length ? libraryView==='rows' ? libraryRows(visible) : `<div class="wl-library-grid">${visible.map(w => `<article class="wl-bottle-card"><button class="wl-bottle-open" data-wine="${esc(w.id)}" data-row-id="${esc(w.id)}"><div class="wl-bottle-stage">${w.image_url ? `<img src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle" loading="lazy">` : '<span class="wl-photo-placeholder">PHOTO<br>TO COME<span>＋</span></span>'}<span class="wl-vintage">${esc(vintageLabel(w))}</span></div><div class="wl-bottle-copy"><p class="wl-kicker">${esc(w.metadata?.color || 'WINE')} · ${esc(w.region || 'YOUR COLLECTION')}</p><h3>${esc(w.wine_name)}</h3><p>${esc(w.producer || w.metadata?.grape || 'Explore this bottle')} <span>↗</span></p>${w.metadata?.image_source === 'generated' ? '<small>Studio rendering · reviewed by you</small>' : ''}</div></button></article>`).join('')}</div>` : `<div class="wl-empty"><h3>${search||libraryCountry ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${search||libraryCountry ? 'Try another country, region or search.' : 'Add a new wine or bring a favorite over from the catalog.'}</p><button class="wl-primary" id="wl-first">Add a wine ↗</button></div>`}`;
+    ${loading ? '<p class="wl-empty" role="status">Opening your Winebrary…</p>' : !userId ? `<div class="wl-empty wl-welcome"><span class="wl-lens-mark" aria-hidden="true">◎</span><h3>Good taste has a memory.</h3><p>Save a wine you love. Add another year. Make it yours.</p><button id="wl-start" class="wl-primary">Open my Winebrary ↗</button></div>` : visible.length ? libraryView==='rows' ? libraryRows(visible) : `<div class="wl-library-grid">${visible.map(w => `<article class="wl-bottle-card"><button class="wl-bottle-open" data-wine="${esc(w.id)}" data-row-id="${esc(w.id)}"><div class="wl-bottle-stage">${w.image_url ? `<img src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle" loading="lazy">` : '<span class="wl-photo-placeholder">BOTTLE PHOTO<br>MISSING</span>'}<span class="wl-vintage">${esc(vintageLabel(w))}</span></div><div class="wl-bottle-copy"><p class="wl-kicker">${esc(w.metadata?.color || 'WINE')} · ${esc(w.region || 'YOUR COLLECTION')}</p><h3>${esc(w.wine_name)}</h3><p>${esc(w.producer || w.metadata?.grape || 'Explore this bottle')} <span>↗</span></p>${w.metadata?.image_source === 'generated' ? '<small>Studio rendering · reviewed by you</small>' : ''}</div></button>${!w.image_url?missingPhotoAction(w.id,w.wine_name,esc):''}</article>`).join('')}</div>` : `<div class="wl-empty"><h3>${missingPhotosOnly?'No missing photos here.':search||libraryCountry ? 'No bottles found.' : 'Your first bottle starts here.'}</h3><p>${missingPhotosOnly?'Your photos are ready. Show all wines to return to your collection.':search||libraryCountry ? 'Try another country, region or search.' : 'Add a new wine or bring a favorite over from the catalog.'}</p>${!missingPhotosOnly?'<button class="wl-primary" id="wl-first">Add a wine ↗</button>':''}</div>`}`;
   root.querySelector<HTMLSelectElement>('#wl-origin-country')?.addEventListener('change',e=>{libraryCountry=(e.target as HTMLSelectElement).value;libraryRegion='';render();root.querySelector<HTMLSelectElement>('#wl-origin-region')?.focus();});
   root.querySelector<HTMLSelectElement>('#wl-origin-region')?.addEventListener('change',e=>{libraryRegion=(e.target as HTMLSelectElement).value;render();root.querySelector<HTMLSelectElement>('#wl-origin-region')?.focus();});
   bindWinebrarySwipe(root);
-  root.querySelector('#wl-view-all')?.addEventListener('click',()=>{libraryCountry='';libraryRegion='';search='';librarySort='country';libraryView='rows';render();});
+  root.querySelector('#wl-view-all')?.addEventListener('click',()=>{libraryCountry='';libraryRegion='';search='';missingPhotosOnly=false;librarySort='country';libraryView='rows';render();});
+  root.querySelector('#wl-missing-photos')?.addEventListener('click',()=>{missingPhotosOnly=!missingPhotosOnly;render();root.querySelector<HTMLButtonElement>('#wl-missing-photos')?.focus();});
+  root.querySelector('#wl-find-photos')?.addEventListener('click',()=>{const wines=missing.slice(0,10).flatMap(w=>items.find(item=>item.id===w.id)??[]);if(wines.length===1)photoStudio(wines[0]);else if(wines.length)window.dispatchEvent(new CustomEvent('sommni-polish-labels',{detail:{wines}}));});
+  // Capture before thumbnail fallback replaces the failing image. Never erase the stored URL.
+  root.querySelectorAll<HTMLImageElement>('[data-row-id] img').forEach(img=>{
+    const row=img.closest<HTMLElement>('[data-row-id]'),wine=items.find(w=>w.id===row?.dataset.rowId),url=img.getAttribute('src');
+    const failed=()=>{if(wine&&url&&libraryPhotos.fail(wine,url))queueMicrotask(()=>{if(root.isConnected)render();});};
+    img.addEventListener('error',failed,{once:true});if(img.complete&&!img.naturalWidth)failed();
+  });
   watchWinePhotos(root);
   root.querySelectorAll<HTMLDetailsElement>('[data-expand-wine]').forEach(el=>el.addEventListener('toggle',()=>{const id=el.dataset.expandWine!;if(el.open)expandedWines.add(id);else expandedWines.delete(id);}));
   root.querySelectorAll<HTMLButtonElement>('[data-edit-photo]').forEach(b=>b.onclick=()=>{const wine=items.find(w=>w.id===b.dataset.editPhoto);if(wine)photoStudio(wine);});
@@ -156,7 +170,7 @@ function render() {
   root.querySelector('#wl-first')?.addEventListener('click', () => window.dispatchEvent(new CustomEvent('sommni-add-wine')));
   root.querySelector('#wl-start')?.addEventListener('click', signIn);
   root.querySelector('#wl-retry')?.addEventListener('click', ()=>void refresh());
-  root.querySelector('#wl-refresh')?.addEventListener('click', ()=>void refresh());
+  root.querySelector('#wl-refresh')?.addEventListener('click', ()=>{libraryPhotos.reset();void refresh();});
   root.querySelector('#wl-artwork')?.addEventListener('click',()=>void artworkStatus());
   root.querySelectorAll<HTMLImageElement>('.wl-bottle-stage img').forEach(img => img.addEventListener('error', () => {
     const placeholder=document.createElement('span'); placeholder.className='wl-photo-placeholder'; placeholder.textContent='PHOTO UNAVAILABLE'; img.replaceWith(placeholder);
@@ -179,7 +193,7 @@ function libraryRows(visible: LibraryWine[]) {
     previousCountry=country;previousRegion=region;
     const year=w.vintage?String(w.vintage):w.metadata?.vintage_state==='non_vintage'?'NV':'—';
     const notes=referenceNotes(w.metadata?.tasting_notes||'');
-    return `${divider}<article data-row-id="${esc(w.id)}" class="wl-compact-row"><div class="wl-swipe-dock" aria-hidden="true" inert><button data-edit-wine="${esc(w.id)}" aria-label="Edit ${esc(w.wine_name)}">Edit</button><button data-remove-wine="${esc(w.id)}" aria-label="Remove ${esc(w.wine_name)}">Remove</button><button data-close-actions aria-label="Close actions for ${esc(w.wine_name)}">×</button></div><div class="wl-swipe-content"><details data-expand-wine="${esc(w.id)}" ${expandedWines.has(w.id)?'open':''}><summary class="bottle-row-summary">${bottleRowCells({name:w.wine_name,producer:w.producer,photo:w.image_url,vintage:year,country:w.metadata?.country,region:w.region,variety:isSake(w)?w.metadata?.rice_variety:w.metadata?.grape,style:isSake(w)?[w.metadata?.sake_classification,w.metadata?.sake_style].filter(Boolean).join(' · '):w.metadata?.color,sake:isSake(w)})}</summary><div class="wl-row-expanded">${w.image_url?`<img class="wl-row-full-bottle" src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle photograph" loading="lazy">`:''}<div class="wl-row-information"><dl>${[['Country',wineOrigin(w.metadata?.country,w.region).country],['State / province',wineOrigin(w.metadata?.country,w.region,w.metadata?.state).subdivision],[isSake(w)?'Prefecture / region':'Region',wineOrigin(w.metadata?.country,w.region).region],[isSake(w)?'Rice variety':'Grape',isSake(w)?w.metadata?.rice_variety:w.metadata?.grape],['Classification',w.metadata?.sake_classification],['Sake styles',w.metadata?.sake_style],['Style',w.metadata?.color],['Vintage',vintageLabel(w)]].filter(([,value])=>value).map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>${bottleStatus(w)}${notes?`<p class="wl-row-note">${esc(notes.length>400?notes.slice(0,400)+'…':notes)}</p>`:''}<div class="wl-row-actions balanced-actions"><button data-wine="${esc(w.id)}">Tasting notes ↗</button><button data-edit-photo="${esc(w.id)}">Edit Bottle Photo</button></div></div></div></details><button class="wl-row-more" data-row-actions aria-label="Actions for ${esc(w.wine_name)}" aria-expanded="false">⋯</button></div></article>`;
+    return `${divider}<article data-row-id="${esc(w.id)}" class="wl-compact-row"><div class="wl-swipe-dock" aria-hidden="true" inert><button data-edit-wine="${esc(w.id)}" aria-label="Edit ${esc(w.wine_name)}">Edit</button><button data-remove-wine="${esc(w.id)}" aria-label="Remove ${esc(w.wine_name)}">Remove</button><button data-close-actions aria-label="Close actions for ${esc(w.wine_name)}">×</button></div><div class="wl-swipe-content"><details data-expand-wine="${esc(w.id)}" ${expandedWines.has(w.id)?'open':''}><summary class="bottle-row-summary">${bottleRowCells({name:w.wine_name,producer:w.producer,photo:w.image_url,vintage:year,country:w.metadata?.country,region:w.region,variety:isSake(w)?w.metadata?.rice_variety:w.metadata?.grape,style:isSake(w)?[w.metadata?.sake_classification,w.metadata?.sake_style].filter(Boolean).join(' · '):w.metadata?.color,sake:isSake(w)})}</summary><div class="wl-row-expanded">${w.image_url?`<img class="wl-row-full-bottle" src="${esc(w.image_url)}" alt="${esc(w.wine_name)} bottle photograph" loading="lazy">`:''}<div class="wl-row-information"><dl>${[['Country',wineOrigin(w.metadata?.country,w.region).country],['State / province',wineOrigin(w.metadata?.country,w.region,w.metadata?.state).subdivision],[isSake(w)?'Prefecture / region':'Region',wineOrigin(w.metadata?.country,w.region).region],[isSake(w)?'Rice variety':'Grape',isSake(w)?w.metadata?.rice_variety:w.metadata?.grape],['Classification',w.metadata?.sake_classification],['Sake styles',w.metadata?.sake_style],['Style',w.metadata?.color],['Vintage',vintageLabel(w)]].filter(([,value])=>value).map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>${bottleStatus(w)}${notes?`<p class="wl-row-note">${esc(notes.length>400?notes.slice(0,400)+'…':notes)}</p>`:''}<div class="wl-row-actions balanced-actions"><button data-wine="${esc(w.id)}">Tasting notes ↗</button><button data-edit-photo="${esc(w.id)}">Edit Bottle Photo</button></div></div></div></details>${!w.image_url?missingPhotoAction(w.id,w.wine_name,esc):''}<button class="wl-row-more" data-row-actions aria-label="Actions for ${esc(w.wine_name)}" aria-expanded="false">⋯</button></div></article>`;
   }).join('')}</div>`;
 }
 function removeWines(wines: LibraryWine[]) {
@@ -251,7 +265,7 @@ function detail(wine: LibraryWine) {
   }));
   dialog.querySelector('#wl-remove')!.addEventListener('click', () => removeWines([wine]));
 }
-function photoStudio(wine: LibraryWine) {
+function photoStudio(wine: LibraryWine, searchOnOpen=true) {
   let draft:ImageDraft|null=null,original:ImageDraft|null=null,options:import('./research/bottle-jobs').BottleCandidate[]=[],selected=-1,operation=0;
   const account=userId;
   openDialog(`<div class="bottle-studio-heading"><p class="wl-kicker">BOTTLE PHOTO</p><h2>Pick your bottle.</h2><p>${esc(wine.wine_name)}${wine.vintage?' · '+esc(wine.vintage):''}</p></div><div class="bottle-studio-tools"><button id="wl-search-photos" class="wl-outline" type="button">Search again</button>${bottlePhotoUpload('wl-file')}</div><p class="wl-muted small">Choose the closest label. The pictured year may differ.</p><div id="wl-photo-options"></div><p id="wl-photo-status" class="bottle-studio-status" role="status" aria-live="polite"></p><div id="wl-image-review" class="bottle-studio-preview"></div><div class="bottle-studio-save"><button id="wl-approve" class="wl-primary" hidden>Save bottle photo</button><button id="wl-cutout" class="wl-outline" hidden>Remove background</button></div><details class="bottle-studio-advanced"><summary>Photo options</summary><p>JPEG, PNG or WebP up to 15 MB. A full bottle on a plain background works best.</p><button id="wl-original" class="wl-text-button" hidden>Use original photo</button><button id="wl-render" class="wl-text-button" hidden>Create studio rendering</button><p>Studio rendering sends your selected photo to OpenAI. Check its label before saving.</p></details>`);
@@ -293,10 +307,11 @@ function photoStudio(wine: LibraryWine) {
     try{const photo=await inlineBottle(draft);if(!current()||token!==operation)return;
       const result=await researchAction({action:'attach_bottle',collection_id:wine.id,expected:bottleIdentity(wine),only_if_missing:false,photo,provenance:draft.provenance});if(!current())return;
       const message=await finishWineArtwork(result.item,account!,true);if(!current())return;
+      window.dispatchEvent(new CustomEvent('sommni-bottle-photo-saved',{detail:{wine:result.item}}));
       arrivedWineId=result.item.id;setBusy(false);detail(result.item);feedback(message);await refresh();
     }catch(error){status((error as Error).message+' Your selected photo is still here; try Save again.');}
   });
-  void search();
+  if(searchOnOpen)void search();else status('Upload a bottle photo or take one with your camera.');
 }
 
 async function artworkStatus(){
@@ -321,6 +336,7 @@ export function initWinebrary() {
   document.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLElement>('[data-library-notes]');if(button){const wine=items.find(w=>w.id===button.dataset.libraryNotes);if(wine)detail(wine);}});
   window.addEventListener('sommni-manual-wine',()=>requireAccount(()=>editWine()));
   initLabelReview(root);
+  window.addEventListener('sommni-upload-bottle-photo',event=>{const wine=items.find(w=>w.id===(event as CustomEvent).detail?.id);if(wine)photoStudio(wine,false);});
   initBottleJobs(async()=>(await api('/api/collection?limit=500')).items);
   window.addEventListener('sommni-bottle-status',()=>{void bottleJobStatuses().then(status=>{bottleStatuses=status;render();});});
   window.addEventListener('winelens-research-saved', event => { arrivedWineId=(event as CustomEvent).detail?.id||null; void refresh(); });
@@ -349,7 +365,7 @@ export function initWinebrary() {
     setStudyAuth(session ? { userId: session.user.id, token: () => auth.auth.getSession().then(r => r.data.session?.access_token ?? null) } : null);
     void useAccount(next==='beta-local'?null:next).then(() => { if (session) setTimeout(() => void syncStudy(), 0); });
     dialogRevision++;
-    userId=next; items=[]; search=''; libraryCountry=''; libraryRegion=''; expandedWines.clear(); arrivedWineId=null; generation++; loading=false;
+    userId=next; items=[]; search=''; libraryCountry=''; libraryRegion=''; missingPhotosOnly=false;libraryPhotos.reset(); expandedWines.clear(); arrivedWineId=null; generation++; loading=false;
     // Do not await Supabase requests inside its auth callback.
     dialog.close(); setBusy(false); render(); setTimeout(()=>void refresh(),0);
   });

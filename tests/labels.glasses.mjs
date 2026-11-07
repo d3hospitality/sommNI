@@ -23,5 +23,6 @@ await new Promise(r=>setTimeout(r,360));const count=pages.length;g.handleLabelGl
 g.handleLabelGlasses({listEvent:{}});await tick();assert.deepEqual(saved,['photo3-cut'],'omitted protobuf index 0 uses the reviewed third photo');
 await new Promise(r=>setTimeout(r,360));g.handleLabelGlasses({listEvent:{currentSelectItemIndex:4}});await tick();assert.equal(searches,2);assert.equal(s.current.work,'idle');
 g.pauseLabelGlasses();const before=photos.length;g.handleLabelGlasses({listEvent:{currentSelectItemIndex:2}});await tick();assert.equal(photos.length,before);await g.resumeLabelGlasses();
+s.acceptSaved({id:'a',wine_name:'Bottle A',image_url:'phone-upload-cutout'});await tick();assert.equal(photos.at(-1),'phone-upload-cutout','phone upload reaches the active glasses review');assert.equal(g.labelActions(s)[0],'Saved · next wine');
 g.handleLabelGlasses({sysEvent:{eventType:3}});await tick();assert.equal(backs,1);assert.equal(g.handleLabelGlasses({sysEvent:{}}),false);
 console.log('PASS: G2 page limits, three numbered photos, correct selected-image save, no rebuild on photo switch, search again, pause/resume, double-tap back.');

@@ -9,6 +9,11 @@ export class LabelQueue{
  get settled(){return this.rows.filter(r=>r.state==='ready'||r.state==='error').length;}
  get saved(){return this.rows.filter(r=>r.work==='saved').length;}
  private live(){return !this.disposed&&this.ports.current();}
+ acceptSaved(wine:any){
+  if(!this.live()||this.busy||!wine?.image_url)return;
+  const row=this.rows.find(r=>r.wine.id===wine.id);if(!row)return;
+  row.wine=wine;row.result=wine;row.preview=wine.image_url;row.state='ready';row.work='saved';row.message='Bottle photo saved from Winebrary';this.ports.changed();
+ }
  start(){this.pump();}
  dispose(){this.disposed=true;}
  move(delta:number){if(!this.live()||!this.rows.length)return;this.index=(this.index+delta+this.rows.length)%this.rows.length;this.ports.changed();}
@@ -18,7 +23,7 @@ export class LabelQueue{
  private pump(){
   if(!this.live())return;
   while(this.searches<2){const r=this.rows.find(r=>r.state==='queued');if(!r)break;this.searches++;r.state='searching';r.message='Searching for matching label photos…';this.ports.changed();
-   void this.ports.search(r.wine).then(options=>{if(!this.live())return;if(!options.length)throw Error('No matching photographs found. Retry the search.');r.options=options.slice(0,3);r.state='ready';r.message='Review the label and pictured vintage';this.ports.changed();}).catch(e=>{if(this.live()){r.state='error';r.message=e.message||'Label search failed';this.ports.changed();}}).finally(()=>{this.searches--;this.pump();});
+   void this.ports.search(r.wine).then(options=>{if(!this.live()||r.work==='saved')return;if(!options.length)throw Error('No matching photographs found. Retry the search.');r.options=options.slice(0,3);r.state='ready';r.message='Review the label and pictured vintage';this.ports.changed();}).catch(e=>{if(this.live()&&r.work!=='saved'){r.state='error';r.message=e.message||'Label search failed';this.ports.changed();}}).finally(()=>{this.searches--;this.pump();});
   }
  }
  async use(){

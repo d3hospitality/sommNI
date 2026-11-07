@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 const {parseHTML}=await import(process.env.SOMMNI_TEST_DOM_PATH?pathToFileURL(process.env.SOMMNI_TEST_DOM_PATH).href:'linkedom');
 const {window}=parseHTML('<html><body><dialog open></dialog></body></html>');
-Object.assign(globalThis,{document:window.document,window,HTMLElement:window.HTMLElement});
+Object.assign(globalThis,{document:window.document,window,HTMLElement:window.HTMLElement,CustomEvent:window.CustomEvent});
 let searches=0,clips=0,saved=[],reviewed=null,slow;
 globalThis.studioPorts={search:async(w,s,refresh)=>{searches++;if(slow)return slow;return [1,2,3].map(i=>({id:String(i),photo:'data:image/png;base64,photo'+i,provenance:{vintage_binding:'label shows '+(2019+i)}}));},clip:async p=>{clips++;return {url:p.photo,path:p.photo,source:'photograph',provenance:p.provenance}},save:async b=>{saved.push(b);return {item:{id:'wine',wine_name:'Existing wine',image_url:b.photo}}},detail:w=>reviewed=w};
 const source=await readFile('src/winebrary.ts','utf8'),body=source.slice(source.indexOf('function photoStudio('),source.indexOf('\nasync function artworkStatus'));
@@ -37,3 +37,5 @@ const input=$('#wl-file-camera');Object.defineProperty(input,'files',{value:[{}]
 $('#wl-cutout').click();await tick();assert.match($('#wl-photo-status').textContent,/original is still selected/);$('#wl-approve').click();await tick();assert.equal(saved.at(-1).photo,'data:image/png;base64,upload');
 let resolve;slow=new Promise(r=>resolve=r);photoStudio(wine);$('dialog').open=false;resolve([{id:'stale',photo:'stale',provenance:{}}]);await tick();assert.equal(document.querySelectorAll('[data-photo-option]').length,0,'closed studio ignores late results');
 console.log('PASS: three photos, no auto-selection/cutout/save, choose third and save, fresh search, upload fallback, retained original after cutout failure, closed-dialog race.');
+
+slow=null;const beforeUpload=searches;photoStudio(wine,false);await tick();assert.equal(searches,beforeUpload,'Upload fallback does not spend another photo lookup');assert.match($('#wl-photo-status').textContent,/Upload a bottle photo/);

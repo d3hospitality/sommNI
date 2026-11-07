@@ -15,7 +15,10 @@ const provider=async(url,options)=>{
  const u=String(url);
  if(u==='https://api.openai.com/v1/responses'){
   const body=JSON.parse(options.body);assert.equal(body.store,false);const hasImage=body.input[0].content.some(p=>p.type==='input_image');
-  const text=hasImage?JSON.stringify({match:++vision===2,full_bottle:true,bottle_only:true,producer_match:true,cuvee_match:vision===2,visible_vintage:'2020',reason:'Same producer and cuvée; representative year.'}):'Product pages';
+  const image=body.input[0].content.find(p=>p.type==='input_image');if(hasImage)vision++;
+  // Concurrent candidate checks can finish in either order: judge the actual fixture image.
+  const right=!!image&&Buffer.from(image.image_url.split(',')[1],'base64').at(-1)===2;
+  const text=hasImage?JSON.stringify({match:right,full_bottle:true,bottle_only:true,producer_match:true,cuvee_match:right,visible_vintage:'2020',reason:'Same producer and cuvée; representative year.'}):'Product pages';
   return Response.json({status:'completed',output:[{type:'message',content:[{type:'output_text',text,annotations:hasImage?[]:[{type:'url_citation',url:'https://example.com/wine'}]}]}]});
  }
  assert.equal(options.headers.Authorization,undefined);
