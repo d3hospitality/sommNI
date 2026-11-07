@@ -7,15 +7,12 @@ const env=(name:string)=>Deno.env.get(name);
 const projectUrl=env('SUPABASE_URL')||'';
 const db=createClient(projectUrl,env('SUPABASE_SERVICE_ROLE_KEY')||'',{auth:{persistSession:false,autoRefreshToken:false}});
 const service=createResearchService({db,env,fetch});
-const allowed=new Set((env('WL_RESEARCH_ORIGINS')||'http://127.0.0.1:5196,http://localhost:5196,https://sommni-beige.vercel.app,https://d3hospitality.github.io,null').split(','));
-allowed.add('https://d3hospitality.com');
-allowed.add('http://127.0.0.1:5198');
-allowed.add('http://127.0.0.1:5188');
-allowed.add('http://localhost:5188');
+// Packaged Even WebViews use device-specific origins. This bearer-only API
+// accepts CORS from any origin, like the cutout service; no cookies/credentials.
+// getUser, revoked-session checks and collection ownership remain mandatory.
 Deno.serve(async(req:Request)=>{
- const origin=req.headers.get('origin'),headers={'Content-Type':'application/json','Cache-Control':'no-store','Vary':'Origin','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST,OPTIONS',...(origin&&allowed.has(origin)?{'Access-Control-Allow-Origin':origin}:{})};
+ const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info,x-retry-count,traceparent,tracestate,baggage','Access-Control-Allow-Methods':'POST,OPTIONS'};
  const respond=(body:unknown,status=200)=>new Response(JSON.stringify(publicContent(body)),{status,headers});
- if(origin&&!allowed.has(origin))return respond({error:'Origin not allowed.'},403);
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')return respond({error:'POST required.'},405);
  try{

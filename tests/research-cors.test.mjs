@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp} from 'node:fs/promises';import {tmpdir} from 'node:os';
+let handler;globalThis.Deno={env:{get:n=>n==='SUPABASE_URL'?'https://mcmtasetompygfktzhpr.supabase.co':undefined},serve:fn=>handler=fn};
+const dir=await mkdtemp(tmpdir()+'/sommni-cors-');await build({entryPoints:['supabase/functions/winelens-research/index.ts'],bundle:true,format:'esm',platform:'node',outfile:dir+'/edge.mjs',plugins:[{name:'auth-boundary',setup(b){b.onResolve({filter:/^npm:@supabase/},()=>({path:'supabase',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:'export const createClient=()=>({auth:{getUser:async()=>({data:{user:null},error:true})}})'}));}}]});await import(dir+'/edge.mjs');
+for(const origin of ['null','http://localhost:38421','https://evenhub.evenrealities.com','https://d3hospitality.com']){
+ const res=await handler(new Request('https://service.test',{method:'OPTIONS',headers:{origin,'Access-Control-Request-Headers':'authorization,apikey,content-type'}}));assert.equal(res.status,204);assert.equal(res.headers.get('Access-Control-Allow-Origin'),'*');assert.equal(res.headers.has('Access-Control-Allow-Credentials'),false);
+ for(const authorization of ['', 'Bearer invalid']){const response=await handler(new Request('https://service.test',{method:'POST',headers:{origin,authorization,'Content-Type':'application/json'},body:'{"action":"attach_bottle"}'}));assert.equal(response.status,401);assert.equal(response.headers.get('Access-Control-Allow-Origin'),'*');}
+}
+console.log('PASS packaged WebView CORS, null/local/site origins, non-credentialed requests, missing and invalid bearer tokens denied.');

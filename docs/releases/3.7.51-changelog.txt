@@ -1,0 +1,1 @@
+Fixes Use This Photo failing to save in the Even app. Failed-save retries keep the chosen cutout. Contributors now shows actual wine additions, public contributor profiles and your submissions. D3 owner accounts get a grouped review queue with attribution, evidence and confirmed decisions. Verified wines earn credit once and enter Friday releases; nothing is deleted.

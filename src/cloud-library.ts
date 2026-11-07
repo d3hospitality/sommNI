@@ -17,7 +17,10 @@ export async function canonicalWineId(w:any){
 }
 export async function accountResearch(body:any,signal?:AbortSignal){
  const session=(await account.auth.getSession()).data.session;if(!session)throw Error('Link your account first.');
- const res=await fetch(ACCOUNT_URL+'/functions/v1/winelens-research',{method:'POST',headers:{'Content-Type':'application/json',apikey:ACCOUNT_PUBLIC_KEY,Authorization:'Bearer '+session.access_token},body:JSON.stringify(body),signal});const data=await res.json();
+ let res:Response;
+ try{res=await fetch(ACCOUNT_URL+'/functions/v1/winelens-research',{method:'POST',headers:{'Content-Type':'application/json',apikey:ACCOUNT_PUBLIC_KEY,Authorization:'Bearer '+session.access_token},body:JSON.stringify(body),signal});}
+ catch(error){if(signal?.aborted)throw Error('Saving timed out. Retry Use This Photo; your selected cutout is kept.');throw Error('Could not reach your account’s bottle storage. Check your connection and retry Use This Photo. Your selected cutout is kept.');}
+ const data=await res.json().catch(()=>({error:'Bottle storage returned an unreadable response. Retry saving your selected photo.'}));
  if((await account.auth.getSession()).data.session?.user.id!==session.user.id)throw Error('Account changed.');if(!res.ok)throw Error(data.error||'Could not save the bottle.');return data;
 }
 export async function cloudCollection(path:string,method='GET',body:any={}):Promise<any>{
