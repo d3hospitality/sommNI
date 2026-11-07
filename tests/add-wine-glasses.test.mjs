@@ -45,6 +45,8 @@ const result={passed:true,checks,validPages:pages.length,micCalls:mic,bridgePeak
 await writeFile(resolve(dir,'glasses-checks.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
 // The real Winebrary entry point must offer Add even with an empty collection.
 const libraryStubs={
+ './beta/client':`export const betaProvider=async()=>({text:''})`,
+ './intelligence/client':`export const getLocale=()=>'en'`,
  './research/label-glasses':`export const openLabelGlasses=async()=>{}`,
  './wine-context':`export const announceWineContext=()=>{};export const libraryContext=()=>({});export const libraryPhoto=()=>null`,
  './research/glasses-add':`export const openAddWineGlasses=async()=>{__addFixture.openedAdd=true}`,
@@ -54,7 +56,7 @@ const libraryStubs={
  './image-utils':`import {validateGlassesPage} from ${JSON.stringify(resolve('src/glasses-page.ts'))};export const rebuildGlassesPage=async(b,p)=>{validateGlassesPage(p);__addFixture.pages.push(p);return true};export const queueBridgeControl=task=>task();export const invalidateImages=()=>{};export const currentImageEpoch=()=>0;export const pushBottlePhoto=async()=>{};export const pushLogoToGlasses=async()=>{};export const pushGrayImage=async()=>{}`,
  './wine-scene':`export const SCENE_X=250,MAP_Y=40,TILE_W=288,TILE_H=120,CAPTION_MIN_X=250;export const captionBox=()=>({x:250,width:200})`,
  './bottle-raster':`export const ruleCanvas=()=>{};export const toGreenLevels=()=>{};export const stageCanvas=async()=>{}`,
- './identity':`export const lookupWineById=()=>null`,
+ './identity':`export const lookupWineById=()=>null;export const allCatalogWines=()=>[];export const catalogPhoto=()=>null`,
  './display':`export const claimDisplay=async()=>{};export const dropDisplay=()=>{}`,
  './pages':`export const rebuildHomePage=()=>({})`,
 };

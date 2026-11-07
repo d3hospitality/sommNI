@@ -48,3 +48,11 @@ assert.equal(uploaded.item.image_url,'https://example.com/saved.png');
 const imported=await importGuestWine({id:'photo-guest',wine_name:'Guest photo wine',producer:'Estate',vintage:2024,metadata:{},image_url:'data:image/jpeg;base64,original'});
 assert.equal(imported.item.image_url,'https://example.com/saved.png');assert.equal(attachmentRequests.length,2);
 console.log('PASS: camera JPEG and guest import inline hosted cutouts before attachment; returned wines include the saved image.');
+
+const listing=await cloudCollection('/api/collection','POST',{wine_name:'Menu Red',producer:'Maker',vintage:2021,vintage_state:'year',metadata:{saved_locations:['A Restaurant']}});
+const secondListing=await cloudCollection('/api/collection','POST',{wine_name:'Menu Red',producer:'Maker',vintage:2021,vintage_state:'year',metadata:{saved_locations:['B Restaurant','a restaurant']}});
+assert.equal(secondListing.item.id,listing.item.id);assert.deepEqual(secondListing.item.metadata.saved_locations,['A Restaurant','B Restaurant']);
+const again=(await cloudCollection('/api/collection')).items.find(w=>w.id===listing.item.id);assert.deepEqual(again.metadata.saved_locations,['A Restaurant','B Restaurant']);assert(submitted.some(w=>w.id===listing.item.id));
+console.log('PASS restaurant memberships merge on duplicate/guest import, persist in account metadata, and keep collective submission.');
+
+const third=await cloudCollection('/api/collection','PATCH',{id:listing.item.id,add_saved_location:'C Restaurant'});assert.deepEqual(third.item.metadata.saved_locations,['A Restaurant','B Restaurant','C Restaurant']);

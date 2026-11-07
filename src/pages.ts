@@ -580,6 +580,6 @@ export function build86ListPage(
 
 /** The home stays quiet; catalog styles now live inside one folder. */
 export function buildWineTypesPage():RebuildPageContainer {
- const labels=[...WINE_TYPES.map(t=>TYPE_DISPLAY[t]),'Back'];
- return new RebuildPageContainer({containerTotalNum:2,textObject:[new TextContainerProperty({xPosition:16,yPosition:4,width:544,height:32,containerID:1,containerName:'grape-folder',content:'WINE BY GRAPE · Choose a style',isEventCapture:0})],listObject:[new ListContainerProperty({xPosition:2,yPosition:42,width:572,height:240,containerID:2,containerName:'wine-types',isEventCapture:1,itemContainer:new ListItemContainerProperty({itemCount:labels.length,itemWidth:0,isItemSelectBorderEn:1,itemName:labels})})]});
+ const labels=['Search by Voice','Saved Locations',...WINE_TYPES.map(t=>TYPE_DISPLAY[t]),'Back'];
+ return new RebuildPageContainer({containerTotalNum:2,textObject:[new TextContainerProperty({xPosition:16,yPosition:4,width:544,height:32,containerID:1,containerName:'grape-folder',content:'Wine by Grape · Search or browse',isEventCapture:0})],listObject:[new ListContainerProperty({xPosition:2,yPosition:42,width:572,height:240,containerID:2,containerName:'wine-types',isEventCapture:1,itemContainer:new ListItemContainerProperty({itemCount:labels.length,itemWidth:0,isItemSelectBorderEn:1,itemName:labels})})]});
 }

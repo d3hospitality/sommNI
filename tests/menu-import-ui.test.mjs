@@ -34,3 +34,7 @@ $('[data-menu-toggle="1"]').closest('.menu-entry').click();assert.equal($('[data
 $('[data-query="0"]').click();assert.equal($('[data-keep="0"]').checked,true,'editing does not toggle selection');assert.equal($('[data-keep="0"]').hasAttribute('hidden'),true,'no visible checkmark');
 $('[data-menu-research]').onclick();assert.deepEqual(started,['Maker A 2020','Maker C 2022']);
 console.log('PASS: country/region inclusion, whole-row selection, editable fields, uncertain origin and selected-only research.');
+
+reset();savedWines.push({id:'saved',wine_name:'Reserve',producer:'Estate',vintage:2022,metadata:{vintage_state:'year'}});
+const resetLocation=mountMenuImport(host,queries=>started=queries,()=>savedWines,()=> 'Runway 84');$('[name=menu-link]').value='https://example.com/menu.pdf';const locReading=submit();resolveRequest({entries:[{query:'Estate Reserve 2022',needs_review:false}]});await locReading;assert.equal($('[data-keep="0"]').disabled,false);assert.equal($('[data-keep="0"]').checked,true);assert.match($('[data-duplicate]').textContent,/add to this location/);$('[data-menu-research]').onclick();assert.deepEqual(started,['Estate Reserve 2022']);resetLocation();
+console.log('PASS menu exact matches can be selected for a named location without treating them as new bottles.');

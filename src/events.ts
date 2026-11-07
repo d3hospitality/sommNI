@@ -44,7 +44,7 @@ import {
 import { getPairings, flushCompanionWrites, type Pairing } from './sync';
 import { flushStudyWrites } from './study/store';
 import { releaseDisplay, suspendDisplay, displayOwner } from './display';
-import { handleLibraryGlassesEvent, openLibraryOnGlasses } from './winebrary-glasses';
+import { handleLibraryGlassesEvent, openLibraryOnGlasses, openWineSearchOnGlasses, openSavedLocationsOnGlasses, pauseLibraryVoice, resumeLibraryVoice } from './winebrary-glasses';
 import { handleStudyGlassesEvent, openStudyOnGlasses } from './study/glasses';
 import { handleAtlasGlassesEvent, openAtlasOnGlasses, pushCatalogGlobe, catalogBrowseScene, pauseAtlasGlasses, resumeAtlasGlasses } from './atlas-app';
 import { rebuildGlassesPage, handleContinuousReadingScroll, invalidateImages, sendSerial, currentImageEpoch, pushGrayImage, imageIdle, suspendImages, pauseHomePour, resumeHomePour } from './image-utils';
@@ -119,14 +119,14 @@ export function registerEventHandlers(bridge: EvenAppBridge, baseUrl: string, on
       background = true; cancelBrowsePreview();
       pauseIntelligenceGlasses();pauseHistoryGlasses();
       suspendDisplay(true); suspendImages(true);
-      enqueue(async () => { pauseLabelGlasses(); await pauseAddWineGlasses(); await pauseAtlasGlasses(); await imageIdle(); await flush(); });
+      enqueue(async () => { pauseLabelGlasses(); await pauseAddWineGlasses(); await pauseAtlasGlasses(); await pauseLibraryVoice(); await imageIdle(); await flush(); });
       return;
     }
     if (type === 4) {
       enqueue(async () => {
         if (ended) return;
         suspendDisplay(false); suspendImages(false);
-        try { await resumeLabelGlasses(); await resumeAddWineGlasses(); await resumeAtlasGlasses(); await resumeIntelligenceGlasses(); await resumeHistoryGlasses(); if(displayOwner()==='catalog'&&(currentPage==='home'||currentPage==='pairings-list'))await resumeHomePour();if(displayOwner()==='catalog'&&(currentPage==='wines'||currentPage==='grapes'))previewBrowse(bridge); } finally { background = false; }
+        try { await resumeLabelGlasses(); await resumeAddWineGlasses(); await resumeAtlasGlasses(); await resumeLibraryVoice(); await resumeIntelligenceGlasses(); await resumeHistoryGlasses(); if(displayOwner()==='catalog'&&(currentPage==='home'||currentPage==='pairings-list'))await resumeHomePour();if(displayOwner()==='catalog'&&(currentPage==='wines'||currentPage==='grapes'))previewBrowse(bridge); } finally { background = false; }
       });
       return;
     }
@@ -414,6 +414,8 @@ async function handleClick(bridge: EvenAppBridge, idx: number, baseUrl: string):
       return;
     }
     if(currentPage==="wine-types") {
+      if(idx===0||idx===1){navigating=false;const restore=async()=>{await rebuild(bridge,buildWineTypesPage());currentPage='wine-types';lastNavigationTime=Date.now();};if(idx===0)await openWineSearchOnGlasses(restore);else await openSavedLocationsOnGlasses(restore);return;}
+      idx-=2;
       if(idx===WINE_TYPES.length){navigating=false;await goBack(bridge,baseUrl);return;}
       if(idx>=0&&idx<WINE_TYPES.length){currentType=WINE_TYPES[idx];countryCursor=0;await rebuild(bridge,buildCountryListPage(currentType, countryCursor));await showCountryFootprint(bridge,baseUrl);currentPage="countries";lastHoveredIndex=-1;lastNavigationTime=Date.now();}return;
     }

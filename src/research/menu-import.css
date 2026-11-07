@@ -44,3 +44,4 @@
 @media(max-width:480px){#wine-research .menu-entry{grid-template-columns:minmax(0,1fr)}#wine-research .menu-match{grid-column:1;margin:0}}
 
 .menu-place-group>details{margin:0!important}.menu-place-group>details>summary{font-size:11px;cursor:pointer;padding:8px;color:var(--muted,#aaa)}.menu-place-group>details>div{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0}.menu-place-group{grid-template-columns:minmax(0,1fr) minmax(100px,1fr);align-items:start}.menu-place-group>details[open]{grid-column:1/-1}
+.batch-location{display:grid;gap:8px;margin-bottom:20px;font-size:.85rem}.batch-location small{font-size:.75rem;opacity:.65}.batch-location input{width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;border:1px solid #635b39;border-radius:10px;background:#10100e;color:inherit;font:inherit}

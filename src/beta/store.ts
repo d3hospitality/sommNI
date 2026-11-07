@@ -1,3 +1,4 @@
+import {cleanLocations,addLocation} from '../saved-locations';
 import { bottleImageUrl } from '../bottle-assets';
 import { backupDeviceWine, recoverDeviceWines } from './device-wines';
 import { artworkOwner, bottlePhoto, blobData } from '../artwork-store';
@@ -45,7 +46,7 @@ export async function localCollection(path:string,method:string,body:any={}) {
   const previous=method==='PATCH'?await localStore<LibraryWine>('wines','get',body.id):null;
   if(method==='PATCH'&&!previous)throw new Error('This wine is no longer saved on this device.');
   const found=lookupWineById(body.wine_id||previous?.wine_id);
-  const metadata={...previous?.metadata,...body.metadata};
+  const metadata={...previous?.metadata,...body.metadata,...(typeof body.add_saved_location==='string'?addLocation(previous||{metadata:null},body.add_saved_location):{})};if('saved_locations' in metadata)metadata.saved_locations=cleanLocations(metadata.saved_locations);
   for(const key of ['vintage_state','country','grape','color','sake_classification','sake_style','rice_variety','image_source'])if(key in body)metadata[key]=body[key];
   if(found&&!metadata.tasting_notes)metadata.tasting_notes=[found.wine.nose,found.wine.palate,found.wine.finish].join('\n');
   if(found)metadata.reference_kind='catalogue';

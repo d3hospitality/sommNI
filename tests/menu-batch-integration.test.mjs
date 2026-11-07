@@ -4,9 +4,11 @@ const {parseHTML}=await import('linkedom');
 const {window}=parseHTML('<html><body><details open><main></main></details></body></html>');Object.assign(globalThis,{window,document:window.document,CustomEvent:window.CustomEvent});
 Object.defineProperty(window.HTMLInputElement.prototype,'checked',{configurable:true,get(){return this.hasAttribute('checked')},set(value){value?this.setAttribute('checked',''):this.removeAttribute('checked')}});
 globalThis.FormData=class extends Map{constructor(form){super();for(const input of form.querySelectorAll('textarea,input'))this.set(input.name,input.value)}};
-let queries=[],saves=0;globalThis.batchFixture={action:async body=>{if(body.action==='research'){queries.push(body.query);return {draft:{id:body.query,result:{wine_name:body.query,producer:'Estate',vintage:2022,vintage_state:'year'}}};}if(body.action==='confirm'){saves++;return {item:{id:body.draft_id,image_url:'photo'}}}},menu:async()=>({entries:[{query:'Menu Bottle 2022',source_text:'Menu Bottle 2022',needs_review:false,page:1,section:'Red'}]})};
+let queries=[],saves=0;globalThis.savedMenuWines=[];globalThis.locationPatches=[];globalThis.batchFixture={action:async body=>{if(body.action==='research'){queries.push(body.query);return {draft:{id:body.query,result:{wine_name:body.query,producer:'Estate',vintage:2022,vintage_state:'year'}}};}if(body.action==='confirm'){saves++;return {item:{id:body.draft_id,image_url:'photo'}}}},menu:async()=>({entries:[{query:'Menu Bottle 2022',source_text:'Menu Bottle 2022',needs_review:false,page:1,section:'Red'}]})};
 const modules={
- '../winebrary-glasses':'export const readLibrary=()=>({items:[]});',
+ '../winebrary-glasses':'export const readLibrary=()=>({items:globalThis.savedMenuWines});',
+ '../cloud-library':`export const isGuestLibrary=()=>true;export const cloudCollection=()=>{throw Error('Wrong store')};`,
+ '../beta/store':`export const localCollection=async(path,method,body)=>{globalThis.locationPatches.push(body);return {item:{id:body.id,metadata:{saved_locations:[body.add_saved_location]},image_url:'photo'}}};`,
  '../beta/client':'export const betaProvider=(...args)=>globalThis.batchFixture.menu(...args);',
  '../artwork-store':'export const artworkOwner=()=>"guest:test";',
  './client':`export const researchAction=(...args)=>globalThis.batchFixture.action(...args);export const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));`,
@@ -23,3 +25,7 @@ $('[data-row-toggle]').click();assert.equal($('[data-row]').dataset.selected,'fa
 await $('[data-save]').onclick();await tick();assert.equal(saves,2);assert.equal($('[data-save-progress]').value,2);assert.equal($('[data-save-progress]').max,2);assert.equal($('[data-saving-progress]').hidden,false);assert.equal($('[data-save-label]').textContent,'Save complete');reset();assert.equal($('.batch-input').hidden,false);
 $('[name=menu-link]').value='https://example.com/menu.pdf';await $('[data-menu-form]').onsubmit({preventDefault(){}});assert.equal(queries.length,2);$('[data-menu-research]').onclick();await tick();assert.equal(queries.at(-1),'Menu Bottle 2022');assert.equal($('.batch-rows').children.length,1);assert.equal(saves,2);reset();
 console.log('PASS: typed batch and extracted menu both start research, use correct forms, wait for explicit save, and reset cleanly.');
+
+reset();savedMenuWines.push({id:'saved-estate',wine_name:'Reserve',producer:'Estate',vintage:2022,metadata:{vintage_state:'year',saved_locations:['First Restaurant']},image_url:'photo'});
+$('[data-saved-location]').value='Runway 84 · Fort Lauderdale';$('[name=wines]').value='Estate Reserve 2022';const beforeQueries=queries.length,beforeSaves=saves;$('.batch-form').onsubmit({preventDefault(){}});await tick();assert.equal(queries.length,beforeQueries,'existing bottle skips research');await $('[data-save]').onclick();await tick();assert.equal(saves,beforeSaves,'no duplicate confirm needed');assert.equal(locationPatches.at(-1).add_saved_location,'Runway 84 · Fort Lauderdale');assert.equal(locationPatches.at(-1).id,'saved-estate');assert.match($('[data-location-summary]').textContent,/Runway/);
+console.log('PASS saved bottle joins a restaurant list without provider research, duplicate rows, or losing earlier locations.');

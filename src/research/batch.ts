@@ -1,9 +1,10 @@
 /** Bounded, incremental research. Unchecked rows never save; late results cannot cross accounts. */
 export type BatchRow = {
  id:number; query:string; selected:boolean; state:'queued'|'researching'|'ready'|'saving'|'saved'|'error'|'duplicate';
- draft?:any; bottle?:any; artwork:'waiting'|'working'|'ready'|'error'; message:string; imageMessage:string;
+ existing?:any; draft?:any; bottle?:any; artwork:'waiting'|'working'|'ready'|'error'; message:string; imageMessage:string;
 };
 export type BatchPorts = {
+ reuse?:(query:string)=>any;
  current:()=>boolean;
  research:(query:string,signal:AbortSignal)=>Promise<any>;
  artwork:(wine:any,signal:AbortSignal)=>Promise<any>;
@@ -33,7 +34,7 @@ export class WineBatch {
  private live(){return !this.disposed&&this.ports.current();}
  start(queries:string[]){
   if(this.rows.length)throw Error('Finish or clear this batch first.');
-  this.rows=queries.map((query,id)=>({id,query,selected:true,state:'queued',artwork:'waiting',message:'Waiting to research',imageMessage:''}));
+  this.rows=queries.map((query,id)=>{const existing=this.ports.reuse?.(query);return {id,query,selected:true,state:existing?'ready':'queued',artwork:existing?'ready':'waiting',message:existing?'Already saved · reuse this bottle':'Waiting to research',imageMessage:'',...(existing?{existing,draft:{result:{...existing,vintage_state:existing.metadata?.vintage_state,country:existing.metadata?.country,grape:existing.metadata?.grape,tasting_notes:existing.metadata?.tasting_notes}},bottle:existing.image_url?{url:existing.image_url}:undefined}:{})};});
   this.ports.changed();this.pump();
  }
  select(id:number,selected:boolean){const r=this.rows[id];if(!this.live()||!r||['saving','saved','duplicate'].includes(r.state))return;r.selected=selected;this.ports.changed(r);this.pump();}

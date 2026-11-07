@@ -1,3 +1,8 @@
+import {savedLocations,atLocation} from './saved-locations';
+import {searchLibrary} from './library-search';
+import {AtlasVoiceCapture} from './atlas/voice-capture';
+import {betaProvider} from './beta/client';
+import {getLocale} from './intelligence/client';
 import {wineOrigin} from './wine-origin';
 import { foodPairingsText } from './food-pairings';
 import { cursorRows, moveCursor } from './glasses-cursor';
@@ -14,7 +19,7 @@ import type { LibraryWine } from './winebrary';
 import { rebuildGlassesPage, pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch, queueBridgeControl } from './image-utils';
 import { SCENE_X, MAP_Y, TILE_W, TILE_H, CAPTION_MIN_X, captionBox, type ScenePlan } from './wine-scene';
 import { ruleCanvas, toGreenLevels } from './bottle-raster';
-import { lookupWineById } from './identity';
+import { lookupWineById, allCatalogWines, catalogPhoto } from './identity';
 import { claimDisplay, dropDisplay } from './display';
 import { stageCanvas } from './bottle-raster';
 import { rebuildHomePage } from './pages';
@@ -35,7 +40,9 @@ export interface WineGroup { title: string; wines: LibraryWine[] }
 type MessageReason = 'signed-out' | 'loading' | 'empty' | 'error';
 type Screen = (
   | { kind: 'types'; page: number }
-  | { kind: 'all'; page: number }
+  | { kind: 'all'; page: number; location?:string; query?:string; parent?:Screen }
+  | { kind:'locations'; page:number }
+  | { kind:'voice'; page:number; parent:Screen|null; message:string }
   | { kind: 'countries'; type: string; page: number }
   | { kind: 'regions'; type: string; country: string; page: number }
   | { kind: 'list'; type: string; country: string; region: string; page: number }
@@ -58,7 +65,7 @@ const NAV_SETTLE_MS = 350; // swallow the ghost click that can follow a page reb
 let readSource: () => LibrarySource = () => ({ userId: null, loading: false, error: '', items: [] });
 
 export function connectWinebraryGlasses(value: EvenAppBridge, url: string) { bridge=value; baseUrl=url; void flushPendingCache(); }
-export function setWinebraryDeviceConnected(value: boolean) { connected=value;window.dispatchEvent(new Event('sommni-glasses-connection'));if(!value){cancelListPreview();announceWineContext(null);} }
+export function setWinebraryDeviceConnected(value: boolean) { connected=value;window.dispatchEvent(new Event('sommni-glasses-connection'));if(!value){void pauseLibraryVoice();cancelListPreview();announceWineContext(null);}else void resumeLibraryVoice(); }
 export function canShowWine() { return !!bridge && connected && !sending; }
 export function isLibraryActive() { return active; }
 export function setLibrarySource(read: () => LibrarySource) { readSource=read; }
@@ -151,13 +158,13 @@ function vintageListPage(g: WineGroup, page: number): ListPage {
 }
 
 /** Country and region lines are visual context only, never cursor targets. */
-export function allWineRows(wines: LibraryWine[], index: number, width: number): string {
+export function allWineRows(wines: LibraryWine[], index: number, width: number, searchAgain=false): string {
   const budget = Math.max(8, Math.floor(width / CHAR_W) - 5);
   const lines: string[] = [];
   let country = '', region = '';
-  for (let i = Math.max(0, index - 1); i <= wines.length; i++) {
+  for (let i = Math.max(0, index - 1); i <= wines.length+(searchAgain?1:0); i++) {
     const row: string[] = [];
-    if (i === wines.length) row.push(`${i === index ? '>' : ' '} Back`);
+    if (i >= wines.length) row.push(`${i === index ? '>' : ' '} ${searchAgain&&i===wines.length?'Search by Voice':'Back'}`);
     else {
       const place = placeOf(wines[i]);
       if (place.country !== country) {
@@ -178,7 +185,7 @@ function allWineMap(): ListMap {
   return {caption: '', plan: {anchorX:100, anchorY:100, render:async()=>[new Uint8Array(TILE_W*TILE_H),new Uint8Array(TILE_W*TILE_H)]}};
 }
 function libraryMenuLabels(): string[] {
-  return ['View All', 'Add Wine by Voice', ...typeFacets().map(facetLabel), ...(items.length?['Polish Labels']:[]), 'Back'];
+  return ['View All', 'Add Wine by Voice', ...typeFacets().map(facetLabel), ...(items.length?['Polish Labels']:[]), 'Search by Voice', 'Saved Locations', 'Back'];
 }
 
 // ═══ PAGE BUILDERS ═══
@@ -220,7 +227,7 @@ function listScreen(name: string, labels: string[], header: string, map: ListMap
     containerID: 3, containerName: 'library-header', content: clipLabel(header, charsPerLine(headerW)), isEventCapture: 0,
   });
   if (name === 'library-list' || name === 'library-vintages' || name === 'library-all' || name === 'library-types') {
-    const capture = new TextContainerProperty({xPosition:12,yPosition:42,width:w-12,height:210,containerID:2,containerName:name,content:name==='library-all'?allWineRows(allWines,cursor,w-12):cursorRows(labels,cursor,w-12),isEventCapture:1});
+    const capture = new TextContainerProperty({xPosition:12,yPosition:42,width:w-12,height:210,containerID:2,containerName:name,content:name==='library-all'?allWineRows(allWines,cursor,w-12,screen?.kind==='all'&&screen.query!==undefined):cursorRows(labels,cursor,w-12),isEventCapture:1});
     const imageObject = map ? mapTiles(1,4) : [];
     const textObject = [title, capture, ...(caption ? [caption] : [])];
     return new RebuildPageContainer({containerTotalNum:textObject.length+imageObject.length,textObject,imageObject});
@@ -383,16 +390,19 @@ async function render(next: Screen): Promise<void> {
   let plan: ScenePlan | null = null;
   if (next.kind === 'types') page = listScreen('library-types', libraryMenuLabels(), `Winebrary · ${items.length} wines`, null, next.cursor ?? 0);
   else if (next.kind === 'all') {
-    allWines = [...items].sort((a,b)=>placeOf(a).country.localeCompare(placeOf(b).country)||placeOf(a).region.localeCompare(placeOf(b).region)||a.wine_name.localeCompare(b.wine_name)||vintageRank(b)-vintageRank(a));
-    next.cursor = Math.min(next.cursor ?? 0, allWines.length);
+    const scoped=items.filter(w=>atLocation(w,next.location||''));allWines = (next.query!==undefined?searchLibrary(scoped,next.query):[...scoped]).sort((a,b)=>placeOf(a).country.localeCompare(placeOf(b).country)||placeOf(a).region.localeCompare(placeOf(b).region)||a.wine_name.localeCompare(b.wine_name)||vintageRank(b)-vintageRank(a));
+    next.cursor = Math.min(next.cursor ?? 0, allWines.length+(next.query!==undefined?1:0));
     const wine = allWines[next.cursor];
     const place = wine ? placeOf(wine) : null;
     listMap = place ? await mapFor(place.country,place.region) : null;
     listMap = await bottleMap(listMap || allWineMap(),wine);
     // Origin dividers live in the list; reserve the caption strip for stable layout.
     listMap!.caption = '';
-    page = listScreen('library-all', [], `View All · ${allWines.length} wines`, listMap, next.cursor);
+    page = listScreen('library-all', [], `${next.query!==undefined?'Results':next.location||'View All'} · ${allWines.length} wines`, listMap, next.cursor);
+    page.textObject!.find(t=>t.containerName==='library-all')!.content=allWineRows(allWines,next.cursor,SCENE_X-18,next.query!==undefined);
   }
+  else if(next.kind==='voice')page=new RebuildPageContainer({containerTotalNum:1,textObject:[new TextContainerProperty({containerID:2,containerName:'library-voice',xPosition:16,yPosition:8,width:544,height:272,isEventCapture:1,content:'Search by Voice\n\n'+next.message.slice(0,240)+'\n\nDouble tap: cancel'})]});
+  else if(next.kind==='locations'){const locations=savedLocations(items);page=listScreen('library-places',pageList(locations.map(l=>l.name+' · '+l.count+'w'),next.page).labels,'Saved Locations');if(!locations.length){page.textObject!.push(new TextContainerProperty({containerID:6,containerName:'places-help',xPosition:16,yPosition:100,width:544,height:162,isEventCapture:0,content:'Name a restaurant when importing its menu on the phone. Saved lists appear here.'}));page.containerTotalNum!++;}}
   else if (next.kind === 'countries') page = buildFacetPage('library-country', countryFacets(next.type), next.page, crumb([next.type]));
   else if (next.kind === 'regions') { listMap = await mapFor(next.country, null); page = buildFacetPage('library-regions', regionFacets(next.type, next.country), next.page, listMap ? crumb([next.type], 24) : crumb([next.type, next.country]), listMap); }
   else if (next.kind === 'list') { listMap = await mapFor(next.country, next.region); groups = groupLibrary(inRegion(next.type, next.country, next.region)); const row=libraryListPage(groups,next.page).rows[next.cursor ?? 0]; listMap=await bottleMap(listMap,row?.kind==='item'?groups[row.index]?.wines[0]:null); page = buildLibraryListPage(groups, next.page, offlineCopy, listMap ? next.type.toUpperCase() : crumb([next.type, next.country, next.region], 30), listMap, next.cursor ?? 0); }
@@ -435,7 +445,7 @@ async function render(next: Screen): Promise<void> {
   }
 }
 async function goHome(): Promise<void> {
-  cancelListPreview();
+  await cancelLibraryVoice();scopedReturn=null;pausedVoiceParent=undefined;cancelListPreview();
   if (!bridge) return;
   invalidateImages();
   if (!await rebuildGlassesPage(bridge, rebuildHomePage())) throw new Error('The glasses did not accept the home page.');
@@ -445,7 +455,7 @@ async function goHome(): Promise<void> {
   await pushLogoToGlasses(bridge, baseUrl);
 }
 /** Another module took the display (e.g. the Wine Atlas from the phone): stop consuming events. */
-function relinquish(): void { cancelListPreview(); active=false; screen=null; }
+async function relinquish(): Promise<void> { await cancelLibraryVoice();pausedVoiceParent=undefined;scopedReturn=null;cancelListPreview(); active=false; screen=null; }
 /** One navigation at a time; a rejected page leaves the previous screen and state untouched. */
 async function settle(task: () => Promise<void>): Promise<void> {
   if (sending) return;
@@ -457,7 +467,7 @@ async function settle(task: () => Promise<void>): Promise<void> {
 /** Entry from the glasses home menu. */
 export async function openLibraryOnGlasses(): Promise<void> {
   await settle(async () => {
-    const source = readSource();
+    scopedReturn=null;const source = readSource();
     offlineCopy = false;
     items = source.items;
     if (!source.userId) { items = []; return render({ kind: 'message', reason: 'signed-out' }); }
@@ -492,7 +502,9 @@ async function back(): Promise<void> {
     }
     return s.parent ? render(s.parent) : goHome();
   }
-  if (s.kind === 'all') return render({kind:'types',page:0});
+  if(s.kind==='voice'){await cancelLibraryVoice();return s.parent?render(s.parent):scopedReturn?leaveScoped():render({kind:'types',page:0});}
+  if (s.kind === 'all') return s.parent?render(s.parent):scopedReturn?leaveScoped():render({kind:'types',page:0});
+  if(s.kind==='locations'&&s.page===0)return scopedReturn?leaveScoped():render({kind:'types',page:0});
   if (s.kind === 'vintages') return s.page > 0 ? render({ ...s, page: s.page - 1, cursor: 0 }) : render(s.parent);
   if (s.page > 0) return render({ ...s, page: s.page - 1, cursor: 0 });
   if (s.kind === 'list') return render({ kind: 'regions', type: s.type, country: s.country, page: 0 });
@@ -503,8 +515,11 @@ async function back(): Promise<void> {
 async function select(index: number): Promise<void> {
   const s = screen;
   if (!s || s.kind === 'detail') return;
+  if(s.kind==='voice')return startLibraryVoice(s.parent);
+  if(s.kind==='locations'){const rows=pageList(savedLocations(items).map(l=>l.name),s.page).rows;const row=rows[index];if(row?.kind==='more')return render({...s,page:s.page+1});if(row?.kind==='item')return render({kind:'all',page:0,location:savedLocations(items)[row.index].name,parent:s});return back();}
   if (s.kind === 'message') return goHome();
   if (s.kind === 'types') {
+    const label=libraryMenuLabels()[index];if(label==='Search by Voice')return startLibraryVoice(s);if(label==='Saved Locations')return render({kind:'locations',page:0});
     if (index === 0) return render({kind:'all',page:0,cursor:0});
     if (index === 1) return openAddWineGlasses();
     if (items.length && index === typeFacets().length + 2) return openLabelGlasses(items.slice(0,20));
@@ -512,6 +527,7 @@ async function select(index: number): Promise<void> {
     return row ? render({ kind: 'countries', type: row.label, page: 0 }) : back();
   }
   if (s.kind === 'all') {
+    if(s.query!==undefined&&index===allWines.length)return startLibraryVoice(s.parent||null);
     const wine=allWines[index];
     return wine ? render({kind:'detail',wine,from:'library',parent:s}) : back();
   }
@@ -618,11 +634,12 @@ function previewLibrarySelection(index:number){
 export function handleLibraryGlassesEvent(event: EvenHubEvent): boolean {
   if (!active) return false;
   const type=event.listEvent?.eventType ?? event.textEvent?.eventType ?? event.sysEvent?.eventType;
+  if(screen?.kind==='voice'){if(event.audioEvent){libraryVoice?.feed(event.audioEvent.audioPcm);return true;}if(type===3){void back().catch(console.error);return true;}if((type===undefined||type===0)&&(event.sysEvent||event.textEvent||event.listEvent)&&Date.now()-lastNavigation>=NAV_SETTLE_MS){if(libraryVoice?.state==='listening')void libraryVoice.finish();else if(!libraryVoice)void settle(()=>startLibraryVoice(screen?.kind==='voice'?screen.parent:null));}return true;}
   if (screen?.kind === 'list' || screen?.kind === 'vintages' || screen?.kind === 'all' || screen?.kind === 'types') {
     const current = screen;
     if (sending) return true;
     if (type === 1 || type === 2) {
-      const labels = current.kind === 'types' ? libraryMenuLabels() : current.kind === 'all' ? [...allWines.map(w=>w.wine_name),'Back'] : current.kind === 'list' ? libraryListPage(groups,current.page).labels : vintageListPage(current.group,current.page).labels;
+      const labels = current.kind === 'types' ? libraryMenuLabels() : current.kind === 'all' ? [...allWines.map(w=>w.wine_name),...(current.query!==undefined?['Search by Voice']:[]),'Back'] : current.kind === 'list' ? libraryListPage(groups,current.page).labels : vintageListPage(current.group,current.page).labels;
       const index = moveCursor(current.cursor ?? 0, labels.length, type, event.listEvent ? event.listEvent.currentSelectItemIndex ?? 0 : undefined);
       if (index === (current.cursor ?? 0)) return true;
       current.cursor = index;
@@ -630,7 +647,7 @@ export function handleLibraryGlassesEvent(event: EvenHubEvent): boolean {
       const revision = listPreviewRevision;
       void queueBridgeControl(async () => {
         if (!active || screen !== current || revision !== listPreviewRevision || !bridge) return;
-        await bridge.textContainerUpgrade(new TextContainerUpgrade({containerID:2,containerName:current.kind==='types'?'library-types':current.kind==='all'?'library-all':current.kind==='list'?'library-list':'library-vintages',content:current.kind==='all'?allWineRows(allWines,index,SCENE_X-18):cursorRows(labels,index,(selectedListMap?SCENE_X-6:572)-12),contentOffset:0,contentLength:0}));
+        await bridge.textContainerUpgrade(new TextContainerUpgrade({containerID:2,containerName:current.kind==='types'?'library-types':current.kind==='all'?'library-all':current.kind==='list'?'library-list':'library-vintages',content:current.kind==='all'?allWineRows(allWines,index,SCENE_X-18,current.query!==undefined):cursorRows(labels,index,(selectedListMap?SCENE_X-6:572)-12),contentOffset:0,contentLength:0}));
       }).catch(error=>console.warn('[sommNI] Winebrary cursor unavailable',error));
       return true;
     }
@@ -653,6 +670,7 @@ export function handleLibraryGlassesEvent(event: EvenHubEvent): boolean {
 }
 
 export async function clearPrivateGlasses() {
+  await cancelLibraryVoice();scopedReturn=null;pausedVoiceParent=undefined;
   cancelListPreview();
   announceWineContext(null);
   window.dispatchEvent(new Event('winelens-library-changed'));   // the Atlas drops account wines too
@@ -660,6 +678,41 @@ export async function clearPrivateGlasses() {
   invalidateImages();
   const accepted=await rebuildGlassesPage(bridge, rebuildHomePage());
   if (accepted) { active=false; screen=null; groups=[]; items=[]; places=new Map(); dropDisplay('library'); window.dispatchEvent(new Event('winelens-glasses-home')); }
+}
+
+let libraryVoice:AtlasVoiceCapture|null=null;
+let scopedReturn:(()=>Promise<void>)|null=null;
+let pausedVoiceParent:Screen|null|undefined;
+async function cancelLibraryVoice(){const capture=libraryVoice;libraryVoice=null;if(capture)await capture.cancel();}
+export async function pauseLibraryVoice(){if(libraryVoice){pausedVoiceParent=screen?.kind==='voice'?screen.parent:null;await cancelLibraryVoice();}}
+export async function resumeLibraryVoice(){if(pausedVoiceParent!==undefined&&active){const parent=pausedVoiceParent;pausedVoiceParent=undefined;await render({kind:'voice',page:0,parent,message:'Search paused. Tap to try again.'});}}
+async function leaveScoped(){const restore=scopedReturn;scopedReturn=null;await cancelLibraryVoice();cancelListPreview();active=false;screen=null;dropDisplay('library');if(restore)await restore();else await goHome();}
+async function startLibraryVoice(parent:Screen|null){
+ if(!bridge||libraryVoice)return;
+ cancelListPreview();invalidateImages();
+ const b=bridge,owner=readSource().userId;
+ const capture=new AtlasVoiceCapture({
+  control:open=>queueBridgeControl(()=>b.audioControl(open)),
+  state:async state=>{if(libraryVoice!==capture)return;await render({kind:'voice',page:0,parent,message:state==='opening'?'Opening microphone…':state==='listening'?'Listening · say a bottle, producer, grape or place.\nTap when finished · up to 6 seconds':'Searching your wines…'});},
+  transcribe:async(pcm,signal)=>{let binary='';for(const byte of pcm)binary+=String.fromCharCode(byte);const result=await betaProvider({action:'transcribe',pcm:btoa(binary),sample_rate:16000,locale:getLocale()},signal);return typeof result.text==='string'?result.text:'';},
+  result:async query=>{if(libraryVoice!==capture||owner!==readSource().userId)return;libraryVoice=null;if(!query.trim())return render({kind:'voice',page:0,parent,message:'No words heard. Tap to try again.'});await render({kind:'all',page:0,query,parent:parent||undefined,location:parent?.kind==='all'?parent.location:undefined});},
+  error:async error=>{if(libraryVoice!==capture)return;libraryVoice=null;await render({kind:'voice',page:0,parent,message:(error.name==='AbortError'?'Search timed out.':error.message)+'\nTap to try again.'});},
+ });libraryVoice=capture;await capture.start();
+}
+/** Wine by Grape searches saved vintages plus the actual collective catalog, without adding anything. */
+export async function openWineSearchOnGlasses(restore:()=>Promise<void>){
+ await settle(async()=>{
+  await claimDisplay('library',relinquish);scopedReturn=restore;items=[...readSource().items];
+  const savedIds=new Set(items.map(w=>lookupWineById(w.wine_id)?.id||w.wine_id));
+  for(const entry of allCatalogWines())if(!savedIds.has(entry.id)){
+   const [name,...producer]=entry.wine.name.split(' – ');
+   items.push({id:entry.id,wine_id:entry.id,wine_name:name,producer:producer.join(' – ')||null,vintage:null,region:entry.wine.region,notes:'',image_url:catalogPhoto(entry.id,baseUrl)||undefined,metadata:{country:entry.country,grape:entry.wine.grape,color:entry.type,tasting_notes:[entry.wine.nose,entry.wine.palate,entry.wine.finish].filter(Boolean).join('\n')}});
+  }
+  await refreshPlaces(items);active=true;await startLibraryVoice(null);
+ });
+}
+export async function openSavedLocationsOnGlasses(restore?:()=>Promise<void>){
+ await settle(async()=>{await claimDisplay('library',relinquish);scopedReturn=restore||null;items=readSource().items;await refreshPlaces(items);await render({kind:'locations',page:0});});
 }
 
 // ═══ OFFLINE COPY ═══

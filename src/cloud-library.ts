@@ -1,3 +1,4 @@
+import {cleanLocations,wineLocations,addLocation} from './saved-locations';
 import {localWines,localStore,localCollection} from './beta/store';
 import {queueWineSubmission} from './wine-contributions';
 import {account} from './account-client';
@@ -47,20 +48,21 @@ export async function cloudCollection(path:string,method='GET',body:any={}):Prom
  if(method==='POST'&&!navigator.onLine){const result=await localCollection(path,method,body);await localStore('wines','put',{...result.item,sync_owner:owner});return result;}
  if(method==='DELETE'){const id=new URL(path,location.origin).searchParams.get('id');check(await table().delete().eq('id',id!).eq('user_id',owner));const cache=await artworkStore('get',owner+':collection');if(cache)await artworkStore('put',{...cache,items:cache.items.filter((w:any)=>w.id!==id)});return {ok:true};}
  const previous=method==='PATCH'?check(await table().select('*').eq('id',body.id).eq('user_id',owner).single()):null;
- const metadata={...previous?.metadata,...body.metadata};for(const k of ['vintage_state','country','grape','color','sake_classification','sake_style','rice_variety','image_source'])if(k in body)metadata[k]=body[k];
+ const metadata={...previous?.metadata,...body.metadata,...(typeof body.add_saved_location==='string'?addLocation(previous||{metadata:null},body.add_saved_location):{})};if('saved_locations' in metadata)metadata.saved_locations=cleanLocations(metadata.saved_locations);for(const k of ['vintage_state','country','grape','color','sake_classification','sake_style','rice_variety','image_source'])if(k in body)metadata[k]=body[k];
  // Private storage paths are only attached through the authenticated image endpoint.
  if(!previous)delete metadata.image_path;else metadata.image_path=previous.metadata?.image_path;
  const found=lookupWineById(body.wine_id||previous?.wine_id);if(found&&!metadata.tasting_notes)metadata.tasting_notes=[found.wine.nose,found.wine.palate,found.wine.finish].join('\n');if(found)metadata.reference_kind='catalogue';
  const row={user_id:owner,wine_name:body.wine_name??previous?.wine_name,producer:body.producer??previous?.producer??null,region:body.region??previous?.region??null,notes:body.notes??previous?.notes??'',vintage:body.vintage_state==='year'?Number(body.vintage):body.vintage_state?null:body.vintage??previous?.vintage??null,metadata,wine_id:body.wine_id??previous?.wine_id};
  if(!row.wine_name?.trim())throw Error('Enter a wine name.');row.wine_id=await canonicalWineId(row);current();
+ async function mergeLocations(existing:any){if(!metadata.saved_locations?.length)return existing;return check(await table().update({metadata:{...existing.metadata,saved_locations:cleanLocations([...wineLocations(existing),...metadata.saved_locations])}}).eq('id',existing.id).eq('user_id',owner).select().single());}
  if(method!=='PATCH'){
   const found=check(await table().select('*').eq('user_id',owner).limit(500));
   const identities=await Promise.all(found.map((w:any)=>canonicalWineId(w)));current();
   const duplicate=found.find((w:any,i:number)=>identities[i]===row.wine_id&&w.vintage===row.vintage&&(w.metadata?.vintage_state==='non_vintage')===(metadata.vintage_state==='non_vintage'));
-  if(duplicate){await queueWineSubmission(duplicate,owner);return {item:await decorate(duplicate),duplicate:true};}
+  if(duplicate){const merged=await mergeLocations(duplicate);await queueWineSubmission(merged,owner);return {item:await decorate(merged),duplicate:true};}
  }
  let saved=method==='PATCH'?await table().update(row).eq('id',body.id).eq('user_id',owner).select().single():await table().insert(row).select().single();
- if(saved.error?.code==='23505'&&method!=='PATCH'){const rows=check(await table().select('*').eq('user_id',owner).eq('wine_id',row.wine_id));const same=rows.find((w:any)=>w.vintage===row.vintage&&(w.metadata?.vintage_state==='non_vintage')===(metadata.vintage_state==='non_vintage'));if(same)return {item:await decorate(same),duplicate:true};throw Error('This wine is already saved with an unconfirmed vintage. Edit its existing entry to confirm the vintage.');}
+ if(saved.error?.code==='23505'&&method!=='PATCH'){const rows=check(await table().select('*').eq('user_id',owner).eq('wine_id',row.wine_id));const same=rows.find((w:any)=>w.vintage===row.vintage&&(w.metadata?.vintage_state==='non_vintage')===(metadata.vintage_state==='non_vintage'));if(same)return {item:await decorate(await mergeLocations(same)),duplicate:true};throw Error('This wine is already saved with an unconfirmed vintage. Edit its existing entry to confirm the vintage.');}
  let item=await decorate(check(saved));
  const remember=async()=>{const cached=await artworkStore('get',owner+':collection');current();await artworkStore('put',{id:owner+':collection',scope:owner,kind:'collection',items:[item,...(cached?.items||[]).filter((w:any)=>w.id!==item.id)]});};
  await remember();await queueWineSubmission(item,owner);

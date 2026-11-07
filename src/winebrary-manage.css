@@ -63,3 +63,5 @@
 .wl-photo-tools button:focus-visible,.wl-find-photo:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.wl-find-photo:hover{background:#d9bd6915}
 
 .bottle-studio-preview:empty{display:none}
+.wl-location-filter{display:grid;gap:6px;margin:12px 0;font-size:.78rem;color:var(--wl-muted,#aaa)}
+.wl-location-filter select{width:100%;min-height:42px;padding:9px 12px;background:#10100e;color:inherit;border:1px solid #504a31;border-radius:10px;font:inherit}

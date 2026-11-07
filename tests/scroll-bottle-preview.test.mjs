@@ -9,6 +9,8 @@ globalThis.CustomEvent=class extends Event{constructor(type,init){super(type);th
 const F=globalThis.__scrollFixture={pages:[],texts:[],images:[],context:null,epoch:0,owner:'catalog',queue:Promise.resolve(),delay:0,suspended:false};
 F.serial=fn=>F.queue=F.queue.catch(()=>{}).then(fn);
 const stubs={
+ 'beta/client':`export const betaProvider=async()=>{__scrollFixture.transcribes=(__scrollFixture.transcribes||0)+1;return {text:__scrollFixture.speech||'Wine 5'}};`,
+ 'intelligence/client':`export const getLocale=()=>'en';`,
  'research/label-glasses':`export const handleLabelGlasses=()=>false;export const openLabelGlasses=async()=>{};export const pauseLabelGlasses=()=>{};export const resumeLabelGlasses=async()=>{};`,
  'research/glasses-add':`export const handleAddWineGlasses=()=>false;export const openAddWineGlasses=async()=>{};export const pauseAddWineGlasses=async()=>{};export const resumeAddWineGlasses=async()=>{};`,
  'pairing-glasses':`export const handlePairingGlasses=()=>false;export const openPairingGlasses=async()=>{};`,
@@ -40,7 +42,7 @@ const root=resolve('src'),dir=await mkdtemp(tmpdir()+'/sommni-scroll-');
 const output=dir+'/test.mjs';
 await build({stdin:{contents:`export * as E from './src/events';export * as G from './src/winebrary-glasses';export * as P from './src/pages';export * as C from './src/constants';export * as I from './src/identity';export {validateGlassesPage} from './src/glasses-page';`,resolveDir:process.cwd(),loader:'ts'},bundle:true,platform:'node',format:'esm',outfile:output,plugins:[{name:'hardware-fixture',setup(b){b.onResolve({filter:/^\./},a=>{const path=resolve(a.resolveDir||dirname(a.importer),a.path);const key=path.startsWith(root+'/')?path.slice(root.length+1).replace(/\.ts$/,''):'';return key in stubs?{path:key,namespace:'fixture'}:undefined});b.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:stubs[a.path],loader:'ts',resolveDir:process.cwd()}));}}]});
 const {E,G,P,C,I,validateGlassesPage}=await import(output);
-let handler;const bridge={onEvenHubEvent:cb=>{handler=cb;return()=>{}},textContainerUpgrade:async t=>{F.texts.push(t);return true},setLocalStorage:async()=>{},getLocalStorage:async()=>'',shutDownPageContainer:async()=>true};
+let handler;const bridge={audioControl:async open=>{(F.mic??=[]).push(open);return true},onEvenHubEvent:cb=>{handler=cb;return()=>{}},textContainerUpgrade:async t=>{F.texts.push(t);return true},setLocalStorage:async()=>{},getLocalStorage:async()=>'',shutDownPageContainer:async()=>true};
 G.connectWinebraryGlasses(bridge,'https://fixture.invalid/');G.setWinebraryDeviceConnected(true);
 const scene=id=>({anchorX:100,anchorY:100,render:async()=>{const delay=F.delay;await wait(delay);return [[id],[id]]}});
 G.setWinePlacer(async wines=>new Map(wines.map(w=>[w.id,{type:'Red',country:'Italy',region:'Tuscany',mapped:true}])));G.setPlaceSceneBuilder(async()=>scene('map'));G.setWineSceneBuilder(async w=>scene(w.id));
@@ -97,7 +99,7 @@ E.registerEventHandlers(bridge,'https://fixture.invalid/');
 const click=async index=>{await wait(520);handler(index===undefined?{sysEvent:{}}:{listEvent:{currentSelectItemIndex:index}});await wait(230);await F.queue};
 handler({textEvent:{eventType:2}});handler({textEvent:{eventType:2}});await F.queue;
 assert.match(F.texts.filter(t=>t.containerName==='home-list').at(-1).content,/> Grapes/);
-await click();await click(0);
+await click();await click(2);
 // France offers multiple grapes and several wines per grape.
 for(let i=0;i<C.COUNTRIES.Red.indexOf('France');i++)handler({textEvent:{eventType:2}});await wait(230);await click();
 assert.ok(F.pages.at(-1).textObject.some(t=>t.containerName==='grapes'));const grapes=C.getGrapesForCountry('Red','France');
@@ -109,5 +111,15 @@ const winePages=F.pages.length;handler({textEvent:{eventType:2}});await wait(230
 handler({sysEvent:{eventType:3}});await wait(250);assert.match(F.pages.at(-1).textObject.find(t=>t.containerName==='wines').content,/\n>/,'Back restores the selected wine');
 // Page constraints hold for every catalog grape/wine screen, including long labels.
 for(const type of C.WINE_TYPES)for(const country of C.COUNTRIES[type]){validateGlassesPage(P.buildGrapeListPage(type,country));for(const grape of C.getGrapesForCountry(type,country))validateGlassesPage(P.buildWineListPage(type,country,grape));}
+
+G.setLibrarySource(()=>({userId:'qa',loading:false,error:'',items:wines}));let restored=0;
+await G.openWineSearchOnGlasses(async()=>{restored++});assert.match(F.pages.at(-1).textObject[0].content,/Listening/);G.handleLibraryGlassesEvent({audioEvent:{audioPcm:new Uint8Array(4000)}});await libraryTap();
+assert.match(F.pages.at(-1).textObject.find(t=>t.containerName==='library-all').content,/Wine 5/);assert.equal(F.transcribes,1);assert.deepEqual(F.mic,[true,false]);await libraryTap();assert.match(F.pages.at(-1).textObject.find(t=>t.containerName==='library-title').content,/Wine 5/);
+G.handleLibraryGlassesEvent({sysEvent:{eventType:3}});await wait(60);assert.match(F.pages.at(-1).textObject.find(t=>t.containerName==='library-all').content,/> Wine 5/);G.handleLibraryGlassesEvent({sysEvent:{eventType:3}});await wait(60);assert.equal(restored,1);
+await G.openWineSearchOnGlasses(async()=>{restored++});G.handleLibraryGlassesEvent({sysEvent:{eventType:3}});await wait(60);assert.equal(F.transcribes,1,'cancel never transcribes');assert.equal(F.mic.at(-1),false);assert.equal(restored,2);
+await G.openWineSearchOnGlasses(async()=>{restored++});await G.pauseLibraryVoice();assert.equal(F.mic.at(-1),false);await G.resumeLibraryVoice();assert.match(F.pages.at(-1).textObject[0].content,/paused/);await G.clearPrivateGlasses();
+wines[0].metadata.saved_locations=['Runway 84 · Fort Lauderdale'];wines[2].metadata.saved_locations=['Runway 84 · Fort Lauderdale','Second Restaurant'];
+await G.openSavedLocationsOnGlasses(async()=>{restored++});assert.match(F.pages.at(-1).listObject[0].itemContainer.itemName[0],/Runway 84.*2w/);await libraryTap(0);assert.match(F.pages.at(-1).textObject.find(t=>t.containerName==='library-all').content,/Wine 0/);assert.doesNotMatch(F.pages.at(-1).textObject.find(t=>t.containerName==='library-all').content,/Wine 3/);await libraryMove(2);assert.equal(F.images.at(-1).data[0],'wine-2');await libraryTap();G.handleLibraryGlassesEvent({sysEvent:{eventType:3}});await wait(60);assert.match(F.pages.at(-1).textObject.find(t=>t.containerName==='library-all').content,/> Wine 2/);G.handleLibraryGlassesEvent({sysEvent:{eventType:3}});await wait(60);assert.ok(F.pages.at(-1).listObject[0].itemContainer.itemName.some(s=>s.includes('Second Restaurant')));await G.clearPrivateGlasses();
+console.log('PASS voice library results, no saves, mic close/cancel/pause, parent restoration, restaurant scoping and bottle hover.');
 F.images=[];handler({textEvent:{eventType:2}});handler({sysEvent:{eventType:7}});await wait(250);assert.equal(F.images.length,0,'no delayed preview after exit');
 console.log('PASS: continuous grouped View All, nonselectable dividers, empty library, compact home menu, swipe previews, first-row omission, vintages, pagination, rapid gestures, stale-image cancellation, grape previews, note selection/Back, exit and all catalog page bounds.');
