@@ -53,3 +53,5 @@
  .phone-shell-ready #home-open-atlas{display:none}
  .phone-shell-ready #dot-dialog:has(#orbit-appellation-label:not([hidden])) .orbit-map{height:clamp(200px,27svh,220px)}
 }
+/* The Even host owns phone zoom; preserve ordinary one-finger page scrolling. */
+html.even-phone-gestures,html.even-phone-gestures body{touch-action:pan-x pan-y}

@@ -25,6 +25,7 @@ export function wineBatchIdentity(w:any){
 }
 export class WineBatch {
  rows:BatchRow[]=[]; saving=false;
+ saveProgress:{total:number;completed:number;saved:number;failed:number;skipped:number}|null=null;
  private controller=new AbortController(); private researches=0; private clipping=false; private disposed=false;
  private ports:BatchPorts;
  constructor(ports:BatchPorts){this.ports=ports;}
@@ -60,13 +61,14 @@ export class WineBatch {
   if(!this.live()||this.saving)return;
   // Snapshot only ready selections. Wines that arrive later need another explicit save.
   const ready=this.rows.filter(r=>r.selected&&r.state==='ready');if(!ready.length)return;
+  this.saveProgress={total:ready.length,completed:0,saved:0,failed:0,skipped:0};
   this.saving=true;this.ports.changed();
   try{for(const r of ready){
-   if(!this.live())return;if(!r.selected||r.state!=='ready')continue;
+   if(!this.live())return;if(!r.selected||r.state!=='ready'){this.saveProgress.completed++;this.saveProgress.skipped++;this.ports.changed();continue;}
    r.state='saving';r.message='Saving wine and queuing master-library upload…';this.ports.changed(r);
-   try{const message=await this.ports.save(r,this.controller.signal);if(!this.live())return;r.state='saved';r.message=message;}
-   catch(error){if(!this.live())return;r.state='error';r.message=(error as Error).message||'Save failed. Retry this wine.';}
-   this.ports.changed(r);
+   try{const message=await this.ports.save(r,this.controller.signal);if(!this.live())return;r.state='saved';r.message=message;this.saveProgress.saved++;}
+   catch(error){if(!this.live())return;r.state='error';r.message=(error as Error).message||'Save failed. Retry this wine.';this.saveProgress.failed++;}
+   this.saveProgress.completed++;this.ports.changed(r);
   }}finally{this.saving=false;if(this.live())this.ports.changed();}
  }
 }
