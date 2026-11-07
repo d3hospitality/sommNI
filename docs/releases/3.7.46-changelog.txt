@@ -1,0 +1,1 @@
+Tap whole wine rows to include or skip; select entire countries and regions from imported menus. Processed labels stay available locally and reuse matching master artwork. Linked accounts skip the automatic guide. Quiet ElevenLabs feedback sounds, with a mute setting. Clearer label-search timeout, connection and provider-credit messages.
