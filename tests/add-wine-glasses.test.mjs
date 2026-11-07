@@ -42,7 +42,7 @@ let finish;researchResponse=new Promise(r=>finish=r);await tap();g.handleAddWine
 await tap();sourceUser=null;window.dispatchEvent(new Event('winelens-library-changed'));await wait(30);assert.equal(mic.at(-1),false);checks.push('account change closes microphone and leaves add flow');
 assert.equal(peak,1);checks.push('bridge pages and audio controls are serialized');
 const result={passed:true,checks,validPages:pages.length,micCalls:mic,bridgePeak:peak};
-await writeFile(resolve('../../outputs/sommNI-easy-add/glasses-checks.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
+await writeFile(resolve(dir,'glasses-checks.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
 // The real Winebrary entry point must offer Add even with an empty collection.
 const libraryStubs={
  './research/label-glasses':`export const openLabelGlasses=async()=>{}`,
@@ -61,4 +61,4 @@ const libraryStubs={
 await build({entryPoints:['src/winebrary-glasses.ts'],bundle:true,format:'esm',platform:'node',outfile:dir+'/library.mjs',plugins:[{name:'library-fixture',setup(b){b.onResolve({filter:/.*/},a=>a.importer.endsWith('/src/winebrary-glasses.ts')&&a.path in libraryStubs?{path:a.path,namespace:'fixture'}:undefined);b.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:libraryStubs[a.path],resolveDir:process.cwd(),loader:'ts'}));}}]});
 const library=await import(dir+'/library.mjs');library.connectWinebraryGlasses({getLocalStorage:async()=>''},'https://fixture.invalid/');library.setLibrarySource(()=>({userId:'beta-local',loading:false,error:'',items:[]}));await library.openLibraryOnGlasses();assert.match(pages.at(-1).textObject.map(t=>t.content).join('\n'),/Add Wine/);await wait(370);library.handleLibraryGlassesEvent({listEvent:{currentSelectItemIndex:1}});await wait(20);assert.equal(__addFixture.openedAdd,true);checks.push('empty Winebrary exposes voice add and omitted first index opens it');
 library.setLibrarySource(()=>({userId:'beta-local',loading:false,error:'',items:[{id:'entry',wine_name:'Chianti',producer:'Fixture',region:'Tuscany',vintage:2021,notes:'',metadata:{color:'Red',country:'Italy'}}]}));await library.openLibraryOnGlasses();await wait(370);library.handleLibraryGlassesEvent({listEvent:{currentSelectItemIndex:2}});await wait(20);assert.ok(pages.at(-1).listObject[0].itemContainer.itemName.some(s=>s.includes('Italy')));checks.push('existing wine types still open the correct country after the Add row');
-await writeFile(resolve('../../outputs/sommNI-easy-add/glasses-checks.json'),JSON.stringify({...result,checks,validPages:pages.length},null,2));console.log('Winebrary entry checks passed.');
+await writeFile(resolve(dir,'glasses-checks.json'),JSON.stringify({...result,checks,validPages:pages.length},null,2));console.log('Winebrary entry checks passed.');

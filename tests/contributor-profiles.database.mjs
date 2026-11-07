@@ -22,9 +22,7 @@ create function sommni_private.atlas_resolve_region(text,text) returns text lang
 create function sommni_private.atlas_recap(timestamptz) returns jsonb language sql as $$select '{}'::jsonb$$;
 create function sommni_private.review_wine(text,text,text) returns uuid language sql as $$select id from sommni_wines where wine_name=$2 limit 1$$;
 `);
-const base=fs.readFileSync('../d3-sommni-site/supabase/migrations/20261022023333_sommni_contribution_accounts.sql','utf8');
-await db.exec(base.slice(base.indexOf('create function sommni_private.community_state()'),base.indexOf('create function sommni_private.submit_wine(')));
-await db.exec(base.slice(base.indexOf('create function sommni_private.review_contribution('),base.indexOf('create function public.sommni_community_state()')));
+await db.exec(fs.readFileSync(new URL('./fixtures/contribution-baseline.sql',import.meta.url),'utf8'));
 await db.exec(fs.readFileSync('supabase/migrations/20261107062520_contributor_profiles_friday_releases.sql','utf8'));
 await db.exec(fs.readFileSync('supabase/migrations/20261107064720_friday_catalog_visibility.sql','utf8'));
 await db.exec(fs.readFileSync('supabase/migrations/20261107065824_friday_atlas_seed_coverage.sql','utf8'));
