@@ -1,3 +1,4 @@
+import {atlasPhoneSelection} from './atlas/phone-selection';
 import { atlasStatus, openAtlasOnGlasses, type AtlasStatus } from './atlas-app';
 import { inEvenHubHost } from './sync';
 const $ = <T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
@@ -25,7 +26,7 @@ export function initAtlasCard(): void {
   button?.addEventListener('click', async () => {
     button.disabled = true;
     if (status) status.textContent = 'Opening the Atlas on your glasses…';
-    try { await openAtlasOnGlasses(); }
+    try { await openAtlasOnGlasses(undefined,atlasPhoneSelection()); }
     catch (error) { if (status) status.textContent = error instanceof Error ? error.message : String(error); }
     finally { button.disabled = !host; }
   });

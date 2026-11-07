@@ -41,10 +41,11 @@ export function mountWineContext(root:HTMLElement){
   let revision=0,animation=0;let lastCamera:Camera|null=null;
   let lastKey='';
   root.classList.add('wine-context');
-  return async(context:WineContext)=>{
+  return async(context:WineContext|null)=>{
+    if(!context){revision++;lastKey='';lastCamera=null;if(animation)cancelAnimationFrame(animation);animation=0;root.replaceChildren();return;}
     const key=JSON.stringify(context);if(key===lastKey)return;lastKey=key;
     const ticket=++revision,esc=escapeWine;if(animation)cancelAnimationFrame(animation);
-    root.innerHTML=`<div class="wine-context-scene"><canvas aria-label="Wine origin globe"></canvas><div class="wine-context-bottle">${context.photo?wineThumbnail(context.photo,context.title):''}</div></div><div class="wine-context-copy"><p class="wl-kicker">${esc(context.country||'ORIGIN TO CONFIRM')}</p><h3>${esc(context.title)}</h3><p>${esc([...wineOrigin(context.country,context.region,context.state).path.slice(1),context.grape].filter(Boolean).join(' · '))}</p><small class="wine-context-map-status">Locating this wine’s origin…</small>${context.catalogId?`<button class="wl-text-button" data-wine-notes="${esc(context.catalogId)}">Tasting notes ↗</button>`:''}</div>`;
+    root.innerHTML=`<div class="wine-context-scene"><canvas aria-label="Wine origin globe"></canvas><div class="wine-context-bottle">${context.photo?wineThumbnail(context.photo,context.title):''}</div></div><div class="wine-context-copy"><p class="wl-kicker">${esc(context.country||'ORIGIN TO CONFIRM')}</p><h3>${esc(context.title)}</h3><p>${esc([...wineOrigin(context.country,context.region,context.state).path.slice(1),context.grape].filter(Boolean).join(' · '))}</p><small class="wine-context-map-status">Locating this wine’s origin…</small>${context.libraryId?`<button class="wl-text-button" data-library-notes="${esc(context.libraryId)}">Tasting notes ↗</button>`:context.catalogId?`<button class="wl-text-button" data-wine-notes="${esc(context.catalogId)}">Tasting notes ↗</button>`:''}</div>`;
     watchWinePhotos(root);
     try{
       const {geography,boundaries,model}=await contextMap();if(ticket!==revision||!root.isConnected)return;
@@ -63,9 +64,14 @@ export function mountWineContext(root:HTMLElement){
 
 export function initGlassesContext(){
   const host=document.querySelector('main');if(!host)return;
-  const panel=document.createElement('details');panel.className='glasses-context-panel';panel.hidden=true;panel.open=true;
+  const panel=document.createElement('details');panel.className='glasses-context-panel';panel.hidden=true;
   panel.innerHTML='<summary>On your glasses <span>Wine & origin</span></summary><div></div>';host.prepend(panel);
   const render=mountWineContext(panel.querySelector('div')!);
-  window.addEventListener('sommni-glasses-context',()=>{panel.hidden=!current;if(current)void render(current);});
-  window.addEventListener('winelens-glasses-home',()=>announceWineContext(null));
+  const refresh=()=>{const settings=document.getElementById('tab-settings')?.classList.contains('active');panel.hidden=!current||!!settings;
+    panel.querySelector('summary span')!.textContent=current?.title||'Wine & origin';
+    if(!current){panel.open=false;void render(null);}else if(panel.open&&!panel.hidden)void render(current);
+  };
+  window.addEventListener('sommni-glasses-context',refresh);window.addEventListener('sommni-tab-changed',refresh);panel.addEventListener('toggle',refresh);
+  for(const event of ['winelens-glasses-home','sommni-library-account-changing'])window.addEventListener(event,()=>announceWineContext(null));
+  refresh();
 }

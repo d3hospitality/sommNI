@@ -1,3 +1,4 @@
+import type {AtlasPhoneTarget} from './atlas/phone-selection';
 import {locateWine,resolveWineFocus} from './atlas/wine-focus';
 import {loadBoundaries} from './atlas/coverage';
 import japanPrefectures from './data/japan-prefecture-regions.json';
@@ -271,6 +272,24 @@ export class CatalogAtlasNavigator extends AtlasNavigator {
     if(wineRegionById(id)){this.wineAreaId=id;this.allAreaWines=false;this.mode='regions';this.regionIndex=0;this.menuAction='all';this.infoSelected=false;return;}
     if(!(this.scope.entries.get(id)?.length))this.showAllRegions=true;super.chooseRegion(id);this.menuAction=null;this.infoSelected=true;this.wineIndex=0;
   }
+  /** Resolve phone IDs against the current account/catalog, never a stale copied wine. */
+  choosePhoneTarget(target:AtlasPhoneTarget):void {
+    if(!this.countries.some(c=>c.code===target.countryCode))throw Error('This place has no wines available on glasses yet.');
+    const matches=(entry:AtlasEntry)=>target.libraryId?entry.kind==='library'&&entry.wine.id===target.libraryId:!!target.catalogId&&entry.kind==='catalog'&&entry.item.id===target.catalogId;
+    const rows=this.scope.data.regions.filter(r=>r.country===target.countryCode);
+    const wineRegion=rows.find(r=>(this.scope.entries.get(r.id)??[]).some(matches));
+    const region=wineRegion??rows.find(r=>r.name.toLocaleLowerCase()===target.regionName?.toLocaleLowerCase());
+    if((target.libraryId||target.catalogId)&&!wineRegion)throw Error('This bottle is no longer available. Refresh your Winebrary and try again.');
+    this.chooseCountry(target.countryCode);
+    if(!region)return;
+    const parent=wineRegionFor(region.country,region.name);
+    if(parent&&parent.id!==region.id)this.chooseRegion(parent.id);
+    this.chooseRegion(region.id);
+    if(wineRegion){
+      if(wineRegionById(region.id)){this.allAreaWines=true;this.mode='detail';}
+      this.wineIndex=Math.max(0,this.wines.findIndex(matches));this.infoSelected=false;this.menuAction=null;
+    }
+  }
   get region():Region|undefined{return this.allAreaWines&&this.wineAreaId?this.scope.data.regions.find(r=>r.id===this.wineAreaId):super.region;}
   get view(){return this.mode==='regions'&&(this.menuAction||this.infoSelected)?{country:this.country,...(this.wineAreaId?{region:this.scope.data.regions.find(r=>r.id===this.wineAreaId)}:{})}:super.view;}
   get wines():AtlasEntry[]{return this.region?this.scope.entries.get(this.region.id)??[]:[];}
@@ -475,17 +494,18 @@ function changed(): void {
 }
 
 /** Home › Wine Atlas (also used by the phone "Open on glasses" button). */
-export async function openAtlasOnGlasses(countryCode?: string): Promise<void> {
+export async function openAtlasOnGlasses(countryCode?: string, phoneTarget?: AtlasPhoneTarget): Promise<void> {
   if (!bridge) throw new Error('Connect your Even G2 glasses first.');
   const renderer = await loadAtlasRenderer();
   // Catalog/bottle/study images must be finished (or cancelled) before Atlas sends anything.
   invalidateImages();
   await imageIdle();
-  await claimDisplay('atlas', release);
   const { items, signedIn } = libraryScope();
   if (!navigator) navigator = new CatalogAtlasNavigator(catalogAtlas(renderer, items), signedIn);
   else navigator.setScope(catalogAtlas(renderer, items), signedIn);
   if (countryCode) navigator.chooseCountry(countryCode);
+  if (phoneTarget) navigator.choosePhoneTarget(phoneTarget);
+  await claimDisplay('atlas', release);
   if (!glasses) glasses = new AtlasGlasses(bridge, navigator, renderer, changed, fail, exitToHome, selectedBottle);
   lastError = null;
   await glasses.open();

@@ -1,3 +1,5 @@
+import {setAtlasPhoneSelection} from './phone-selection';
+import {createContextFollower} from '../context-follower';
 import {wineOrigin} from '../wine-origin';
 import {resolveWineFocus,blendWineCamera,type WineFocus} from './wine-focus';
 import { attachPlaceWheel } from './place-wheel';
@@ -85,7 +87,7 @@ export async function createBrowserAtlas(dialog:HTMLElement,geography:GlobeRende
   if(motion.active||flight)frame=requestAnimationFrame(paint);else syncMotion();
  }
  function draw(){painted=0;if(!frame&&isOpen()&&!document.hidden)frame=requestAnimationFrame(paint)}
- function visibility(){if(document.hidden){clearResume();recognition?.abort();if(frame)cancelAnimationFrame(frame);frame=0;}else{motion.resetClock();draw();resumeAfterExploring();}}
+ function visibility(){if(document.hidden){clearResume();recognition?.abort();if(frame)cancelAnimationFrame(frame);frame=0;}else{followGlasses();motion.resetClock();draw();resumeAfterExploring();}}
  document.addEventListener('visibilitychange',visibility);
  reduced.addEventListener('change',()=>{if(reduced.matches){stop();draw();}});
  const updateCoverage=()=>{coverage=collectiveCoverage(geography.data,boundaries,collectiveSnapshot());options();info();draw();};
@@ -120,6 +122,7 @@ export async function createBrowserAtlas(dialog:HTMLElement,geography:GlobeRende
  const bottle=get<HTMLButtonElement>('orbit-bottle');
  function previewWine(wine:WineContext|null,followOrigin=true){
   const changed=bottleKey(currentBottle)!==bottleKey(wine);currentBottle=wine;
+  if(changed&&!followOrigin){wineFocus=null;flight=null;}
   if(wine&&followOrigin&&(changed||!wineFocus)){const next=resolveWineFocus(geography.data,boundaries,{country:wine.country,region:wine.region,state:wine.state});wineFocus=next;if(next){stop();const to=next.camera;if(reduced.matches)camera=to;else flight={from:{center:[...camera.center],zoom:camera.zoom},to,started:performance.now()};get('orbit-path').textContent=next.path.join(' › ');get('dot-status').textContent=next.cluster?'Highlighted winery-area locations · not an appellation boundary':next.boundary?'Administrative context · precise wine-area location not mapped':'Country view · precise region not mapped';draw();}}
   else if(!wine){wineFocus=null;flight=null;}
   if(wineFocus){get('orbit-path').textContent=wineFocus.path.join(' › ');get('dot-status').textContent=wineFocus.cluster?'Highlighted winery-area locations · not an appellation boundary':wineFocus.boundary?'Administrative context · precise wine-area location not mapped':'Country view · precise region not mapped';}
@@ -180,13 +183,14 @@ export async function createBrowserAtlas(dialog:HTMLElement,geography:GlobeRende
  }
  const catalogChanged=()=>{catalog=allCatalogWines();catalogRegions=coverageByWine();updateCoverage();};
  window.addEventListener('sommni-catalog-updated',catalogChanged);
- function followGlasses(){
-  const selected=glassesContext();if(!selected||!isOpen())return;
-  const focus=resolveWineFocus(geography.data,boundaries,{country:selected.country,region:selected.region,state:selected.state});if(!focus)return;
-  if(selected.libraryId||selected.catalogId){if(country.code!==focus.country.code){const from={center:[...camera.center] as Point,zoom:camera.zoom};chooseCountry(focus.country);camera=from;}previewWine(selected);}
+ const followGlasses=createContextFollower(glassesContext,()=>isOpen()&&!document.hidden,selected=>{
+  const focus=resolveWineFocus(geography.data,boundaries,{country:selected.country,region:selected.region,state:selected.state});
+  if(!focus){previewWine(null);get('dot-status').textContent='This wine’s origin is not mapped yet.';draw();return;}
+  if(selected.libraryId||selected.catalogId){if(country.code!==focus.country.code||!bottleDeck.some(w=>bottleKey(w)===bottleKey(selected))){const from={center:[...camera.center] as Point,zoom:camera.zoom};chooseCountry(focus.country);camera=from;}previewWine(selected);}
   else{chooseCountry(focus.country);if(focus.boundary)chooseRegion(focus.boundary);}
-
- }
+ });
+ const clearPrivateSelection=()=>{if(currentBottle?.libraryId){bottleDeck=bottleDeck.filter(w=>!w.libraryId);previewWine(null);draw();}};
+ window.addEventListener('sommni-library-account-changing',clearPrivateSelection);
  window.addEventListener('sommni-glasses-context',followGlasses);
  dialog.addEventListener('click',event=>{const b=(event.target as HTMLElement).closest<HTMLElement>('[data-place-insight]');if(b)void openPlaceInsight(country.name,b.dataset.placeInsight==='country'?null:(selectedAppellation?regionalWines().find(w=>normalizePlace(w.wine.region.split(',')[0])===selectedAppellation)?.wine.region.split(',')[0]:region?.name)??null,b.dataset.placeInsight==='country'?catalog.filter(w=>atlasCountryFor(geography,w.country)?.code===country.code):matchedWines());});
  function options(){
@@ -234,10 +238,11 @@ export async function createBrowserAtlas(dialog:HTMLElement,geography:GlobeRende
  // A deliberate pause stays paused. Exploration only suspends the idle spin.
  const interacted=(event:Event)=>{if((event.target as HTMLElement).closest('#orbit-spin,#dot-close'))return;resumeAfterExploring();};
  for(const name of ['pointerup','pointercancel','wheel','keydown','change','input'])dialog.addEventListener(name,interacted);
- const observer=modal?null:new IntersectionObserver(entries=>{inView=entries.some(e=>e.isIntersecting);if(inView){motion.resetClock();draw();resumeAfterExploring();}else{clearResume();recognition?.abort();if(frame)cancelAnimationFrame(frame);frame=0;}},{threshold:.02});
+ const observer=modal?null:new IntersectionObserver(entries=>{inView=entries.some(e=>e.isIntersecting);if(inView){followGlasses();motion.resetClock();draw();resumeAfterExploring();}else{clearResume();recognition?.abort();if(frame)cancelAnimationFrame(frame);frame=0;}},{threshold:.02});
  observer?.observe(canvas);
- const overlayObserver=modal?null:new MutationObserver(()=>{if(isOpen()){motion.resetClock();draw();resumeAfterExploring();}else{if(frame)cancelAnimationFrame(frame);frame=0;}});
+ const overlayObserver=modal?null:new MutationObserver(()=>{if(isOpen()){followGlasses();motion.resetClock();draw();resumeAfterExploring();}else{if(frame)cancelAnimationFrame(frame);frame=0;}});
  overlayObserver?.observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
  options();info();
- return {open(selection:DotSelection){if(modal&&!modal.open)modal.showModal();reset(selection);followGlasses();},destroy(){placeWheels.forEach(wheel=>wheel.destroy());observer?.disconnect();overlayObserver?.disconnect();recognition?.abort();stop();if(frame)cancelAnimationFrame(frame);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('sommni-glasses-context',followGlasses);window.removeEventListener('sommni-catalog-updated',catalogChanged);window.removeEventListener('winelens-library-changed',updateCoverage);window.removeEventListener('sommni-atlas-snapshot',updateCoverage);}};
+ setAtlasPhoneSelection(()=>({countryCode:country.code,regionName:region?.name,catalogId:currentBottle?.catalogId,libraryId:currentBottle?.libraryId}));
+ return {open(selection:DotSelection){if(modal&&!modal.open)modal.showModal();reset(selection);followGlasses();},destroy(){placeWheels.forEach(wheel=>wheel.destroy());observer?.disconnect();overlayObserver?.disconnect();recognition?.abort();stop();if(frame)cancelAnimationFrame(frame);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('sommni-glasses-context',followGlasses);window.removeEventListener('sommni-library-account-changing',clearPrivateSelection);window.removeEventListener('sommni-catalog-updated',catalogChanged);window.removeEventListener('winelens-library-changed',updateCoverage);window.removeEventListener('sommni-atlas-snapshot',updateCoverage);}};
 }

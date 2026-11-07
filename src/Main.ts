@@ -81,7 +81,7 @@ async function main(): Promise<void> {
   if (!inEvenHubHost()) {
     setStatus("disconnected", "Browser mode");
     setGlassesStatus(false);
-    setVersionInfo("3.7.48 · Beta");
+    setVersionInfo("3.7.49 · Beta");
   } else {
     setStatus("connecting", "Waiting for bridge...");
   }
@@ -177,9 +177,9 @@ async function main(): Promise<void> {
   connectHistoryGlasses(bridge);
   log("Events active", "success");
 
-  await bridge.setLocalStorage("sommni_version", "3.7.48");
-  setVersionInfo("3.7.48 · Beta");
-  log(`sommNI v3.7.48 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
+  await bridge.setLocalStorage("sommni_version", "3.7.49");
+  setVersionInfo("3.7.49 · Beta");
+  log(`sommNI v3.7.49 Beta — ${TOTAL_WINES} wines · courses · quiz · pairings · 86 list`, "success");
 
   // Refresh all dashboard tabs with data from bridge
   await refreshAll();
