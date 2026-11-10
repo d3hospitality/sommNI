@@ -2,6 +2,7 @@
 const string={type:'string'};
 export function wineSchema(identify:boolean){
  const properties:Record<string,unknown>={wine_name:string,producer:string,vintage:{type:['integer','null']},vintage_state:{type:'string',enum:['year','non_vintage','unknown']},region:string,country:string,grape:string,color:{type:'string',enum:['','Red','White','Sparkling','Rosé','Orange','Dessert','Sake']},sake_classification:string,sake_style:string,rice_variety:string,tasting_notes:string,uncertainty:string};
+ if(identify){properties.recognition_basis={type:'string',enum:['label_text','artwork','unknown']};properties.visual_evidence=string;properties.vintage_evidence=string;}
  if(identify)properties.bottle_outline={anyOf:[{type:'null'},{type:'object',additionalProperties:false,required:['top','bottom','left','right'],properties:{top:{type:'number'},bottom:{type:'number'},left:{type:'array',items:{type:'number'},minItems:12,maxItems:12},right:{type:'array',items:{type:'number'},minItems:12,maxItems:12}}}]};
  return {type:'object',additionalProperties:false,properties,required:Object.keys(properties)};
 }

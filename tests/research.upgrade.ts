@@ -55,3 +55,15 @@ Deno.test('web research cannot replace a photographed producer or guess its vint
  const result=alignPhotoCandidate({...label,vintage:2023,vintage_state:'year'},label);assert(result.vintage===null&&result.vintage_state==='unknown');
  let rejected=false;try{alignPhotoCandidate({...label,producer:'Castello di Gabbiano'},label)}catch{rejected=true}assert(rejected);
 });
+
+Deno.test('distinctive artwork can suggest a wine without readable lettering; no inferred vintage',async()=>{
+ const make=(data:any)=>createWineProvider(k=>k==='OPENAI_API_KEY'?'test':undefined,async()=>Response.json({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(data)}]}]}));
+ const art={...wine,wine_name:'Palermo',producer:'Orin Swift',recognition_basis:'artwork',visual_evidence:'Sepia portrait of a dressed skeletal figure on an aged paper label.',vintage:2020,vintage_state:'year',vintage_evidence:''};
+ const r=await make(art).structured('identify','Match label artwork','/9j/AA==');assert(r.wine_name==='Palermo'&&r.recognition_basis==='artwork');assert(r.vintage===null&&r.vintage_state==='unknown');assert(r.uncertainty.startsWith('Artwork-based suggestion'));
+ for(const data of [{...art,recognition_basis:'unknown'},{...art,visual_evidence:''},{...art,producer:''}]){let rejected=false;try{await make(data).structured('identify','Art','/9j/AA==')}catch(e){rejected=(e as any).status===422}assert(rejected);}
+});
+Deno.test('artwork basis and warning survive shared research and its evidence record',async()=>{
+ const art={...wine,recognition_basis:'artwork',visual_evidence:'Distinctive illustrated scene',vintage_evidence:'',vintage:null,vintage_state:'unknown'};
+ const action=createBetaService({env:k=>k==='GEMINI_API_KEY'?'test':undefined,reserve:async()=>true,fetch:async(_url,init)=>{const b=JSON.parse(String(init?.body));return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:b.tools?'Sourced report':JSON.stringify(art)}]},groundingMetadata:{groundingChunks:[{web:{uri:'https://example.com',title:'Source'}}]}}]});}});
+ const r=await action({action:'research',photo:'data:image/jpeg;base64,/9j/AA=='});assert(r.draft.result.recognition_basis==='artwork');assert(r.draft.result.uncertainty.startsWith('Artwork-based suggestion'));assert(r.draft.evidence.label.visual_evidence===art.visual_evidence);
+});

@@ -17,8 +17,8 @@ export function openBottleScanner(options:Options={}){
  const dialog=active=document.createElement('dialog');dialog.className='bottle-scanner'+(nativeMode?' scan-native-mode':'');dialog.setAttribute('aria-labelledby','bottle-scanner-title');
  dialog.innerHTML=`<header><div><span class="scan-eyebrow">sommNI <span lang="ja">ソムニ</span></span><h2 id="bottle-scanner-title">Scan a Bottle</h2></div><button type="button" data-close aria-label="Close bottle scanner">×</button></header>
  <ol class="scan-steps" aria-label="Scan progress"><li data-scan-step="0">01 <span>Frame</span></li><li data-scan-step="1">02 <span>Identify</span></li><li data-scan-step="2">03 <span>Approve</span></li></ol>
- <div class="scan-view"><div class="scan-native" hidden><span aria-hidden="true">◎</span><strong>Frame it with your phone</strong><p>Take a clear bottle photo. Return here to identify it and approve the match.</p></div><video muted playsinline aria-label="Live bottle camera"></video><img class="scan-still" hidden alt="Captured bottle to identify"><canvas class="scan-grid" aria-hidden="true"></canvas><div class="scan-view-label">Center one bottle · Keep the label readable</div><div class="scan-progress" hidden><span data-step></span><progress max="3" aria-label="Bottle identification progress"></progress><small>Capture → Research → Review</small></div></div>
- <section class="scan-focus" hidden aria-label="Label focus"><p>Tap the label in your photo. Adjust the frame until the producer, wine and year fit inside.</p><label>Label frame <input type="range" min="25" max="95" value="65" aria-label="Label frame size"></label><img alt="Label close-up" hidden><button type="button" data-reset-focus>Use Full Photo</button></section>
+ <div class="scan-view"><div class="scan-native" hidden><span aria-hidden="true">◎</span><strong>Frame it with your phone</strong><p>Photograph the bottle or its label artwork. Return here to check the match.</p></div><video muted playsinline aria-label="Live bottle camera"></video><img class="scan-still" hidden alt="Captured bottle to identify"><canvas class="scan-grid" aria-hidden="true"></canvas><div class="scan-view-label">Bottle or label artwork · Keep details sharp</div><div class="scan-progress" hidden><span data-step></span><progress max="3" aria-label="Bottle identification progress"></progress><small>Capture → Research → Review</small></div></div>
+ <section class="scan-focus" hidden aria-label="Label focus"><p>Tap the label in your photo. Adjust the frame until the artwork or the producer, wine and year fit inside.</p><label>Label frame <input type="range" min="25" max="95" value="65" aria-label="Label frame size"></label><img alt="Label close-up" hidden><button type="button" data-reset-focus>Use Full Photo</button></section>
  <p class="scan-status" role="status" aria-live="polite"></p><label class="scan-name-hint" hidden>Producer or Wine Name <input type="text" maxlength="180" autocomplete="off" placeholder="Optional · Help read a difficult label"></label>
  <section class="scan-result" hidden><span class="scan-eyebrow">Possible match · Check the label</span><h3></h3><p data-facts></p><p data-notes></p><details class="scan-check"><summary>Identification details</summary><p class="scan-caution"></p></details></section>
  <p class="scan-share" hidden>Approving saves this bottle to your Winebrary and contributes its wine details and photo to the collective catalog for review.</p>
@@ -33,7 +33,7 @@ export function openBottleScanner(options:Options={}){
  let focusTimer:ReturnType<typeof setTimeout>|undefined;
  let focusing=false,labelFocus:LabelFocus|undefined,previewRevision=0;
  let closed=false,cameraReady=false,frame=0,lastProbe=0,outline:BottleOutline|null=null,misses=0,photoRevision=0,opening=false,saving=false,nativePicking=false;
- const session=new BottleScanSession({prepare:boundedPng,research:options.research||((photo,signal)=>researchAction({action:'research',query:'Identify this bottle from its label. Leave unreadable vintage unknown.'+(get<HTMLInputElement>('.scan-name-hint input').value.trim()?' User label hint: '+get<HTMLInputElement>('.scan-name-hint input').value.trim():''),photo,label_focus:labelFocus,request_id:crypto.randomUUID()},signal)),changed:paint});
+ const session=new BottleScanSession({prepare:boundedPng,research:options.research||((photo,signal)=>researchAction({action:'research',query:'Identify this wine from label text or distinctive label artwork. Mark artwork-only matches as tentative. Leave unreadable vintage unknown.'+(get<HTMLInputElement>('.scan-name-hint input').value.trim()?' User label hint: '+get<HTMLInputElement>('.scan-name-hint input').value.trim():''),photo,label_focus:labelFocus,request_id:crypto.randomUUID()},signal)),changed:paint});
  const stopCamera=()=>{lease.stop();cancelAnimationFrame(frame);video.srcObject=null;cameraReady=false;};
  const close=()=>{
   if(closed)return;closed=true;photoRevision++;previewRevision++;clearTimeout(focusTimer);session.cancel();stopCamera();cancelAnimationFrame(meshFrame);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('pagehide',pageHide);window.removeEventListener('hashchange',close);window.removeEventListener('sommni-library-account-changing',close);
@@ -51,9 +51,9 @@ export function openBottleScanner(options:Options={}){
   dialog.querySelectorAll<HTMLInputElement>('input').forEach(input=>input.disabled=busy);
   get('.scan-progress').hidden=!busy;
   if(session.phase==='researching')progress.removeAttribute('value');else progress.value=review?3:1;
-  get('[data-step]').textContent=review?'Research ready':session.phase==='preparing'?'1 / 3 · Preparing your photo':'2 / 3 · Reading label & finding notes';
+  get('[data-step]').textContent=review?'Research ready':session.phase==='preparing'?'1 / 3 · Preparing your photo':'2 / 3 · Reading label & artwork';
   get('.scan-result').hidden=!review;
-  if(busy)status.textContent='Reading the label and finding reference notes. You can stop at any time.';
+  if(busy)status.textContent='Matching the label or artwork and finding reference notes. You can stop at any time.';
   get('.scan-name-hint').hidden=!error&&!focusing;
   if(error)status.textContent=session.error;
   cancelAnimationFrame(meshFrame);
@@ -63,8 +63,9 @@ export function openBottleScanner(options:Options={}){
    const wine=session.draft.result;outline=fittedBottle(wine.bottle_outline)||outline;get('.scan-result h3').textContent=wine.wine_name;
    get('[data-facts]').textContent=[wine.producer,wine.vintage??(wine.vintage_state==='non_vintage'?'Non-vintage':'Vintage not confirmed'),wine.region,wine.country].filter(Boolean).join(' · ');
    get('[data-notes]').textContent=String(wine.tasting_notes||'Open review to check the details and add your own tasting notes.').replace(/https?:\/\/\S+/g,'').slice(0,420);
+   get('.scan-result .scan-eyebrow').textContent=wine.recognition_basis==='artwork'?'Artwork Match · Please Confirm':'Possible match · Check the label';
    get('.scan-caution').textContent=wine.uncertainty||'AI-assisted identification. Confirm the producer, wine and year before adding.';
-   status.textContent='Check the label and year before approving.';
+   status.textContent=wine.recognition_basis==='artwork'?'Suggested from label artwork. Confirm the wine and producer; the year may be unknown.':'Check the label and year before approving.';
   }
  }
  function drawGrid(){
@@ -96,7 +97,7 @@ export function openBottleScanner(options:Options={}){
    if(!options.camera&&(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia))throw Error('Live camera is unavailable here. Use Take Photo or Choose Photo below.');
    const stream=await lease.open(options.camera||(()=>navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:1920}}})));
    if(!stream||closed)return;video.srcObject=stream;await video.play();if(closed||lease.stream!==stream)return;
-   cameraReady=true;status.textContent='Frame the whole bottle, then tap Scan This Bottle.';paint();frame=requestAnimationFrame(tick);
+   cameraReady=true;status.textContent='Frame the bottle or its label artwork, then tap Scan This Bottle.';paint();frame=requestAnimationFrame(tick);
   }catch(error){if(closed)return;stopCamera();status.textContent=(error as Error).name==='NotAllowedError'?'Camera access wasn’t allowed. Use Take Photo or Choose Photo below.':(error as Error).message;get('[data-retake]').hidden=false;drawGrid();}
   finally{opening=false;}
  }

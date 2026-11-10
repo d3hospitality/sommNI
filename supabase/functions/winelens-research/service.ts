@@ -74,7 +74,7 @@ export function createResearchService({db,env,fetch:fetcher}:Deps) {
     const candidate=alignPhotoCandidate(await structured('structure',JSON.stringify({query,label,report:research.answer})),label);
     const imagePath=image?`${user}/${id}/reference.jpg`:null;
     if(image)check(await db.storage.from('winelens-bottles').upload(imagePath,image.bytes,{contentType:'image/jpeg',upsert:false}));
-    const draft={id,user_id:user,query,result:{...candidate,...(label?{bottle_outline:label.bottle_outline}: {})},report:research.answer,evidence:{label:label?{wine_name:label.wine_name,producer:label.producer,vintage:label.vintage,vintage_state:label.vintage_state,uncertainty:label.uncertainty}:null,sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html,image_path:imagePath};
+    const draft={id,user_id:user,query,result:{...candidate,...(label?{bottle_outline:label.bottle_outline,recognition_basis:label.recognition_basis,visual_evidence:label.visual_evidence,...(label.recognition_basis==='artwork'?{uncertainty:label.uncertainty}:{})}: {})},report:research.answer,evidence:{label:label?{wine_name:label.wine_name,producer:label.producer,vintage:label.vintage,vintage_state:label.vintage_state,uncertainty:label.uncertainty,recognition_basis:label.recognition_basis,visual_evidence:label.visual_evidence}:null,sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html,image_path:imagePath};
     try{check(await db.from('wl_wine_research').insert(draft));}catch(error){if(imagePath)await db.storage.from('winelens-bottles').remove([imagePath]);throw error;}
     return {draft};
    });

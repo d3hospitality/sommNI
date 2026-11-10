@@ -43,7 +43,7 @@ export function createWineProvider(env:(name:string)=>string|undefined,fetcher:t
  const gemini=(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string,imageDetail?:string)=>env('GEMINI_API_KEY')?google(mode,input,image,imageDetail):openai(mode,input,image,imageDetail);
  async function structured(mode:'identify'|'structure',input:string,image?:string,imageDetail?:string) {
   // Use the dedicated vision model when available; a partial label is not a complete wine record.
-  const labelInput=mode==='identify'?JSON.stringify({request:input,catalog_name_hints:catalog.wines.map(w=>w.name),hint_rules:'These are spelling candidates, not evidence or a required match. Match only when visible label lettering supports both wine and producer. Wines outside this list are valid. Never copy a vintage from the catalog. Re-examine small producer script against these names before leaving it unreadable.'}):input;
+  const labelInput=mode==='identify'?JSON.stringify({request:input,catalog_name_hints:catalog.wines.map(w=>w.name),hint_rules:'These are spelling candidates, not evidence or a required match. Visible lettering or a distinctive recognizable label illustration may suggest a wine and producer. Generic artwork is not sufficient. Artwork-only suggestions must use recognition_basis artwork and describe their visible distinguishing features. Wines outside this list are valid. Never copy a vintage from the catalog. Re-examine small producer script against these names before leaving it unreadable.'}):input;
   const response=await (mode==='identify'&&env('OPENAI_API_KEY')?openai(mode,labelInput,image,imageDetail):gemini(mode,labelInput,image,imageDetail));
   let data:any;
   try{data=JSON.parse(response.answer)}catch{
@@ -59,8 +59,11 @@ export function createWineProvider(env:(name:string)=>string|undefined,fetcher:t
   const state=data.vintage_state==='non_vintage'?'non_vintage':data.vintage_state==='year'&&validYear?'year':'unknown';
   const normalized={...data,color:color??'',vintage_state:state,vintage:state==='year'?rawYear:null};
   if(mode==='identify')normalized.tasting_notes='';
-  if(typeof normalized.wine_name!=='string'||!normalized.wine_name.trim())throw new Fault(422,'No wine name could be read. Try a closer label photo, or enter the producer and wine name.');
-  try{return {...review(normalized),uncertainty:text(data.uncertainty??'',700),...(mode==='identify'?{bottle_outline:photoOutline(data.bottle_outline)}:{})}}catch(error){
+  const basis=data.recognition_basis==='artwork'?'artwork':data.recognition_basis==='unknown'?'unknown':'label_text',visual=text(data.visual_evidence??'',500);
+  if(mode==='identify'&&basis==='artwork'&&String(data.vintage_evidence??'').trim()!==String(normalized.vintage)){normalized.vintage=null;normalized.vintage_state='unknown';}
+  if(mode==='identify'&&(basis==='unknown'||(basis==='artwork'&&(!visual.trim()||!String(data.producer||'').trim()))))throw new Fault(422,'This artwork is not distinctive enough for a reliable wine match yet. Include more of the label, or add a producer hint.');
+  if(typeof normalized.wine_name!=='string'||!normalized.wine_name.trim())throw new Fault(422,'No clear wine match from this label or artwork. Include more of the design, or enter a producer or wine name.');
+  try{return {...review(normalized),uncertainty:text(((mode==='identify'&&basis==='artwork'?'Artwork-based suggestion; confirm the producer and wine before saving. ':'')+String(data.uncertainty??'')).slice(0,700),700),...(mode==='identify'?{recognition_basis:basis,visual_evidence:visual,bottle_outline:photoOutline(data.bottle_outline)}:{})}}catch(error){
    console.error('Wine response validation',JSON.stringify({mode,reason:error instanceof Error?error.message:'invalid_fields'}));
    throw new Fault(502,mode==='identify'?'The label was read, but its details need another pass. Your photo is kept; retry lookup.':'The wine was identified, but reference notes could not be formatted. Your photo is kept; retry lookup.');
   }
