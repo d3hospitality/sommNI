@@ -1,3 +1,4 @@
+import type {ResearchProgress} from './research-stream';
 import { referenceNotes } from '../reference-notes';
 import {labelResearchPhoto,labelResearchDetail} from './photo-input';
 import { getCatalogAnecdote } from '../catalog-anecdotes';
@@ -6,10 +7,10 @@ import { FREE_BETA } from '../beta/config';
 import { betaResearch } from '../beta/client';
 import { account } from '../account-client';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY } from '../account-config';
-export async function researchAction(body:Record<string,unknown>,signal?:AbortSignal) {
+export async function researchAction(body:Record<string,unknown>,signal?:AbortSignal,onProgress?:(value:ResearchProgress)=>void) {
  signal?.throwIfAborted();
  if(body.action==='research'&&typeof body.photo==='string'&&body.photo){body={...body,photo_detail:await labelResearchDetail(body.photo,body.label_focus),photo:await labelResearchPhoto(body.photo)};signal?.throwIfAborted();delete body.label_focus;}
- if(FREE_BETA){if(body.action==='attach_bottle'&&!isGuestLibrary())return accountResearch(body,signal);return betaResearch(body,signal);}
+ if(FREE_BETA){if(body.action==='attach_bottle'&&!isGuestLibrary())return accountResearch(body,signal);return betaResearch(body,signal,onProgress);}
  const session=(await account.auth.getSession()).data.session;
  if(!session)throw new Error('Sign in to your sommNI account first.');
  const response=await fetch(`${ACCOUNT_URL}/functions/v1/winelens-research`,{method:'POST',headers:{'Content-Type':'application/json',apikey:ACCOUNT_PUBLIC_KEY,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify(body),signal});

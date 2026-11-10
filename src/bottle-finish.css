@@ -1,0 +1,8 @@
+/* Static, restrained ordered texture; the central label band stays fully opaque.
+   CSS only: source photographs, transparency, offline files and upload originals stay intact. */
+:is(.wine-thumb,.wl-cat-bottle,.wl-bottle-stage img,.notes-heading img,.bottle-row-photo img,.wl-row-bottle img,.intel-match-bottle img){
+ -webkit-mask-image:linear-gradient(transparent 28%,#000 42%,#000 78%,transparent 90%),repeating-conic-gradient(#000 0% 25%,#000c 0% 50%);
+ mask-image:linear-gradient(transparent 28%,#000 42%,#000 78%,transparent 90%),repeating-conic-gradient(#000 0% 25%,#000c 0% 50%);
+ -webkit-mask-size:100% 100%,3px 3px;mask-size:100% 100%,3px 3px;
+ -webkit-mask-repeat:no-repeat,repeat;mask-repeat:no-repeat,repeat;
+}

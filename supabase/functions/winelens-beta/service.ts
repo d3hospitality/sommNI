@@ -4,8 +4,8 @@ import { pcmWave, transcribePcm } from './transcription.ts';
 import { Fault, text, photo, narration, hash } from '../winelens-research/domain.ts';
 import { createWineProvider, alignPhotoCandidate } from '../winelens-research/provider.ts';
 import { bottleStudioPrompt } from '../../../prompts/bottle-studio.ts';
-type Deps={env:(key:string)=>string|undefined;fetch:typeof fetch;reserve:(weight:number)=>Promise<boolean>;resolveHost?:(host:string)=>Promise<string[]>;cacheResearch?:(key:string,build:()=>Promise<any>)=>Promise<any>};
-export function createBetaService({env,fetch:fetcher,reserve,cacheResearch,resolveHost}:Deps){
+type Deps={progress?:(value:Record<string,unknown>)=>void;env:(key:string)=>string|undefined;fetch:typeof fetch;reserve:(weight:number)=>Promise<boolean>;resolveHost?:(host:string)=>Promise<string[]>;cacheResearch?:(key:string,build:()=>Promise<any>)=>Promise<any>};
+export function createBetaService({env,fetch:fetcher,reserve,cacheResearch,resolveHost,progress}:Deps){
  const {gemini,structured}=createWineProvider(env,fetcher);
  const discover=createBottleDiscovery(env,fetcher,resolveHost||(()=>Promise.reject(Error('Resolver unavailable'))));
  const ready=()=>({research:!!(env('GEMINI_API_KEY')||env('OPENAI_API_KEY')),research_provider:env('GEMINI_API_KEY')?'Google Gemini + Search':env('OPENAI_API_KEY')?'OpenAI + web search':null,audio:!!env('ELEVENLABS_API_KEY')&&!!env('ELEVENLABS_VOICE_ID'),transcription:!!env('OPENAI_API_KEY'),studio:!!env('OPENAI_API_KEY'),intelligence:!!env('OPENAI_API_KEY'),community:true,free:true,account_required:false});
@@ -31,7 +31,9 @@ export function createBetaService({env,fetch:fetcher,reserve,cacheResearch,resol
    const build=async()=>{
     await spend(3);
     const label=image?await structured('identify',query||'Read this wine label.',image.data,photo(body.photo_detail)?.data):null;
+    if(label)progress?.({stage:'identified',wine_name:label.wine_name,producer:label.producer,bottle_outline:label.bottle_outline});
     const research=await gemini('research',JSON.stringify({query,label}));if(!research.sources.length)throw new Fault(422,'No web sources returned. Try a more specific name.');
+    progress?.({stage:'references'});
     const result=alignPhotoCandidate(await structured('structure',JSON.stringify({query,label,report:research.answer})),label);
     return {result:{...result,...(label?{bottle_outline:label.bottle_outline,recognition_basis:label.recognition_basis,visual_evidence:label.visual_evidence,...(label.recognition_basis==='artwork'?{uncertainty:label.uncertainty}:{})}: {})},report:research.answer,evidence:{label:label?{wine_name:label.wine_name,producer:label.producer,vintage:label.vintage,vintage_state:label.vintage_state,uncertainty:label.uncertainty,recognition_basis:label.recognition_basis,visual_evidence:label.visual_evidence}:null,sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html};
    };

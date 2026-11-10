@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';import {build} from 'esbuild';
+const load=async path=>{const r=await build({entryPoints:[path],bundle:true,format:'esm',platform:'node',write:false});return import('data:text/javascript;base64,'+Buffer.from(r.outputFiles[0].text).toString('base64'))};
+const {readResearchStream}=await load('src/research/research-stream.ts'),{researchStream}=await load('supabase/functions/_shared/research-stream.ts');
+const seen=[];const response=researchStream(async emit=>{emit({stage:'identified',wine_name:'Irrosso',source:'https://private-source.example'});await new Promise(r=>setTimeout(r,5));emit({stage:'references'});return {draft:{id:'ready'},allowance:{remaining:9}}},{},e=>({error:e.message}));
+const result=await readResearchStream(response,p=>seen.push(p));assert.equal(result.draft.id,'ready');assert.equal(result.allowance.remaining,9);assert.deepEqual(seen.map(p=>p.stage),['identified','references']);assert.equal(seen[0].source,'','source URLs must remain backend-only');
+await assert.rejects(readResearchStream(researchStream(async()=>{throw Error('Limit reached')},{},e=>({error:e.message,code:'DAILY_BOTTLE_LIMIT'})),()=>{}),e=>e.code==='DAILY_BOTTLE_LIMIT');
+await assert.rejects(readResearchStream(new Response('{"type":"progress","value":{"stage":"identified"}}\n'),()=>{}),/ended before/);
+const payload=new TextEncoder().encode('{"type":"progress","value":{"stage":"identified","wine_name":"Rosé"}}\n{"type":"result","value":{"ok":true}}\n');let at=0;const split=new ReadableStream({pull(c){if(at===payload.length){c.close();return;}c.enqueue(payload.slice(at,++at));}});let name='';assert((await readResearchStream(new Response(split),p=>name=p.wine_name)).ok);assert.equal(name,'Rosé');
+console.log('PASS: live stages precede final match, URLs sanitized, quota errors preserved, interrupted responses rejected, byte-split UTF-8 handled.');

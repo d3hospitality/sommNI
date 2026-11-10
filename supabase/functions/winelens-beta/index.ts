@@ -1,3 +1,4 @@
+import {researchStream} from '../_shared/research-stream.ts';
 import {quotaSubject,withBottleAllowance} from '../_shared/bottle-allowance.ts';
 import { publicContent } from '../_shared/public-content.ts';
 import { sharedCatalog } from './shared-catalog.ts';
@@ -9,7 +10,7 @@ import { createRequestReserve } from './request-limit.ts';
 import { Fault } from '../winelens-research/domain.ts';
 const env=(key:string)=>Deno.env.get(key);
 const db=createClient(env('SUPABASE_URL')!,env('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
-const publicService=(requestReserve:(weight:number)=>Promise<boolean>)=>createBetaService({env,fetch,reserve:requestReserve,resolveHost:async host=>(await Promise.allSettled([Deno.resolveDns(host,'A'),Deno.resolveDns(host,'AAAA')])).flatMap(r=>r.status==='fulfilled'?r.value:[]),cacheResearch:(key,build)=>cachedResearch(db,key,build)});
+const publicService=(requestReserve:(weight:number)=>Promise<boolean>,progress?:(value:Record<string,unknown>)=>void)=>createBetaService({env,fetch,progress,reserve:requestReserve,resolveHost:async host=>(await Promise.allSettled([Deno.resolveDns(host,'A'),Deno.resolveDns(host,'AAAA')])).flatMap(r=>r.status==='fulfilled'?r.value:[]),cacheResearch:(key,build)=>cachedResearch(db,key,build)});
 const intelligenceActions=new Set(['daily','daily_archive','daily_saved','translate','sommelier','contribute','contribution_status']);
 // Public reads stay anonymous. Costly bottle work shares a server-enforced daily allowance.
 Deno.serve(async(req:Request)=>{
@@ -35,7 +36,10 @@ Deno.serve(async(req:Request)=>{
   }
   const reserve=createRequestReserve(db,req,env('SUPABASE_SERVICE_ROLE_KEY')!,body.action);
   const capped=new Set(['research','bottle_lookup','bottle_candidates','bottle_allow','bottle_allowance']);
-  const work=()=>intelligenceActions.has(body.action)?createIntelligence({db,env,fetch,reserve})(body):publicService(reserve)(body);
-  return respond(capped.has(body.action)?await withBottleAllowance(db,await quotaSubject(db,req,env('SUPABASE_SERVICE_ROLE_KEY')!),body,work):await work());
+  let progress:((value:Record<string,unknown>)=>void)|undefined;
+  const work=()=>intelligenceActions.has(body.action)?createIntelligence({db,env,fetch,reserve})(body):publicService(reserve,progress)(body);
+  const run=async()=>capped.has(body.action)?await withBottleAllowance(db,await quotaSubject(db,req,env('SUPABASE_SERVICE_ROLE_KEY')!),body,work):await work();
+  if(body.action==='research'&&body.photo&&req.headers.get('accept')?.includes('application/x-ndjson'))return researchStream(async emit=>{progress=emit;return run();},headers,error=>({code:error instanceof Fault&&error.status===429&&error.message.startsWith('Daily limit reached')?'DAILY_BOTTLE_LIMIT':undefined,error:error instanceof Fault?error.message:'The scan service could not finish. Retry your photo.'}));
+  return respond(await run());
  }catch(error){return respond({code:error instanceof Fault&&error.status===429&&error.message.startsWith('Daily limit reached')?'DAILY_BOTTLE_LIMIT':undefined,error:error instanceof Fault?error.message:'The beta service is temporarily unavailable.'},error instanceof Fault?error.status:503);}
 });

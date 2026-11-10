@@ -12,7 +12,7 @@ async function camera(){
  draw();const timer=setInterval(draw,66);track.stop=()=>{clearInterval(timer);stop();};return stream;
 }
 const draft={id:'local-scanner-fixture',result:{wine_name:'Scanner demo wine',producer:'Fixture · Not a verified identification',vintage:null,vintage_state:'unknown',region:'Test region',country:'Test country',tasting_notes:'This is a layout fixture. Live research is a separate test; no invented notes are saved.',uncertainty:'Demo response only. This fixture never writes to Winebrary.'}};
-const research=async(_,signal)=>{await new Promise((resolve,reject)=>{const t=setTimeout(resolve,2500);signal.addEventListener('abort',()=>{clearTimeout(t);reject(new DOMException('Stopped','AbortError'))},{once:true})});return {draft}};
+const research=async(_,signal,progress)=>{progress?.({stage:'identified',wine_name:'Scanner demo wine',bottle_outline:{top:.05,bottom:.94,left:[.46,.46,.46,.42,.35,.35,.35,.35,.35,.35,.35,.36],right:[.54,.54,.54,.58,.65,.65,.65,.65,.65,.65,.65,.64]}});await new Promise((resolve,reject)=>{const t=setTimeout(resolve,2500);signal.addEventListener('abort',()=>{clearTimeout(t);reject(new DOMException('Stopped','AbortError'))},{once:true})});return {draft}};
 const save=async()=>({message:'Fixture save completed. No real wine was saved or uploaded.'});
 const review=()=>{document.querySelector('#result').textContent='Review handoff received. No wine saved in this fixture.';return true};
 document.querySelector('#native').onclick=()=>openBottleScanner({nativePhoto:async()=>{window.dispatchEvent(new Event('pagehide'));await new Promise(r=>setTimeout(r,600));return new File([await (await fetch('../../bottles/w0.png')).blob()],'native-bottle.png',{type:'image/png'})},research,review,save});

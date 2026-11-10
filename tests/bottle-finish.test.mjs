@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';import {build} from 'esbuild';
+const b=await build({entryPoints:['src/bottle-raster.ts'],bundle:true,platform:'node',format:'esm',write:false,plugins:[{name:'cache-stub',setup(b){b.onResolve({filter:/artwork-store/},()=>({path:'cache',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:'export const artworkStore=()=>{},bottleCacheKey=()=>{},bottlePhoto=()=>{},artworkOwner=()=>{};'}));}}]});const {toBottleGreenLevels,toGreenLevels}=await import('data:text/javascript;base64,'+Buffer.from(b.outputFiles[0].text).toString('base64'));
+const rgba=(value,alpha=255)=>Uint8ClampedArray.from({length:16*16*4},(_,i)=>i%4===3?alpha:value);const tones=new Set([0,17,34,68,102,153,204]);let textured=false;
+for(let value=0;value<256;value++){const src=rgba(value),gray=toBottleGreenLevels(src,16);assert(gray.every(x=>tones.has(x)));assert.deepEqual(gray,toBottleGreenLevels(src,16),'static pattern, no shimmer');if(new Set(gray).size>1)textured=true;}
+assert(textured);assert(toBottleGreenLevels(rgba(0),16).every(x=>x===0));assert(toBottleGreenLevels(rgba(255),16).every(x=>x===204));assert(toBottleGreenLevels(rgba(255,0),16).every(x=>x===0));
+console.log('PASS: subtle static midtone dither; seven existing tones; black, transparent pixels and bright label paper preserved.');

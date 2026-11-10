@@ -101,11 +101,18 @@ export function toGreenLevels(pixels: Uint8ClampedArray, width = 0): Uint8Array 
 
 // Compact glasses portraits: preserve black, the faint silhouette and white labels,
 // but collapse subtle photographic shading into seven native G2 tones.
+const BOTTLE_BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
 const BOTTLE_TONES = [0, 17, 34, 68, 102, 153, 204] as const;
 export function toBottleGreenLevels(pixels: Uint8ClampedArray, width = 0): Uint8Array {
-  const gray=toGreenLevels(pixels,width);
+  const source=toGreenLevels(pixels,width),gray=new Uint8Array(source);
   for(let i=0;i<gray.length;i++) {
-    const value=gray[i];let closest:number=BOTTLE_TONES[0];
+    // Dither only opaque midtones away from ink edges; bright label paper stays clean.
+    let value=gray[i];
+    if(width>0&&pixels[i*4+3]>242&&value>=34&&value<=136){
+     const x=i%width,y=Math.floor(i/width),left=x>0?source[i-1]:value,right=x<width-1?source[i+1]:value;
+     if(Math.abs(left-value)<18&&Math.abs(right-value)<18)value+=(BOTTLE_BAYER[(y%4)*4+x%4]-7.5)*1.2;
+    }
+    let closest:number=BOTTLE_TONES[0];
     for(const tone of BOTTLE_TONES)if(Math.abs(tone-value)<Math.abs(closest-value))closest=tone;
     gray[i]=closest;
   }
