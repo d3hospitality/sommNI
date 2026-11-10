@@ -609,7 +609,7 @@ function updateListBottle(index: number) {
       if(!fresh())return;
       await pushGrayImage(bridge!,LIST_MAP_TILES[i][0],LIST_MAP_TILES[i][1],TILE_W,TILE_H,tiles[i],epoch);
     }
-  })().catch(error=>console.warn('[sommNI] Winebrary preview unavailable',error));},160);
+  })().catch(error=>console.warn('[sommNI] Winebrary preview unavailable',error));},80);
 }
 
 function previewLibrarySelection(index:number){

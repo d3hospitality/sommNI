@@ -57,7 +57,7 @@ export class AtlasGlasses {
     }
     let gray:Uint8Array;
     // Text leads; the image follows a settled cursor. Superseded frames never send.
-    steps.push(async()=>{await new Promise(r=>setTimeout(r,180));});
+    steps.push(async()=>{await new Promise(r=>setTimeout(r,60));});
     steps.push(async()=>{
       if(source===undefined){gray=frames.get(strength)??this.renderer.render(view,ATLAS_SIZE,strength).gray;frames.set(strength,gray);return;}
       gray=new Uint8Array(ATLAS_SIZE*ATLAS_SIZE);

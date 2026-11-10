@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+const store=new Map(),calls=[];let resolve;
+globalThis.F={store,calls,locale:'en',load:body=>{calls.push(body);return new Promise(r=>resolve=r)}};
+const b=await build({entryPoints:['src/intelligence/daily.ts'],bundle:true,format:'esm',platform:'node',write:false,loader:{'.css':'empty'},plugins:[{name:'daily-fixture',setup(b){b.onResolve({filter:/^\.\/client$/},()=>({path:'client',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`export const saved={get:async(k,f)=>F.store.get(k)??f,set:async(k,v)=>{F.store.set(k,structuredClone(v))}};export const intelligence=(b)=>F.load(b);export const getLocale=()=>F.locale;export const esc=String;`}));}}]});
+const d=await import('data:text/javascript;base64,'+Buffer.from(b.outputFiles[0].text).toString('base64'));
+const day=new Date().toISOString().slice(0,10),edition={version:'6',id:'daily:6:fixture:'+day,day,locale:'en',wines:Array.from({length:8},(_,i)=>({id:'w'+i,name:'Wine '+i})),questions:Array.from({length:20},(_,i)=>({id:'q'+i,wine_id:'w'+i%8,options:['a','b','c','d'],correct_index:0}))};
+const tick=()=>new Promise(r=>setImmediate(r));
+const preload=d.loadDaily();await tick();assert(d.dailyState().busy);const glasses=d.ensureDaily();await tick();assert.equal(calls.length,1,'glasses waits for existing preload');resolve(edition);await Promise.all([preload,glasses]);assert.equal(d.dailyState().question.id,'q0');
+await d.answerDaily(1);assert.deepEqual(d.dailyState().progress.revisit,['q0']);
+await d.loadDaily();assert.equal(calls.length,1,'opening today reuses local questions');assert.equal(d.dailyState().index,1);d.reviewDaily(true);assert.equal(d.dailyState().total,1);
+const old={...edition,id:'daily:6:earlier',day:'2026-10-25'};store.set('daily:'+old.id,old);await d.loadDaily(old.id);await d.ensureDaily();assert.equal(d.dailyState().edition.id,old.id,'glasses preserves intentionally reopened archived flight');assert.equal(calls.length,1);
+F.load=async()=>{throw Error('Offline')};await d.loadDaily('missing');assert.equal(d.dailyState().error,'Offline');assert.equal(d.dailyState().busy,false);
+assert(store.has('daily-archive'));assert(store.has('progress:'+edition.id));
+console.log('PASS: concurrent preload/glasses share one lookup, offline cache reuse, answer persistence, missed-question review, archived flight on G2 and recoverable errors.');

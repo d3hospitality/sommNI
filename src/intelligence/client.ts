@@ -12,7 +12,7 @@ export const saved={
 export const getLocale=()=>locale;
 export async function loadLocale(){const value=await saved.get<Locale>('language','en');locale=Object.prototype.hasOwnProperty.call(LANGUAGES,value)?value:'en';window.dispatchEvent(new Event('winelens-language'));}
 export async function setLocale(value:Locale){if(!Object.prototype.hasOwnProperty.call(LANGUAGES,value))return;await saved.set('language',value);locale=value;window.dispatchEvent(new Event('winelens-language'));}
-export async function intelligence(body:Record<string,unknown>){try{return await betaProvider({locale,...body});}catch(error){if((error as Error).message.includes('Unknown beta action'))throw Error('The cloud upgrade is not live yet. Saved notes and reference practice remain available.');throw error;}}
+export async function intelligence(body:Record<string,unknown>,signal?:AbortSignal){try{return await betaProvider({locale,...body},signal);}catch(error){if((error as Error).message.includes('Unknown beta action'))throw Error('The cloud upgrade is not live yet. Saved notes and reference practice remain available.');throw error;}}
 export async function translateTexts(texts:string[]):Promise<string[]>{
  if(locale==='en'||!texts.length)return texts;
  const target=locale;

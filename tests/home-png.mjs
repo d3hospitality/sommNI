@@ -35,7 +35,7 @@ function decode(bytes, width, height) {
 }
 
 let fixtures = 0;
-for (const [width, height] of [[1, 1], [7, 11], [200, 144]]) {
+for (const [width, height] of [[1, 1], [7, 11], [200, 144], [200,126], [244,122], [100,120]]) {
   for (const pattern of [(i) => i % 256, (i) => i % 4 === 0 ? 102 : 0, () => 0]) {
     const pixels = Uint8Array.from({ length: width * height }, (_, i) => pattern(i));
     assert.deepEqual(decode(await encodeCompactGrayscalePng(width, height, pixels), width, height), pixels);

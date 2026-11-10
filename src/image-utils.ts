@@ -33,7 +33,7 @@ async function pushImg(bridge: EvenAppBridge, id: number, name: string, data: Ui
     if(suspended || epoch!==imageEpoch) return;
     const result=await bridge.updateImageRawData(new ImageRawDataUpdate({containerID:id,containerName:name,imageData:Array.from(encoded)}));
     if(!ImageRawDataUpdateResult.isSuccess(result)) throw new Error('Glasses image transfer failed');
-    await new Promise(resolve=>setTimeout(resolve,100));
+    // The bridge acknowledgement is the pacing boundary; no extra per-tile sleep.
   });
   imageQueue=task; await task;
 }
@@ -112,7 +112,7 @@ export function handleContinuousReadingScroll(type:number|undefined):boolean {
 }
 export function currentImageEpoch(): number { return imageEpoch; }
 /** Send a ready 16-level grayscale buffer through the app-wide queue; stale epochs never send. */
-export async function pushGrayImage(bridge: EvenAppBridge, id: number, name: string, width: number, height: number, gray: Uint8Array, epoch=imageEpoch,compact=false): Promise<void> {
+export async function pushGrayImage(bridge: EvenAppBridge, id: number, name: string, width: number, height: number, gray: Uint8Array, epoch=imageEpoch,compact=true): Promise<void> {
   // Reserve the queue before asynchronous compression so imageIdle and page
   // changes also wait for images that have not reached the transport yet.
   const png=compact?()=>encodeCompactGrayscalePng(width,height,gray):encodeGrayscalePng(width,height,gray);
@@ -124,7 +124,7 @@ export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, wid
   const ctx=canvas.getContext('2d')!;
   for(let i=0;i<2;i++) {
     const gray=toGreenLevels(ctx.getImageData(0,i*halfHeight,width,halfHeight).data,width);
-    await pushImg(bridge,i+1,i===0?'bottle-top':'bottle-bot',encodeGrayscalePng(width,halfHeight,gray),epoch);
+    await pushImg(bridge,i+1,i===0?'bottle-top':'bottle-bot',()=>encodeCompactGrayscalePng(width,halfHeight,gray),epoch);
   }
 }
 
@@ -216,7 +216,7 @@ export async function pushLogoToGlasses(bridge: EvenAppBridge, baseUrl: string):
       const o = i * 4;
       topGray[i] = 0.299 * topPx[o] + 0.587 * topPx[o + 1] + 0.114 * topPx[o + 2];
     }
-    await pushImg(bridge, 3, "logo-top", encodeGrayscalePng(W, HALF_H, topGray), epoch);
+    await pushImg(bridge, 3, "logo-top", ()=>encodeCompactGrayscalePng(W, HALF_H, topGray), epoch);
 
     // Extract bottom half → container 4
     const botPx = ctx.getImageData(0, HALF_H, W, HALF_H).data;
@@ -225,7 +225,7 @@ export async function pushLogoToGlasses(bridge: EvenAppBridge, baseUrl: string):
       const o = i * 4;
       botGray[i] = 0.299 * botPx[o] + 0.587 * botPx[o + 1] + 0.114 * botPx[o + 2];
     }
-    await pushImg(bridge, 4, "logo-bottom", encodeGrayscalePng(W, HALF_H, botGray), epoch);
+    await pushImg(bridge, 4, "logo-bottom", ()=>encodeCompactGrayscalePng(W, HALF_H, botGray), epoch);
 
     console.log("[sommNI-TG] Logo pushed (split from single source)");
   } catch (e) { console.error("[sommNI-TG] Logo FAILED:", e); }
@@ -266,7 +266,7 @@ export async function pushGlobeToGlasses(bridge: EvenAppBridge, baseUrl: string)
       const o = i * 4;
       topGray[i] = 0.299 * topPx[o] + 0.587 * topPx[o + 1] + 0.114 * topPx[o + 2];
     }
-    await pushImg(bridge, 3, "globe-top", encodeGrayscalePng(W, HALF_H, topGray), epoch);
+    await pushImg(bridge, 3, "globe-top", ()=>encodeCompactGrayscalePng(W, HALF_H, topGray), epoch);
 
     const botPx = ctx.getImageData(0, HALF_H, W, HALF_H).data;
     const botGray = new Uint8Array(W * HALF_H);
@@ -274,7 +274,7 @@ export async function pushGlobeToGlasses(bridge: EvenAppBridge, baseUrl: string)
       const o = i * 4;
       botGray[i] = 0.299 * botPx[o] + 0.587 * botPx[o + 1] + 0.114 * botPx[o + 2];
     }
-    await pushImg(bridge, 4, "globe-bottom", encodeGrayscalePng(W, HALF_H, botGray), epoch);
+    await pushImg(bridge, 4, "globe-bottom", ()=>encodeCompactGrayscalePng(W, HALF_H, botGray), epoch);
 
     console.log("[sommNI-TG] Globe pushed (split from single source)");
   } catch (e) { console.error("[sommNI-TG] Globe FAILED:", e); }
@@ -320,7 +320,7 @@ export async function pushGrapeSpriteToGlasses(bridge: EvenAppBridge, baseUrl: s
       const o = i * 4;
       topGray[i] = 0.299 * topPx[o] + 0.587 * topPx[o + 1] + 0.114 * topPx[o + 2];
     }
-    await pushImg(bridge, 3, "grape-top", encodeGrayscalePng(W, HALF_H, topGray), epoch);
+    await pushImg(bridge, 3, "grape-top", ()=>encodeCompactGrayscalePng(W, HALF_H, topGray), epoch);
 
     const botPx = ctx.getImageData(0, HALF_H, W, HALF_H).data;
     const botGray = new Uint8Array(W * HALF_H);
@@ -328,7 +328,7 @@ export async function pushGrapeSpriteToGlasses(bridge: EvenAppBridge, baseUrl: s
       const o = i * 4;
       botGray[i] = 0.299 * botPx[o] + 0.587 * botPx[o + 1] + 0.114 * botPx[o + 2];
     }
-    await pushImg(bridge, 4, "grape-bottom", encodeGrayscalePng(W, HALF_H, botGray), epoch);
+    await pushImg(bridge, 4, "grape-bottom", ()=>encodeCompactGrayscalePng(W, HALF_H, botGray), epoch);
 
     console.log(`[sommNI-TG] Grape sprite pushed: ${pick}`);
   } catch (e) { console.error("[sommNI-TG] Grape sprite FAILED:", e); }
@@ -395,12 +395,12 @@ export async function pushBottleSpriteSplit(
     // Top half
     const topG = new Uint8Array(W * HALF);
     for (let i = 0; i < W * HALF; i++) { const o = i * 4; topG[i] = 0.299 * full[o] + 0.587 * full[o + 1] + 0.114 * full[o + 2]; }
-    await pushImg(bridge, topID, topName, encodeGrayscalePng(W, HALF, topG), epoch);
+    await pushImg(bridge, topID, topName, ()=>encodeCompactGrayscalePng(W, HALF, topG), epoch);
 
     // Bottom half
     const botG = new Uint8Array(W * HALF);
     for (let i = 0; i < W * HALF; i++) { const o = (i + W * HALF) * 4; botG[i] = 0.299 * full[o] + 0.587 * full[o + 1] + 0.114 * full[o + 2]; }
-    await pushImg(bridge, botID, botName, encodeGrayscalePng(W, HALF, botG), epoch);
+    await pushImg(bridge, botID, botName, ()=>encodeCompactGrayscalePng(W, HALF, botG), epoch);
 
     console.log(`[sommNI-TG] Bottle split pushed: ${wineId}`);
   } catch (e) { console.warn(`[sommNI-TG] Bottle split FAILED: ${wineId}`, e); }

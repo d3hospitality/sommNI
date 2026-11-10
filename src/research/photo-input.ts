@@ -30,3 +30,16 @@ export async function photoData(file:File):Promise<string>{
  const data=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Could not read the photo.'));reader.readAsDataURL(file.type?file:new Blob([file],{type}));});
  return boundedPng(data);
 }
+
+/** The label-research endpoint accepts JPEG; artwork processing keeps its PNG alpha. */
+export async function labelResearchPhoto(photo:string):Promise<string>{
+ const bounded=await boundedPng(photo),decoded=await decodePhoto(await (await fetch(bounded)).blob());
+ try{
+  const canvas=document.createElement('canvas');canvas.width=decoded.width;canvas.height=decoded.height;
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Could not prepare the label photo.');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(decoded.image,0,0);
+  const jpeg=canvas.toDataURL('image/jpeg',.9);
+  if(!jpeg.startsWith('data:image/jpeg;base64,')||jpeg.length>2796200)throw Error('Choose a clearer, smaller label photo.');
+  return jpeg;
+ }finally{decoded.close();}
+}

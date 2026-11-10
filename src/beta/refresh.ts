@@ -7,6 +7,7 @@ export function initBetaRefresh(): void {
 
   document.querySelectorAll<HTMLElement>('[data-beta-research],[data-beta-scan]').forEach(button => {
     button.addEventListener('click', () => {
+      if(button.hasAttribute('data-beta-scan')){void import('../research/bottle-scanner').then(({openBottleScanner})=>openBottleScanner());return;}
       document.querySelector<HTMLButtonElement>('.tab[data-tab="home"]')?.click();
       research?.querySelector<HTMLButtonElement>('[data-mode="research"]')?.click();
       revealHomeTask(research);research?.scrollIntoView({ block: 'start' });

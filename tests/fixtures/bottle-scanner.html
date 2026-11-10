@@ -1,0 +1,22 @@
+<!doctype html><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · Scanner Lab</title>
+<style>body{background:#0a0b09;color:#efeadb;font:15px system-ui;padding:24px}button{font:inherit;padding:14px;margin:8px;border-radius:10px}p{max-width:34em}</style>
+<h1>sommNI Bottle Lens</h1><p>Local test bench. The camera below is a moving catalog photograph, not a physical camera. Fixture research is simulated; no wine is saved or submitted.</p>
+<button id="demo">Moving bottle · Demo</button><button id="denied">Camera unavailable</button><button id="failure">Lookup failure</button><button id="live">Live research · Same test photo</button><p id="result" role="status"></p>
+<script type="module">
+import {openBottleScanner} from '../../src/research/bottle-scanner.ts';
+const img=new Image();img.src='/sommNI/bottles/w0.png';await img.decode();
+async function camera(){
+ const c=document.createElement('canvas');c.width=540;c.height=720;const ctx=c.getContext('2d');let n=0;
+ const stream=c.captureStream(15),track=stream.getVideoTracks()[0],stop=track.stop.bind(track);
+ const draw=()=>{ctx.fillStyle='#dedbce';ctx.fillRect(0,0,540,720);ctx.fillStyle='#cbc7b7';ctx.fillRect(0,632,540,88);const h=570,w=img.width/img.height*h;ctx.drawImage(img,270-w/2+Math.sin(n++/22)*65,62,w,h)};
+ draw();const timer=setInterval(draw,66);track.stop=()=>{clearInterval(timer);stop();};return stream;
+}
+const draft={id:'local-scanner-fixture',result:{wine_name:'Scanner demo wine',producer:'Fixture · Not a verified identification',vintage:null,vintage_state:'unknown',region:'Test region',country:'Test country',tasting_notes:'This is a layout fixture. Live research is a separate test; no invented notes are saved.',uncertainty:'Demo response only. This fixture never writes to Winebrary.'}};
+const research=async(_,signal)=>{await new Promise((resolve,reject)=>{const t=setTimeout(resolve,2500);signal.addEventListener('abort',()=>{clearTimeout(t);reject(new DOMException('Stopped','AbortError'))},{once:true})});return {draft}};
+const save=async()=>({message:'Fixture save completed. No real wine was saved or uploaded.'});
+const review=()=>{document.querySelector('#result').textContent='Review handoff received. No wine saved in this fixture.';return true};
+document.querySelector('#demo').onclick=()=>openBottleScanner({camera,research,review,save});
+document.querySelector('#denied').onclick=()=>openBottleScanner({camera:async()=>{throw new DOMException('Camera unavailable','NotAllowedError')},research,review,save});
+document.querySelector('#failure').onclick=()=>openBottleScanner({camera,research:async()=>{throw Error('Fixture: service offline. Retry when connected.')},review,save});
+document.querySelector('#live').onclick=()=>openBottleScanner({camera,review,save});
+</script>

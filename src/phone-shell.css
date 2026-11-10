@@ -22,7 +22,7 @@
  .phone-shell-ready .tab-bar>.active,.phone-shell-ready #phone-more.active{color:var(--gold);background:#e1c66b10}
  .phone-shell-ready .tab-bar .wl-icon{width:18px;height:18px}.phone-more-icon{height:18px;font-size:25px;line-height:8px;letter-spacing:2px}
  .phone-shell-ready .header{min-height:44px;padding:4px 0;margin-bottom:0}.phone-shell-ready .wl-header-actions{justify-content:flex-end}.phone-shell-ready .header .wl-quick-add{display:none}.phone-shell-ready .wl-account-button{min-height:44px;max-width:100%;padding:8px;font-size:12px}
- .phone-shell-ready #tab-home .lens-home{padding:4px 0 8px}.phone-shell-ready #tab-home .sommni-hero-title{font-size:30px;margin:0}.phone-shell-ready #tab-home .sommni-hero-intro{display:none}.phone-shell-ready #tab-home .sommni-scan{display:none}
+ .phone-shell-ready #tab-home .lens-home{padding:4px 0 8px}.phone-shell-ready #tab-home .sommni-hero-title{font-size:30px;margin:0}.phone-shell-ready #tab-home .sommni-hero-intro{display:none}.phone-shell-ready #tab-home .sommni-scan{display:block;width:100%;min-height:40px;margin-top:8px;border:1px solid var(--line);border-radius:10px;text-align:center;color:var(--gold);font-size:12px}
  .phone-shell-ready #tab-home .wl-hero-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.phone-shell-ready #tab-home .wl-hero-actions button{min-height:44px;padding:10px;font-size:13px}
  .phone-shell-ready .sommni-guide-launch{font-size:11px;margin:4px 0 0;padding:8px 0;min-height:40px}
  .phone-shell-ready #tab-home .wl-launch-grid{margin:4px 0 8px;gap:4px}.phone-shell-ready #tab-home .wl-launch{padding:8px 3px;min-height:44px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
