@@ -1,0 +1,1 @@
+Easier bottle scanning: tap Adjust Label, position a gold focus frame, resize the close-up and retry the same photo. Optional label hints and full-photo reset help difficult labels. Fixed local-photo decoding during bottle cutout in Even. Approval still saves to Winebrary and queues wine details and artwork for the collective catalog.

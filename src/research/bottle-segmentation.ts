@@ -1,4 +1,4 @@
-import {decodePhoto} from './photo-input';
+import {decodePhoto,dataImageBlob} from './photo-input';
 import * as ort from 'onnxruntime-web/wasm';
 type Assets={model:{url:string;sha:string};wasm:{url:string;sha:string}};
 let ready:Promise<ort.InferenceSession>|undefined;
@@ -26,7 +26,7 @@ function model(assets:Assets){
 }
 /** Predict only an outline. Supabase applies it to the photograph and validates the silhouette. */
 export async function bottleMask(photo:string,assets:Assets):Promise<string>{
- const bitmap=await decodePhoto(await (await fetch(photo)).blob()),canvas=document.createElement('canvas');canvas.width=320;canvas.height=320;
+ const bitmap=await decodePhoto(dataImageBlob(photo)),canvas=document.createElement('canvas');canvas.width=320;canvas.height=320;
  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#fff';ctx.fillRect(0,0,320,320);ctx.drawImage(bitmap.image,0,0,320,320);bitmap.close();
  const rgba=ctx.getImageData(0,0,320,320).data,input=new Float32Array(3*320*320),mean=[.485,.456,.406],std=[.229,.224,.225];let peak=1;
  for(let i=0;i<320*320;i++)for(let c=0;c<3;c++)peak=Math.max(peak,rgba[i*4+c]);

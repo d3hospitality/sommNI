@@ -52,11 +52,19 @@ export async function labelResearchPhoto(photo:string):Promise<string>{
  }finally{decoded.close();}
 }
 
+export type LabelFocus={x:number;y:number;size:number};
+/** Clamp the user's label target to the actual photo, never the letterboxed viewport. */
+export function labelCrop(value?:unknown){
+ const f=value as Partial<LabelFocus>|undefined;
+ if(!f||![f.x,f.y,f.size].every(n=>typeof n==='number'&&Number.isFinite(n)))return {left:.12,top:.24,width:.76,height:.62};
+ const width=Math.max(.25,Math.min(.95,f.size!)),height=width*.75;
+ return {left:Math.max(0,Math.min(1-width,f.x!-width/2)),top:Math.max(0,Math.min(1-height,f.y!-height/2)),width,height};
+}
 /** A second view concentrates image tokens on central label lettering; the full photo remains authoritative. */
-export async function labelResearchDetail(photo:string):Promise<string|undefined>{
+export async function labelResearchDetail(photo:string,focus?:unknown):Promise<string|undefined>{
  const decoded=await decodePhoto(dataImageBlob(photo));
  try{
-  const sx=decoded.width*.12,sy=decoded.height*.24,sw=decoded.width*.76,sh=decoded.height*.62;
+  const crop=labelCrop(focus),sx=decoded.width*crop.left,sy=decoded.height*crop.top,sw=decoded.width*crop.width,sh=decoded.height*crop.height;
   const scale=Math.min(3,900/Math.max(sw,sh)),canvas=document.createElement('canvas');canvas.width=Math.max(20,Math.round(sw*scale));canvas.height=Math.max(20,Math.round(sh*scale));
   const ctx=canvas.getContext('2d');if(!ctx)return undefined;
   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(decoded.image,sx,sy,sw,sh,0,0,canvas.width,canvas.height);

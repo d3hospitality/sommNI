@@ -8,7 +8,7 @@ import { account } from '../account-client';
 import { ACCOUNT_URL, ACCOUNT_PUBLIC_KEY } from '../account-config';
 export async function researchAction(body:Record<string,unknown>,signal?:AbortSignal) {
  signal?.throwIfAborted();
- if(body.action==='research'&&typeof body.photo==='string'&&body.photo){body={...body,photo_detail:await labelResearchDetail(body.photo),photo:await labelResearchPhoto(body.photo)};signal?.throwIfAborted();}
+ if(body.action==='research'&&typeof body.photo==='string'&&body.photo){body={...body,photo_detail:await labelResearchDetail(body.photo,body.label_focus),photo:await labelResearchPhoto(body.photo)};signal?.throwIfAborted();delete body.label_focus;}
  if(FREE_BETA){if(body.action==='attach_bottle'&&!isGuestLibrary())return accountResearch(body,signal);return betaResearch(body,signal);}
  const session=(await account.auth.getSession()).data.session;
  if(!session)throw new Error('Sign in to your sommNI account first.');
