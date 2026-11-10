@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {parseHTML} from 'linkedom';
+import {build} from 'esbuild';
+const {window}=parseHTML('<html><body><main></main></body></html>');globalThis.window=window;globalThis.document=window.document;globalThis.Event=window.Event;
+const photo=new File(['photo'],'bottle.jpg',{type:'image/jpeg'}),calls=[];let result=photo;
+globalThis.F={pick:async source=>{calls.push(source);if(result instanceof Error)throw result;return result;}};
+const b=await build({entryPoints:['src/research/photo-upload.ts'],bundle:true,platform:'node',format:'esm',write:false,loader:{'.css':'empty'},plugins:[{name:'native',setup(b){b.onResolve({filter:/^\.\/native-photo$/},()=>({path:'native',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:'export const usesEvenPhotoPicker=()=>true;export const pickEvenPhoto=s=>F.pick(s);'}));}}]});
+const {bottlePhotoUpload,bindBottlePhotoUpload}=await import('data:text/javascript;base64,'+Buffer.from(b.outputFiles[0].text).toString('base64'));
+const root=document.querySelector('main');root.innerHTML=bottlePhotoUpload('photo');const input=root.querySelector('#photo'),camera=root.querySelector('#photo-camera');let selected=[];input.onchange=e=>selected.push(e.target.files[0]);bindBottlePhotoUpload(root,'photo');
+const tick=()=>new Promise(r=>setImmediate(r));
+const click=new Event('click',{cancelable:true});input.dispatchEvent(click);await tick();assert(click.defaultPrevented);assert.equal(selected[0],photo);assert.deepEqual(calls,['album']);
+camera.dispatchEvent(new Event('click',{cancelable:true}));await tick();assert.equal(selected.length,2);assert.equal(calls.at(-1),'camera');
+result=null;input.dispatchEvent(new Event('click',{cancelable:true}));await tick();assert.equal(selected.length,2);assert.match(root.textContent,/No photo selected/);
+result=Error('Permission denied');camera.dispatchEvent(new Event('click',{cancelable:true}));await tick();assert.match(root.textContent,/Permission denied/);
+result=photo;input.dispatchEvent(new Event('click',{cancelable:true}));root.innerHTML='';await tick();assert.equal(selected.length,2,'return from obsolete picker cannot affect a new screen');
+console.log('PASS upload controls use native album/camera, existing photo consumer receives File, cancellation and denial recover, obsolete picker ignored.');

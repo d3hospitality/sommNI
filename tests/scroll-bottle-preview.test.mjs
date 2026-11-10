@@ -4,7 +4,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, dirname } from 'node:path';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-globalThis.window=new EventTarget();globalThis.document=new EventTarget();document.readyState='loading';
+globalThis.window=new EventTarget();Object.assign(window,{setTimeout,clearTimeout,setInterval,clearInterval});globalThis.document=new EventTarget();document.readyState='loading';
 globalThis.CustomEvent=class extends Event{constructor(type,init){super(type);this.detail=init?.detail}};
 const F=globalThis.__scrollFixture={pages:[],texts:[],images:[],context:null,epoch:0,owner:'catalog',queue:Promise.resolve(),delay:0,suspended:false};
 F.serial=fn=>F.queue=F.queue.catch(()=>{}).then(fn);

@@ -1,3 +1,11 @@
+/** Decode an in-memory photo without going through WebView network interception. */
+export function dataImageBlob(photo:string):Blob {
+ const match=/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(photo);
+ if(!match||photo.length>21_000_000)throw Error('Choose a PNG, JPEG or WebP photo up to 15 MB.');
+ let raw:string;try{raw=atob(match[2]);}catch{throw Error('Could not read this photo. Choose another JPEG or PNG.');}
+ if(!raw.length||raw.length>15*1024*1024)throw Error('Choose a photo up to 15 MB.');
+ return new Blob([Uint8Array.from(raw,c=>c.charCodeAt(0))],{type:match[1]});
+}
 /** Camera originals are resized locally before any upload. Keep alpha for cutouts. */
 export async function decodePhoto(blob:Blob):Promise<{image:CanvasImageSource;width:number;height:number;close:()=>void}>{
  if(typeof createImageBitmap==='function'){
@@ -9,7 +17,7 @@ export async function decodePhoto(blob:Blob):Promise<{image:CanvasImageSource;wi
 }
 export async function boundedPng(photo:string,frame=false):Promise<string>{
  if(!/^data:image\/(png|jpeg|webp);base64,/.test(photo)||photo.length>21_000_000)throw new Error('Choose a PNG, JPEG or WebP photo up to 15 MB.');
- const decoded=await decodePhoto(await (await fetch(photo)).blob());
+ const decoded=await decodePhoto(dataImageBlob(photo));
  try{
   if(decoded.width<20||decoded.height<20)throw new Error('Choose a larger, clear full-bottle photo.');
   const pad=frame?16:0,canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');if(!ctx)throw new Error('Could not read the bottle photo.');
@@ -33,7 +41,7 @@ export async function photoData(file:File):Promise<string>{
 
 /** The label-research endpoint accepts JPEG; artwork processing keeps its PNG alpha. */
 export async function labelResearchPhoto(photo:string):Promise<string>{
- const bounded=await boundedPng(photo),decoded=await decodePhoto(await (await fetch(bounded)).blob());
+ const bounded=await boundedPng(photo),decoded=await decodePhoto(dataImageBlob(bounded));
  try{
   const canvas=document.createElement('canvas');canvas.width=decoded.width;canvas.height=decoded.height;
   const ctx=canvas.getContext('2d');if(!ctx)throw Error('Could not prepare the label photo.');

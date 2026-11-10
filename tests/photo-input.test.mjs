@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 const png='data:image/png;base64,iVBORw0KGgo=';
+const platformFetch=globalThis.fetch;globalThis.fetch=async url=>{if(String(url).startsWith('data:'))throw TypeError('WebView blocked data URL fetch');return platformFetch(url);};
 let closes=0,draws=0,fills=0,revoked=0,lastCanvas;
 globalThis.FileReader=class{async readAsDataURL(blob){this.result=`data:${blob.type};base64,${Buffer.from(await blob.arrayBuffer()).toString('base64')}`;this.onload();}};
 globalThis.createImageBitmap=async()=>({width:4032,height:3024,close(){closes++}});

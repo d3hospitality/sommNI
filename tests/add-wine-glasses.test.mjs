@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 const checks=[],pages=[],mic=[],calls=[];let peak=0,inflight=0,releaseDisplay,sourceUser='beta-local',researchResponse;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const draft={id:'qa-draft',result:{wine_name:'Vasse Felix Cabernet Sauvignon',producer:'Vasse Felix',vintage:2019,vintage_state:'year',region:'Margaret River',country:'Australia',grape:'Cabernet Sauvignon',tasting_notes:'NOSE: Blackcurrant and cedar. PALATE: Fine tannins and refreshing acidity.'}};
-globalThis.document=new EventTarget();globalThis.document.readyState='loading';globalThis.window=new EventTarget();globalThis.CustomEvent=class extends Event{constructor(type,init){super(type);this.detail=init?.detail}};
+globalThis.document=new EventTarget();globalThis.document.readyState='loading';globalThis.window=new EventTarget();Object.assign(window,{setTimeout,clearTimeout,setInterval,clearInterval});globalThis.CustomEvent=class extends Event{constructor(type,init){super(type);this.detail=init?.detail}};
 globalThis.__addFixture={
  pages, async operation(fn){inflight++;peak=Math.max(peak,inflight);await wait(2);try{return await fn()}finally{inflight--}},
  async research(body,signal){calls.push(body);if(body.action==='research'){if(researchResponse)return researchResponse;return {draft}}if(body.action==='confirm')return {item:{id:'qa-saved',wine_name:draft.result.wine_name,metadata:{}}};},

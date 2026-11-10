@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+const calls=[];let camera=async()=>asset,album=async()=>asset;
+const asset={path:'/private/phone/bottle.jpg',name:'bottle.jpg',mimeType:'image/jpeg',size:4,base64:'/9j/AA=='};
+globalThis.F={bridge:{captureImageFromCamera:()=>{calls.push('camera');return camera()},pickImageFromAlbum:()=>{calls.push('album');return album()}}};
+globalThis.fetch=async()=>{throw Error('Native image must not fetch a phone path or data URL')};
+const b=await build({entryPoints:['src/research/native-photo.ts'],bundle:true,platform:'node',format:'esm',write:false,plugins:[{name:'bridge',setup(b){b.onResolve({filter:/^@evenrealities\/even_hub_sdk$/},()=>({path:'bridge',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:'export const waitForEvenAppBridge=async()=>F.bridge;'}));}}]});
+const n=await import('data:text/javascript;base64,'+Buffer.from(b.outputFiles[0].text).toString('base64'));
+const photo=await n.pickEvenPhoto('camera');assert.equal(photo.name,'bottle.jpg');assert.equal(photo.type,'image/jpeg');assert.deepEqual([...new Uint8Array(await photo.arrayBuffer())],[255,216,255,0]);
+await n.pickEvenPhoto('album');assert.deepEqual(calls,['camera','album']);
+camera=async()=>null;assert.equal(await n.pickEvenPhoto('camera'),null);
+camera=async()=>{throw Error('Camera denied')};await assert.rejects(n.pickEvenPhoto('camera'),/denied/);await n.pickEvenPhoto('album');
+let release;camera=()=>new Promise(r=>release=r);const pending=n.pickEvenPhoto('camera');await new Promise(r=>setImmediate(r));await assert.rejects(n.pickEvenPhoto('album'),/Finish/);release(null);await pending;
+assert.equal(n.nativePhotoFile({...asset,mimeType:'',base64:'iVBORw0KGgo='}).type,'image/png');
+assert.equal(n.nativePhotoFile({...asset,base64:'data:image/jpeg;base64,/9j/AA=='}).size,4);
+assert.throws(()=>n.nativePhotoFile({...asset,base64:''}),/without image data/);
+assert.throws(()=>n.nativePhotoFile({...asset,base64:'bad!!!!!'}),/PNG, JPEG/);
+console.log('PASS native camera and album routing, cancellation, denial recovery, duplicate picker guard, image bytes and no local-path/data-URL fetch.');

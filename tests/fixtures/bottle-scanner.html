@@ -1,6 +1,6 @@
 <!doctype html><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · Scanner Lab</title>
 <style>body{background:#0a0b09;color:#efeadb;font:15px system-ui;padding:24px}button{font:inherit;padding:14px;margin:8px;border-radius:10px}p{max-width:34em}</style>
-<h1>sommNI Bottle Lens</h1><p>Local test bench. The camera below is a moving catalog photograph, not a physical camera. Fixture research is simulated; no wine is saved or submitted.</p>
+<button id="native">Native camera · Demo</button><button id="native-cancel">Native camera · Cancel</button><h1>sommNI Bottle Lens</h1><p>Local test bench. The camera below is a moving catalog photograph, not a physical camera. Fixture research is simulated; no wine is saved or submitted.</p>
 <button id="demo">Moving bottle · Demo</button><button id="denied">Camera unavailable</button><button id="failure">Lookup failure</button><button id="live">Live research · Same test photo</button><p id="result" role="status"></p>
 <script type="module">
 import {openBottleScanner} from '../../src/research/bottle-scanner.ts';
@@ -15,6 +15,8 @@ const draft={id:'local-scanner-fixture',result:{wine_name:'Scanner demo wine',pr
 const research=async(_,signal)=>{await new Promise((resolve,reject)=>{const t=setTimeout(resolve,2500);signal.addEventListener('abort',()=>{clearTimeout(t);reject(new DOMException('Stopped','AbortError'))},{once:true})});return {draft}};
 const save=async()=>({message:'Fixture save completed. No real wine was saved or uploaded.'});
 const review=()=>{document.querySelector('#result').textContent='Review handoff received. No wine saved in this fixture.';return true};
+document.querySelector('#native').onclick=()=>openBottleScanner({nativePhoto:async()=>{window.dispatchEvent(new Event('pagehide'));await new Promise(r=>setTimeout(r,600));return new File([await (await fetch('../../bottles/w0.png')).blob()],'native-bottle.png',{type:'image/png'})},research,review,save});
+document.querySelector('#native-cancel').onclick=()=>openBottleScanner({nativePhoto:async()=>null,research,review,save});
 document.querySelector('#demo').onclick=()=>openBottleScanner({camera,research,review,save});
 document.querySelector('#denied').onclick=()=>openBottleScanner({camera:async()=>{throw new DOMException('Camera unavailable','NotAllowedError')},research,review,save});
 document.querySelector('#failure').onclick=()=>openBottleScanner({camera,research:async()=>{throw Error('Fixture: service offline. Retry when connected.')},review,save});

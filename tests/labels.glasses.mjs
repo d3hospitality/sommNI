@@ -4,7 +4,7 @@ import {mkdtemp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {LabelQueue} from '../src/research/label-queue.ts';
-globalThis.window=new EventTarget();globalThis.document=new EventTarget();document.readyState='loading';
+globalThis.window=new EventTarget();Object.assign(window,{setTimeout,clearTimeout,setInterval,clearInterval});globalThis.document=new EventTarget();document.readyState='loading';
 const pages=[],photos=[],text=[],listeners=[];let saved=[],searches=0,backs=0;
 const tick=()=>new Promise(r=>setTimeout(r,15));
 const s=new LabelQueue([{id:'a',wine_name:'Bottle A',producer:'Estate',vintage:2020}],{current:()=>true,changed:()=>listeners.forEach(f=>f()),search:async()=>{searches++;return [1,2,3].map(i=>({id:String(i),photo:'photo'+i,provenance:{}}));},polish:async p=>({url:p.photo+'-cut'}),save:async(w,d)=>{saved.push(d.url);return w}});
