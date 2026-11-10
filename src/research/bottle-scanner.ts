@@ -1,10 +1,11 @@
 import {boundedPng,photoData} from './photo-input';
 import {researchAction} from './client';
 import {artworkOwner} from '../artwork-store';
-import {traceBottle,CameraLease,type BottleOutline} from './scan-tracker';
+import {traceBottle,fittedBottle,CameraLease,type BottleOutline} from './scan-tracker';
 import {BottleScanSession} from './scan-session';
 import type {WineDraft} from './add-session';
 import './bottle-scanner.css';
+import {drawBottleMesh} from './scan-mesh';
 import {usesEvenPhotoPicker,pickEvenPhoto,type PhotoSource} from './native-photo';
 
 let active:HTMLDialogElement|null=null;
@@ -17,7 +18,7 @@ export function openBottleScanner(options:Options={}){
  dialog.innerHTML=`<header><div><span class="scan-eyebrow">sommNI <span lang="ja">ソムニ</span></span><h2 id="bottle-scanner-title">Scan a Bottle</h2></div><button type="button" data-close aria-label="Close bottle scanner">×</button></header>
  <ol class="scan-steps" aria-label="Scan progress"><li data-scan-step="0">01 <span>Frame</span></li><li data-scan-step="1">02 <span>Identify</span></li><li data-scan-step="2">03 <span>Approve</span></li></ol>
  <div class="scan-view"><div class="scan-native" hidden><span aria-hidden="true">◎</span><strong>Frame it with your phone</strong><p>Take a clear bottle photo. Return here to identify it and approve the match.</p></div><video muted playsinline aria-label="Live bottle camera"></video><img class="scan-still" hidden alt="Captured bottle to identify"><canvas class="scan-grid" aria-hidden="true"></canvas><div class="scan-view-label">Center one bottle · Keep the label readable</div><div class="scan-progress" hidden><span data-step></span><progress max="3" aria-label="Bottle identification progress"></progress><small>Capture → Research → Review</small></div></div>
- <p class="scan-status" role="status" aria-live="polite"></p>
+ <p class="scan-status" role="status" aria-live="polite"></p><label class="scan-name-hint" hidden>Producer or Wine Name <input type="text" maxlength="180" autocomplete="off" placeholder="Optional · Help read a difficult label"></label>
  <section class="scan-result" hidden><span class="scan-eyebrow">Possible match · Check the label</span><h3></h3><p data-facts></p><p data-notes></p><details class="scan-check"><summary>Identification details</summary><p class="scan-caution"></p></details></section>
  <p class="scan-share" hidden>Approving saves this bottle to your Winebrary and contributes its wine details and photo to the collective catalog for review.</p>
  <footer class="scan-controls"><div class="scan-actions"><button type="button" class="scan-primary" data-capture disabled>Scan This Bottle</button><button type="button" class="scan-primary" data-approve hidden>Approve & Add to Winebrary</button><button type="button" data-review hidden>Edit Details</button><button type="button" data-retry hidden>Retry Lookup</button><button type="button" data-retake hidden>Scan Again</button><button type="button" data-stop hidden>Stop Lookup</button><button type="button" class="scan-primary" data-library hidden>Open Winebrary →</button></div>
@@ -27,11 +28,12 @@ export function openBottleScanner(options:Options={}){
  const get=<T extends HTMLElement>(s:string)=>dialog.querySelector<T>(s)!;
  const video=get<HTMLVideoElement>('video'),still=get<HTMLImageElement>('.scan-still'),canvas=get<HTMLCanvasElement>('.scan-grid'),status=get('.scan-status'),progress=get<HTMLProgressElement>('progress');
  const probe=document.createElement('canvas'),lease=new CameraLease();
+ let meshFrame=0;const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  let closed=false,cameraReady=false,frame=0,lastProbe=0,outline:BottleOutline|null=null,misses=0,photoRevision=0,opening=false,saving=false,nativePicking=false;
- const session=new BottleScanSession({prepare:boundedPng,research:options.research||((photo,signal)=>researchAction({action:'research',query:'Identify this bottle from its label. Leave unreadable vintage unknown.',photo,request_id:crypto.randomUUID()},signal)),changed:paint});
+ const session=new BottleScanSession({prepare:boundedPng,research:options.research||((photo,signal)=>researchAction({action:'research',query:'Identify this bottle from its label. Leave unreadable vintage unknown.'+(get<HTMLInputElement>('.scan-name-hint input').value.trim()?' User label hint: '+get<HTMLInputElement>('.scan-name-hint input').value.trim():''),photo,request_id:crypto.randomUUID()},signal)),changed:paint});
  const stopCamera=()=>{lease.stop();cancelAnimationFrame(frame);video.srcObject=null;cameraReady=false;};
  const close=()=>{
-  if(closed)return;closed=true;photoRevision++;session.cancel();stopCamera();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('pagehide',pageHide);window.removeEventListener('hashchange',close);window.removeEventListener('sommni-library-account-changing',close);
+  if(closed)return;closed=true;photoRevision++;session.cancel();stopCamera();cancelAnimationFrame(meshFrame);document.removeEventListener('visibilitychange',visibility);window.removeEventListener('pagehide',pageHide);window.removeEventListener('hashchange',close);window.removeEventListener('sommni-library-account-changing',close);
   dialog.close();dialog.remove();active=null;if(previous?.isConnected)previous.focus();
  };
  const pageHide=()=>{if(!nativePicking)close();};
@@ -49,9 +51,13 @@ export function openBottleScanner(options:Options={}){
   get('[data-step]').textContent=review?'Research ready':session.phase==='preparing'?'1 / 3 · Preparing your photo':'2 / 3 · Reading label & finding notes';
   get('.scan-result').hidden=!review;
   if(busy)status.textContent='Reading the label and finding reference notes. You can stop at any time.';
+  get('.scan-name-hint').hidden=!error;
   if(error)status.textContent=session.error;
+  cancelAnimationFrame(meshFrame);
+  const animate=()=>{if(closed)return;drawGrid();if(session.phase==='researching'&&!reducedMotion)meshFrame=requestAnimationFrame(animate);};
+  if(busy)animate();
   if(review&&session.draft){
-   const wine=session.draft.result;get('.scan-result h3').textContent=wine.wine_name;
+   const wine=session.draft.result;outline=fittedBottle(wine.bottle_outline)||outline;get('.scan-result h3').textContent=wine.wine_name;
    get('[data-facts]').textContent=[wine.producer,wine.vintage??(wine.vintage_state==='non_vintage'?'Non-vintage':'Vintage not confirmed'),wine.region,wine.country].filter(Boolean).join(' · ');
    get('[data-notes]').textContent=String(wine.tasting_notes||'Open review to check the details and add your own tasting notes.').replace(/https?:\/\/\S+/g,'').slice(0,420);
    get('.scan-caution').textContent=wine.uncertainty||'AI-assisted identification. Confirm the producer, wine and year before adding.';
@@ -61,18 +67,11 @@ export function openBottleScanner(options:Options={}){
  function drawGrid(){
   const box=canvas.getBoundingClientRect(),ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(box.width*ratio);canvas.height=Math.round(box.height*ratio);
   const ctx=canvas.getContext('2d');if(!ctx)return;ctx.scale(ratio,ratio);
-  const vw=video.videoWidth||still.naturalWidth||3,vh=video.videoHeight||still.naturalHeight||4,scale=Math.min(box.width/vw,box.height/vh),fw=vw*scale,fh=vh*scale,ox=(box.width-fw)/2,oy=(box.height-fh)/2;
-  const o=outline||{left:.28,top:.09,width:.44,height:.82,rows:[.28,.28,.3,.62,.94,1,1,1,1,1,.98,.9]};
-  const cx=ox+(o.left+o.width/2)*fw,y=oy+o.top*fh,w=o.width*fw,h=o.height*fh;
-  if(session.phase==='preparing'||session.phase==='researching'||session.phase==='review'){
-   ctx.save();ctx.beginPath();o.rows.forEach((r,i)=>{const xx=cx-r*w/2,yy=y+i/11*h;i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)});for(let i=11;i>=0;i--)ctx.lineTo(cx+o.rows[i]*w/2,y+i/11*h);ctx.closePath();ctx.clip();
-   const completed=session.phase==='review'?1:1/3;ctx.fillStyle='rgba(238,192,60,.14)';ctx.fillRect(cx-w/2,y+h*(1-completed),w,h*completed);ctx.restore();
-  }
-  ctx.strokeStyle=outline?'rgba(244,198,75,.88)':'rgba(255,255,255,.52)';ctx.lineWidth=1;ctx.setLineDash(outline?[]:[4,5]);
-  for(const side of [-1,1]){ctx.beginPath();o.rows.forEach((r,i)=>{const x=cx+side*r*w/2,yy=y+i/11*h;i?ctx.lineTo(x,yy):ctx.moveTo(x,yy)});ctx.stroke();}
-  ctx.setLineDash([]);ctx.globalAlpha=.45;
-  for(let i=1;i<11;i++){ctx.beginPath();ctx.ellipse(cx,y+i/11*h,o.rows[i]*w/2,Math.min(7,h/50),0,0,Math.PI*2);ctx.stroke();}
-  for(const f of [-.25,0,.25]){ctx.beginPath();o.rows.forEach((r,i)=>{const x=cx+f*r*w,yy=y+i/11*h;i?ctx.lineTo(x,yy):ctx.moveTo(x,yy)});ctx.stroke();}
+  const vw=(!still.hidden?still.naturalWidth:video.videoWidth)||3,vh=(!still.hidden?still.naturalHeight:video.videoHeight)||4,scale=Math.min(box.width/vw,box.height/vh),fw=vw*scale,fh=vh*scale,ox=(box.width-fw)/2,oy=(box.height-fh)/2;
+  if(outline){drawBottleMesh(ctx,outline,{x:ox,y:oy,width:fw,height:fh},session.phase==='researching'&&!reducedMotion?(Math.sin(performance.now()/1100)+1)/2:null);return;}
+  // No invented silhouette in clutter. A quiet frame remains until actual edges are available.
+  ctx.strokeStyle='rgba(240,197,97,.5)';ctx.lineWidth=1;
+  for(const [x,y,sx,sy] of [[ox+fw*.08,oy+fh*.06,1,1],[ox+fw*.92,oy+fh*.06,-1,1],[ox+fw*.08,oy+fh*.94,1,-1],[ox+fw*.92,oy+fh*.94,-1,-1]]){ctx.beginPath();ctx.moveTo(x+sx*14,y);ctx.lineTo(x,y);ctx.lineTo(x,y+sy*14);ctx.stroke();}
  }
  function tick(now:number){
   if(closed||!lease.stream)return;
@@ -99,7 +98,7 @@ export function openBottleScanner(options:Options={}){
  async function scan(photo:string){
   canvas.hidden=false;stopCamera();still.onload=()=>{
    probe.width=144;probe.height=Math.max(60,Math.min(256,Math.round(144*still.naturalHeight/still.naturalWidth)));
-   const ctx=probe.getContext('2d',{willReadFrequently:true});if(ctx){ctx.drawImage(still,0,0,probe.width,probe.height);outline=traceBottle(ctx.getImageData(0,0,probe.width,probe.height).data,probe.width,probe.height);}drawGrid();
+   const ctx=probe.getContext('2d',{willReadFrequently:true});if(ctx){ctx.drawImage(still,0,0,probe.width,probe.height);outline=fittedBottle(session.draft?.result.bottle_outline)||traceBottle(ctx.getImageData(0,0,probe.width,probe.height).data,probe.width,probe.height);}drawGrid();
   };still.src=photo;still.hidden=false;video.hidden=true;get('.scan-view-label').textContent='Captured photo · Check label and year';await session.scan(photo);if(!closed)drawGrid();
  }
  get('[data-capture]').onclick=()=>{
@@ -120,10 +119,10 @@ export function openBottleScanner(options:Options={}){
   }catch(error){if(!closed&&token===photoRevision)status.textContent=(error as Error).message;}
   finally{nativePicking=false;if(!closed){get<HTMLButtonElement>('[data-capture]').disabled=false;}}
  }
- for(const input of dialog.querySelectorAll<HTMLInputElement>('input'))input.addEventListener('click',event=>{
+ for(const input of dialog.querySelectorAll<HTMLInputElement>('input[type=file]'))input.addEventListener('click',event=>{
   if(nativeMode){event.preventDefault();void pickNative(input.hasAttribute('capture')?'camera':'album');}
  });
- for(const input of dialog.querySelectorAll<HTMLInputElement>('input'))input.onchange=async()=>{
+ for(const input of dialog.querySelectorAll<HTMLInputElement>('input[type=file]'))input.onchange=async()=>{
    const file=input.files?.[0];input.value='';if(!file)return;const token=++photoRevision;session.cancel();stopCamera();opening=false;
   status.textContent='Preparing your bottle photo…';get<HTMLButtonElement>('[data-capture]').disabled=true;
   try{const photo=await photoData(file);if(closed||token!==photoRevision)return;outline=null;void scan(photo);}catch(error){if(!closed&&token===photoRevision){status.textContent=(error as Error).message;get('[data-retake]').hidden=false;}}

@@ -1,5 +1,5 @@
 import { Fault, text, uuid, review, photo, grounding, hash, narration } from './domain.ts';
-import { createWineProvider } from './provider.ts';
+import { createWineProvider, alignPhotoCandidate } from './provider.ts';
 type Deps={db:any; env:(key:string)=>string|undefined; fetch:typeof fetch};
 export function createResearchService({db,env,fetch:fetcher}:Deps) {
  const {gemini,structured}=createWineProvider(env,fetcher);
@@ -68,13 +68,13 @@ export function createResearchService({db,env,fetch:fetcher}:Deps) {
    const query=text(body.query??'',400), image=photo(body.photo),id=uuid(body.request_id);
    if(!query&&!image)throw new Fault(400,'Enter a wine name or add a label photo.');
    return job(user,id,'research',{query,photo:body.photo??null},async()=>{
-    const label=image?await structured('identify',query||'Read this wine label.',image.data):null;
+    const label=image?await structured('identify',query||'Read this wine label.',image.data,photo(body.photo_detail)?.data):null;
     const research=await gemini('research',JSON.stringify({query,label}));
     if(!research.sources.length)throw new Fault(422,'No web sources were returned. Refine the wine name before saving.');
-    const candidate=await structured('structure',JSON.stringify({query,label,report:research.answer}));
+    const candidate=alignPhotoCandidate(await structured('structure',JSON.stringify({query,label,report:research.answer})),label);
     const imagePath=image?`${user}/${id}/reference.jpg`:null;
     if(image)check(await db.storage.from('winelens-bottles').upload(imagePath,image.bytes,{contentType:'image/jpeg',upsert:false}));
-    const draft={id,user_id:user,query,result:candidate,report:research.answer,evidence:{sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html,image_path:imagePath};
+    const draft={id,user_id:user,query,result:{...candidate,...(label?{bottle_outline:label.bottle_outline}: {})},report:research.answer,evidence:{label:label?{wine_name:label.wine_name,producer:label.producer,vintage:label.vintage,vintage_state:label.vintage_state,uncertainty:label.uncertainty}:null,sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html,image_path:imagePath};
     try{check(await db.from('wl_wine_research').insert(draft));}catch(error){if(imagePath)await db.storage.from('winelens-bottles').remove([imagePath]);throw error;}
     return {draft};
    });

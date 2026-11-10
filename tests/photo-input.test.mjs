@@ -7,7 +7,7 @@ globalThis.FileReader=class{async readAsDataURL(blob){this.result=`data:${blob.t
 globalThis.createImageBitmap=async()=>({width:4032,height:3024,close(){closes++}});
 globalThis.document={createElement(tag){assert.equal(tag,'canvas');lastCanvas={width:0,height:0,getContext(){return {drawImage(){draws++},fillRect(){fills++}}},toDataURL(type){return type==='image/jpeg'?'data:image/jpeg;base64,/9j/AA==':png}};return lastCanvas;}};
 const bundle=await build({entryPoints:['src/research/photo-input.ts'],bundle:true,format:'esm',platform:'node',write:false});
-const {photoData,boundedPng,decodePhoto,labelResearchPhoto}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
+const {photoData,boundedPng,decodePhoto,labelResearchPhoto,labelResearchDetail}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
 assert.equal(await photoData(new File([new Uint8Array(5*1024*1024)],'camera.jpg',{type:'image/jpeg'})),png);
 assert.equal(lastCanvas.width,1024);assert.equal(lastCanvas.height,768);assert.equal(closes,1);assert.equal(fills,0,'alpha remains clear unless framing requested');
 assert.equal(await photoData(new File(['image'],'camera.JPG')),png,'empty picker MIME inferred from extension');
@@ -35,3 +35,5 @@ console.log('PASS: hosted photo URLs become inline PNGs without resampling exist
 globalThis.createImageBitmap=async()=>({width:1024,height:768,close(){closes++}});
 const researchPhoto=await labelResearchPhoto(png);assert.match(researchPhoto,/^data:image\/jpeg;base64,/);assert.equal(await boundedPng(png),png);
 console.log('PASS: recognition uses bounded JPEG with white background; original PNG artwork keeps alpha.');
+
+assert.match(await labelResearchDetail(png),/^data:image\/jpeg;base64,/);assert(lastCanvas.width<=900&&lastCanvas.height<=900);console.log('PASS: separate bounded JPEG label close-up, original photo untouched.');

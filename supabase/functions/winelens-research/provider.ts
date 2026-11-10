@@ -1,11 +1,13 @@
+import catalog from '../winelens-beta/data/catalog.json' with {type:'json'};
+import {wineSchema,photoOutline} from '../../../prompts/wine-schema.ts';
 import { Fault, text, review, grounding, safeUrl } from './domain.ts';
 import { researchPrompt, researchInput } from '../../../prompts/wine-research.ts';
 export function createWineProvider(env:(name:string)=>string|undefined,fetcher:typeof fetch){
  const model=env('GEMINI_MODEL')||'gemini-2.5-flash';
- async function google(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string) {
+ async function google(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string,imageDetail?:string) {
   const key=env('GEMINI_API_KEY');if(!key)throw new Fault(503,'Wine research is not connected yet.');
   const search=mode==='research'||mode==='ask';
-  const response=await fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(35000),body:JSON.stringify({systemInstruction:{parts:[{text:researchPrompt(mode)}]},contents:[{role:'user',parts:[{text:input},...(image?[{inlineData:{mimeType:'image/jpeg',data:image}}]:[])]}],...(search?{tools:[{google_search:{}}]}:{}),generationConfig:{maxOutputTokens:4096,...(!search?{responseMimeType:'application/json'}:{})}})});
+  const response=await fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},signal:AbortSignal.timeout(35000),body:JSON.stringify({systemInstruction:{parts:[{text:researchPrompt(mode)}]},contents:[{role:'user',parts:[{text:input},...(image?[{inlineData:{mimeType:'image/jpeg',data:image}}]:[]),...(imageDetail?[{inlineData:{mimeType:'image/jpeg',data:imageDetail}}]:[])]}],...(search?{tools:[{google_search:{}}]}:{}),generationConfig:{maxOutputTokens:4096,...(!search?{responseMimeType:'application/json'}:{})}})});
   if(!response.ok)throw new Fault(502,'The wine research provider could not complete this request.');
   const result=await response.json(), candidate=result.candidates?.[0];
   if(candidate?.finishReason!=='STOP')throw new Fault(502,'Research was incomplete. Try a clearer photo or a more specific wine name.');
@@ -13,10 +15,10 @@ export function createWineProvider(env:(name:string)=>string|undefined,fetcher:t
   if(!answer||answer.length>18000)throw new Fault(502,'No usable research result was returned.');
   return {answer,...grounding(candidate)};
  }
- async function openai(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string){
+ async function openai(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string,imageDetail?:string){
   const key=env('OPENAI_API_KEY');if(!key)throw new Fault(503,'Wine research is not connected yet.');
-  const search=mode==='research'||mode==='ask', model=env('SOMMNI_RESEARCH_MODEL')||env('SOMMNI_TEXT_MODEL')||'gpt-4.1-mini';
-  const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(80000),body:JSON.stringify({model,store:false,instructions:researchPrompt(mode,'web'),input:[{role:'user',content:[{type:'input_text',text:researchInput(mode,input)},...(image?[{type:'input_image',image_url:`data:image/jpeg;base64,${image}`,detail:'high'}]:[])]}],max_output_tokens:4096,...(model.startsWith('gpt-6')?{reasoning:{effort:'low'}}:{}),...(search?{tools:[{type:'web_search'}],tool_choice:'required'}:{text:{format:{type:'json_object'}}})})});
+  const search=mode==='research'||mode==='ask', model=mode==='identify'?(env('SOMMNI_VISION_MODEL')||'gpt-6.1-sol'):(env('SOMMNI_RESEARCH_MODEL')||env('SOMMNI_TEXT_MODEL')||'gpt-4.1-mini');
+  const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(80000),body:JSON.stringify({model,store:false,instructions:researchPrompt(mode,'web'),input:[{role:'user',content:[{type:'input_text',text:researchInput(mode,input)},...(image?[{type:'input_image',image_url:`data:image/jpeg;base64,${image}`,detail:'high'}]:[]),...(imageDetail?[{type:'input_image',image_url:`data:image/jpeg;base64,${imageDetail}`,detail:'high'}]:[])]}],max_output_tokens:4096,...(model.startsWith('gpt-6')?{reasoning:{effort:mode==='identify'?'medium':'low'}}:{}),...(search?{tools:[{type:'web_search'}],tool_choice:'required'}:{text:{format:{type:'json_schema',name:'wine_'+mode,strict:true,schema:wineSchema(mode==='identify')}}})})});
   if(!response.ok){
    const detail=await response.json().catch(()=>({}));
    // Log provider diagnostics only; never log user input, photos, headers or credentials.
@@ -38,10 +40,39 @@ export function createWineProvider(env:(name:string)=>string|undefined,fetcher:t
   return {answer,sources:sources.slice(0,30),supports,search_html:'',citations};
  }
  // Keep the established provider interface for both account and free-beta pipelines.
- const gemini=(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string)=>env('GEMINI_API_KEY')?google(mode,input,image):openai(mode,input,image);
- async function structured(mode:'identify'|'structure',input:string,image?:string) {
-  const response=await gemini(mode,input,image);
-  try{const data=JSON.parse(response.answer);return {...review(data),uncertainty:text(data.uncertainty??'',700)}}catch{throw new Fault(502,'The wine identity is not clear enough. Try a clearer label or a more specific name.');}
+ const gemini=(mode:'identify'|'research'|'structure'|'ask',input:string,image?:string,imageDetail?:string)=>env('GEMINI_API_KEY')?google(mode,input,image,imageDetail):openai(mode,input,image,imageDetail);
+ async function structured(mode:'identify'|'structure',input:string,image?:string,imageDetail?:string) {
+  // Use the dedicated vision model when available; a partial label is not a complete wine record.
+  const labelInput=mode==='identify'?JSON.stringify({request:input,catalog_name_hints:catalog.wines.map(w=>w.name),hint_rules:'These are spelling candidates, not evidence or a required match. Match only when visible label lettering supports both wine and producer. Wines outside this list are valid. Never copy a vintage from the catalog. Re-examine small producer script against these names before leaving it unreadable.'}):input;
+  const response=await (mode==='identify'&&env('OPENAI_API_KEY')?openai(mode,labelInput,image,imageDetail):gemini(mode,labelInput,image,imageDetail));
+  let data:any;
+  try{data=JSON.parse(response.answer)}catch{
+   console.error('Wine response validation',JSON.stringify({mode,reason:'invalid_json'}));
+   throw new Fault(502,'The label service returned an incomplete response. Your photo is kept; retry lookup.');
+  }
+  if(!data||typeof data!=='object'||Array.isArray(data))throw new Fault(502,'The label service returned an invalid response. Retry lookup.');
+  // Normalize provider formatting only. Public confirm/review validation stays strict.
+  const colors=['','Red','White','Sparkling','Rosé','Orange','Dessert','Sake'];
+  const color=typeof data.color==='string'?colors.find(c=>c.toLowerCase()===data.color.trim().toLowerCase()):'';
+  const rawYear=typeof data.vintage==='string'&&/^\d{4}$/.test(data.vintage)?Number(data.vintage):data.vintage;
+  const validYear=Number.isInteger(rawYear)&&rawYear>=1800&&rawYear<=new Date().getUTCFullYear()+1;
+  const state=data.vintage_state==='non_vintage'?'non_vintage':data.vintage_state==='year'&&validYear?'year':'unknown';
+  const normalized={...data,color:color??'',vintage_state:state,vintage:state==='year'?rawYear:null};
+  if(mode==='identify')normalized.tasting_notes='';
+  if(typeof normalized.wine_name!=='string'||!normalized.wine_name.trim())throw new Fault(422,'No wine name could be read. Try a closer label photo, or enter the producer and wine name.');
+  try{return {...review(normalized),uncertainty:text(data.uncertainty??'',700),...(mode==='identify'?{bottle_outline:photoOutline(data.bottle_outline)}:{})}}catch(error){
+   console.error('Wine response validation',JSON.stringify({mode,reason:error instanceof Error?error.message:'invalid_fields'}));
+   throw new Fault(502,mode==='identify'?'The label was read, but its details need another pass. Your photo is kept; retry lookup.':'The wine was identified, but reference notes could not be formatted. Your photo is kept; retry lookup.');
+  }
  }
  return {gemini,structured};
+}
+
+/** Research may enrich a visible identity, but may not replace it or supply a guessed vintage. */
+export function alignPhotoCandidate<T extends {wine_name:string;producer:string;vintage:number|null;vintage_state:string}>(candidate:T,label:T|null):T{
+ if(!label)return candidate;
+ const norm=(s:string)=>s.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const agrees=(a:string,b:string)=>{const x=norm(a),y=norm(b);return x===y||(Math.min(x.length,y.length)>4&&(x.includes(y)||y.includes(x)));};
+ if(!agrees(candidate.wine_name,label.wine_name)||(label.producer&&candidate.producer&&!agrees(candidate.producer,label.producer)))throw new Fault(422,`The label reads ${label.wine_name}${label.producer?' by '+label.producer:''}, but the research matched a different bottle. Add the producer or wine name and retry.`);
+ return {...candidate,wine_name:label.wine_name,producer:label.producer||candidate.producer,vintage:label.vintage,vintage_state:label.vintage_state};
 }

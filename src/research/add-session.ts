@@ -1,7 +1,7 @@
 export type AddPhase = 'ready' | 'opening' | 'listening' | 'transcribing' | 'researching' | 'review' | 'options' | 'saving' | 'saved' | 'error';
 export interface WineDraft {
   id: string;
-  result: { wine_name: string; producer: string | null; vintage: number | null; vintage_state: string; region?: string; country?: string; grape?: string; color?: string; sake_classification?: string; sake_style?: string; rice_variety?: string; tasting_notes?: string; uncertainty?: string };
+  result: { bottle_outline?: import('../../prompts/wine-schema').PhotoOutline | null; wine_name: string; producer: string | null; vintage: number | null; vintage_state: string; region?: string; country?: string; grape?: string; color?: string; sake_classification?: string; sake_style?: string; rice_variety?: string; tasting_notes?: string; uncertainty?: string };
 }
 type Dependencies = {
   research: (query: string, signal: AbortSignal) => Promise<{ draft: WineDraft }>;

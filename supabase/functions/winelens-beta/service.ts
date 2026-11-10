@@ -2,7 +2,7 @@ import { importMenu } from './menu-import.ts';
 import { createBottleDiscovery } from './bottle-discovery.ts';
 import { pcmWave, transcribePcm } from './transcription.ts';
 import { Fault, text, photo, narration, hash } from '../winelens-research/domain.ts';
-import { createWineProvider } from '../winelens-research/provider.ts';
+import { createWineProvider, alignPhotoCandidate } from '../winelens-research/provider.ts';
 import { bottleStudioPrompt } from '../../../prompts/bottle-studio.ts';
 type Deps={env:(key:string)=>string|undefined;fetch:typeof fetch;reserve:(weight:number)=>Promise<boolean>;resolveHost?:(host:string)=>Promise<string[]>;cacheResearch?:(key:string,build:()=>Promise<any>)=>Promise<any>};
 export function createBetaService({env,fetch:fetcher,reserve,cacheResearch,resolveHost}:Deps){
@@ -30,10 +30,10 @@ export function createBetaService({env,fetch:fetcher,reserve,cacheResearch,resol
    const query=text(body.query??'',400),image=photo(body.photo);if(!query&&!image)throw new Fault(400,'Enter a wine name or add a label photo.');
    const build=async()=>{
     await spend(3);
-    const label=image?await structured('identify',query||'Read this wine label.',image.data):null;
+    const label=image?await structured('identify',query||'Read this wine label.',image.data,photo(body.photo_detail)?.data):null;
     const research=await gemini('research',JSON.stringify({query,label}));if(!research.sources.length)throw new Fault(422,'No web sources returned. Try a more specific name.');
-    const result=await structured('structure',JSON.stringify({query,label,report:research.answer}));
-    return {result,report:research.answer,evidence:{sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html};
+    const result=alignPhotoCandidate(await structured('structure',JSON.stringify({query,label,report:research.answer})),label);
+    return {result:{...result,...(label?{bottle_outline:label.bottle_outline}: {})},report:research.answer,evidence:{label:label?{wine_name:label.wine_name,producer:label.producer,vintage:label.vintage,vintage_state:label.vintage_state,uncertainty:label.uncertainty}:null,sources:research.sources,supports:research.supports,citations:('citations' in research?research.citations:[])},search_html:research.search_html};
    };
    // Share only named wine research. Photos and library context never enter this cache.
    const key='research:2:'+Math.floor(Date.now()/(7*86400000))+':'+await hash(query.normalize('NFKC').toLowerCase().replace(/\s+/g,' ').trim());

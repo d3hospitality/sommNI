@@ -32,3 +32,5 @@
 .scan-native{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:36px 24px;color:#bdb7ab}.scan-native>span{font-size:64px;color:var(--scan-gold);line-height:1.3}.scan-native strong{font-size:16px;color:var(--scan-ink)}.scan-native p{font-size:12px;max-width:250px}
 
 .scan-native-mode .scan-alternatives{grid-template-columns:1fr}.scan-native-mode .scan-alternatives label:has(input[capture]){display:none}
+
+.scan-name-hint{display:block;font-size:11px;color:var(--scan-gold);margin:0 0 12px}.scan-name-hint input{display:block;width:100%;min-height:44px;margin-top:6px;padding:10px 12px;border:1px solid var(--scan-line);border-radius:8px;background:#151514;color:var(--scan-ink);font:13px system-ui}.scan-name-hint input:focus-visible{outline:2px solid var(--scan-gold);outline-offset:2px}

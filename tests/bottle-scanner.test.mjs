@@ -31,3 +31,8 @@ const malformed=new BottleScanSession({prepare:async p=>p,research:async()=>({dr
 const requests=[];const race=new BottleScanSession({prepare:async p=>p,research:p=>new Promise(r=>requests.push({p,r})),changed(){}});
 const a=race.scan('old');await tick();const b=race.scan('new');await tick();requests[1].r({draft:{...draft,id:'new'}});await b;requests[0].r({draft});await a;assert.equal(race.draft.id,'new');
 console.log('PASS: moving bottle contour, no false lock on blank frame, pending camera cleanup, abort/late result, retry, invalid image, malformed identification and concurrent lookup isolation.');
+const {fittedBottle}=await load('src/research/scan-tracker.ts');
+const silhouette={top:.03,bottom:.91,left:Array.from({length:12},(_,i)=>.4-i*.01),right:Array.from({length:12},(_,i)=>.5+i*.005)};
+const fit=fittedBottle(silhouette);assert(fit);assert(fit.centers[0]!==fit.centers[11]);assert(fit.rows[0]<fit.rows[11]);
+assert.equal(fittedBottle({...silhouette,top:-1}),null);assert.equal(fittedBottle({...silhouette,right:[.5]}),null);assert.equal(fittedBottle({...silhouette,right:Array(12).fill(.1)}),null);
+console.log('PASS: asymmetric bottle centers and shoulder widths; malformed/out-of-image contours rejected.');

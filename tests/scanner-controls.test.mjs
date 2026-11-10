@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {parseHTML} from 'linkedom';
+import {build} from 'esbuild';
+const {window}=parseHTML('<html><body></body></html>');globalThis.window=window;globalThis.document=window.document;window.matchMedia=()=>({matches:true});
+globalThis.requestAnimationFrame=()=>1;globalThis.cancelAnimationFrame=()=>{};
+window.HTMLElement.prototype.showModal=function(){this.open=true};window.HTMLElement.prototype.close=function(){this.open=false};window.HTMLElement.prototype.getBoundingClientRect=()=>({width:300,height:320});
+window.HTMLElement.prototype.getContext=()=>null;
+const b=await build({entryPoints:['src/research/bottle-scanner.ts'],bundle:true,platform:'node',format:'esm',write:false,loader:{'.css':'empty'},plugins:[{name:'dependencies',setup(b){
+ const stubs={'./client':'export const researchAction=async()=>{throw Error("Test lookup failed")}', '../artwork-store':'export const artworkOwner=()=>"test"', './photo-input':'export const boundedPng=async p=>p;export const photoData=async()=>"photo"', './native-photo':'export const usesEvenPhotoPicker=()=>true;export const pickEvenPhoto=async()=>null', './scan-save':'export const saveScannedWine=async()=>({message:"fixture"})'};
+ b.onResolve({filter:/.*/},a=>a.importer.endsWith('/bottle-scanner.ts')&&a.path in stubs?{path:a.path,namespace:'test'}:undefined);b.onLoad({filter:/.*/,namespace:'test'},a=>({contents:stubs[a.path]}));
+}}]});
+const {openBottleScanner}=await import('data:text/javascript;base64,'+Buffer.from(b.outputFiles[0].text).toString('base64'));
+const picks=[];const ui=openBottleScanner({nativePhoto:async source=>{picks.push(source);return null},research:async()=>{throw Error('Try a label hint')}});
+await new Promise(r=>setImmediate(r));assert.deepEqual(picks,['camera']);
+await ui.session.scan('photo');assert.equal(document.querySelector('.scan-name-hint').hidden,false);
+const hint=document.querySelector('.scan-name-hint input');hint.value='Casanova di Neri Irrosso';hint.dispatchEvent(new window.Event('click',{cancelable:true}));hint.dispatchEvent(new window.Event('change'));await new Promise(r=>setImmediate(r));
+assert.equal(hint.value,'Casanova di Neri Irrosso');assert.deepEqual(picks,['camera'],'typing a hint must never open the native album');
+const choose=document.querySelector('input[type=file]');const click=new window.Event('click',{cancelable:true});choose.dispatchEvent(click);await new Promise(r=>setImmediate(r));assert(click.defaultPrevented);assert.deepEqual(picks,['camera','album']);
+ui.close();assert.equal(document.querySelector('dialog'),null);
+console.log('PASS: failed scan keeps a usable text hint; typing does not open native picker or clear the hint; file chooser still routes to album; close cleans up.');

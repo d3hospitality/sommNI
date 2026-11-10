@@ -51,3 +51,15 @@ export async function labelResearchPhoto(photo:string):Promise<string>{
   return jpeg;
  }finally{decoded.close();}
 }
+
+/** A second view concentrates image tokens on central label lettering; the full photo remains authoritative. */
+export async function labelResearchDetail(photo:string):Promise<string|undefined>{
+ const decoded=await decodePhoto(dataImageBlob(photo));
+ try{
+  const sx=decoded.width*.12,sy=decoded.height*.24,sw=decoded.width*.76,sh=decoded.height*.62;
+  const scale=Math.min(3,900/Math.max(sw,sh)),canvas=document.createElement('canvas');canvas.width=Math.max(20,Math.round(sw*scale));canvas.height=Math.max(20,Math.round(sh*scale));
+  const ctx=canvas.getContext('2d');if(!ctx)return undefined;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(decoded.image,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
+  const jpeg=canvas.toDataURL('image/jpeg',.92);return jpeg.startsWith('data:image/jpeg;base64,')&&jpeg.length<=1200000?jpeg:undefined;
+ }finally{decoded.close();}
+}

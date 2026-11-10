@@ -1,4 +1,12 @@
-export type BottleOutline = { left:number; top:number; width:number; height:number; rows:number[] };
+import {photoOutline} from '../../prompts/wine-schema';
+export type BottleOutline = { left:number; top:number; width:number; height:number; rows:number[]; centers?:number[] };
+/** Photo-space silhouette from vision. No depth claims; each band may have its own center. */
+export function fittedBottle(value:unknown):BottleOutline|null {
+ const v=photoOutline(value);if(!v)return null;
+ const left=Math.min(...v.left),right=Math.max(...v.right),width=right-left;
+ return {left,top:v.top,width,height:v.bottom-v.top,rows:v.left.map((x,i)=>(v.right[i]-x)/width),centers:v.left.map((x,i)=>((v.right[i]+x)/2-left)/width)};
+}
+
 /** Low-resolution contrast tracking, not wine recognition or a semantic bottle detector.
  * Reject weak/cluttered frames rather than presenting a fabricated lock. No frames leave the device. */
 export function traceBottle(data:Uint8ClampedArray,width:number,height:number):BottleOutline|null {
@@ -26,15 +34,16 @@ export function traceBottle(data:Uint8ClampedArray,width:number,height:number):B
   if(s>score){score=s;best=[l,r,t,b,...pixels];}
  }
  if(!best)return null;
- const [l,r,t,b,...pixels]=best,w=r-l+1,h=b-t+1,rows:number[]=[];
+ const [l,r,t,b,...pixels]=best,w=r-l+1,h=b-t+1,rows:number[]=[],centers:number[]=[];
  // Contour widths sampled along the detected component, filling gaps at light labels.
  const spans=Array.from({length:h},()=>[width,0]);
  for(const i of pixels){const x=i%width,y=Math.floor(i/width)-t;spans[y][0]=Math.min(spans[y][0],x);spans[y][1]=Math.max(spans[y][1],x);}
  for(let band=0;band<12;band++){
   const y=Math.min(h-1,Math.round(band/11*(h-1))),span=spans[y];
+  centers.push(span[0]<=span[1]?((span[0]+span[1])/2-l)/w:centers[centers.length-1]??.5);
   rows.push(span[0]<=span[1]?Math.max(.18,(span[1]-span[0]+1)/w):rows[rows.length-1]||1);
  }
- return {left:l/width,top:t/height,width:w/width,height:h/height,rows};
+ return {left:l/width,top:t/height,width:w/width,height:h/height,rows,centers};
 }
 
 /** Owns pending camera permission too: closing during the prompt stops the eventual stream. */
