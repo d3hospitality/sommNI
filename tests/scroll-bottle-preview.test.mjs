@@ -26,7 +26,7 @@ const stubs={
  'history/content':`export const textParagraphs=s=>[s||''];`,
  'intelligence/pour':`export const GLASS_WIDTH=144,GLASS_HEIGHT=144;`,
  'bottle-assets':`export const bottleImageUrl=id=>'/bottle/'+id;`,
- 'bottle-raster':`export const stageCanvas=async()=>{};export const toGreenLevels=()=>[];export const ruleCanvas=()=>({getContext:()=>({getImageData:()=>({data:[]})})});`,
+ 'bottle-raster':`export const stageCanvas=async()=>{};export const toBottleGreenLevels=()=>[];export const toGreenLevels=()=>[];export const ruleCanvas=()=>({getContext:()=>({getImageData:()=>({data:[]})})});`,
  'wine-context':`export const announceWineContext=c=>__scrollFixture.context=c;export const announceCatalogWine=id=>__scrollFixture.context={id};export const libraryContext=w=>({id:w.id});export const libraryPhoto=w=>w.image_url||null;`,
  'display':`export const displayOwner=()=>__scrollFixture.owner;export const claimDisplay=async(o,fn)=>{__scrollFixture.owner=o;__scrollFixture.release=fn};export const dropDisplay=()=>{__scrollFixture.owner='catalog'};export const releaseDisplay=async()=>{__scrollFixture.release?.()};export const suspendDisplay=()=>{};`,
  'image-utils':`import {validateGlassesPage} from ${JSON.stringify(resolve('src/glasses-page.ts'))};const f=__scrollFixture;

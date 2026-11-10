@@ -16,7 +16,7 @@ import { maskGrayLens } from './atlas/lens-mask';
 // ═══════════════════════════════════════════════════════════════════
 
 import { type Country, type GlobeRenderer, type Region } from './atlas/renderer';
-import { stageCanvas, toGreenLevels } from './bottle-raster';
+import { stageCanvas, toBottleGreenLevels } from './bottle-raster';
 
 /** Map panel on screen: x ≥ SCENE_X; the caption strip is y < MAP_Y; the map is below it. */
 export const SCENE_X = 376, MAP_Y = 36, MAP_W = 576 - SCENE_X, MAP_H = 288 - MAP_Y;
@@ -138,7 +138,7 @@ export function planWineScene(renderer: GlobeRenderer, input: SceneInput): Scene
       try {
         const portrait = await stageCanvas(imageUrl, MAP_W, MAP_H);
         const rgba = portrait.getContext('2d')!.getImageData(0, 0, MAP_W, MAP_H).data;
-        const bottle = toGreenLevels(rgba, MAP_W);
+        const bottle = toBottleGreenLevels(rgba, MAP_W);
         for (let i = 0; i < out.length; i++) {
           // Mask the map with source alpha, NOT luminance: black glass must not reveal borders.
           const alpha = rgba[i * 4 + 3] / 255;

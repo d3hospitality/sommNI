@@ -18,7 +18,7 @@ import { EvenAppBridge, EvenHubEvent, OsEventTypeList, RebuildPageContainer, Tex
 import type { LibraryWine } from './winebrary';
 import { rebuildGlassesPage, pushBottlePhoto, invalidateImages, pushLogoToGlasses, pushGrayImage, currentImageEpoch, queueBridgeControl } from './image-utils';
 import { SCENE_X, MAP_Y, TILE_W, TILE_H, CAPTION_MIN_X, captionBox, type ScenePlan } from './wine-scene';
-import { ruleCanvas, toGreenLevels } from './bottle-raster';
+import { ruleCanvas, toGreenLevels, toBottleGreenLevels } from './bottle-raster';
 import { lookupWineById, allCatalogWines, catalogPhoto } from './identity';
 import { claimDisplay, dropDisplay } from './display';
 import { stageCanvas } from './bottle-raster';
@@ -769,7 +769,7 @@ export async function drawGlassesPreview(wine: LibraryWine, canvas: HTMLCanvasEl
     try {
       const photo=await stageCanvas(wine.image_url,100,240);
       const pixels=photo.getContext('2d')!.getImageData(0,0,100,240);
-      const gray=toGreenLevels(pixels.data,100);
+      const gray=toBottleGreenLevels(pixels.data,100);
       for(let i=0;i<gray.length;i++){const o=i*4,v=gray[i];pixels.data[o]=v*.57;pixels.data[o+1]=v*.85;pixels.data[o+2]=v*.55;pixels.data[o+3]=255;}
       ctx.putImageData(pixels,image?.xPosition ?? 16,image?.yPosition ?? 24);
     } catch { /* Text remains readable when the image cannot load. */ }

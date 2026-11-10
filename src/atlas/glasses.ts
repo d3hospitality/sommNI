@@ -4,7 +4,7 @@ import { GlobeRenderer } from './renderer';
 import { AtlasNavigator } from './navigator';
 import { AtlasTransport } from './transport';
 import { validateGlassesPage } from '../glasses-page';
-import { stageCanvas, toGreenLevels } from '../bottle-raster';
+import { stageCanvas, toBottleGreenLevels } from '../bottle-raster';
 export const ATLAS_SIZE=244;
 const clip=(s:string,n=32)=>[...s].slice(0,n).join('');
 export function atlasTexts(nav:AtlasNavigator) {
@@ -66,7 +66,7 @@ export class AtlasGlasses {
       if(cached){gray=cached;return;}
       try {
         const canvas=await stageCanvas(source,ATLAS_SIZE,ATLAS_SIZE);
-        gray=toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,ATLAS_SIZE,ATLAS_SIZE).data,ATLAS_SIZE);
+        gray=toBottleGreenLevels(canvas.getContext('2d')!.getImageData(0,0,ATLAS_SIZE,ATLAS_SIZE).data,ATLAS_SIZE);
         if(this.photos.size>=6)this.photos.delete(this.photos.keys().next().value!);
         this.photos.set(source,gray);
       } catch(error){console.warn('[Atlas] Bottle photo unavailable; wine remains selectable.',error);}

@@ -78,7 +78,7 @@ const { chromium } = require('playwright');
       const chosen = entries[3].item;
       const source = B.bottleImageUrl(base, I.assetIdFor(chosen.id));
       const canvas = await R.stageCanvas(source, 244, 244);
-      const expected = R.toGreenLevels(canvas.getContext('2d').getImageData(0, 0, 244, 244).data, 244);
+      const expected = R.toBottleGreenLevels(canvas.getContext('2d').getImageData(0, 0, 244, 244).data, 244);
       const top = images.filter(i => i.containerName === 'atlas-top').at(-1);
       check(JSON.stringify(top.imageData) === JSON.stringify(Array.from(PNG.encodeGrayscalePng(244, 122, expected.subarray(0, 244 * 122)))), 'rapid scroll sends the selected bottle, not the map or a stale wine');
       // A failed page is restored to the same cursor, then a retry succeeds.

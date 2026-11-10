@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>sommNI · Bottle detail comparison</title>
+<style>body{margin:24px;background:#090a08;color:#eee9db;font:15px system-ui}h1{font:26px Georgia;color:#e4b84d}main{display:grid;gap:28px}article{border-top:1px solid #36342c;padding-top:16px}.pair{display:flex;gap:16px;flex-wrap:wrap}figure{margin:0}canvas{width:244px;height:244px;background:#000}figcaption{font-size:13px;margin:8px 0}p{max-width:700px;color:#b8b3a6}</style>
+<h1>sommNI · Lighter Bottle Detail</h1><p>Glasses-only comparison. Same 244 × 244 pixels, bottle size, peak brightness and two image containers. Left: 13 tones. Right: 7 tones. Phone photographs keep their full detail.</p><main></main><output aria-live="polite">Preparing previews…</output>
+<script type="module">
+import {stageCanvas,toGreenLevels,toBottleGreenLevels} from '../../src/bottle-raster';
+import {encodeCompactGrayscalePng} from '../../src/pngEncoder';
+const assets=(await (await fetch('../../bottles/manifest.json')).json()).assets;
+let oldTotal=0,newTotal=0;
+for(const asset of [assets[0],assets.find(a=>a.name.includes('Chardonnay')),assets.find(a=>a.name.includes('Brice'))].filter(Boolean)){
+ const source=await stageCanvas('../../bottles/'+asset.file,244,244),rgba=source.getContext('2d').getImageData(0,0,244,244).data;
+ const article=document.createElement('article'),title=document.createElement('h2'),pair=document.createElement('div');title.textContent=asset.name;title.style.fontSize='16px';pair.className='pair';article.append(title,pair);document.querySelector('main').append(article);
+ for(const [label,fn] of [['13 tones · Previous',toGreenLevels],['7 tones · Lighter',toBottleGreenLevels]]){
+  const gray=fn(rgba,244),bytes=(await encodeCompactGrayscalePng(244,122,gray.subarray(0,244*122))).length+(await encodeCompactGrayscalePng(244,122,gray.subarray(244*122))).length;
+  label.startsWith('13')?oldTotal+=bytes:newTotal+=bytes;
+  const figure=document.createElement('figure'),canvas=document.createElement('canvas'),caption=document.createElement('figcaption');canvas.width=canvas.height=244;const ctx=canvas.getContext('2d'),image=ctx.createImageData(244,244);
+  for(let i=0;i<gray.length;i++){image.data[i*4+1]=gray[i];image.data[i*4+3]=255}ctx.putImageData(image,0,0);caption.textContent=label+' · '+bytes.toLocaleString()+' bytes';figure.append(canvas,caption);pair.append(figure);
+ }
+}
+document.querySelector('output').textContent=`Combined: ${oldTotal} → ${newTotal} bytes (${((1-newTotal/oldTotal)*100).toFixed(1)}% smaller). Payload measurement, not hardware latency.`;
+</script>

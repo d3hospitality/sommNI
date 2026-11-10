@@ -11,7 +11,7 @@ import { getLocale, translateTexts } from './intelligence/client';
 
 import { EvenAppBridge, ImuReportPace, OsEventTypeList, TextContainerUpgrade, ImageRawDataUpdate, ImageRawDataUpdateResult, RebuildPageContainer, TextContainerProperty } from '@evenrealities/even_hub_sdk';
 import { validateGlassesPage } from './glasses-page';
-import { bottleCanvas, stageCanvas, toGreenLevels } from './bottle-raster';
+import { bottleCanvas, stageCanvas, toBottleGreenLevels } from './bottle-raster';
 import { encodeGrayscalePng, encodeCompactGrayscalePng } from './pngEncoder';
 import { brandGlassesCanvas } from './brand-mark';
 import { homeGlassGray, GLASS_WIDTH, GLASS_HEIGHT, APERTURE, Liquid } from './intelligence/pour';
@@ -123,7 +123,7 @@ export async function pushBottlePhoto(bridge: EvenAppBridge, source: string, wid
   const canvas=await stageCanvas(source,width,halfHeight*2);
   const ctx=canvas.getContext('2d')!;
   for(let i=0;i<2;i++) {
-    const gray=toGreenLevels(ctx.getImageData(0,i*halfHeight,width,halfHeight).data,width);
+    const gray=toBottleGreenLevels(ctx.getImageData(0,i*halfHeight,width,halfHeight).data,width);
     await pushImg(bridge,i+1,i===0?'bottle-top':'bottle-bot',()=>encodeCompactGrayscalePng(width,halfHeight,gray),epoch);
   }
 }
@@ -352,7 +352,7 @@ export async function pushBottleSprite(
   if (!bottleUrl) return;
   try {
     const canvas = await bottleCanvas(bottleUrl, 80, 80);
-    const png = encodeGrayscalePng(80,80,toGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data,80));
+    const png = encodeGrayscalePng(80,80,toBottleGreenLevels(canvas.getContext('2d')!.getImageData(0,0,80,80).data,80));
     await pushImg(bridge, containerID, containerName, png, epoch);
     console.log(`[sommNI-TG] Bottle sprite pushed: ${wineId}`);
   } catch (e) {

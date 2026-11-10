@@ -98,3 +98,16 @@ export function toGreenLevels(pixels: Uint8ClampedArray, width = 0): Uint8Array 
   }
   return gray;
 }
+
+// Compact glasses portraits: preserve black, the faint silhouette and white labels,
+// but collapse subtle photographic shading into seven native G2 tones.
+const BOTTLE_TONES = [0, 17, 34, 68, 102, 153, 204] as const;
+export function toBottleGreenLevels(pixels: Uint8ClampedArray, width = 0): Uint8Array {
+  const gray=toGreenLevels(pixels,width);
+  for(let i=0;i<gray.length;i++) {
+    const value=gray[i];let closest:number=BOTTLE_TONES[0];
+    for(const tone of BOTTLE_TONES)if(Math.abs(tone-value)<Math.abs(closest-value))closest=tone;
+    gray[i]=closest;
+  }
+  return gray;
+}
